@@ -1,0 +1,130 @@
+:root {
+	--bg: #fff;
+	--colorFG: #000;
+	--colorSubdue: #989791;
+	--flow-space: 1rem;
+	--bgSubdue: rgba(153, 153, 140, 0.1);
+	--lineSubdue: rgba(153, 153, 140, 0.5);
+	--textSubdue: #99998c;
+	--bgSubdueActive: rgba(153, 153, 140, 0.4);
+	--gridSpace: 2rem;
+	// --colorHighlight: #D9D9D9; //#F75421;
+	// --colorSubdue:#b6b6b6;
+	@media (max-width: 767px) {
+		--gridSpace: 1rem;
+	}
+}
+$borderColor: #99998c;
+
+@mixin padinL {
+	padding-left: 1.5rem;
+	@media (max-width: 767px) {
+		padding-left: 1rem;
+	}
+}
+@mixin padinR {
+	padding-right: 1.5rem;
+	@media (max-width: 767px) {
+		padding-right: 1rem;
+	}
+}
+@mixin padinT {
+	padding-top: 1.5rem;
+	@media (max-width: 767px) {
+		padding-top: 1rem;
+	}
+}
+@mixin padinB {
+	padding-bottom: 1.5rem;
+	@media (max-width: 767px) {
+		padding-bottom: 1rem;
+	}
+}
+@mixin padin {
+	@include padinL;
+	@include padinR;
+	@include padinT;
+	@include padinB;
+}
+@mixin padinLR {
+	@include padinL;
+	@include padinR;
+}
+
+@mixin insetLR {
+	padding-left: 1rem;
+	padding-right: 1rem;
+	@media (min-width: 1024px) {
+		padding-left: 8rem;
+		padding-right: 8rem;
+	}
+}
+@mixin pullLR {
+	margin-left: -1.5rem;
+	margin-right: -1.5rem;
+}
+@mixin padinTB {
+	@include padinT;
+	@include padinB;
+}
+
+@mixin spaceStd {
+	margin-bottom: 3rem;
+	@media (min-height: 800px) {
+		margin-bottom: 4.5rem;
+	}
+}
+@mixin spaceMin {
+	margin-bottom: 1rem;
+}
+
+@mixin relPadL {
+	padding-left: 6vw;
+	@media (max-width: 767px) {
+		padding-left: 1rem;
+	}
+}
+@mixin relPadL_half {
+	padding-left: 3vw;
+	@media (max-width: 767px) {
+		padding-left: 0.5rem;
+	}
+}
+@mixin relPadR {
+	padding-right: 6vw;
+	@media (max-width: 767px) {
+		padding-right: 1rem;
+	}
+}
+@mixin relPadR_half {
+	padding-right: 3vw;
+	@media (max-width: 767px) {
+		padding-right: 0.5rem;
+	}
+}
+
+@keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@keyframes fadeOut {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (max-width: 768px) {
+	#wpadminbar {
+		display: none !important;
+	}
+	html.js {
+		margin-top: 0 !important;
+	}
+}

@@ -1,0 +1,108 @@
+@font-face {
+	font-family: 'Romaine';
+	src: url('../fonts/Romaine-Regular.woff2') format('woff2'),
+		url('../fonts/Romaine-Regular.woff');
+}
+@font-face {
+	font-family: 'Romaine';
+	src: url('../fonts/Romaine-Italic.woff2') format('woff2'),
+		url('../fonts/Romaine-Italic.woff');
+	font-style:italic;
+}
+@mixin title {
+	font-weight: normal;
+	font-size: 19px;
+	letter-spacing: .015em;
+	word-spacing: -.03em;
+	font-variant: small-caps;
+}
+html {
+	box-sizing: border-box;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: antialiased;
+	font-size:18px;
+	scroll-behavior: smooth;
+	flex-direction:column;
+	::selection {
+		// color: #fff;
+	}
+}
+*,
+*:before,
+*:after {
+	box-sizing: border-box;
+}
+*:focus:not(:focus-visible),
+*:active {
+	outline: none;
+}
+:focus-visible {
+	outline: 1px solid black;
+}
+body {
+	font-family: 'Romaine', serif;
+	font-size: 22px;
+	line-height: 1.2;
+	color: #000;
+	padding: 0px;
+	margin: 0;
+	background: white;
+	font-variant-numeric: proportional-nums;
+	-moz-font-feature-settings: "pnum";
+	-webkit-font-feature-settings: "pnum";
+	font-feature-settings: "pnum";
+	-webkit-font-smoothing: antialiased;
+	font-variant-ligatures: discretionary-ligatures;
+}
+
+.block {
+	margin: auto;
+	padding: 1rem 3rem;
+	max-width: 40em;
+	@media(max-width:767px){
+		padding-left:20px;
+		padding-right:20px;
+	}
+}
+
+h1 {
+	display:flex;
+	flex-direction:row;
+	justify-content:space-between;
+	@include title;
+	font-size:1.5vw;
+	padding:0 20px;
+	@media(min-width:1300px){
+		font-size:19px;
+	}
+	@media(max-width:875px){
+		display:block;
+		font-size:15px;
+		padding:0 1rem;
+		span { display: block; }
+	}
+}
+h2 {
+	@include title;
+	padding: 0;
+	margin: 0;
+	display:none;
+}
+
+footer {
+	font-size: 18px;
+	position: relative;
+	padding: 0 20px 16px;
+	padding-top: 3rem;
+	a { 
+		color: black;
+		text-decoration:none;
+		border-bottom:solid 1px transparent;
+		&:HOVER {
+			border-color:black;
+		}
+	}
+}
+
+
+@import "slideshow";

@@ -1,0 +1,125 @@
+.trp-language-switcher > div > a {
+	padding: 0;
+	border-radius: 0;
+	color: inherit;
+}
+header {
+	.trp-language-switcher {
+		position: absolute;
+		top: 0.7rem;
+		right: 1.5rem;
+		margin: 0;
+		backface-visibility: hidden;
+		will-change: opacity;
+
+		@include typeBase;
+		text-transform: lowercase;
+		font-variant: small-caps;
+		text-align: left;
+		@media (max-width: 767px) {
+			right: 1rem;
+			top: 2.75rem;
+			left: 1rem;
+			font-size: 14px;
+		}
+		> div {
+			border: none;
+			padding: 0;
+			border-radius: 0;
+			background: none;
+			a {
+				padding: 0;
+				border-radius: 0;
+				color: inherit;
+				text-align: right;
+				width: auto;
+				margin-left: auto;
+				&:hover {
+					background: none;
+					// color: var(--colorSubdue);
+					text-decoration: underline;
+					text-underline-offset: 0.2em;
+					text-decoration-thickness: 1px;
+					text-decoration-color: black;
+				}
+			}
+		}
+	}
+}
+
+.trp-ls-shortcode-language,
+.trp-ls-shortcode-current-language {
+	width: 30px !important;
+}
+.trp-ls-shortcode-current-language {
+	.menu-on-lock & {
+		opacity: 0;
+		transition-duration: 0.2s;
+		pointer-events: none;
+	}
+	@media (min-width: 769px) {
+		pointer-events: none;
+		.menu-on &,
+		.translate-on & {
+			opacity: 0;
+			transition-duration: 0.2s;
+			pointer-events: none;
+		}
+	}
+	@media (max-width: 767px) {
+		display: none !important;
+	}
+}
+
+header .trp-language-switcher:hover .trp-ls-shortcode-language {
+	display: flex !important;
+}
+header .trp-language-switcher .trp-ls-shortcode-language {
+	display: flex !important;
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 0;
+	height: auto !important;
+	visibility: visible;
+	white-space: nowrap;
+	width: auto !important;
+
+	overflow: visible !important;
+	left: auto !important;
+	opacity: 0;
+	@media (min-width: 769px) {
+		.allow-animation & {
+			opacity: 1;
+			animation: fadeOut 0.3s 0s forwards 1;
+		}
+	}
+	a {
+		display: block;
+		margin-left: 1rem;
+		&.trp-ls-disabled-language {
+			order: 8;
+			// color: var(--colorSubdue);
+			text-decoration: underline;
+			pointer-events: none;
+			text-underline-offset: 0.2em;
+			text-decoration-thickness: 1px;
+			text-decoration-color: black;
+		}
+	}
+	.allow-animation.menu-on-lock & {
+		opacity: 0;
+		animation: fadeIn 0.15s 0s forwards 1;
+	}
+	@media (min-width: 769px) {
+		.allow-animation.menu-on &,
+		.translate-on & {
+			opacity: 0;
+			animation: fadeIn 0.15s 0s forwards 1;
+		}
+	}
+	@media (max-width: 767px) {
+		left: 0 !important;
+		justify-content: center;
+	}
+}

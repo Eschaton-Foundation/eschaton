@@ -1,0 +1,68 @@
+# Translation of Plugins - Simple Page Ordering - Stable (latest release) in German
+# This file is distributed under the same license as the Plugins - Simple Page Ordering - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2023-01-11 12:56:03+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.0-alpha.3\n"
+"Language: de\n"
+"Project-Id-Version: Plugins - Simple Page Ordering - Stable (latest release)\n"
+
+#. Author of the plugin
+msgid "10up"
+msgstr "10 nach oben"
+
+#: simple-page-ordering.php:153
+msgid "It looks like you are using a development copy of <strong>Simple Page Ordering</strong>. Please run <code>npm i; npm run build</code> to create assets."
+msgstr "Anscheinend verwendest Du eine Entwicklungsversion von <strong>Simple Page Ordering</strong>. Bitte führen <code>npm i; npm run build</code> aus, um Assets zu erstellen."
+
+#: simple-page-ordering.php:487
+msgid "Array of excluded post IDs"
+msgstr "Array ausgeschlossener Beitrags-IDs"
+
+#: simple-page-ordering.php:481
+msgid "Start index"
+msgstr "Start Index"
+
+#: simple-page-ordering.php:475
+msgid "Next post ID"
+msgstr "ID nächster Beitrag"
+
+#: simple-page-ordering.php:470
+msgid "Previous post ID"
+msgstr "ID vorheriger Beitrag"
+
+#: simple-page-ordering.php:465
+msgid "Post ID."
+msgstr "Beitrags-ID."
+
+#: simple-page-ordering.php:236 simple-page-ordering.php:510
+msgid "Missing mandatory parameters."
+msgstr "Erforderliche Parameter fehlen."
+
+#. Author URI of the plugin
+msgid "https://10up.com"
+msgstr "https://10up.com"
+
+#. Plugin URI of the plugin
+msgid "http://10up.com/plugins/simple-page-ordering-wordpress/"
+msgstr "http://10up.com/plugins/simple-page-ordering-wordpress/"
+
+#. Plugin Name of the plugin
+msgid "Simple Page Ordering"
+msgstr "Simple Page Ordering"
+
+#. Description of the plugin
+msgid "Order your pages and hierarchical post types using drag and drop on the built in page list. For further instructions, open the \"Help\" tab on the Pages screen."
+msgstr "Ordne deine Seite und hierarchischen Inhaltstypen mittels Drag & Drop in der Seitenliste von WordPress. Für weitere Anleitungen öffne den „Hilfe“-Tab in der Ansicht „Seiten“."
+
+#: simple-page-ordering.php:433
+msgid "Sort by Order"
+msgstr "Nach Reihenfolge sortieren"
+
+#: simple-page-ordering.php:171
+msgid "To reposition an item, simply drag and drop the row by \"clicking and holding\" it anywhere (outside of the links and form controls) and moving it to its new position."
+msgstr "Um ein Element neu zu positionieren, verschiebe die entsprechende Zeile einfach mit Drag&Drop, indem du sie anklickst und angeklickt hältst, sie dann zur neuen Position (außerhalb der Links und Formularelemente) bewegst und los lässt."

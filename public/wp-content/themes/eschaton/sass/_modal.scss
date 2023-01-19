@@ -1,0 +1,124 @@
+.modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: none;
+	&.modal-interact {
+		display: block;
+		pointer-events: none;
+		animation: modalOut 0.15s forwards 1;
+	}
+	.modal-on & {
+		display: block;
+		opacity: 0;
+		animation: modalIn 0.3s forwards 1;
+		pointer-events: all;
+	}
+	@media (min-width: 768px) {
+		.admin-bar & {
+			top: 32px;
+			height: calc(100% - 32px);
+		}
+	}
+}
+.modal-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(255, 255, 255, 1);
+}
+.modal-close {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	width: 44px;
+	height: 44px;
+	cursor: pointer;
+	z-index: 2;
+	&:before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		background: #f2f2f2;
+	}
+	span {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		color: transparent;
+		overflow: hidden;
+		text-indent: -500px;
+		&:before,
+		&:after {
+			content: "";
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 24px;
+			height: 1px;
+			background: black;
+			margin-left: -12px;
+			transform: rotate(45deg);
+		}
+		&:after {
+			transform: rotate(-45deg);
+		}
+	}
+}
+.modal-content-scroll {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow: auto;
+	.modal-img {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 90%;
+		height: 90%;
+		object-fit: contain;
+		transform: translate(-50%, -50%);
+	}
+}
+
+@keyframes modalOut {
+	0% {
+		opacity: 1;
+		visibility: visible;
+	}
+	99% {
+		opacity: 0;
+		visibility: visible;
+	}
+	100% {
+		opacity: 0;
+		visibility: hidden;
+	}
+}
+
+@keyframes modalIn {
+	0% {
+		opacity: 0;
+		visibility: hidden;
+	}
+	1% {
+		opacity: 0;
+		visibility: visible;
+	}
+	100% {
+		opacity: 1;
+		visibility: visible;
+	}
+}
