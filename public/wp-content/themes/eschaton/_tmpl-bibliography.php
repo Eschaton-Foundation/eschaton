@@ -15,7 +15,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
         <section>
 
             <div class="filters_group">
-                <button class="mainBtn publication-filter active" data-term="all">Tous</button>
+                <button class="mainBtn publication-filter active" data-taxonomy="media_type" data-term="all">Tous</button>
                 <?php 
                 $types = get_terms( array(
                     'taxonomy' => 'media_type',
@@ -25,7 +25,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
                 if ( !empty($types) ) :
                     foreach( $types as $term ) {
 
-                        $output = '<button class="mainBtn publication-filter" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                        $output = '<button class="mainBtn publication-filter" data-taxonomy="media_type" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
                         $output.= esc_attr( $term->name );
                         $output.='</button>';
                         echo $output;
@@ -35,21 +35,13 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             
         </section>
 
-		<section id="grid" class="bibliography-grid">
+		<section id="grid" class="grid" data-posttype="bibliography">
             
             <?php
-				$args = array(
-                    'post_type' => 'bibliography',
-                    'post_status' => 'publish',
-                    'posts_per_page' => -1,
-                    'meta_key' => 'media_date',
-                    'orderby' => 'meta_value',
-                    'order' => 'DESC',
-                );
-                
-                
-                set_query_var('loop_args', $args);
-                get_template_part('components/loops/loop', 'bibliography');
+
+                get_template_part('components/loops/loop', 'bibliography', array(
+                    'term' => 'all',
+                ));
 
 			?>
 		</section>

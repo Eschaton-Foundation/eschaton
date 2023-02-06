@@ -26,14 +26,19 @@ function init() {
                 this.classList.add('active');
 
                 const data = new FormData();
+                const grid = document.querySelector('#grid');
+                const taxonomy = this.getAttribute('data-taxonomy');
                 const term = this.getAttribute('data-term');
                 const termID = this.getAttribute('data-termID');
+                const postType = grid.getAttribute('data-posttype');
                 console.log(term);
 
                 data.append( 'action', 'loadposts' );
                 data.append( 'nonce', ajax_var.nonce );
+                data.append( 'taxonomy', taxonomy);
                 data.append( 'term', term);
                 data.append( 'termID', termID);
+                data.append( 'postType', postType);
 
                 // console.log(data);
 

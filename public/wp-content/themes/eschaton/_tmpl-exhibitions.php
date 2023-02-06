@@ -4,73 +4,49 @@ Template Name: Exhibitions
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<section class="section-exhibition-intro content-intro">
+	<article class="section-exhibition-intro content-intro">
 		<h2 class="tac"><?php the_title(); ?></h2>
-		<article class="wyg">
+		<section class="wyg">
 			<?php the_content(); ?>
-		</article>
+		</section>
 
-		<article class="exhibitions-grid"><?php
-											$args = array(
-												'post_type' => 'exhibitions',
-												'post_status' => 'publish',
-												'posts_per_page' => -1,
-												'meta_key' => 'date_start',
-												'orderby' => 'meta_value',
-												'order' => 'DESC',
-											);
-											query_posts($args);
-											if (have_posts()) {
-												$currTerms = null;
-												while (have_posts()) : the_post();
-													$pID = $post->ID;
-													$pTitle = get_the_title($pID);
-													$terms = wp_get_post_terms($pID, 'exhyear', array());
-													$termsOut = '';
-													$termClass = '';
-													if (!empty($terms)) {
-														foreach ($terms as $termKey => $term) {
-															if ($termKey > 0) {
-																$termsOut .= ', ';
-															}
-															$termsOut .= $term->name;
-															$termClass = $term->slug;
-														}
-													}
 
-													// $exhArr[] = array(
-													// 	'terms' => $termsOut,
-													// 	'datestart' => get_field("date_start"),
-													// 	'link' => get_permalink(),
-													// 	'title' => get_the_title(),
-													// 	'venue' => get_field("venue"),
-													// 	'loc' => get_field("location"),
-													// );
+		<section>
+			<div class="filters_group">
+                <button class="active" data-taxonomy="exhyear" data-term="all">All dates</button>
+                <?php 
+                $types = get_terms( array(
+                    'taxonomy' => 'exhyear',
+                    'hide_empty' => false
+                ) );
+                
+                if ( !empty($types) ) :
+                    foreach( $types as $term ) {
 
-													if ($termsOut !== $currTerms) {
-														echo '<div class="exhib-newyear"><span>' . $termsOut . '</span></div>';
-														$currTerms = $termsOut;
-													}
-											?>
-					<div class="exhibition-single">
-						<?php if (has_post_thumbnail()) {
-														echo '<div class="img-wrap">';
-														echo wp_get_attachment_image(get_post_thumbnail_id($pID), 'thumbnail', false);
-														echo '</div>';
-													} ?>
-						<div class="txt-wrap wyg"><?php the_content(); ?></div>
-						<?php if (get_field("link_text")) {
-														echo '<a href="' . get_field("link") . '" target="_blank">' . get_field("link_text") . '</a>';
-													} ?>
-					</div>
+                        $output = '<button class="" data-taxonomy="exhyear" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                        $output.= esc_attr( $term->name );
+                        $output.='</button>';
+                        echo $output;
+                    }
+                endif; ?>
+            </div>
+		</section>
 
+		<section id="grid" data-posttype="exhibition">
+			<h2>Present</h2>
 			<?php
-												endwhile;
-											}
-											wp_reset_query();
+			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'present')); ?>
 
-			?>
-		</article>
-	</section>
+			<h2>Forthcoming</h2>
+			<?php 
+			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'forthcoming')); ?>
+
+			<h2>Passed</h2>
+			<?php 
+			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'passed')); ?>
+		</section>
+
+	</article>
+
 <?php endwhile;
 get_footer(); ?>

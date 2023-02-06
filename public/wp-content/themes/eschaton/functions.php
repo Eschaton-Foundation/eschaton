@@ -840,32 +840,17 @@ function custom_tours_column( $column, $post_id ) {
 
  function loadposts() {
 
-	 $term = $_POST['term'];
-	 $termID = $_POST['termID'];
+	$postType = $_POST['postType'];
 
-	 $args = array( 
-		 'post_type' => 'bibliography',
-		 'posts_per_page' => -1,
-		 'meta_key' => 'media_date',
-		 'orderby' => 'meta_value',
-		 'order' => 'DESC',
-	);
+	ob_start();
+	 	
+	get_template_part('components/loops/loop', $postType, array(
+		'taxonomy' => $_POST['taxonomy'],
+		'term' => $_POST['term'],
+		'termID' => $_POST['termID'],
+	));
 
-	 if( $term != "all" ) {
-		 $args['tax_query'] = array(
-			 array(
-				 'taxonomy' => 'media_type',
-				 'field'    => 'term_id',
-				 'terms'    => array( $termID ),
-			 )
-		 );
-	 }
+	$response = ob_get_clean();
+	die(json_encode($response));
 
-	 ob_start();
-	 
-	 set_query_var('loop_args', $args);
-	 get_template_part('components/loops/loop', 'bibliography');
-
-	 $response = ob_get_clean();
-	 die(json_encode($response));
- }
+}
