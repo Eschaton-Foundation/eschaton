@@ -844,6 +844,7 @@ function custom_tours_column( $column, $post_id ) {
 
 	ob_start();
 	 	
+	
 	get_template_part('components/loops/loop', $postType, array(
 		'taxonomy' => $_POST['taxonomy'],
 		'term' => $_POST['term'],

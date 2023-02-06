@@ -4,16 +4,16 @@ Template Name: Exhibitions
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<article class="section-exhibition-intro content-intro">
+	<section class="section-exhibition-intro content-intro">
 		<h2 class="tac"><?php the_title(); ?></h2>
-		<section class="wyg">
+		<div class="wyg">
 			<?php the_content(); ?>
-		</section>
+		</div>
 
 
-		<section>
+		<div>
 			<div class="filters_group">
-                <button class="active" data-taxonomy="exhyear" data-term="all">All dates</button>
+                <button class="publication-filter active" data-taxonomy="exhyear" data-term="all">All dates</button>
                 <?php 
                 $types = get_terms( array(
                     'taxonomy' => 'exhyear',
@@ -23,16 +23,36 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
                 if ( !empty($types) ) :
                     foreach( $types as $term ) {
 
-                        $output = '<button class="" data-taxonomy="exhyear" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                        $output = '<button class="publication-filter" data-taxonomy="exhyear" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
                         $output.= esc_attr( $term->name );
                         $output.='</button>';
                         echo $output;
                     }
                 endif; ?>
             </div>
-		</section>
 
-		<section id="grid" data-posttype="exhibition">
+			<div class="filters_group">
+                <button class="publication-filter active" data-taxonomy="exhcontinent" data-term="all">All continent</button>
+                <?php 
+                $types = get_terms( array(
+                    'taxonomy' => 'exhcontinent',
+                    'hide_empty' => false
+                ) );
+                
+                if ( !empty($types) ) :
+                    foreach( $types as $term ) {
+
+                        $output = '<button class="publication-filter" data-taxonomy="exhcontinent" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                        $output.= esc_attr( $term->name );
+                        $output.='</button>';
+                        echo $output;
+                    }
+                endif; ?>
+            </div>
+		</div>
+
+		
+		<div id="grid" data-posttype="exhibitions">
 			<h2>Present</h2>
 			<?php
 			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'present')); ?>
@@ -44,9 +64,9 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			<h2>Passed</h2>
 			<?php 
 			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'passed')); ?>
-		</section>
+		</div>
 
-	</article>
+	</section>
 
 <?php endwhile;
 get_footer(); ?>

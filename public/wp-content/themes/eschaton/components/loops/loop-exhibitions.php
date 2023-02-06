@@ -1,4 +1,4 @@
-<section class="exhibitions-grid">
+<div class="exhibitions-grid">
 			
     <?php
         $today = date('Ymd');
@@ -12,47 +12,59 @@
 			'order' => 'DESC',
 		);
 
-        if( $args['period'] === 'present') {
-            $query_args['meta_query'] = array(
+        if(  array_key_exists('taxonomy', $args) && $args['term'] != "all" ) {
+            $query_args['tax_query'] = array(
                 array(
-                    'key'     => 'date_start',
-                    'compare' => '<=',
-                    'value'   => $today,
-                ),
-                 array(
-                    'key'     => 'date_end',
-                    'compare' => '>=',
-                    'value'   => $today,
+                    'taxonomy' => $args['taxonomy'],
+                    'field'    => 'term_id',
+                    'terms'    => array( $args['termID'] ),
                 )
             );
         }
-        else if( $args['period'] === 'passed' ) {
-            $query_args['meta_query'] = array(
-                array(
-                    'key'     => 'date_start',
-                    'compare' => '<=',
-                    'value'   => $today,
-                ),
-                array(
-                    'key'     => 'date_end',
-                    'compare' => '<',
-                    'value'   => $today,
-                )
-            );
-        }
-        else if( $args['period'] === 'forthcoming' ) {
-            $query_args['meta_query'] = array(
-                array(
-                    'key'     => 'date_start',
-                    'compare' => '>=',
-                    'value'   => $today,
-                ),
-                 array(
-                    'key'     => 'date_end',
-                    'compare' => '>=',
-                    'value'   => $today,
-                )
-            );
+
+        if( array_key_exists('period', $args) ) {
+            if( $args['period'] === 'present') {
+                $query_args['meta_query'] = array(
+                    array(
+                        'key'     => 'date_start',
+                        'compare' => '<=',
+                        'value'   => $today,
+                    ),
+                    array(
+                        'key'     => 'date_end',
+                        'compare' => '>=',
+                        'value'   => $today,
+                    )
+                );
+            }
+            else if( $args['period'] === 'passed' ) {
+                $query_args['meta_query'] = array(
+                    array(
+                        'key'     => 'date_start',
+                        'compare' => '<=',
+                        'value'   => $today,
+                    ),
+                    array(
+                        'key'     => 'date_end',
+                        'compare' => '<',
+                        'value'   => $today,
+                    )
+                );
+            }
+            else if( $args['period'] === 'forthcoming' ) {
+                $query_args['meta_query'] = array(
+                    array(
+                        'key'     => 'date_start',
+                        'compare' => '>=',
+                        'value'   => $today,
+                    ),
+                    array(
+                        'key'     => 'date_end',
+                        'compare' => '>=',
+                        'value'   => $today,
+                    )
+                );
+            }
         }
 		
 		query_posts($query_args);
@@ -69,4 +81,4 @@
             
 		endif; 
 	wp_reset_query(); ?>
-</section>
+</div>
