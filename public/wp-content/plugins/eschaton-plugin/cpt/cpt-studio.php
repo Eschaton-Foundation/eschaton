@@ -1,18 +1,18 @@
 <?php 
 
-function bibliography_register_post_types() {
+function studio_register_post_types() {
 	
     // CPT Portfolio
     $labels = array(
-		'name'					=> 'Bibliography',
-		'singular_name'			=> 'Bibliography',
-		'menu_name'				=> 'Bibliography',
-		'name_admin_bar'		=> 'Bibliography',
-		'archives'				=> 'Bibliography Archives',
-		'attributes'			=> 'Bibliography Attributes',
+		'name'					=> 'Studios / Ateliers',
+		'singular_name'			=> 'Studios / Ateliers',
+		'menu_name'				=> 'Studios / Ateliers',
+		'name_admin_bar'		=> 'Studios / Ateliers',
+		'archives'				=> 'Studios Archives',
+		'attributes'			=> 'Studios Attributes',
 		'parent_item_colon'		=> 'Parent Item:',
 		'all_items'				=> 'All item',
-		'add_new_item'			=> 'Add New Bibliography item',
+		'add_new_item'			=> 'Add New Studio item',
 		'add_new'				=> 'Add New',
 		'new_item'				=> 'New Item',
 		'edit_item'				=> 'Edit Item',
@@ -38,14 +38,14 @@ function bibliography_register_post_types() {
         'has_archive' => true,
         'supports' => array( 'title', 'editor','thumbnail','custom-fields','excerpt'),
         'taxonomies' => array(),
-        'rewrite' => array('slug' => 'bibliography','with_front' => true),
+        'rewrite' => array('slug' => 'studio','with_front' => true),
 		'hierarchical'			=> true,
 		'public'				=> true,
 		'show_in_rest'			=> true,
 		'show_ui'				=> true,
 		'show_in_menu'			=> true,
 		'menu_position'			=> 24,
-		'menu_icon'				=> 'dashicons-email',
+		'menu_icon'				=> 'dashicons-book',
 		'show_in_admin_bar'		=> true,
 		'show_in_nav_menus'		=> false,
 		'can_export'			=> true,
@@ -55,6 +55,6 @@ function bibliography_register_post_types() {
 		'rewrite'				=> false
 	);
 
-	register_post_type( 'bibliography', $args );
+	register_post_type( 'studio', $args );
 }
-add_action( 'init', 'bibliography_register_post_types' ); // Le hook init lance la fonction
+add_action( 'init', 'studio_register_post_types' ); // Le hook init lance la fonction

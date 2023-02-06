@@ -18,3 +18,4 @@ require_once(ABM_DIR.'/acf.php');
 
 // REQUIRE CUSTOM POST TYPES 
 require_once(ABM_DIR.'/cpt/cpt-bibliography.php');
+require_once(ABM_DIR.'/cpt/cpt-studio.php');
