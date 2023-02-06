@@ -33,6 +33,13 @@ function chipsScripts()
 		wp_enqueue_script('zoomjs', null, null, null, true);
 		wp_register_script('scriptsJS', get_bloginfo('template_directory') . '/js/app.js?v=0.020');
 		wp_enqueue_script('scriptsJS', null, null, null, true);
+
+		wp_enqueue_script('filters', get_template_directory_uri() . '/js/filters.js', [], rand(), true);
+		wp_localize_script('filters', 'ajax_var', array(
+			'ajax_url' => admin_url( 'admin-ajax.php' ),
+			'nonce' => wp_create_nonce( 'wp-pageviews-nonce' ),
+		));
+
 	}
 }
 add_action('init', 'chipsScripts');
@@ -817,3 +824,48 @@ function custom_tours_column( $column, $post_id ) {
             break;
     }
 }
+
+
+
+
+
+
+
+/*
+ * Ajax Functions
+ */
+
+ add_action("wp_ajax_loadposts", "loadposts");
+ add_action("wp_ajax_nopriv_loadposts", "loadposts");
+
+ function loadposts() {
+
+	 $term = $_POST['term'];
+	 $termID = $_POST['termID'];
+
+	 $args = array( 
+		 'post_type' => 'bibliography',
+		 'posts_per_page' => -1,
+		 'meta_key' => 'media_date',
+		 'orderby' => 'meta_value',
+		 'order' => 'DESC',
+	);
+
+	 if( $term != "all" ) {
+		 $args['tax_query'] = array(
+			 array(
+				 'taxonomy' => 'media_type',
+				 'field'    => 'term_id',
+				 'terms'    => array( $termID ),
+			 )
+		 );
+	 }
+
+	 ob_start();
+	 
+	 set_query_var('loop_args', $args);
+	 get_template_part('components/loops/loop', 'bibliography');
+
+	 $response = ob_get_clean();
+	 die(json_encode($response));
+ }
