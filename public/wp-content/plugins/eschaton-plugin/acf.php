@@ -35,19 +35,3 @@ add_filter('acf/save_post', function ($post_id) {
     $format($_POST['acf']['field_58eb835538d5a']);
 }, 1, 1);
 
-
-function add_my_options_page() {
-
-    if (function_exists('acf_add_options_page')) {
-
-        acf_add_options_page(array(
-            'page_title' => 'Options',
-            'menu_title' => 'Options',
-            'menu_slug'     => 'theme-general-settings',
-            'icon_url' => 'dashicons-layout',
-            'position' => 2
-        ));
-    }
-}
-
-add_action('plugins_loaded', 'add_my_options_page');
