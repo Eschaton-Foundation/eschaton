@@ -10,47 +10,10 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			<?php the_content(); ?>
 		</div>
 
-
 		<div>
-			<div class="filters_group">
-                <button class="publication-filter active" data-taxonomy="exhyear" data-term="all">All dates</button>
-                <?php 
-                $types = get_terms( array(
-                    'taxonomy' => 'exhyear',
-                    'hide_empty' => false
-                ) );
-                
-                if ( !empty($types) ) :
-                    foreach( $types as $term ) {
-
-                        $output = '<button class="publication-filter" data-taxonomy="exhyear" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
-                        $output.= esc_attr( $term->name );
-                        $output.='</button>';
-                        echo $output;
-                    }
-                endif; ?>
-            </div>
-
-			<div class="filters_group">
-                <button class="publication-filter active" data-taxonomy="exhcontinent" data-term="all">All continent</button>
-                <?php 
-                $types = get_terms( array(
-                    'taxonomy' => 'exhcontinent',
-                    'hide_empty' => false
-                ) );
-                
-                if ( !empty($types) ) :
-                    foreach( $types as $term ) {
-
-                        $output = '<button class="publication-filter" data-taxonomy="exhcontinent" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
-                        $output.= esc_attr( $term->name );
-                        $output.='</button>';
-                        echo $output;
-                    }
-                endif; ?>
-            </div>
+            <?php FILTERS('all dates', 'exhyear')->displayOutput(); ?>
+            <?php FILTERS('all continent', 'exhcontinent')->displayOutput(); ?>
 		</div>
-
 		
 		<div id="grid" data-posttype="exhibitions">
 			<h2>Present</h2>
@@ -69,4 +32,8 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 	</section>
 
 <?php endwhile;
+
+echo "<script type='text/javascript'>const ajaxurl = '".admin_url('admin-ajax.php')."'</script>"; 
+
 get_footer(); ?>
+

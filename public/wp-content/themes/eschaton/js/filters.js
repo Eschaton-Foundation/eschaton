@@ -63,7 +63,7 @@ function init() {
         }
     }
 
-    const filter_buttons = document.querySelectorAll('.publication-filter');
+    const filter_buttons = document.querySelectorAll('.filter-item');
     get_filters(filter_buttons);
 
 

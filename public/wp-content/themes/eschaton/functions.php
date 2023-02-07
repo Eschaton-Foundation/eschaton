@@ -6,6 +6,7 @@ add_post_type_support('page', 'excerpt');
 include("_posttypes.php");
 include("_taxonomies.php");
 require_once('classes/flex.php');
+require_once('classes/Filters.php');
 
 include "snippets/shortcodes.php";
 include "snippets/collapse-flexible-rows.php";
