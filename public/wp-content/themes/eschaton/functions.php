@@ -40,6 +40,7 @@ function chipsScripts()
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
 			'nonce' => wp_create_nonce( 'wp-pageviews-nonce' ),
 		));
+		wp_enqueue_style( 'dashicons' );
 
 	}
 }

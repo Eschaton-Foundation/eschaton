@@ -42,6 +42,8 @@ function init() {
 
                 // console.log(data);
 
+                grid.style.opacity = "0.5";
+
                 fetch(ajax_var.ajax_url, {
                     method: "POST",
                     credentials: 'same-origin',
@@ -54,6 +56,7 @@ function init() {
                     .then((data) => {
                         // console.log(data);
                         document.querySelector('#grid').innerHTML = data;
+                        grid.style.opacity = "1";
                     })
                     .catch((error) => {
                         console.log(error);

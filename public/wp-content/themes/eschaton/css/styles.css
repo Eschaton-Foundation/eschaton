@@ -662,6 +662,9 @@ footer {
 .exhibitions-stage {
   margin-bottom: 4rem; }
 
+#grid {
+  transition: opacity .3s; }
+
 .exhibitions-grid {
   margin-top: 2rem; }
   .exhibitions-grid .exhib-newyear {
@@ -1415,6 +1418,28 @@ details {
   font-size: 16px; }
   .filter-item.active {
     font-weight: bold; }
+
+.bibliography-single {
+  margin-bottom: 2rem;
+  position: relative; }
+  .bibliography-single:after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 0;
+    width: 20px;
+    height: 1px;
+    background-color: #d8d8d3; }
+  .bibliography-single .item_title {
+    font-style: italic;
+    font-weight: 100; }
+  .bibliography-single a {
+    font-size: 16px; }
+  .bibliography-single a:after {
+    font-family: "dashicons";
+    content: "\f504";
+    padding-left: 5px;
+    font-size: 14px; }
 
 .bookings-grid {
   display: grid;
