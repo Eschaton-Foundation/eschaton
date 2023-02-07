@@ -9,9 +9,12 @@
 
     <div class="txt-wrap wyg">
         <?php the_content(); ?>
+
+        <?php if (get_field("link_text")) {
+            echo '<a href="' . get_field("link") . '" target="_blank">' . get_field("link_text") . '</a>';
+        } ?>
+        
     </div>
     
-    <?php if (get_field("link_text")) {
-        echo '<a href="' . get_field("link") . '" target="_blank">' . get_field("link_text") . '</a>';
-    } ?>
+
 </article>

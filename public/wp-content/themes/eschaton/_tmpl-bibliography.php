@@ -4,19 +4,19 @@ Template Name: Bibliography
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<article class="section-bibliography-intro content-intro">
+	<section class="section-bibliography-intro content-intro">
 		
         <h2 class="tac"><?php the_title(); ?></h2>
 
-		<section class="wyg">
+		<div class="wyg">
 			<?php the_content(); ?>
-		</section>
+		</div>
 
-        <section>
+        <div class="page_filters">
             <?php FILTERS('All types', 'media_type')->displayOutput(); ?>
-        </section>
+        </div>
 
-		<section id="grid" class="grid" data-posttype="bibliography">
+		<div id="grid" class="grid" data-posttype="bibliography">
             
             <?php
 
@@ -25,8 +25,8 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
                 ));
 
 			?>
-		</section>
+		</div>
 
-    </article>
+    </section>
 <?php endwhile;
 get_footer(); ?>

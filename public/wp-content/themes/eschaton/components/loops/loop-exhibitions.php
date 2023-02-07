@@ -1,4 +1,4 @@
-<div class="exhibitions-grid">
+<div class="exhibitions-stage">
 			
     <?php
         $today = date('Ymd');
@@ -23,7 +23,7 @@
         }
 
         if( array_key_exists('period', $args) ) {
-            if( $args['period'] === 'present') {
+            if( $args['period'] === 'Present') {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -37,7 +37,7 @@
                     )
                 );
             }
-            else if( $args['period'] === 'passed' ) {
+            else if( $args['period'] === 'Passed' ) {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -51,7 +51,7 @@
                     )
                 );
             }
-            else if( $args['period'] === 'forthcoming' ) {
+            else if( $args['period'] === 'Forthcoming' ) {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -69,16 +69,16 @@
 		
 		query_posts($query_args);
 
-		if (have_posts()) :
-			while (have_posts()) : the_post();
+		if (have_posts()) : ?>
 
-				get_template_part('components/blocs/bloc', 'exhibition');
+            <h3 class="stage_title"><?php echo $args['period']; ?></h3>
 
-			endwhile;
-
-        else : 
-            echo 'No Exhibition';
+            <div class="exhibitions-grid">
+                <?php while (have_posts()) : the_post();
+                    get_template_part('components/blocs/bloc', 'exhibition');
+                endwhile; ?>
+            </div>
             
-		endif; 
+		<?php endif; 
 	wp_reset_query(); ?>
 </div>
