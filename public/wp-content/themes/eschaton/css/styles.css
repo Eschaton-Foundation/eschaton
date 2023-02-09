@@ -1433,10 +1433,10 @@ details {
   .filter-item.active {
     font-weight: bold; }
 
-.bibliography-single {
+.publication-single {
   margin-bottom: 2rem;
   position: relative; }
-  .bibliography-single:after {
+  .publication-single:after {
     content: '';
     position: absolute;
     bottom: -1rem;
@@ -1444,16 +1444,25 @@ details {
     width: 20px;
     height: 1px;
     background-color: #d8d8d3; }
-  .bibliography-single .item_title {
-    font-style: italic;
+  .publication-single .item_title {
     font-weight: 100; }
-  .bibliography-single a {
+  .publication-single a {
     font-size: 16px; }
-  .bibliography-single a:after {
+  .publication-single a:after {
     font-family: "dashicons";
     content: "\f504";
     padding-left: 5px;
     font-size: 14px; }
+  .publication-single .publication_isbn {
+    color: var(--colorSubdue);
+    font-size: 1.4rem; }
+
+.separator {
+  content: " • ";
+  padding: 0 5px;
+  display: inline-block;
+  color: black;
+  height: 32px; }
 
 .bookings-grid {
   display: grid;

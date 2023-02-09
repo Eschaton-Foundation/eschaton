@@ -3,7 +3,7 @@
 $loop_args = array( 
     'post_type' => 'publication',
     'posts_per_page' => -1,
-    'meta_key' => 'media_date',
+    'meta_key' => 'publication_date',
     'orderby' => 'meta_value',
     'order' => 'DESC',
 );

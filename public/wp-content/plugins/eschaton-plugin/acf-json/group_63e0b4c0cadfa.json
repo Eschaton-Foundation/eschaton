@@ -36,14 +36,14 @@
                 "class": "",
                 "id": ""
             },
-            "display_format": "F j, Y",
-            "return_format": "j F Y",
+            "display_format": "Y",
+            "return_format": "Y",
             "first_day": 1
         },
         {
             "key": "field_63e51335a6aaf",
             "label": "ISBN",
-            "name": "isbnpublication_isbn",
+            "name": "publication_isbn",
             "aria-label": "",
             "type": "text",
             "instructions": "",
@@ -96,5 +96,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1675957246
+    "modified": 1675961887
 }

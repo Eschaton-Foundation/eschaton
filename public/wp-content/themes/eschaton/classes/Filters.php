@@ -39,35 +39,38 @@ class Filters {
      */
     public function getOutput() {
 
-        ob_start(); ?>
+        ob_start(); 
 
-        <div class="filters_group">
-            <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
-                <?php echo $this->_allLabel; ?>
-            </button>
+        $args = array(
+            'taxonomy'      => $this->_taxonomy,
+            'hide_empty'    => true,
+        );
 
-            <?php 
+        if( $this->_onlyParent ) {
+            $args['parent'] = 0;
+        }
 
-            $args = array(
-                'taxonomy'      => $this->_taxonomy,
-                'hide_empty'    => true,
-            );
-
-            if( $this->_onlyParent ) {
-                $args['parent'] = 0;
-            }
-
-            $types = get_terms( $args );
+        $types = get_terms( $args );
             
-            if ( !empty($types) ) :
-                foreach( $types as $term ) {
+        if ( !empty($types) ) : ?>
+
+            <div class="filters_group">
+
+                <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
+                    <?php echo $this->_allLabel; ?>
+                </button>
+
+                <?php foreach( $types as $term ) {
                     $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
                     $output.= esc_attr( $term->name );
                     $output.='</button>';
                     echo $output;
-                }
-            endif; ?>
-        </div>
+                } ?>
+
+            </div>
+
+
+        <?php endif; ?>
 
 
         <?php 
