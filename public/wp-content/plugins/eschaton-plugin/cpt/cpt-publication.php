@@ -1,18 +1,18 @@
 <?php 
 
-function bibliography_register_post_types() {
+function publication_register_post_types() {
 	
     // CPT Portfolio
     $labels = array(
-		'name'					=> 'Bibliography',
-		'singular_name'			=> 'Bibliography',
-		'menu_name'				=> 'Bibliography',
-		'name_admin_bar'		=> 'Bibliography',
-		'archives'				=> 'Bibliography Archives',
-		'attributes'			=> 'Bibliography Attributes',
+		'name'					=> 'Publications',
+		'singular_name'			=> 'Publication',
+		'menu_name'				=> 'Publications',
+		'name_admin_bar'		=> 'Publications',
+		'archives'				=> 'Publications Archives',
+		'attributes'			=> 'Publications Attributes',
 		'parent_item_colon'		=> 'Parent Item:',
 		'all_items'				=> 'All item',
-		'add_new_item'			=> 'Add New Bibliography item',
+		'add_new_item'			=> 'Add New Publication item',
 		'add_new'				=> 'Add New',
 		'new_item'				=> 'New Item',
 		'edit_item'				=> 'Edit Item',
@@ -38,7 +38,7 @@ function bibliography_register_post_types() {
         'has_archive' => true,
         'supports' => array( 'title', 'editor','thumbnail','custom-fields','excerpt'),
         'taxonomies' => array(),
-        'rewrite' => array('slug' => 'bibliography','with_front' => true),
+        'rewrite' => array('slug' => 'publications','with_front' => true),
 		'hierarchical'			=> true,
 		'public'				=> true,
 		'show_in_rest'			=> true,
@@ -55,15 +55,15 @@ function bibliography_register_post_types() {
 		'rewrite'				=> false
 	);
 
-	register_post_type( 'bibliography', $args );
+	register_post_type( 'publication', $args );
 }
-add_action( 'init', 'bibliography_register_post_types' ); // Le hook init lance la fonction
+add_action( 'init', 'publication_register_post_types' ); // Le hook init lance la fonction
 
 
 
 
 // Register Custom Taxonomy
-function media_type() {
+function publication_taxonomies() {
 
 	$labels = array(
 		'name'                       => _x( 'Media Types', 'Taxonomy General Name', 'text_domain' ),
@@ -89,6 +89,40 @@ function media_type() {
 	);
 	$args = array(
 		'labels'                     => $labels,
+		'hierarchical'               => true,
+		'public'                     => true,
+		'show_ui'                    => true,
+		'show_admin_column'          => true,
+		'show_in_nav_menus'          => true,
+		'show_tagcloud'              => true,
+	);
+	register_taxonomy( 'media_type', array( 'publication' ), $args );
+
+
+	$labels = array(
+		'name'                       => _x( 'Publication language', 'Taxonomy General Name', 'text_domain' ),
+		'singular_name'              => _x( 'Publication language', 'Taxonomy Singular Name', 'text_domain' ),
+		'menu_name'                  => __( 'Publication languages', 'text_domain' ),
+		'all_items'                  => __( 'All languages', 'text_domain' ),
+		'parent_item'                => __( 'languages Item', 'text_domain' ),
+		'parent_item_colon'          => __( 'languages Item:', 'text_domain' ),
+		'new_item_name'              => __( 'New language Name', 'text_domain' ),
+		'add_new_item'               => __( 'Add New language', 'text_domain' ),
+		'edit_item'                  => __( 'Edit language', 'text_domain' ),
+		'update_item'                => __( 'Update language', 'text_domain' ),
+		'view_item'                  => __( 'View languages', 'text_domain' ),
+		'separate_items_with_commas' => __( 'Separate languages with commas', 'text_domain' ),
+		'add_or_remove_items'        => __( 'Add or remove items', 'text_domain' ),
+		'choose_from_most_used'      => __( 'Choose from the most used', 'text_domain' ),
+		'popular_items'              => __( 'Popular Items', 'text_domain' ),
+		'search_items'               => __( 'Search Items', 'text_domain' ),
+		'not_found'                  => __( 'Not Found', 'text_domain' ),
+		'no_terms'                   => __( 'No items', 'text_domain' ),
+		'items_list'                 => __( 'Items list', 'text_domain' ),
+		'items_list_navigation'      => __( 'Items list navigation', 'text_domain' ),
+	);
+	$args = array(
+		'labels'                     => $labels,
 		'hierarchical'               => false,
 		'public'                     => true,
 		'show_ui'                    => true,
@@ -96,7 +130,7 @@ function media_type() {
 		'show_in_nav_menus'          => true,
 		'show_tagcloud'              => true,
 	);
-	register_taxonomy( 'media_type', array( 'bibliography' ), $args );
+	register_taxonomy( 'language', array( 'publication' ), $args );
 
 }
-add_action( 'init', 'media_type', 0 );
+add_action( 'init', 'publication_taxonomies', 0 );

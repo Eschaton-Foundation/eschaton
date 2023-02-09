@@ -1,10 +1,10 @@
 <?php
 /* 
-Template Name: Bibliography 
+Template Name: Publications 
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<section class="section-bibliography-intro content-intro">
+	<section class="section-publication-intro content-intro">
 		
         <h2 class="tac"><?php the_title(); ?></h2>
 
@@ -16,11 +16,11 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             <?php FILTERS('All types', 'media_type')->displayOutput(); ?>
         </div>
 
-		<div id="grid" class="grid" data-posttype="bibliography">
+		<div id="grid" class="grid" data-posttype="publication">
             
             <?php
 
-                get_template_part('components/loops/loop', 'bibliography', array(
+                get_template_part('components/loops/loop', 'publications', array(
                     'term' => 'all',
                 ));
 

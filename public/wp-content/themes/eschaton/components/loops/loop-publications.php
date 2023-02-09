@@ -1,7 +1,7 @@
 <?php
 
 $loop_args = array( 
-    'post_type' => 'bibliography',
+    'post_type' => 'publication',
     'posts_per_page' => -1,
     'meta_key' => 'media_date',
     'orderby' => 'meta_value',
@@ -23,7 +23,7 @@ query_posts($loop_args);
 if (have_posts()) :
     while (have_posts()) : the_post();
 
-        get_template_part('components/blocs/bloc', 'bibliography');
+        get_template_part('components/blocs/bloc', 'publication');
 
     endwhile;
 endif;
