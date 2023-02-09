@@ -7,3 +7,5 @@ eschaton.code-workspace
 /eschaton.code-workspace
 .DS_Store
 debug.log
+.htaccess
+/public/.htaccess
