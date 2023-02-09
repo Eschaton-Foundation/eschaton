@@ -38,9 +38,9 @@ function chips_taxonomies() {
 
 
 	$labels_ExhibitionContinent = array(
-		'name'						=> _x( 'Continent', 'Taxonomy General Name', 'text_domain' ),
-		'singular_name'				=> _x( 'Continent', 'Taxonomy Singular Name', 'text_domain' ),
-		'menu_name'					=> __( 'Continent', 'text_domain' ),
+		'name'						=> _x( 'Continent / City', 'Taxonomy General Name', 'text_domain' ),
+		'singular_name'				=> _x( 'Continent / City', 'Taxonomy Singular Name', 'text_domain' ),
+		'menu_name'					=> __( 'Continent / City', 'text_domain' ),
 		'all_items'					=> __( 'All Continent', 'text_domain' ),
 		'parent_item'				=> __( 'Parent Item', 'text_domain' ),
 		'parent_item_colon'			=> __( 'Parent Item:', 'text_domain' ),

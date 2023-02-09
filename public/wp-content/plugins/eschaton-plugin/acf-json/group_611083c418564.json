@@ -3,6 +3,26 @@
     "title": "Exhibitions",
     "fields": [
         {
+            "key": "field_63e4fb6924358",
+            "label": "Gallery \/ Museum Name",
+            "name": "exhibition_place",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_611083d3a63b6",
             "label": "Start date",
             "name": "date_start",
@@ -17,7 +37,7 @@
                 "id": ""
             },
             "display_format": "F j, Y",
-            "return_format": "Ymd",
+            "return_format": "j F Y",
             "first_day": 1
         },
         {
@@ -35,7 +55,7 @@
                 "id": ""
             },
             "display_format": "F j, Y",
-            "return_format": "Ymd",
+            "return_format": "j F Y",
             "first_day": 1
         },
         {
@@ -94,5 +114,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1675669843
+    "modified": 1675951233
 }

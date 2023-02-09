@@ -1,8 +1,9 @@
 <?php
 
-function FILTERS( $label, $taxonomy) {
-	return new Filters( $label, $taxonomy);
+function FILTERS( $label = "All", $taxonomy, $onlyParent = false) {
+	return new Filters( $label, $taxonomy, $onlyParent);
 }  
+
 
 /*
  * Classe Filters
@@ -20,12 +21,19 @@ class Filters {
      */
     private $_taxonomy;
 
+    /*
+     * @var int 
+     */
+    private $_onlyParent;
 
-    public function __construct( $label = 'All', $taxonomy ) {
+
+    public function __construct( $label, $taxonomy, $onlyParent ) {
         $this->_allLabel = $label;
         $this->_taxonomy = $taxonomy;
+        $this->_onlyParent = $onlyParent;
     }
 
+    
     /*
      * @return String HTML
      */
@@ -39,14 +47,20 @@ class Filters {
             </button>
 
             <?php 
-            $types = get_terms( array(
-                'taxonomy' => $this->_taxonomy,
-                'hide_empty' => true
-            ) );
+
+            $args = array(
+                'taxonomy'      => $this->_taxonomy,
+                'hide_empty'    => true,
+            );
+
+            if( $this->_onlyParent ) {
+                $args['parent'] = 0;
+            }
+
+            $types = get_terms( $args );
             
             if ( !empty($types) ) :
                 foreach( $types as $term ) {
-
                     $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
                     $output.= esc_attr( $term->name );
                     $output.='</button>';
