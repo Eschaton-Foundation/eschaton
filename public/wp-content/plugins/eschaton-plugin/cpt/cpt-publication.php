@@ -130,7 +130,7 @@ function publication_taxonomies() {
 		'show_in_nav_menus'          => true,
 		'show_tagcloud'              => true,
 	);
-	register_taxonomy( 'language', array( 'publication' ), $args );
+	register_taxonomy( 'publication_language', array( 'publication' ), $args );
 
 }
 add_action( 'init', 'publication_taxonomies', 0 );
