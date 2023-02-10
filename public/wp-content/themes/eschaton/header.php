@@ -169,10 +169,7 @@
 		</button>
 		
 		<div class="lang_switcher">
-			<a href="#" id="triggerLang1" class="btn-lang dropdown_link">
-				<?php pll_e('Langue'); ?>
-			</a>
-			<ul id="lang_list" class="dropdown_panel--left">
+			<ul id="lang_list" class="dropdown_panel">
 				<?php pll_the_languages();?>
 			</ul>
 		</div>
