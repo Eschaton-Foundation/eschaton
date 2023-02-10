@@ -5,7 +5,7 @@ Template Name: Studios / Ateliers
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<section class="section-exhibition-intro content-intro">
+	<section class="section-studio content-intro">
 		
         <h2 class="tac"><?php the_title(); ?></h2>
 
@@ -20,9 +20,9 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
                     'post_type' => 'studio',
                     'post_status' => 'publish',
                     'posts_per_page' => -1,
-                    // 'meta_key' => 'media_date',
-                    // 'orderby' => 'meta_value',
-                    // 'order' => 'DESC',
+                    'meta_key' => 'date_start',
+                    'orderby' => 'meta_value',
+                    'order' => 'ASC',
                 );
                 
                 query_posts($args);

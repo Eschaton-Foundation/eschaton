@@ -1464,6 +1464,28 @@ details {
   color: black;
   height: 32px; }
 
+/*
+ * STUDIOS
+ */
+.studio_single {
+  margin-bottom: 4rem;
+  margin-top: 4rem; }
+
+.studio_title {
+  font-size: 3rem;
+  margin-bottom: 2rem; }
+
+.studio_medias {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin-top: 2rem; }
+  .studio_medias li {
+    max-width: 33%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem; }
+
 .bookings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

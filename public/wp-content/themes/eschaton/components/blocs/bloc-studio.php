@@ -1,15 +1,32 @@
 
-<div class="studio-single">
-
-<?php if (has_post_thumbnail()) {
-    echo '<div class="img-wrap">';
-        echo wp_get_attachment_image(get_post_thumbnail_id($pID), 'thumbnail', false);
-    echo '</div>';
-} ?>
+<div id="about-<?php the_field('date_start'); ?>" class="studio_single" data-start="<?php the_field('date_start'); ?>" data-end="<?php the_field('date_end'); ?>">
 
 
-	<div class="txt-wrap wyg"><?php the_title(); ?></div>
+    <?php if (has_post_thumbnail()) {
+        echo '<div class="img-wrap">';
+            //echo wp_get_attachment_image(get_post_thumbnail_id($pID), 'thumbnail', false);
+        echo '</div>';
+    } ?>
 
-    <?php the_content(); ?>
+
+	<h3 class="studio_title"><?php the_title(); ?></h3>
+
+    <div class="txt-wrap wyg"><?php the_content(); ?></div>
+
+    <?php 
+        $images = get_field('studio_medias');
+        $size = 'full'; // (thumbnail, medium, large, full or custom size)
+        if( $images ): ?>
+            <div id="slider" class="flexslider">
+                <ul class="studio_medias">
+                    <?php foreach( $images as $image ): ?>
+                        <li>
+                            <img src="<?php echo esc_url($image['url']); ?>" alt="<?php echo esc_attr($image['alt']); ?>" />
+                            <span><?php echo esc_html($image['caption']); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
 
 </div>
