@@ -1,4 +1,5 @@
 
+
 <article class="exhibition-single">
 
     <?php if (has_post_thumbnail()) {
@@ -10,16 +11,32 @@
         echo '</div>';
     } ?>
 
-    <div class="txt-wrap wyg">
-        <a href="<?php the_field('link'); ?>" target="_blank">
-            <h3 class="exhibition_title"><?php the_title(); ?></h3>
+    <div class="txt-wrap">
+        <a href="<?php the_field('link'); ?>" target="_blank" class="exhibition_title">
+            <h3 class=""><?php the_title(); ?></h3>
         </a>
 
-        <div><?php the_field("exhibition_place"); ?></div>
-        <div><?php the_content(); ?></div>
+        <div class="wyg">
+            <div><?php the_field("exhibition_place"); ?></div>
+            <div><?php the_content(); ?></div>
 
-        <div><?php the_field("date_start"); ?> - <?php the_field("date_end"); ?></div>
-        
+            <div class="exhibition-dates">
+                <span class="exhibition-start">
+                    <?php the_field("date_start"); ?>
+                </span>
+                
+                <span class="exhibition-end">
+                    <?php 
+                        if( get_field('permanent')) {
+                            echo ' -  Ongoing (Permanent exhibition)';
+                        }
+                        else {
+                            echo " - " . get_field("date_end"); 
+                        }
+                    ?>
+                </span>
+            </div>
+        </div>
     </div>
     
 

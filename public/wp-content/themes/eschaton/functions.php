@@ -832,7 +832,6 @@ function custom_tours_column( $column, $post_id ) {
 
 
 
-
 /*
  * Ajax Functions
  */

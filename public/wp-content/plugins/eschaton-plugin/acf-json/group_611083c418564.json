@@ -94,6 +94,26 @@
             },
             "default_value": "",
             "placeholder": ""
+        },
+        {
+            "key": "field_63ea42ef1724b",
+            "label": "This is a Parmanent Exhibition",
+            "name": "permanent",
+            "aria-label": "",
+            "type": "true_false",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "message": "",
+            "default_value": 0,
+            "ui": 0,
+            "ui_on_text": "",
+            "ui_off_text": ""
         }
     ],
     "location": [
@@ -114,5 +134,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1675951233
+    "modified": 1676297599
 }

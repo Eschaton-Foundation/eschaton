@@ -1,3 +1,12 @@
+<?php 
+    $periods = ['Present', 'Forthcoming', 'Passed'];
+
+    foreach( $periods as $period ) : 
+
+?>
+
+
+
 <div class="exhibitions-stage">
 			
     <?php
@@ -22,8 +31,7 @@
             );
         }
 
-        if( array_key_exists('period', $args) ) {
-            if( $args['period'] === 'Present') {
+            if( $period === 'Present') {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -37,7 +45,7 @@
                     )
                 );
             }
-            else if( $args['period'] === 'Passed' ) {
+            else if( $period === 'Passed' ) {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -51,7 +59,7 @@
                     )
                 );
             }
-            else if( $args['period'] === 'Forthcoming' ) {
+            else if( $period === 'Forthcoming' ) {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -65,15 +73,14 @@
                     )
                 );
             }
-        }
 		
 		query_posts($query_args);
 
 		if (have_posts()) : ?>
 
-            <h3 class="stage_title"><?php echo $args['period']; ?></h3>
+            <h3 class="stage_title"><?php echo $period; ?></h3>
 
-            <div class="exhibitions-grid">
+            <div class="exhibitions-grid <?php  echo $period === 'Passed' ? 'passed' : '' ?>">
                 <?php while (have_posts()) : the_post();
                     get_template_part('components/blocs/bloc', 'exhibition');
                 endwhile; ?>
@@ -82,3 +89,6 @@
 		<?php endif; 
 	wp_reset_query(); ?>
 </div>
+
+
+<?php endforeach; ?>

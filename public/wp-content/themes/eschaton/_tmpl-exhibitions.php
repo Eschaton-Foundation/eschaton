@@ -19,13 +19,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 		
 		<div id="grid" data-posttype="exhibitions">
 			<?php
-			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'Present')); ?>
-
-			<?php 
-			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'Forthcoming')); ?>
-
-			<?php 
-			get_template_part('components/loops/loop', 'exhibitions', array('period' => 'Passed')); ?>
+			get_template_part('components/loops/loop', 'exhibitions'); ?>
 		</div>
 
 	</section>

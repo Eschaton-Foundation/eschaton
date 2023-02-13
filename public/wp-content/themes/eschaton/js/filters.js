@@ -76,30 +76,34 @@ function init() {
     // STUDIO
 
     const studios = document.querySelectorAll('.studio_single');
-    let studios_dates_array = [];
 
-    for (const st of studios) {
-        const start = st.dataset.start;
-        const end = st.dataset.end;
-        studios_dates_array.push(start);
-        if( end == '' ) {
-            studios_dates_array.push('present');
+    if(studios.length > 0 ) {
+
+        let studios_dates_array = [];
+
+        for (const st of studios) {
+            const start = st.dataset.start;
+            const end = st.dataset.end;
+            studios_dates_array.push(start);
+            if( end == '' ) {
+                studios_dates_array.push('present');
+            }
         }
+        console.log(studios_dates_array);
+
+        let timeline_nav = document.createElement('div');
+        timeline_nav.classList.add('page_filters');
+        let timeline_nav_html = '<ul class="filters_group">';
+        
+        for (const date of studios_dates_array) {
+            timeline_nav_html += `<li class=""><a class="timeline_item" href="#about-${date}">${date}</a></li>`;
+        }
+
+        timeline_nav_html += '</ul>';
+        timeline_nav.innerHTML = timeline_nav_html;
+
+        document.querySelector('.section-studio').prepend(timeline_nav);
     }
-    console.log(studios_dates_array);
-
-    let timeline_nav = document.createElement('div');
-    timeline_nav.classList.add('page_filters');
-    timeline_nav_html = '<ul class="filters_group">';
-    
-    for (const date of studios_dates_array) {
-        timeline_nav_html += `<li class=""><a class="timeline_item" href="#about-${date}">${date}</a></li>`;
-    }
-
-    timeline_nav_html += '</ul>';
-    timeline_nav.innerHTML = timeline_nav_html;
-
-    document.querySelector('.section-studio').prepend(timeline_nav);
 
 
 }
