@@ -19,7 +19,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             <?php FILTERS('All dates', 'publication_date', 'inline')->displayOutput(); ?>
         </div>
 
-		<div id="grid" class="grid" data-posttype="publications">
+		<div id="grid" class="grid" data-posttype="publications" data-step="2">
             
             <?php
 
@@ -30,7 +30,11 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			?>
 		</div>
 
-        
+        <div class="posts_navigation">
+            <button id="loadMore" class="mainBtn hidden">Load more</button>
+        </div>
+
+
     </section>
 <?php endwhile;
 get_footer(); ?>

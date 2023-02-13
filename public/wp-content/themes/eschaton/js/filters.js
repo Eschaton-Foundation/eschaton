@@ -20,9 +20,6 @@ function init() {
             el.addEventListener('click', function (e) {
                 console.log('please do filter');
 
-                const load_more = document.querySelector('#loadMore');
-                const posts_nav = document.querySelector('#posts_nav');
-
 
                 const query_data = new FormData();
                 const grid = document.querySelector('#grid');
@@ -30,9 +27,8 @@ function init() {
                 const term = this.getAttribute('data-term');
                 const termID = this.getAttribute('data-termID');
                 const postType = grid.getAttribute('data-posttype');
-                const step = 12;
+                const step = 20;
 
-                console.log(term);
 
                 els.forEach(element => {
                     element.classList.remove('active');
@@ -54,7 +50,6 @@ function init() {
                 query_data.append( 'postType', postType);
                 query_data.append( 'offset', 0);
 
-                // console.log(data);
 
                 grid.style.opacity = "0.5";
 
@@ -72,12 +67,13 @@ function init() {
                         document.querySelector('#grid').innerHTML = data;
                         grid.style.opacity = "1";
 
-                        console.log(posts_nav);
-                        console.log(load_more);
 
-                        
-                        posts_nav.classList.add('hidden');                    
+                        const load_more = document.querySelector('#loadMore');
                         load_more.classList.remove('hidden'); 
+
+                        // const posts_nav = document.querySelector('#posts_nav');
+                        // posts_nav.classList.add('hidden');
+
 
 
                         load_more.addEventListener('click', function() {
@@ -97,11 +93,15 @@ function init() {
                                     return response.json()
                                 })
                                 .then((data) => {
-                                    if(data === '') {
+                                    
+                                    if( !data || data.length === 1 ) {
                                         load_more.classList.add('hidden'); 
                                     }
                                     else {
                                         grid.insertAdjacentHTML("beforeend", data);
+                                        grid.querySelectorAll('.posts_navigation').forEach(el => {
+                                            el.remove();
+                                        })
                                     }
                                     grid.style.opacity = '1';
                                 })

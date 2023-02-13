@@ -1534,6 +1534,9 @@ details {
     flex-direction: column;
     margin-bottom: 2rem; }
 
+.posts_navigation {
+  margin-top: 4rem; }
+
 .bookings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
