@@ -29,6 +29,12 @@
 
   html.js {
     margin-top: 0 !important; } }
+.hidden {
+  visibility: hidden;
+  height: 0px;
+  display: block;
+  width: 0px; }
+
 @font-face {
   font-family: "Romaine";
   src: url("../fonts/Romaine-Regular.woff2") format("woff2"), url("../fonts/Romaine-Regular.woff"); }

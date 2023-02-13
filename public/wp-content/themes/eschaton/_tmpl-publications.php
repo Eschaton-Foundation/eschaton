@@ -15,6 +15,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
         <div class="page_filters">
             <?php FILTERS('All types', 'media_type')->displayOutput(); ?>
             <?php FILTERS('All languages', 'publication_language')->displayOutput(); ?>
+            <?php FILTERS('All', 'publication_groupesolo')->displayOutput(); ?>
             <?php FILTERS('All dates', 'publication_date', 'inline')->displayOutput(); ?>
         </div>
 
@@ -29,6 +30,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			?>
 		</div>
 
+        
     </section>
 <?php endwhile;
 get_footer(); ?>

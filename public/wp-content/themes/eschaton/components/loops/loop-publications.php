@@ -2,11 +2,14 @@
 
 $loop_args = array( 
     'post_type' => 'publication',
-    'posts_per_page' => -1,
+    'posts_per_page' => 2,
     'meta_key' => 'publication_date',
     'orderby' => 'meta_value',
     'order' => 'DESC',
 );
+$loop_args['paged'] = get_query_var( 'paged' ) 
+? get_query_var( 'paged' ) 
+: 1;
 
 if( $args['term'] != "all" ) {
     $loop_args['tax_query'] = array(
@@ -18,13 +21,24 @@ if( $args['term'] != "all" ) {
     );
 }
 
-query_posts($loop_args);
+$the_query = new WP_Query( 
+    $loop_args
+);
 
-if (have_posts()) :
-    while (have_posts()) : the_post();
+if ( $the_query->have_posts() ) :
+    while ( $the_query->have_posts() ) :
+        $the_query->the_post();
 
         get_template_part('components/blocs/bloc', 'publication');
 
     endwhile;
 endif;
-wp_reset_query();
+wp_reset_query(); ?>
+
+
+<div id="posts_nav" class="posts_navigation">
+    <div><?php previous_posts_link( 'Previous' ); ?></div>
+    <div><?php next_posts_link( 'Next', $the_query->max_num_pages ); ?></div>
+</div>
+
+<button id="loadMore" class="mainBtn hidden">Load more</button>

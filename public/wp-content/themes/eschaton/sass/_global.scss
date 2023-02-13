@@ -128,3 +128,11 @@ $borderColor: #99998c;
 		margin-top: 0 !important;
 	}
 }
+
+
+.hidden {
+    visibility: hidden;
+    height: 0px;
+    display: block;
+    width: 0px;
+}

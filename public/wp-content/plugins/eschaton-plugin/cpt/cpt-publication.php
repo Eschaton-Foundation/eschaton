@@ -166,5 +166,23 @@ function publication_taxonomies() {
 	);
 	register_taxonomy( 'publication_date', array( 'publication' ), $args );
 
+
+
+	$labels = array(
+		'name'                       => _x( 'Group / Solo ?', 'Taxonomy General Name', 'text_domain' ),
+		'singular_name'              => _x( 'Group / Solo ?', 'Taxonomy Singular Name', 'text_domain' ),
+		'menu_name'                  => __( 'Group / Solo ?', 'text_domain' ),
+	);
+	$args = array(
+		'labels'                     => $labels,
+		'hierarchical'               => true,
+		'public'                     => true,
+		'show_ui'                    => true,
+		'show_admin_column'          => true,
+		'show_in_nav_menus'          => true,
+		'show_tagcloud'              => true,
+	);
+	register_taxonomy( 'publication_groupesolo', array( 'publication' ), $args );
+
 }
 add_action( 'init', 'publication_taxonomies', 0 );

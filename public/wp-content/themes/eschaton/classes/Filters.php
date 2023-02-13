@@ -4,6 +4,9 @@ function FILTERS( $label = "All", $taxonomy, $display = 'column', $onlyParent = 
 	return new Filters( $label, $taxonomy, $display, $onlyParent);
 }  
 
+function FILTERS_ACF( $label = "All", $taxonomy, $display = 'column', $onlyParent = false) {
+	return new FiltersACF( $label, $taxonomy, $display, $onlyParent);
+}  
 
 /*
  * Classe Filters
@@ -14,22 +17,22 @@ class Filters {
     /*
      * @var string Label du bouton 'all'
      */
-    private $_allLabel;
+    protected $_allLabel;
 
     /*
      * @var string La taxonomy sur laquelle se base le fitre
      */
-    private $_taxonomy;
+    protected $_taxonomy;
 
     /*
      * @var int 
      */
-    private $_onlyParent;
+    protected $_onlyParent;
 
         /*
      * @var int 
      */
-    private $_display;
+    protected $_display;
 
 
 
@@ -95,4 +98,51 @@ class Filters {
     }
     
 
+}
+
+
+
+class FiltersACF extends Filters {
+
+
+    public function __construct( $label, $taxonomy, $display, $onlyParent ) {
+        $this->_allLabel = $label;
+        $this->_taxonomy = $taxonomy;
+        $this->_display = $display;
+        $this->_onlyParent = $onlyParent;
+    }
+
+    /*
+     * @return String HTML
+     */
+    public function getOutput() {
+
+        ob_start(); 
+            
+        if ( !empty($types) ) : ?>
+
+            <div class="filters_group <?php echo $this->_display; ?>">
+
+                <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
+                    <?php echo $this->_allLabel; ?>
+                </button>
+
+                <?php foreach( $types as $term ) {
+                    $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                    $output.= esc_attr( $term->name );
+                    $output.='</button>';
+                    echo $output;
+                } ?>
+
+            </div>
+
+
+        <?php endif; ?>
+
+
+        <?php 
+        $finalString = ob_get_contents();
+        ob_end_clean();
+        return $finalString;
+    }
 }

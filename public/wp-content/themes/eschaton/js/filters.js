@@ -20,25 +20,39 @@ function init() {
             el.addEventListener('click', function (e) {
                 console.log('please do filter');
 
-                els.forEach(element => {
-                    element.classList.remove('active');
-                });
-                this.classList.add('active');
+                const load_more = document.querySelector('#loadMore');
+                const posts_nav = document.querySelector('#posts_nav');
 
-                const data = new FormData();
+
+                const query_data = new FormData();
                 const grid = document.querySelector('#grid');
                 const taxonomy = this.getAttribute('data-taxonomy');
                 const term = this.getAttribute('data-term');
                 const termID = this.getAttribute('data-termID');
                 const postType = grid.getAttribute('data-posttype');
+                const step = 12;
+
                 console.log(term);
 
-                data.append( 'action', 'loadposts' );
-                data.append( 'nonce', ajax_var.nonce );
-                data.append( 'taxonomy', taxonomy);
-                data.append( 'term', term);
-                data.append( 'termID', termID);
-                data.append( 'postType', postType);
+                els.forEach(element => {
+                    element.classList.remove('active');
+                });
+                if( term == "all" ) {
+                    document.querySelectorAll('[data-term="all"]').forEach(el => {
+                        el.classList.add('active');
+                    });
+                }
+                else {
+                    this.classList.add('active');
+                }
+                
+                query_data.append( 'action', 'loadposts' );
+                query_data.append( 'nonce', ajax_var.nonce );
+                query_data.append( 'taxonomy', taxonomy);
+                query_data.append( 'term', term);
+                query_data.append( 'termID', termID);
+                query_data.append( 'postType', postType);
+                query_data.append( 'offset', 0);
 
                 // console.log(data);
 
@@ -47,7 +61,7 @@ function init() {
                 fetch(ajax_var.ajax_url, {
                     method: "POST",
                     credentials: 'same-origin',
-                    body: data
+                    body: query_data
                     })
                     .then((response) => {
                         // console.log(response);
@@ -57,6 +71,46 @@ function init() {
                         // console.log(data);
                         document.querySelector('#grid').innerHTML = data;
                         grid.style.opacity = "1";
+
+                        console.log(posts_nav);
+                        console.log(load_more);
+
+                        
+                        posts_nav.classList.add('hidden');                    
+                        load_more.classList.remove('hidden'); 
+
+
+                        load_more.addEventListener('click', function() {
+
+                            grid.style.opacity = '.5';
+    
+                            let current_offset = parseInt(query_data.get('offset'));
+                            let new_offset = parseInt(current_offset + step)
+                            query_data.set('offset', new_offset);
+    
+                            fetch(ajax_var.ajax_url, {
+                                    method: "POST",
+                                    credentials: 'same-origin',
+                                    body: query_data
+                                })
+                                .then((response) => {
+                                    return response.json()
+                                })
+                                .then((data) => {
+                                    if(data === '') {
+                                        load_more.classList.add('hidden'); 
+                                    }
+                                    else {
+                                        grid.insertAdjacentHTML("beforeend", data);
+                                    }
+                                    grid.style.opacity = '1';
+                                })
+                                .catch((error) => {
+                                    console.log(error);
+                                });
+    
+                        });
+
                     })
                     .catch((error) => {
                         console.log(error);

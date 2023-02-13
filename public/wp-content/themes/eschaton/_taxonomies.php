@@ -73,5 +73,23 @@ function chips_taxonomies() {
 	register_taxonomy( 'exhcontinent', array( 'exhibitions' ), $args_ExhibitionContinent );
 
 
+	$labels_ExhibitionPermanent = array(
+		'name'						=> _x( 'Permanent exhibition', 'Taxonomy General Name', 'text_domain' ),
+		'singular_name'				=> _x( 'Permanent exhibition', 'Taxonomy Singular Name', 'text_domain' ),
+		'menu_name'					=> __( 'Permanent exhibition', 'text_domain' ),
+		'all_items'					=> __( 'All', 'text_domain' ),
+	);
+	$args_ExhibitionPermanent = array(
+		'labels'					=> $labels_ExhibitionPermanent,
+		'hierarchical'				=> true,
+		'public'					=> true,
+		'show_ui'					=> true,
+		'show_admin_column'			=> true,
+		'show_in_nav_menus'			=> true,
+		'show_tagcloud'				=> false,
+		'show_in_rest'				=> true,
+	);
+	register_taxonomy( 'exhpermanent', array( 'exhibitions' ), $args_ExhibitionPermanent );
+
 }
 add_action( 'init', 'chips_taxonomies', 0 );
