@@ -182,7 +182,9 @@ header {
 		display: flex;
 		list-style: none;
 	}
-
+	.lang-item {
+		margin: 0 5px;
+	}
 	.current-lang {
 		border-bottom: 1px solid;
 	}
