@@ -1,7 +1,7 @@
 <?php
 
-function FILTERS( $label = "All", $taxonomy, $onlyParent = false) {
-	return new Filters( $label, $taxonomy, $onlyParent);
+function FILTERS( $label = "All", $taxonomy, $display = 'column', $onlyParent = false) {
+	return new Filters( $label, $taxonomy, $display, $onlyParent);
 }  
 
 
@@ -26,10 +26,17 @@ class Filters {
      */
     private $_onlyParent;
 
+        /*
+     * @var int 
+     */
+    private $_display;
 
-    public function __construct( $label, $taxonomy, $onlyParent ) {
+
+
+    public function __construct( $label, $taxonomy, $display, $onlyParent ) {
         $this->_allLabel = $label;
         $this->_taxonomy = $taxonomy;
+        $this->_display = $display;
         $this->_onlyParent = $onlyParent;
     }
 
@@ -54,7 +61,7 @@ class Filters {
             
         if ( !empty($types) ) : ?>
 
-            <div class="filters_group">
+            <div class="filters_group <?php echo $this->_display; ?>">
 
                 <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
                     <?php echo $this->_allLabel; ?>

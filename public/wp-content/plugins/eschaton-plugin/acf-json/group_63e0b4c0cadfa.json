@@ -23,24 +23,6 @@
             "append": ""
         },
         {
-            "key": "field_63e0b4e1e0fce",
-            "label": "Date",
-            "name": "publication_date",
-            "aria-label": "",
-            "type": "date_picker",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "50",
-                "class": "",
-                "id": ""
-            },
-            "display_format": "Y",
-            "return_format": "Y",
-            "first_day": 1
-        },
-        {
             "key": "field_63e51335a6aaf",
             "label": "ISBN",
             "name": "publication_isbn",
@@ -96,5 +78,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1675961887
+    "modified": 1676301312
 }

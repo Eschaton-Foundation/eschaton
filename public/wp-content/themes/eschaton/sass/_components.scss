@@ -279,6 +279,8 @@ section.section-artists-headshot:not(.bleed) {
 }
 
 main {
+	min-height: 50vh;
+	
 	#gform_wrapper_2,
 	.section-text #gform_wrapper_2,
 	.pre-form {
@@ -740,6 +742,19 @@ details {
 	align-items: flex-start;
 	padding-bottom: 20px;
 	margin-bottom: 20px;
+
+	&.inline {
+		flex-direction: row;
+		flex-wrap: wrap;
+
+		.filter-item:first-child {
+			flex: 0 0 100%;
+			text-align: left;
+		}
+		.filter-item {
+			padding-right: 10px;
+		}
+	}
 }
 .filter-item {
 	font-family: inherit;

@@ -14,7 +14,8 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 
         <div class="page_filters">
             <?php FILTERS('All types', 'media_type')->displayOutput(); ?>
-            <?php FILTERS('All languages', 'language')->displayOutput(); ?>
+            <?php FILTERS('All languages', 'publication_language')->displayOutput(); ?>
+            <?php FILTERS('All dates', 'publication_date', 'inline')->displayOutput(); ?>
         </div>
 
 		<div id="grid" class="grid" data-posttype="publications">

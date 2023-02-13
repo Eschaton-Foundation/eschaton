@@ -4,7 +4,11 @@
 		<em><?php the_title(); ?></em>, <?php the_field('publication_author'); ?>
 	</h3>
 
-	<?php the_field('publication_date'); ?>
+	<?php 
+		$term_obj_list = get_the_terms( $post->ID, 'publication_date' );
+		$terms_string = join(', ', wp_list_pluck($term_obj_list, 'name')); 
+		echo $terms_string;
+	?>
 	
 	<span class="separator"></span> 
 	
@@ -17,7 +21,7 @@
 	<span class="separator"></span> 
 	
 	<?php 
-		$term_obj_list = get_the_terms( $post->ID, 'language' );
+		$term_obj_list = get_the_terms( $post->ID, 'publication_language' );
 		$terms_string = join(', ', wp_list_pluck($term_obj_list, 'name')); 
 		echo $terms_string;
 	?>
