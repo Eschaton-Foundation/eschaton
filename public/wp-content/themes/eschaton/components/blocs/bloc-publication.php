@@ -1,8 +1,10 @@
 <div class="publication-single">
 
-	<h3 class="item_title wyg">
+	<h3 class="item_title">
 		<em><?php the_title(); ?></em>, <?php the_field('publication_author'); ?>
 	</h3>
+
+	<div class="item_content wyg"><?php the_content(); ?></div>
 
 	<p class="item_meta">
 		<?php 

@@ -1503,6 +1503,8 @@ details {
     font-size: 14px; }
   .publication-single .publication_isbn {
     color: var(--colorSubdue); }
+  .publication-single .item_content {
+    font-size: 1.4rem; }
   .publication-single .item_meta {
     margin-top: 0;
     font-size: 1.2rem; }
