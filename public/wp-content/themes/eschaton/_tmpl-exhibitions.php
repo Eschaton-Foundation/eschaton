@@ -13,9 +13,9 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 		</div>
 
 		<div class="page_filters">
-            <?php FILTERS('All dates', 'exhyear')->displayOutput(); ?>
+            <?php FILTERS('All dates', 'exhyear', 'inline')->displayOutput(); ?>
             <?php FILTERS('All types', 'exhpermanent')->displayOutput(); ?>
-            <?php FILTERS('All continent', 'exhcontinent', true )->displayOutput(); ?>
+            <?php FILTERS('All continent', 'exhcontinent', 'column', true )->displayOutput(); ?>
 		</div>
 		
 		<div id="grid" data-posttype="exhibitions">
