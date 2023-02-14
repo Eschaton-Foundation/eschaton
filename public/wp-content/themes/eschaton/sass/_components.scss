@@ -768,13 +768,13 @@ details {
 
 
 .publication-single {
-	margin-bottom: 2rem;
+	margin-bottom: 3rem;
 	position: relative;
 
 	&:after {
 		content: '';
 		position: absolute;
-		bottom: -1rem;
+		bottom: -1.5rem;
 		left: 0;
 		width: 20px;
 		height: 1px;
@@ -795,7 +795,11 @@ details {
 	}
 	.publication_isbn {
 		color: var(--colorSubdue);
-		font-size: 1.4rem;
+	}
+
+	.item_meta {
+		margin-top: 0;
+		font-size: 1.2rem;
 	}
 }
 
@@ -805,7 +809,7 @@ details {
 	padding: 0 5px;
 	display: inline-block;
 	color: black;
-	height: 32px;
+	height: 20px;
 }
 
 
