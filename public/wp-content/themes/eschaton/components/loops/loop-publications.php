@@ -5,9 +5,10 @@ $offset = $_POST['offset'];
 $loop_args = array( 
     'post_type' => 'publication',
     'posts_per_page' => 20,
-    'meta_key' => 'publication_date',
-    'orderby' => 'meta_value',
-    'order' => 'DESC',
+    // 'meta_key' => 'publication_date',
+    // 'orderby' => 'meta_value',
+    'orderby' => 'date',
+    'order' => 'ASC',
 );
 $loop_args['paged'] = get_query_var( 'paged' ) 
 ? get_query_var( 'paged' ) 
