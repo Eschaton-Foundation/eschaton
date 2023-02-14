@@ -733,6 +733,7 @@ details {
 .page_filters {
 	position: fixed;
 	left: 1.5rem;
+	max-width: 8rem;
 }
 
 .filters_group {
@@ -758,7 +759,10 @@ details {
 }
 .filter-item {
 	font-family: inherit;
-	font-size: 16px;
+	font-size: 1rem;
+	text-align: left;
+	line-height: 1;
+	padding: 4px 0px;
 
 	&.active {
 		font-weight: bold;
