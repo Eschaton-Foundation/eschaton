@@ -51,34 +51,46 @@ class Filters {
 
         ob_start(); 
 
-        $args = array(
-            'taxonomy'      => $this->_taxonomy,
-            'hide_empty'    => true,
-        );
+        if( $this->_taxonomy !== '' ) : 
+            $args = array(
+                'taxonomy'      => $this->_taxonomy,
+                'hide_empty'    => true,
+            );
 
-        if( $this->_onlyParent ) {
-            $args['parent'] = 0;
-        }
+            if( $this->_onlyParent ) {
+                $args['parent'] = 0;
+            }
 
-        $types = get_terms( $args );
-            
-        if ( !empty($types) ) : ?>
+            $types = get_terms( $args );
+                
+            if ( !empty($types) ) : ?>
+
+                <div class="filters_group <?php echo $this->_display; ?>">
+
+                    <?php if( $this->_allLabel !== '' ) : ?>
+                        <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
+                            <?php echo $this->_allLabel; ?>
+                        </button>
+                    <?php endif; ?>
+
+                    <?php foreach( $types as $term ) {
+                        $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                        $output.= esc_attr( $term->name );
+                        $output.='</button>';
+                        echo $output;
+                    } ?>
+
+                </div>
+                
+            <?php endif; ?>
+
+        <?php else: ?>
 
             <div class="filters_group <?php echo $this->_display; ?>">
-
-                <button class="filter-item active" data-taxonomy="<?php echo $this->_taxonomy; ?>" data-term="all">
+                <button class="filter-item active" data-taxonomy="" data-term="all">
                     <?php echo $this->_allLabel; ?>
                 </button>
-
-                <?php foreach( $types as $term ) {
-                    $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
-                    $output.= esc_attr( $term->name );
-                    $output.='</button>';
-                    echo $output;
-                } ?>
-
             </div>
-
 
         <?php endif; ?>
 

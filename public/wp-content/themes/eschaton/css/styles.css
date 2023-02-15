@@ -1470,9 +1470,6 @@ details {
   .filters_group.inline {
     flex-direction: row;
     flex-wrap: wrap; }
-    .filters_group.inline .filter-item:first-child {
-      flex: 0 0 100%;
-      text-align: left; }
     .filters_group.inline .filter-item {
       padding-right: 10px; }
 

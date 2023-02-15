@@ -13,9 +13,10 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 		</div>
 
 		<div class="page_filters">
-            <?php FILTERS('All dates', 'exhyear', 'inline')->displayOutput(); ?>
-            <?php FILTERS('All types', 'exhpermanent')->displayOutput(); ?>
-            <?php FILTERS('All continent', 'exhcontinent', 'column', true )->displayOutput(); ?>
+			<?php FILTERS('All', '')->displayOutput(); ?>
+            <?php FILTERS('', 'exhyear', 'inline')->displayOutput(); ?>
+            <?php FILTERS('', 'exhpermanent')->displayOutput(); ?>
+            <?php FILTERS('', 'exhcontinent', 'column', true )->displayOutput(); ?>
 		</div>
 		
 		<div id="grid" data-posttype="exhibitions">

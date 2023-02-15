@@ -748,10 +748,10 @@ details {
 		flex-direction: row;
 		flex-wrap: wrap;
 
-		.filter-item:first-child {
-			flex: 0 0 100%;
-			text-align: left;
-		}
+		// .filter-item:first-child {
+		// 	flex: 0 0 100%;
+		// 	text-align: left;
+		// }
 		.filter-item {
 			padding-right: 10px;
 		}
