@@ -3,12 +3,12 @@
 	src: url("../fonts/Romaine-Regular.woff2") format("woff2"),
 		url("../fonts/Romaine-Regular.woff");
 }
-@font-face {
-	font-family: "Romaine";
-	src: url("../fonts/Romaine-Italic.woff2") format("woff2"),
-		url("../fonts/Romaine-Italic.woff");
-	font-style: italic;
-}
+// @font-face {
+// 	font-family: "Romaine";
+// 	src: url("../fonts/Romaine-Italic.woff2") format("woff2"),
+// 		url("../fonts/Romaine-Italic.woff");
+// 	font-style: italic;
+// }
 @mixin typeBase {
 	font-weight: normal;
 	font-size: 18px;

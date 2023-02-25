@@ -9,6 +9,64 @@ document.addEventListener('DOMContentLoaded', function() {
 function init() {
 
 
+    // ACCORDEONS
+    const closeDropdownsContent = function( $els ) {
+        console.log('closeDropdownsContent');
+
+        let i = 0;
+
+        for (let el of $els) {
+
+            var this_height = el.offsetHeight + 500;            
+            el.style.maxHeight = this_height + 'px';
+            el.closest('.js_dropdown').classList.add('closed');
+
+            // Don't close for first item
+            // if( i > 0 ) {
+            //     el.closest('.js_dropdown').classList.add('closed');
+            // }
+
+            i++;
+        }
+
+    }
+
+    const handleDropdownsOpening = function( $els ) {
+        console.log('handleDropdownsOpening');
+
+        for (let el of $els) {
+
+            const js_dropdown = el.closest('.js_dropdown');
+
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+    
+                if ( ! el.closest('.js_dropdown').classList.contains("closed") ) {
+                    el.closest('.js_dropdown').classList.add('closed');
+                    return;
+                }
+                for( let j of $els) {
+                    j.closest('.js_dropdown').classList.add('closed');
+                }
+    
+                js_dropdown.classList.toggle('closed')
+    
+            }); 
+
+        }
+    }
+
+
+    // handle accordéons
+    const $js_dropdown = document.querySelectorAll('.js_dropd_link');
+    const $js_dropd_content = document.querySelectorAll('.js_dropd_content');
+
+    closeDropdownsContent( $js_dropd_content );
+    handleDropdownsOpening( $js_dropdown );
+
+
+
+
     /*
      * Active filter for publications template
      * get an array of elements

@@ -55,10 +55,6 @@
 @font-face {
   font-family: "Romaine";
   src: url("../fonts/Romaine-Regular.woff2") format("woff2"), url("../fonts/Romaine-Regular.woff"); }
-@font-face {
-  font-family: "Romaine";
-  src: url("../fonts/Romaine-Italic.woff2") format("woff2"), url("../fonts/Romaine-Italic.woff");
-  font-style: italic; }
 .smallcap {
   font-weight: normal;
   font-size: 19px;
@@ -1501,7 +1497,7 @@ details {
 .page_filters {
   position: fixed;
   left: 1.5rem;
-  max-width: 8rem; }
+  max-width: 10rem; }
 
 .filters_group {
   border-bottom: 1px solid #d8d8d3;
@@ -1528,6 +1524,44 @@ details {
   .filter-item:hover {
     color: var(--colorSubdue); }
 
+.terms-group {
+  list-style: none; }
+  .terms-group .filter-parent {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 4px 0px;
+    transition: color .3s;
+    font-family: inherit; }
+    .terms-group .filter-parent .fas {
+      margin-left: 5px;
+      font-size: .6rem;
+      color: var(--colorGray); }
+  .terms-group .children-group {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 10px; }
+    .terms-group .children-group .filter-item {
+      padding-right: 10px; }
+
+.js_dropdown.closed .js_dropd_content {
+  max-height: 0 !important; }
+.js_dropdown i:before {
+  transition: all .2s;
+  display: inline-block; }
+.js_dropdown:not(.closed) i:before {
+  transform: rotate(90deg); }
+
+.js_dropd_link:hover {
+  color: var(--colorGray);
+  cursor: pointer; }
+
+.js_dropd_content {
+  overflow: hidden;
+  transition: max-height .4s; }
+
 .publication-single {
   margin-bottom: 3rem;
   position: relative; }
@@ -1540,9 +1574,15 @@ details {
     height: 1px;
     background-color: #d8d8d3; }
   .publication-single .item_title {
-    padding-bottom: 10px;
+    padding-bottom: 5px;
     font-weight: 100;
     font-size: 1.6rem;
+    line-height: 1;
+    font-style: italic; }
+  .publication-single .item_author {
+    padding-bottom: 10px;
+    font-weight: 100;
+    font-size: 1.4rem;
     line-height: 1; }
   .publication-single a {
     font-size: 16px; }

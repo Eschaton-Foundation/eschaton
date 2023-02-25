@@ -14,7 +14,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 
 		<div class="page_filters">
 			<?php FILTERS('All', '')->displayOutput(); ?>
-            <?php FILTERS('', 'exhyear', 'inline')->displayOutput(); ?>
+            <?php FILTERS('', 'exhyear', 'tree', true)->displayOutput(); ?>
             <?php FILTERS('', 'exhpermanent')->displayOutput(); ?>
             <?php FILTERS('', 'exhcontinent', 'column', true )->displayOutput(); ?>
 		</div>

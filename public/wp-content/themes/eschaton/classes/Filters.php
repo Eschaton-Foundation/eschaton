@@ -57,7 +57,7 @@ class Filters {
                 'hide_empty'    => true,
             );
 
-            if( $this->_onlyParent ) {
+            if( $this->_onlyParent || $this->_display === 'tree' ) {
                 $args['parent'] = 0;
             }
 
@@ -74,10 +74,36 @@ class Filters {
                     <?php endif; ?>
 
                     <?php foreach( $types as $term ) {
-                        $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
-                        $output.= esc_attr( $term->name );
-                        $output.='</button>';
+
+                        if ( $this->_display === 'tree' && $this->_onlyParent ) {
+
+                            $output = '<div class="terms-group js_dropdown">';
+
+                                $output .= '<p class="filter-parent js_dropd_link">' . $term->name . '<i class="fas fa-sharp fa-solid fa-caret-right"></i></p>';
+
+                                $term_children = get_term_children( $term->term_id, $this->_taxonomy );
+
+                                $output .= '<ul class="children-group inline js_dropd_content">';
+
+                                    foreach ( $term_children as $child ) {
+                                        $child_term_obj = get_term_by( 'id', $child, $this->_taxonomy );
+                                        $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child_term_obj->slug . '" data-termID="' . $child . '">';
+                                        $output .= esc_attr( $child_term_obj->name );
+                                        $output .='</button></li>';
+                                    }
+                                
+                                $output .= '</ul>';
+
+                            $output .= '</div>';
+                        }
+                        else {
+                            $output = '<button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $term->slug . '" data-termID="' . $term->term_id . '">';
+                            $output.= esc_attr( $term->name );
+                            $output.='</button>';
+                        }
+
                         echo $output;
+
                     } ?>
 
                 </div>
