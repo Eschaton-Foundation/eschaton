@@ -81,14 +81,16 @@ class Filters {
 
                                 $output .= '<p class="filter-parent js_dropd_link">' . $term->name . '<i class="fas fa-sharp fa-solid fa-caret-right"></i></p>';
 
-                                $term_children = get_term_children( $term->term_id, $this->_taxonomy );
+                                //$term_children = get_term_children( $term->term_id, $this->_taxonomy );
+                                $term_children = get_terms( $this->_taxonomy, array( 'child_of' => $term->term_id ) );
 
                                 $output .= '<ul class="children-group inline js_dropd_content">';
 
                                     foreach ( $term_children as $child ) {
-                                        $child_term_obj = get_term_by( 'id', $child, $this->_taxonomy );
-                                        $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child_term_obj->slug . '" data-termID="' . $child . '">';
-                                        $output .= esc_attr( $child_term_obj->name );
+
+                                        //$child_term_obj = get_term_by( 'id', $child, $this->_taxonomy );
+                                        $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child->slug . '" data-termID="' . $child->term_idd . '">';
+                                        $output .= esc_attr( $child->name );
                                         $output .='</button></li>';
                                     }
                                 
