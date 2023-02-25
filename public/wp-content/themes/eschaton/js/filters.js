@@ -11,7 +11,7 @@ function init() {
 
     // ACCORDEONS
     const closeDropdownsContent = function( $els ) {
-        console.log('closeDropdownsContent');
+        //console.log('closeDropdownsContent');
 
         let i = 0;
 
@@ -32,7 +32,7 @@ function init() {
     }
 
     const handleDropdownsOpening = function( $els ) {
-        console.log('handleDropdownsOpening');
+        //console.log('handleDropdownsOpening');
 
         for (let el of $els) {
 

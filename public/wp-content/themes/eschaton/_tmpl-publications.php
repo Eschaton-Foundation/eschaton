@@ -16,7 +16,6 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             <?php FILTERS('All', '')->displayOutput(); ?>
             <?php FILTERS('', 'media_type')->displayOutput(); ?>
             <?php FILTERS('', 'publication_language')->displayOutput(); ?>
-            <?php FILTERS('', 'publication_groupesolo')->displayOutput(); ?>
             <?php FILTERS('', 'publication_date', 'tree', true)->displayOutput(); ?>
         </div>
 

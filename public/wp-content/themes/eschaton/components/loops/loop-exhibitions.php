@@ -99,15 +99,14 @@
                     
                 endwhile; ?>
             </div>
-            
-            
-            <div class="posts_navigation">
-                <button id="loadMore" class="mainBtn hidden">Load more</button>
-            </div>
 
 		<?php endif; 
 	wp_reset_query(); ?>
 </div>
 
+
+<div class="posts_navigation">
+    <button id="loadMore" class="mainBtn">Load more</button>
+</div>
 
 <?php endforeach; ?>
