@@ -2,14 +2,19 @@
 
 <article class="exhibition-single">
 
-    <?php if (has_post_thumbnail()) {
-        echo '<div class="img-wrap">';
-            echo wp_get_attachment_image(get_post_thumbnail_id(get_the_ID()), 'thumbnail', false);
-            echo "<span class='exhibtion_caption'>";
-                the_post_thumbnail_caption( );
-            echo "</span>";
-        echo '</div>';
-    } ?>
+    <?php if (has_post_thumbnail()) { ?>
+        <div class="img-wrap">
+            <div class="ratio">
+                <div class="content">
+                    <?php echo wp_get_attachment_image(get_post_thumbnail_id(get_the_ID()), 'thumbnail', false); ?>
+                </div>
+            </div>
+
+            <div class='exhibtion_caption'>
+                <?php the_post_thumbnail_caption( ); ?>
+            </div>
+        </div>
+    <?php } ?>
 
     <div class="txt-wrap">
         <a href="<?php the_field('link'); ?>" target="_blank" class="exhibition_title">
@@ -28,7 +33,7 @@
                 <span class="exhibition-end">
                     <?php 
                         if( get_field('permanent')) {
-                            echo ' -  Ongoing (Permanent exhibition)';
+                            echo ' -  Ongoing <br>(Permanent exhibition)';
                         }
                         else {
                             echo " - " . get_field("date_end"); 

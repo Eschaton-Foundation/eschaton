@@ -2,6 +2,7 @@
 	--bg: #fff;
 	--colorFG: #000;
 	--colorSubdue: #989791;
+	--colorGray: #616161;
 	--flow-space: 1rem;
 	--bgSubdue: #{rgba(153, 153, 140, 0.1)};
 	--lineSubdue: #{rgba(153, 153, 140, 0.5)};
@@ -136,3 +137,27 @@ $borderColor: #99998c;
     display: block;
     width: 0px;
 }
+
+
+.ratio {
+	position: relative;
+	width: 100%;
+
+	&:after {
+		content: "";
+		display: block;
+		padding-bottom: 75%;
+	}
+	  
+	.content {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+	img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+}
+  

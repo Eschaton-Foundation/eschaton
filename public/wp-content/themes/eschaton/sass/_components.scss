@@ -28,7 +28,7 @@
 }
 
 .exhibitions-stage {
-	margin-bottom: 6rem;
+	margin-bottom: 3rem;
 }
 
 #grid {
@@ -50,23 +50,28 @@
 				width: 100%;
 				flex-shrink: 0;
 				flex-grow: 0;
-				height: 230px;
 				flex-basis: auto;
-
-				img {
-					object-fit: contain;
-					max-height: 100%;
-				}
 			}
 			.txt-wrap {
 				width: 100%;
 				font-size: .8em;
 				flex: 1 1 auto;
-				padding-top: 20px;
+				padding-top: 10px;
 				justify-content: flex-start;
 			}
 			.exhibition_title {
 				font-size: 1.4rem;
+			}
+			.exhibition-start,
+			.exhibition-end {
+				position: relative;
+				display: block;
+			}
+			.exhibition-start {
+				right: 20px;
+			}
+			.exhibition-end {
+				left: 20px;
 			}
 		}
 	}
@@ -88,11 +93,6 @@
 		margin-bottom: 2rem;
 		display: flex;
 
-		img {
-			display: block;
-			max-width: 100%;
-			height: auto;
-		}
 		.img-wrap {
 			width: 50%;
 			flex: 0 0 50%;
@@ -111,6 +111,10 @@
 			justify-content: center;
 			text-align: center;
 			font-size: 1.2rem;
+			padding-bottom: 30px;
+		}
+		.wyg {
+			color: var(--colorGray);
 		}
 	}
 
@@ -131,8 +135,10 @@
 	}
 
 	.exhibtion_caption {
-		font-size: 1rem;
+		font-size: .8rem;
 		color: var(--colorSubdue);
+		min-height: 30px;
+		line-height: 2;
 	}
 	.exhibition_title {
 		font-variant: none;
@@ -140,12 +146,13 @@
 		font-weight: 100;
 		font-size: 2.4rem;
 		margin-bottom: 1rem;
-		font-style: italic;
+		font-style: normal;
 		text-decoration: none;
 		color: black;
 		h3 {
 			font-weight: 100;
 			font-size: inherit;
+			font-style: inherit;
 		}
 	}
 }
@@ -728,6 +735,9 @@ details {
 
 
 
+/*
+ * FILTERS
+ */
 
 
 .page_filters {
@@ -748,10 +758,6 @@ details {
 		flex-direction: row;
 		flex-wrap: wrap;
 
-		// .filter-item:first-child {
-		// 	flex: 0 0 100%;
-		// 	text-align: left;
-		// }
 		.filter-item {
 			padding-right: 10px;
 		}
@@ -763,9 +769,13 @@ details {
 	text-align: left;
 	line-height: 1;
 	padding: 4px 0px;
+	transition: color .3s;
 
 	&.active {
 		font-weight: bold;
+	}
+	&:hover {
+		color: var(--colorSubdue);
 	}
 }
 

@@ -27,7 +27,7 @@ function init() {
                 const term = this.getAttribute('data-term');
                 const termID = this.getAttribute('data-termID');
                 const postType = grid.getAttribute('data-posttype');
-                const step = 20;
+                const step = 24;
 
 
                 els.forEach(element => {

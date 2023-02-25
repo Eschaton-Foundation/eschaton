@@ -4,7 +4,7 @@ $offset = $_POST['offset'];
 
 $loop_args = array( 
     'post_type' => 'publication',
-    'posts_per_page' => 20,
+    'posts_per_page' => 24,
     // 'meta_key' => 'publication_date',
     // 'orderby' => 'meta_value',
     'orderby' => 'date',
@@ -42,12 +42,12 @@ if ( $the_query->have_posts() ) :
 endif;
 wp_reset_query(); ?>
 
+
 <?php if( $args['term'] === "all" ) : ?>
 
-
-<div id="posts_nav" class="posts_navigation">
-    <div><?php previous_posts_link( 'Previous' ); ?></div>
-    <div><?php next_posts_link( 'Next', $the_query->max_num_pages ); ?></div>
-</div>
+    <div id="posts_nav" class="posts_navigation">
+        <div><?php previous_posts_link( 'Previous' ); ?></div>
+        <div><?php next_posts_link( 'Next', $the_query->max_num_pages ); ?></div>
+    </div>
 
 <?php endif; ?>

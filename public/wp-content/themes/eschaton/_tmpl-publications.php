@@ -20,7 +20,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             <?php FILTERS('', 'publication_date', 'inline')->displayOutput(); ?>
         </div>
 
-		<div id="grid" class="grid" data-posttype="publications" data-step="2">
+		<div id="grid" class="grid" data-posttype="publications" data-step="24">
             
             <?php
 
