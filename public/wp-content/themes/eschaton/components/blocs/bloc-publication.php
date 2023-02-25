@@ -21,6 +21,7 @@
 		<?php 
 			$term_obj_list = get_the_terms( $post->ID, 'media_type' );
 			$terms_string = join(', ', wp_list_pluck($term_obj_list, 'name')); 
+			$terms_string = str_replace("All, ", "", $terms_string);
 			echo $terms_string;
 		?> 
 		

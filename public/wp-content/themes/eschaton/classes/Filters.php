@@ -82,7 +82,7 @@ class Filters {
                                 $output .= '<p class="filter-parent js_dropd_link">' . $term->name . '<i class="fas fa-sharp fa-solid fa-caret-right"></i></p>';
 
                                 $term_children = get_terms( $this->_taxonomy, array( 'child_of' => $term->term_id ) );
-                                
+
                                 $output .= '<ul class="children-group inline js_dropd_content">';
 
                                     foreach ( $term_children as $child ) {

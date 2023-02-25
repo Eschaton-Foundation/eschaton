@@ -14,7 +14,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 
         <div class="page_filters">
             <?php FILTERS('All', '')->displayOutput(); ?>
-            <?php FILTERS('', 'media_type')->displayOutput(); ?>
+            <?php FILTERS('', 'media_type', 'tree', true )->displayOutput(); ?>
             <?php FILTERS('', 'publication_language')->displayOutput(); ?>
             <?php FILTERS('', 'publication_date', 'tree', true)->displayOutput(); ?>
         </div>
