@@ -83,7 +83,15 @@
 
             <h3 class="stage_title"><?php echo $period; ?></h3>
 
-            <div class="exhibitions-grid <?php  echo $period === 'Passed' ? 'passed' : '' ?>">
+            <?php 
+             if( $period=== 'Forthcoming' ) {
+                $gridClasses = "gridCount-" . $the_query->found_posts;
+             } 
+             else if ( $period === 'Passed' ) {
+                $gridClasses = 'gridCount-3';
+             }
+            ?>
+            <div class="exhibitions-grid <?php echo $gridClasses; ?>">
                 <?php while ( $the_query->have_posts()) : 
                     $the_query->the_post();
 

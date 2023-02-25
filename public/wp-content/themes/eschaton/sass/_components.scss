@@ -38,7 +38,31 @@
 .exhibitions-grid {
 	margin-top: 2rem;
 
-	&.passed {
+	&.gridCount-2 {
+		grid-template-columns: repeat(2, 1fr);
+		display: grid;
+		gap: 2rem;
+
+		.exhibition-single {
+			flex-direction: column;
+
+			.img-wrap {
+				width: 100%;
+				flex-shrink: 0;
+				flex-grow: 0;
+				flex-basis: auto;
+			}
+			.txt-wrap {
+				width: 100%;
+				font-size: .8em;
+				flex: 1 1 auto;
+				padding-top: 10px;
+				justify-content: flex-start;
+			}
+		}
+	}
+
+	&.gridCount-3 {
 		grid-template-columns: repeat(3, 1fr);
 		display: grid;
 		gap: 2rem;

@@ -690,32 +690,49 @@ footer {
 
 .exhibitions-grid {
   margin-top: 2rem; }
-  .exhibitions-grid.passed {
-    grid-template-columns: repeat(3, 1fr);
+  .exhibitions-grid.gridCount-2 {
+    grid-template-columns: repeat(2, 1fr);
     display: grid;
     gap: 2rem; }
-    .exhibitions-grid.passed .exhibition-single {
+    .exhibitions-grid.gridCount-2 .exhibition-single {
       flex-direction: column; }
-      .exhibitions-grid.passed .exhibition-single .img-wrap {
+      .exhibitions-grid.gridCount-2 .exhibition-single .img-wrap {
         width: 100%;
         flex-shrink: 0;
         flex-grow: 0;
         flex-basis: auto; }
-      .exhibitions-grid.passed .exhibition-single .txt-wrap {
+      .exhibitions-grid.gridCount-2 .exhibition-single .txt-wrap {
         width: 100%;
         font-size: .8em;
         flex: 1 1 auto;
         padding-top: 10px;
         justify-content: flex-start; }
-      .exhibitions-grid.passed .exhibition-single .exhibition_title {
+  .exhibitions-grid.gridCount-3 {
+    grid-template-columns: repeat(3, 1fr);
+    display: grid;
+    gap: 2rem; }
+    .exhibitions-grid.gridCount-3 .exhibition-single {
+      flex-direction: column; }
+      .exhibitions-grid.gridCount-3 .exhibition-single .img-wrap {
+        width: 100%;
+        flex-shrink: 0;
+        flex-grow: 0;
+        flex-basis: auto; }
+      .exhibitions-grid.gridCount-3 .exhibition-single .txt-wrap {
+        width: 100%;
+        font-size: .8em;
+        flex: 1 1 auto;
+        padding-top: 10px;
+        justify-content: flex-start; }
+      .exhibitions-grid.gridCount-3 .exhibition-single .exhibition_title {
         font-size: 1.4rem; }
-      .exhibitions-grid.passed .exhibition-single .exhibition-start,
-      .exhibitions-grid.passed .exhibition-single .exhibition-end {
+      .exhibitions-grid.gridCount-3 .exhibition-single .exhibition-start,
+      .exhibitions-grid.gridCount-3 .exhibition-single .exhibition-end {
         position: relative;
         display: block; }
-      .exhibitions-grid.passed .exhibition-single .exhibition-start {
+      .exhibitions-grid.gridCount-3 .exhibition-single .exhibition-start {
         right: 20px; }
-      .exhibitions-grid.passed .exhibition-single .exhibition-end {
+      .exhibitions-grid.gridCount-3 .exhibition-single .exhibition-end {
         left: 20px; }
   .exhibitions-grid .exhib-newyear {
     flex-basis: 100%;
