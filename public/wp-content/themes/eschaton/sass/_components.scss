@@ -35,6 +35,10 @@
 	transition: opacity .3s;
 }
 
+.exhibitions_listing {
+	display: flex;
+	
+}
 .exhibitions-grid {
 	margin-top: 2rem;
 
@@ -838,6 +842,25 @@ details {
 		.filter-item {
 			padding-right: 10px;
 		}
+	}
+	.blocked {
+		flex: 0 0 100%;
+	}
+	.grandchildren-group {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 5px 0;
+
+		& > * {
+			flex: 0 0 50%;
+			width: 50%;
+		}
+	}
+	.grandchildren-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 }
 

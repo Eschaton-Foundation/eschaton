@@ -81,14 +81,39 @@ class Filters {
 
                                 $output .= '<p class="filter-parent js_dropd_link">' . $term->name . '<i class="fas fa-sharp fa-solid fa-caret-right"></i></p>';
 
-                                $term_children = get_terms( $this->_taxonomy, array( 'child_of' => $term->term_id ) );
+                                $term_children = get_terms( $this->_taxonomy, array( 'child_of' => $term->term_id, 'parent' => $term->term_id ) );
 
                                 $output .= '<ul class="children-group inline js_dropd_content">';
 
                                     foreach ( $term_children as $child ) {
-                                        $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child->slug . '" data-termID="' . $child->term_id . '">';
-                                        $output .= esc_attr( $child->name );
-                                        $output .='</button></li>';
+
+                                        $child_children = get_terms( $this->_taxonomy, array( 'child_of' => $child->term_id ) );
+
+                                        if( !empty($child_children) ) {
+
+                                            $output .= '<li class="blocked">';
+                                                $output .= '<ul class="grandchildren-group">';
+                                                    $output .= '<li><button class="filter-item " data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child->slug . '" data-termID="' . $child->term_id . '">';
+                                                    $output .= esc_attr( $child->name );
+                                                    $output .='</button></li>';
+                                                    $output .= '<ul class="grandchildren-list">';
+
+                                                    foreach ( $child_children as $grandchild ) {
+                                                            $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $grandchild->slug . '" data-termID="' . $grandchild->term_id . '">';
+                                                            $output .= esc_attr( $grandchild->name );
+                                                            $output .='</button></li>';
+                                                    }
+                                                    $output .= '</ul>';
+                                                $output .= '</ul>';
+                                            $output .= '</li>';
+
+                                        }
+                                        else {
+                                            $output .= '<li><button class="filter-item" data-taxonomy="' . $this->_taxonomy . '" data-term="' . $child->slug . '" data-termID="' . $child->term_id . '">';
+                                            $output .= esc_attr( $child->name );
+                                            $output .='</button></li>';
+                                        }
+
                                     }
                                 
                                 $output .= '</ul>';
