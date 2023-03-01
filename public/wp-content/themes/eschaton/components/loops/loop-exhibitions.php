@@ -1,5 +1,5 @@
 <?php 
-    $periods = ['Present', 'Forthcoming', 'Passed'];
+    $periods = ['Present', 'Forthcoming', 'Past'];
 
     foreach( $periods as $period ) : 
 
@@ -45,7 +45,7 @@
                     )
                 );
             }
-            else if( $period === 'Passed' ) {
+            else if( $period === 'Past' ) {
                 $query_args['meta_query'] = array(
                     array(
                         'key'     => 'date_start',
@@ -87,7 +87,7 @@
              if( $period=== 'Forthcoming' ) {
                 $gridClasses = "gridCount-" . $the_query->found_posts;
              } 
-             else if ( $period === 'Passed' ) {
+             else if ( $period === 'Past' ) {
                 $gridClasses = 'gridCount-3';
              }
             ?>

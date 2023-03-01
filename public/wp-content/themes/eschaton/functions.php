@@ -10,6 +10,7 @@ require_once('classes/Filters.php');
 
 include "snippets/shortcodes.php";
 include "snippets/collapse-flexible-rows.php";
+include "snippets/helpers.php";
 
 add_action('init', 'chipsbase_styles');
 function chipsbase_styles()

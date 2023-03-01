@@ -718,7 +718,6 @@ footer {
         width: 100%;
         font-size: .8em;
         flex: 1 1 auto;
-        padding-top: 10px;
         justify-content: flex-start; }
       .exhibitions-grid.gridCount-3 .exhibition-single .exhibition_title {
         font-size: 1.4rem; }
@@ -786,7 +785,8 @@ footer {
     font-size: .8rem;
     color: var(--colorSubdue);
     min-height: 30px;
-    line-height: 2; }
+    line-height: 2;
+    align-self: baseline; }
   .exhibitions-grid .exhibition_title {
     font-variant: none;
     text-transform: none;
@@ -1586,7 +1586,7 @@ details {
   .publication-single .item_author {
     padding-bottom: 10px;
     font-weight: 100;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     line-height: 1; }
   .publication-single a {
     font-size: 16px; }
@@ -1595,10 +1595,9 @@ details {
     content: "\f504";
     padding-left: 5px;
     font-size: 14px; }
-  .publication-single .publication_isbn {
-    color: var(--colorSubdue); }
   .publication-single .item_content {
-    font-size: 1.2rem; }
+    font-size: 1.2rem;
+    color: #b0afaa; }
   .publication-single .item_meta {
     margin-top: 0;
     font-size: 1.2rem; }

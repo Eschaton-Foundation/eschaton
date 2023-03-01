@@ -80,7 +80,6 @@
 				width: 100%;
 				font-size: .8em;
 				flex: 1 1 auto;
-				padding-top: 10px;
 				justify-content: flex-start;
 			}
 			.exhibition_title {
@@ -163,6 +162,7 @@
 		color: var(--colorSubdue);
 		min-height: 30px;
 		line-height: 2;
+		align-self: baseline;
 	}
 	.exhibition_title {
 		font-variant: none;
@@ -898,7 +898,7 @@ details {
 	.item_author {
 		padding-bottom: 10px;
 		font-weight: 100;
-		font-size: 1.4rem;
+		font-size: 1.3rem;
 		line-height: 1;
 	}
 	a {
@@ -911,11 +911,12 @@ details {
 		font-size: 14px;
 	}
 	.publication_isbn {
-		color: var(--colorSubdue);
+		//color: var(--colorSubdue);
 	}
 
 	.item_content {
 		font-size: 1.2rem;
+		color: #b0afaa;
 	}
 
 	.item_meta {

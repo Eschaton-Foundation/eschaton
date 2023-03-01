@@ -26,20 +26,7 @@
             <div><?php the_content(); ?></div>
 
             <div class="exhibition-dates">
-                <span class="exhibition-start">
-                    <?php the_field("date_start"); ?>
-                </span>
-                
-                <span class="exhibition-end">
-                    <?php 
-                        if( get_field('permanent')) {
-                            echo ' -  Ongoing <br>(Permanent exhibition)';
-                        }
-                        else {
-                            echo " - " . get_field("date_end"); 
-                        }
-                    ?>
-                </span>
+                <?php get_event_dates( get_the_ID()); ?>
             </div>
         </div>
     </div>

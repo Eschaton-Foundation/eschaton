@@ -3,13 +3,12 @@
 	<h3 class="item_title">
 		<?php the_title(); ?>
 	</h3>
+
 	<h4 class="item_author">
 		<?php the_field('publication_author'); ?>
 	</h4>
 
-	<div class="item_content wyg"><?php the_content(); ?></div>
-
-	<p class="item_meta">
+	<div class="item_meta">
 		<?php 
 			$term_obj_list = get_the_terms( $post->ID, 'publication_date' );
 			$terms_string = join(', ', wp_list_pluck($term_obj_list, 'name')); 
@@ -38,5 +37,9 @@
 
 			<span class="publication_isbn">isbn : <?php the_field('publication_isbn'); ?></span>
 		<?php endif; ?>
-	</p>
+		
+	</div>
+
+	<div class="item_content wyg"><?php the_content(); ?></div>
+
 </div>
