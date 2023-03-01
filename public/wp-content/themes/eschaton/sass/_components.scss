@@ -765,9 +765,17 @@ details {
 
 
 .page_filters {
-	position: fixed;
-	left: 1.5rem;
-	max-width: 10rem;
+	
+
+	@media (max-width: 767px) {
+		display: flex;
+    }
+	
+	@media (min-width: 767px) {
+		position: fixed;
+		left: 1.5rem;
+		max-width: 10rem;
+    }
 }
 
 .filters_group {

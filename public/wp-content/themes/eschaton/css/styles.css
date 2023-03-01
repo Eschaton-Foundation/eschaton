@@ -1494,10 +1494,14 @@ details {
 /*
  * FILTERS
  */
-.page_filters {
-  position: fixed;
-  left: 1.5rem;
-  max-width: 10rem; }
+@media (max-width: 767px) {
+  .page_filters {
+    display: flex; } }
+@media (min-width: 767px) {
+  .page_filters {
+    position: fixed;
+    left: 1.5rem;
+    max-width: 10rem; } }
 
 .filters_group {
   border-bottom: 1px solid #d8d8d3;
