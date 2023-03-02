@@ -1518,7 +1518,8 @@ details {
 .filters_group {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; }
+  align-items: flex-start;
+  list-style: none; }
   @media (min-width: 767px) {
     .filters_group {
       border-bottom: 1px solid #d8d8d3;
@@ -1660,6 +1661,12 @@ details {
 @media (max-width: 767px) {
   .section-studio .page_filters {
     display: none; } }
+@media (max-width: 1250px) {
+  .section-studio .page_filters {
+    position: sticky;
+    top: 100px; } }
+.section-studio .filters_group {
+  border: none; }
 
 .studio_intro {
   display: flex;
