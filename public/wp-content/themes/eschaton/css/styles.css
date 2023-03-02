@@ -1691,6 +1691,11 @@ details {
     flex-direction: column;
     margin-bottom: 2rem; }
 
+.studio_content > * {
+  margin-bottom: 4rem; }
+.studio_content p {
+  line-height: 1.4; }
+
 .wp-block-columns {
   gap: 10%; }
 

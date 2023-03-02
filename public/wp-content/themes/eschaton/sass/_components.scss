@@ -1041,6 +1041,14 @@ details {
 		margin-bottom: 2rem;
 	}
 }
+.studio_content {
+	& > * {
+		margin-bottom: 4rem;
+	}
+	p {
+		line-height: 1.4;
+	}
+}
 
 .wp-block-columns {
 	gap: 10%;
