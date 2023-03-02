@@ -1047,11 +1047,17 @@ details {
 	}
 	p {
 		line-height: 1.4;
+		margin-top: 0;
+		font-size: 1.2rem;
+	}
+	.wp-element-caption {
+		font-size: 1rem;
+		color: var(--colorGray);
 	}
 }
 
 .wp-block-columns {
-	gap: 10%;
+	gap: 40px;
 }
 .has-text-align-center {
 	margin: 3rem;
