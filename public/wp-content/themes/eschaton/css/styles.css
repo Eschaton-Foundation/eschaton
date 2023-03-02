@@ -112,6 +112,9 @@ body {
     display: flex;
     flex-direction: column; }
 
+img {
+  max-width: 100%; }
+
 #main {
   flex-grow: 1; }
 
@@ -1649,12 +1652,33 @@ details {
  * STUDIOS
  */
 .studio_single {
-  margin-bottom: 4rem;
-  margin-top: 4rem; }
+  margin-bottom: 10rem;
+  margin-top: 10rem; }
+
+@media (max-width: 767px) {
+  .section-studio .page_filters {
+    display: none; } }
+
+.studio_intro {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 4rem; }
+
+.intro_text {
+  flex: 1 1 40%; }
+
+.intro_image {
+  flex: 1 1 60%; }
+
+.studio_dates {
+  font-size: 6rem;
+  text-align: left;
+  line-height: .8;
+  margin-bottom: 6rem; }
 
 .studio_title {
-  font-size: 3rem;
-  margin-bottom: 2rem; }
+  font-size: 2rem;
+  margin-bottom: 1rem; }
 
 .studio_medias {
   display: flex;
@@ -1666,6 +1690,12 @@ details {
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem; }
+
+.wp-block-columns {
+  gap: 10%; }
+
+.has-text-align-center {
+  margin: 3rem; }
 
 .posts_navigation {
   margin-top: 4rem; }

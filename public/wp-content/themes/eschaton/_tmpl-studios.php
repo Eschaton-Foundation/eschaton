@@ -9,34 +9,40 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 		
         <h2 class="tac"><?php the_title(); ?></h2>
 
-		<article class="wyg">
-			<?php the_content(); ?>
-		</article>
+        <div class="listing_w_filters">
 
-		<article class="studios-grid">
-            
-            <?php
-				$args = array(
-                    'post_type' => 'studio',
-                    'post_status' => 'publish',
-                    'posts_per_page' => -1,
-                    'meta_key' => 'date_start',
-                    'orderby' => 'meta_value',
-                    'order' => 'ASC',
-                );
+            <div>
+                <div class="wyg">
+                    <?php the_content(); ?>
+                </div>
                 
-                query_posts($args);
-                if (have_posts()) :
-                    while (have_posts()) : the_post();
+                <div class="studios-grid">
+                    
+                    <?php
+                        $args = array(
+                            'post_type' => 'studio',
+                            'post_status' => 'publish',
+                            'posts_per_page' => -1,
+                            'meta_key' => 'date_start',
+                            'orderby' => 'meta_value',
+                            'order' => 'ASC',
+                        );
+                        
+                        query_posts($args);
+                        if (have_posts()) :
+                            while (have_posts()) : the_post();
 
-                        get_template_part('components/blocs/bloc', 'studio');
+                                get_template_part('components/blocs/bloc', 'studio');
 
-			        endwhile;
-                endif;
-                wp_reset_query();
+                            endwhile;
+                        endif;
+                        wp_reset_query();
 
-			?>
-		</article>
+                    ?>
+                </div>
+            </div>
+            
+        </div>
 	</section>
 <?php endwhile;
 get_footer(); ?>

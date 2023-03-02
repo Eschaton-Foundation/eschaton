@@ -214,7 +214,7 @@ function init() {
         timeline_nav_html += '</ul>';
         timeline_nav.innerHTML = timeline_nav_html;
 
-        document.querySelector('.section-studio').prepend(timeline_nav);
+        document.querySelector('.section-studio .listing_w_filters').prepend(timeline_nav);
     }
 
 
