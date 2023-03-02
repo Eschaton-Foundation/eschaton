@@ -12,12 +12,12 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			<?php the_content(); ?>
 		</div>
 
-		<div class="exhibitions_listing">
+		<div class="listing_w_filters">
 			<div class="page_filters">
-				<?php FILTERS('All', '')->displayOutput(); ?>
-				<?php FILTERS('', 'exhyear', 'tree', true)->displayOutput(); ?>
+				<?php FILTERS('All', '', 'all')->displayOutput(); ?>
+				<?php FILTERS('', 'exhyear', 'medium', true)->displayOutput(); ?>
 				<?php FILTERS('', 'exhpermanent')->displayOutput(); ?>
-				<?php FILTERS('', 'exhcontinent', 'column', true )->displayOutput(); ?>
+				<?php FILTERS('', 'exhcontinent', 'large', true )->displayOutput(); ?>
 			</div>
 			
 			<div id="grid" data-posttype="exhibitions">

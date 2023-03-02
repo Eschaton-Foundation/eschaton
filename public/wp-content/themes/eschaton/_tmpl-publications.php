@@ -12,27 +12,30 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 			<?php the_content(); ?>
 		</div>
 
-        <div class="page_filters">
-            <?php FILTERS('All', '')->displayOutput(); ?>
-            <?php FILTERS('', 'media_type', 'tree', true )->displayOutput(); ?>
-            <?php FILTERS('', 'publication_language')->displayOutput(); ?>
-            <?php FILTERS('', 'publication_date', 'tree', true)->displayOutput(); ?>
-        </div>
+        <div class="listing_w_filters">
 
-		<div id="grid" class="grid" data-posttype="publications" data-step="24">
-            
-            <?php
+            <div class="page_filters">
+                <?php FILTERS('All', '')->displayOutput(); ?>
+                <?php FILTERS('', 'media_type', 'large', true )->displayOutput(); ?>
+                <?php FILTERS('', 'publication_language')->displayOutput(); ?>
+                <?php FILTERS('', 'publication_date', 'medium', true)->displayOutput(); ?>
+            </div>
 
-                get_template_part('components/loops/loop', 'publications', array(
-                    'term' => 'all',
-                ));
+            <div class="outer_grid">
+                <div id="grid" class="grid" data-posttype="publications" data-step="24">
+                    
+                    <?php
+                        get_template_part('components/loops/loop', 'publications', array(
+                            'term' => 'all',
+                        ));
+                    ?>
+                </div>
 
-			?>
+                <div class="posts_navigation">
+                    <button id="loadMore" class="mainBtn hidden">Load more</button>
+                </div>
+            </div>
 		</div>
-
-        <div class="posts_navigation">
-            <button id="loadMore" class="mainBtn hidden">Load more</button>
-        </div>
 
 
     </section>

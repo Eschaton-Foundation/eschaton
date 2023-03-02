@@ -35,10 +35,15 @@
 	transition: opacity .3s;
 }
 
-.exhibitions_listing {
+.listing_w_filters {
 	display: flex;
-	
+	gap: 40px;
+	@media (max-width: 767px) {
+		flex-direction: column;
+	}
 }
+
+
 .exhibitions-grid {
 	margin-top: 2rem;
 
@@ -775,21 +780,44 @@ details {
 		display: flex;
     }
 	
-	@media (min-width: 767px) {
+	@media (min-width: 1250px) {
 		position: fixed;
 		left: 1.5rem;
 		max-width: 10rem;
     }
+
 }
 
 .filters_group {
-	border-bottom: 1px solid #d8d8d3;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	padding-bottom: 20px;
-	margin-bottom: 20px;
+	
+	@media (min-width: 767px) {
+		border-bottom: 1px solid #d8d8d3;
+		padding-bottom: 20px;
+		margin-bottom: 20px;
+    }
+	@media (max-width: 767px) {
+		flex: 1 1 20%;
+    }
 
+	&.all {
+		@media (max-width: 767px) {
+			flex: 0 0 60px;
+		}
+	}
+
+	&.large {
+		@media (max-width: 767px) {
+			flex: 0 0 40%;
+		}
+	}
+	&.medium {
+		@media (max-width: 767px) {
+			flex: 0 0 30%;
+		}
+	}
 	&.inline {
 		flex-direction: row;
 		flex-wrap: wrap;

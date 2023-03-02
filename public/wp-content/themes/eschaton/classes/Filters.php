@@ -137,7 +137,7 @@ class Filters {
 
         <?php else: ?>
 
-            <div class="filters_group <?php echo $this->_display; ?>">
+            <div class="filters_group all <?php echo $this->_display; ?>">
                 <button class="filter-item active" data-taxonomy="" data-term="all">
                     <?php echo $this->_allLabel; ?>
                 </button>
