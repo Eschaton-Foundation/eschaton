@@ -800,6 +800,7 @@ details {
     }
 	@media (max-width: 767px) {
 		flex: 1 1 20%;
+		padding: 0 10px;
     }
 
 	&.all {
@@ -810,12 +811,12 @@ details {
 
 	&.large {
 		@media (max-width: 767px) {
-			flex: 0 0 40%;
+			flex: 1 1 40%;
 		}
 	}
 	&.medium {
 		@media (max-width: 767px) {
-			flex: 0 0 30%;
+			flex: 1 1 30%;
 		}
 	}
 	&.inline {
