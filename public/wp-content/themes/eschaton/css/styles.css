@@ -691,7 +691,8 @@ footer {
 
 .listing_w_filters {
   display: flex;
-  gap: 40px; }
+  gap: 40px;
+  align-items: flex-start; }
   @media (max-width: 767px) {
     .listing_w_filters {
       flex-direction: column; } }
