@@ -1659,13 +1659,19 @@ details {
   margin-bottom: 10rem;
   margin-top: 10rem; }
 
+.section-studio h2 {
+  font-size: 6rem;
+  text-align: left;
+  margin-bottom: 4rem;
+  font-weight: bold; }
 @media (max-width: 767px) {
   .section-studio .page_filters {
     display: none; } }
 @media (max-width: 1250px) {
   .section-studio .page_filters {
     position: sticky;
-    top: 100px; } }
+    top: 100px;
+    min-width: 7rem; } }
 .section-studio .filters_group {
   border: none; }
 
@@ -1684,7 +1690,8 @@ details {
   font-size: 6rem;
   text-align: left;
   line-height: .8;
-  margin-bottom: 6rem; }
+  margin-bottom: 6rem;
+  font-weight: bold; }
 
 .studio_title {
   font-size: 2rem;

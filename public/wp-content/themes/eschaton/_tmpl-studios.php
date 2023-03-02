@@ -7,11 +7,12 @@ get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
 	<section class="section-studio content-intro">
 		
-        <h2 class="tac"><?php the_title(); ?></h2>
 
         <div class="listing_w_filters">
 
             <div>
+                <h2 class="tac"><?php the_title(); ?></h2>
+
                 <div class="wyg">
                     <?php the_content(); ?>
                 </div>
@@ -41,7 +42,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
                     ?>
                 </div>
             </div>
-            
+
         </div>
 	</section>
 <?php endwhile;

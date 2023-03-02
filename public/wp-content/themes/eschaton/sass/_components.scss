@@ -39,7 +39,7 @@
 	display: flex;
 	gap: 40px;
 	align-items: flex-start;
-	
+
 	@media (max-width: 767px) {
 		flex-direction: column;
 	}
@@ -1003,6 +1003,13 @@ details {
 }
 
 .section-studio {
+
+	h2 {
+		font-size: 6rem;
+		text-align: left;
+		margin-bottom: 4rem;
+		font-weight: bold;
+	}
 	.page_filters {
 		@media (max-width: 767px) {
 			display: none;
@@ -1011,6 +1018,7 @@ details {
 		@media (max-width: 1250px) {
 			position: sticky;
 			top: 100px;
+			min-width: 7rem;
 		}
 	}
 	.filters_group {
@@ -1034,6 +1042,7 @@ details {
 	text-align: left;
 	line-height: .8;
 	margin-bottom: 6rem;
+	font-weight: bold;
 }
 .studio_title {
 	font-size: 2rem;
