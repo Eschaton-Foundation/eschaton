@@ -4,7 +4,7 @@ Template Name: Exhibitions
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<section class="section-exhibition-intro content-intro">
+	<section class="section-exhibition-intro content-intro section-w-filters">
 
 		<h2 class="tac"><?php the_title(); ?></h2>
 		

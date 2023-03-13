@@ -195,20 +195,20 @@ function init() {
 
         for (const st of studios) {
             const start = st.dataset.start;
-            const end = st.dataset.end;
-            studios_dates_array.push(start);
+            let end = st.dataset.end;
             if( end == '' ) {
-                studios_dates_array.push('present');
+                end = 'present';
             }
+            studios_dates_array.push([start, end]);
         }
         console.log(studios_dates_array);
 
         let timeline_nav = document.createElement('div');
         timeline_nav.classList.add('page_filters');
-        let timeline_nav_html = '<ul class="filters_group">';
+        let timeline_nav_html = '<ul class="">';
         
         for (const date of studios_dates_array) {
-            timeline_nav_html += `<li class=""><a class="timeline_item" href="#about-${date}">${date}</a></li>`;
+            timeline_nav_html += `<li class="filters_group"><a class="timeline_item" href="#about-${date[0]}">${date[0]} - ${date[1]}</a></li>`;
         }
 
         timeline_nav_html += '</ul>';

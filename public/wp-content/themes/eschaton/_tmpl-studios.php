@@ -5,7 +5,7 @@ Template Name: Studios / Ateliers
 */
 get_header();
 if (have_posts()) while (have_posts()) : the_post(); ?>
-	<section class="section-studio content-intro">
+	<section class="section-studio content-intro section-w-filters">
 		
 
         <div class="listing_w_filters">
