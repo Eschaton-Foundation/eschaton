@@ -4,7 +4,7 @@ Template Name: Exhibitions
 */
 get_header();
 
-$step = 2;
+$step = 24;
 
 
 if (have_posts()) while (have_posts()) : the_post(); ?>
@@ -24,12 +24,20 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 				<?php FILTERS('', 'exhcontinent', 'large', true )->displayOutput(); ?>
 			</div>
 			
-			<div id="grid" data-posttype="exhibitions" data-step="<?php echo $step; ?>">
-				<?php
-				get_template_part('components/loops/outerloop', 'exhibitions', array(
-					'step'  => $step
-				)); ?>
+			<div class="outer_grid">
+				<div id="grid" data-posttype="exhibitions" data-step="<?php echo $step; ?>">
+					<?php
+					get_template_part('components/loops/outerloop', 'exhibitions', array(
+						'step'  => $step
+					)); ?>
+				</div>
+
+				<div class="posts_navigation">
+					<button id="loadMore" class="mainBtn">Load more</button>
+				</div>
 			</div>
+
+
 		</div>
 
 	</section>

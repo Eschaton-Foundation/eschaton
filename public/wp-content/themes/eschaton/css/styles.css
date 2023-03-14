@@ -686,10 +686,6 @@ footer {
 .exhibitions-stage {
   margin-bottom: 3rem; }
 
-#grid {
-  transition: opacity .3s;
-  flex: 1 1 100%; }
-
 .listing_w_filters {
   display: flex;
   gap: 60px;
@@ -697,6 +693,12 @@ footer {
   @media (max-width: 767px) {
     .listing_w_filters {
       flex-direction: column; } }
+
+#grid {
+  transition: opacity .3s; }
+
+.outer_grid {
+  flex: 1 1 100%; }
 
 .exhibitions-grid {
   margin-top: 2rem; }

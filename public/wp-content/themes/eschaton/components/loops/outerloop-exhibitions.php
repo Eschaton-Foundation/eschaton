@@ -26,6 +26,3 @@
     endforeach; ?>
 
 
-    <div class="posts_navigation">
-        <button id="loadMore" class="mainBtn">Load more</button>
-    </div>

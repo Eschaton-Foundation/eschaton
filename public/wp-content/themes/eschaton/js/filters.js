@@ -92,14 +92,14 @@ function init() {
     }
 
 
-    const load_more = document.querySelector('#loadMore');
+    let loadMore = document.querySelector('#loadMore');
     let grid = document.querySelector('#grid');
 
 
 
 
-    load_more.addEventListener('click', function() {
-        console.log('loadmore !');
+    loadMore.addEventListener('click', function() {
+        //console.log('loadmore !');
 
 
         // FRONT STUFFS
@@ -146,9 +146,9 @@ function init() {
                 return response.json()
             })
             .then((data) => {
-                                    
-                if( !data || data.length < 5 ) {
-                    load_more.classList.add('hidden'); 
+                         
+                if( !data || data.length < 20 ) {
+                    loadMore.classList.add('hidden'); 
                 }
                 else {
                     grid.insertAdjacentHTML("beforeend", data);
@@ -171,7 +171,7 @@ function init() {
 
         for (const el of els) {
             el.addEventListener('click', function (e) {
-                console.log('please do filter');
+                //console.log('please do filter');
 
                 grid = document.querySelector('#grid');
 
@@ -182,7 +182,7 @@ function init() {
                 query_data.set('offset', 0);
                 query_data.set('loadmore', false);
 
-                console.log(query_data);
+                //console.log(query_data);
 
 
                 // FRONT STUFFS
@@ -190,6 +190,7 @@ function init() {
                 els.forEach(element => {
                     element.classList.remove('active');
                 });
+
                 if( query_data.get('term') == "all" ) {
                     document.querySelectorAll('[data-term="all"]').forEach(el => {
                         el.classList.add('active');
@@ -209,7 +210,7 @@ function init() {
                     method: "POST",
                     credentials: 'same-origin',
                     body: query_data
-                    })
+                })
                     .then((response) => {
                         // console.log(response);
                         return response.json()
@@ -218,7 +219,7 @@ function init() {
                         // console.log(data);
                         grid.innerHTML = data;
                         grid.style.opacity = "1";
-                        load_more.classList.remove('hidden'); 
+                        loadMore.classList.remove('hidden'); 
 
                     })
                     .catch((error) => {

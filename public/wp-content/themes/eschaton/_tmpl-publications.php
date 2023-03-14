@@ -4,7 +4,7 @@ Template Name: Publications
 */
 get_header();
 
-$step = 2;
+$step = 24;
 
 if (have_posts()) while (have_posts()) : the_post(); ?>
 	<section class="section-publication-intro content-intro section-w-filters">

@@ -31,10 +31,6 @@
 	margin-bottom: 3rem;
 }
 
-#grid {
-	transition: opacity .3s;
-	flex: 1 1 100%;
-}
 
 .listing_w_filters {
 	display: flex;
@@ -44,6 +40,14 @@
 	@media (max-width: 767px) {
 		flex-direction: column;
 	}
+}
+
+#grid {
+	transition: opacity .3s;
+}
+
+.outer_grid {
+	flex: 1 1 100%;
 }
 
 
