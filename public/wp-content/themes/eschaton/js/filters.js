@@ -72,6 +72,90 @@ function init() {
      * Active filter for publications template
      * get an array of elements
     */
+
+    const query_data = new FormData();
+
+
+    function setQueryDatas( el ) {
+        const taxonomy = el.getAttribute('data-taxonomy');
+        const term = el.getAttribute('data-term');
+        const termID = el.getAttribute('data-termID');
+        const postType = grid.getAttribute('data-posttype');
+        const step = grid.getAttribute('data-step');
+
+        query_data.set( 'action', 'loadposts' );
+        query_data.set( 'nonce', ajax_var.nonce );
+        query_data.set( 'taxonomy', taxonomy);
+        query_data.set( 'term', term);
+        query_data.set( 'termID', termID);
+        query_data.set( 'postType', postType);
+        query_data.set( 'step', step);
+    }
+
+
+    const load_more = document.querySelector('#loadMore');
+    const grid = document.querySelector('#grid');
+
+
+    load_more.addEventListener('click', function() {
+
+        // FRONT STUFFS
+
+        grid.style.opacity = '.5';
+ 
+
+        // QUERY DATAS
+
+        if( query_data.get('term') === null ) {
+            setQueryDatas( this );
+        }
+
+        let current_offset;
+        let step = parseInt(query_data.get('step'));
+
+        if( query_data.get('offset') !== null ) {
+            current_offset = parseInt(query_data.get('offset'));
+        }
+        else {
+            current_offset = parseInt(0);
+        }
+
+        let new_offset = parseInt(current_offset + step )
+        query_data.set('offset', new_offset);
+    
+        console.log(query_data);
+
+        // FETCH POSTS
+        
+        fetch(ajax_var.ajax_url, {
+            method: "POST",
+            credentials: 'same-origin',
+            body: query_data
+        })
+            .then((response) => {
+                return response.json()
+            })
+            .then((data) => {
+                                    
+                if( !data || data.length < 5 ) {
+                    load_more.classList.add('hidden'); 
+                }
+                else {
+                    grid.insertAdjacentHTML("beforeend", data);
+                    // grid.querySelectorAll('.posts_navigation').forEach(el => {
+                    //     el.remove();
+                    // })
+                }
+                grid.style.opacity = '1';
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    
+    });
+
+    
+
     
     function get_filters( els ) {
 
@@ -80,19 +164,20 @@ function init() {
                 console.log('please do filter');
 
 
-                const query_data = new FormData();
-                const grid = document.querySelector('#grid');
-                const taxonomy = this.getAttribute('data-taxonomy');
-                const term = this.getAttribute('data-term');
-                const termID = this.getAttribute('data-termID');
-                const postType = grid.getAttribute('data-posttype');
-                const step = 24;
+                // GET QUERY DATAS
 
+                setQueryDatas( this );
+                query_data.set('offset', 0);
+
+                console.log(query_data);
+
+
+                // FRONT STUFFS
 
                 els.forEach(element => {
                     element.classList.remove('active');
                 });
-                if( term == "all" ) {
+                if( query_data.get('term') == "all" ) {
                     document.querySelectorAll('[data-term="all"]').forEach(el => {
                         el.classList.add('active');
                     });
@@ -100,17 +185,12 @@ function init() {
                 else {
                     this.classList.add('active');
                 }
-                
-                query_data.append( 'action', 'loadposts' );
-                query_data.append( 'nonce', ajax_var.nonce );
-                query_data.append( 'taxonomy', taxonomy);
-                query_data.append( 'term', term);
-                query_data.append( 'termID', termID);
-                query_data.append( 'postType', postType);
-                query_data.append( 'offset', 0);
-
 
                 grid.style.opacity = "0.5";
+
+
+
+                // FETCH DATAS
 
                 fetch(ajax_var.ajax_url, {
                     method: "POST",
@@ -123,52 +203,9 @@ function init() {
                     })
                     .then((data) => {
                         // console.log(data);
-                        document.querySelector('#grid').innerHTML = data;
+                        grid.innerHTML = data;
                         grid.style.opacity = "1";
-
-
-                        const load_more = document.querySelector('#loadMore');
                         load_more.classList.remove('hidden'); 
-
-                        // const posts_nav = document.querySelector('#posts_nav');
-                        // posts_nav.classList.add('hidden');
-
-
-
-                        load_more.addEventListener('click', function() {
-
-                            grid.style.opacity = '.5';
-    
-                            let current_offset = parseInt(query_data.get('offset'));
-                            let new_offset = parseInt(current_offset + step)
-                            query_data.set('offset', new_offset);
-    
-                            fetch(ajax_var.ajax_url, {
-                                    method: "POST",
-                                    credentials: 'same-origin',
-                                    body: query_data
-                                })
-                                .then((response) => {
-                                    return response.json()
-                                })
-                                .then((data) => {
-                                    
-                                    if( !data || data.length < 5 ) {
-                                        load_more.classList.add('hidden'); 
-                                    }
-                                    else {
-                                        grid.insertAdjacentHTML("beforeend", data);
-                                        grid.querySelectorAll('.posts_navigation').forEach(el => {
-                                            el.remove();
-                                        })
-                                    }
-                                    grid.style.opacity = '1';
-                                })
-                                .catch((error) => {
-                                    console.log(error);
-                                });
-    
-                        });
 
                     })
                     .catch((error) => {
@@ -181,6 +218,18 @@ function init() {
 
     const filter_buttons = document.querySelectorAll('.filter-item');
     get_filters(filter_buttons);
+
+
+
+
+    // EXHIBITIONS
+
+
+
+
+
+
+
 
 
 

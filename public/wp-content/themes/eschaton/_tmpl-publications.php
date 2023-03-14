@@ -3,6 +3,9 @@
 Template Name: Publications 
 */
 get_header();
+
+$step = 2;
+
 if (have_posts()) while (have_posts()) : the_post(); ?>
 	<section class="section-publication-intro content-intro section-w-filters">
 		
@@ -22,17 +25,18 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             </div>
 
             <div class="outer_grid">
-                <div id="grid" class="grid" data-posttype="publications" data-step="24">
+                <div id="grid" class="grid" data-posttype="publications" data-step="<?php echo $step; ?>">
                     
                     <?php
                         get_template_part('components/loops/loop', 'publications', array(
                             'term' => 'all',
+                            'step'  => $step
                         ));
                     ?>
                 </div>
 
                 <div class="posts_navigation">
-                    <button id="loadMore" class="mainBtn hidden">Load more</button>
+                    <button id="loadMore" class="mainBtn">Load more</button>
                 </div>
             </div>
 		</div>
