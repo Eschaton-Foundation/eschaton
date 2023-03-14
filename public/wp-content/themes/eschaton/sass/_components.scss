@@ -196,7 +196,7 @@
 	font-size: 19px;
 	letter-spacing: 0.015em;
 	border-bottom: 1px solid #d8d8d3;
-	padding-bottom: 10px;
+	padding-bottom: 20px;
 	font-weight: 100;
 }
 .artists-grid {
@@ -786,7 +786,7 @@ section:not(.bleed).section-w-filters {
 	@media (min-width: 1250px) {
 		position: sticky;
 		top: 150px;
-		min-width: 10rem;
+		min-width: 12rem;
 		max-width: 15rem;
     }
 
@@ -800,7 +800,7 @@ section:not(.bleed).section-w-filters {
 	
 	@media (min-width: 767px) {
 		border-bottom: 1px solid #d8d8d3;
-		padding-bottom: 10px;
+		padding-bottom: 20px;
 		margin-bottom: 20px;
     }
 	@media (max-width: 767px) {
@@ -837,7 +837,6 @@ section:not(.bleed).section-w-filters {
 	font-family: inherit;
 	font-size: 1rem;
 	text-align: left;
-	line-height: 1;
 	padding: 4px 0px;
 	transition: color .3s;
 
@@ -851,6 +850,7 @@ section:not(.bleed).section-w-filters {
 
 .terms-group {
 	list-style: none;
+	width: 100%;
 
 	.filter-parent {
 		margin: 0;
@@ -967,18 +967,18 @@ section:not(.bleed).section-w-filters {
 		padding-left: 5px;
 		font-size: 14px;
 	}
-	.publication_isbn {
-		//color: var(--colorSubdue);
-	}
-
-	.item_content {
-		font-size: 1.2rem;
-		color: #b0afaa;
-	}
 
 	.item_meta {
 		margin-top: 0;
 		font-size: 1.2rem;
+	}
+	.item_content {
+		font-size: inherit;
+		color: #b0afaa;
+
+		p {
+			display: inline;
+		}
 	}
 }
 

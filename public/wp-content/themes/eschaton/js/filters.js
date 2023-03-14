@@ -65,6 +65,7 @@ function init() {
     handleDropdownsOpening( $js_dropdown );
 
 
+    
 
 
     /*
@@ -152,7 +153,7 @@ function init() {
                                 })
                                 .then((data) => {
                                     
-                                    if( !data || data.length === 1 ) {
+                                    if( !data || data.length < 5 ) {
                                         load_more.classList.add('hidden'); 
                                     }
                                     else {

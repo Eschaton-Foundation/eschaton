@@ -15,7 +15,7 @@
         $query_args = array(
 			'post_type' => 'exhibitions',
 		    'post_status' => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => 4,
 			'meta_key' => 'date_start',
 			'orderby' => 'meta_value',
 			'order' => 'DESC',
@@ -88,7 +88,7 @@
                 $gridClasses = "gridCount-" . $the_query->found_posts;
              } 
              else if ( $period === 'Past' ) {
-                $gridClasses = 'gridCount-3';
+                $gridClasses = 'exhibitions-grid-past gridCount-3';
              }
             ?>
             <div class="exhibitions-grid <?php echo $gridClasses; ?>">

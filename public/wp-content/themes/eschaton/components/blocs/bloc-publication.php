@@ -5,7 +5,8 @@
 	</h3>
 
 	<h4 class="item_author">
-		<?php the_field('publication_author'); ?>
+		<?php the_field('publication_author'); ?> <span class="item_content wyg"> - <?php the_content(); ?></span>
+
 	</h4>
 
 	<div class="item_meta">
@@ -37,9 +38,12 @@
 
 			<span class="publication_isbn">isbn : <?php the_field('publication_isbn'); ?></span>
 		<?php endif; ?>
+
+		<span class="separator">-</span> 
+
 		
 	</div>
 
-	<div class="item_content wyg"><?php the_content(); ?></div>
+	
 
 </div>
