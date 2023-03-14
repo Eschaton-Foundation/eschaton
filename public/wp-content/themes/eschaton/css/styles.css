@@ -687,7 +687,8 @@ footer {
   margin-bottom: 3rem; }
 
 #grid {
-  transition: opacity .3s; }
+  transition: opacity .3s;
+  flex: 1 1 100%; }
 
 .listing_w_filters {
   display: flex;
@@ -1517,8 +1518,8 @@ section:not(.bleed).section-w-filters {
   .page_filters {
     position: sticky;
     top: 150px;
-    min-width: 12rem;
-    max-width: 15rem; } }
+    width: 15rem;
+    flex: 0 0 15rem; } }
 
 .filters_group {
   display: flex;
@@ -1741,6 +1742,15 @@ section:not(.bleed).section-w-filters {
 
 .posts_navigation {
   margin-top: 4rem; }
+
+.mainBtn {
+  border: 1px solid black;
+  border-radius: 3px;
+  padding: 2px 7px;
+  transition: all .3s; }
+  .mainBtn:hover {
+    color: white;
+    background-color: black; }
 
 .bookings-grid {
   display: grid;

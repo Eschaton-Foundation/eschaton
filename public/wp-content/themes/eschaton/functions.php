@@ -845,13 +845,25 @@ function custom_tours_column( $column, $post_id ) {
 	$postType = $_POST['postType'];
 
 	ob_start();	
-	
-	get_template_part('components/loops/loop', $postType, array(
-		'taxonomy' => $_POST['taxonomy'],
-		'term' => $_POST['term'],
-		'termID' => $_POST['termID'],
-		'offset' => $_POST['offset'],
-	));
+
+	if( $postType === "exhibitions" && $_POST['loadmore'] === "false" ) {
+		get_template_part('components/loops/outerloop', $postType, array(
+			'taxonomy' 	=> $_POST['taxonomy'],
+			'term' 		=> $_POST['term'],
+			'termID' 	=> $_POST['termID'],
+			'offset' 	=> $_POST['offset'],
+		));
+	}
+	else {
+		get_template_part('components/loops/loop', $postType, array(
+			'taxonomy' 	=> $_POST['taxonomy'],
+			'term' 		=> $_POST['term'],
+			'termID' 	=> $_POST['termID'],
+			'offset' 	=> $_POST['offset'],
+			'period'	=> 'Past'
+		));
+	}
+
 
 	$response = ob_get_clean();
 

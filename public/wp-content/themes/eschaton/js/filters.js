@@ -75,7 +75,6 @@ function init() {
 
     const query_data = new FormData();
 
-
     function setQueryDatas( el ) {
         const taxonomy = el.getAttribute('data-taxonomy');
         const term = el.getAttribute('data-term');
@@ -94,21 +93,33 @@ function init() {
 
 
     const load_more = document.querySelector('#loadMore');
-    const grid = document.querySelector('#grid');
+    let grid = document.querySelector('#grid');
+
+
 
 
     load_more.addEventListener('click', function() {
+        console.log('loadmore !');
+
 
         // FRONT STUFFS
 
+        if( document.querySelector('.exhibitions-grid-past') !== null  ) {
+            grid = document.querySelector('.exhibitions-grid-past');
+        }
+        else {
+            grid = document.querySelector('#grid');
+        }
+
         grid.style.opacity = '.5';
- 
+
 
         // QUERY DATAS
 
         if( query_data.get('term') === null ) {
             setQueryDatas( this );
         }
+        query_data.set('loadmore', true);
 
         let current_offset;
         let step = parseInt(query_data.get('step'));
@@ -123,7 +134,6 @@ function init() {
         let new_offset = parseInt(current_offset + step )
         query_data.set('offset', new_offset);
     
-        console.log(query_data);
 
         // FETCH POSTS
         
@@ -163,11 +173,14 @@ function init() {
             el.addEventListener('click', function (e) {
                 console.log('please do filter');
 
+                grid = document.querySelector('#grid');
+
 
                 // GET QUERY DATAS
 
                 setQueryDatas( this );
                 query_data.set('offset', 0);
+                query_data.set('loadmore', false);
 
                 console.log(query_data);
 
@@ -218,13 +231,6 @@ function init() {
 
     const filter_buttons = document.querySelectorAll('.filter-item');
     get_filters(filter_buttons);
-
-
-
-
-    // EXHIBITIONS
-
-
 
 
 

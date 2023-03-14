@@ -3,6 +3,10 @@
 Template Name: Exhibitions 
 */
 get_header();
+
+$step = 2;
+
+
 if (have_posts()) while (have_posts()) : the_post(); ?>
 	<section class="section-exhibition-intro content-intro section-w-filters">
 
@@ -20,14 +24,13 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 				<?php FILTERS('', 'exhcontinent', 'large', true )->displayOutput(); ?>
 			</div>
 			
-			<div id="grid" data-posttype="exhibitions">
+			<div id="grid" data-posttype="exhibitions" data-step="<?php echo $step; ?>">
 				<?php
-				get_template_part('components/loops/loop', 'exhibitions'); ?>
+				get_template_part('components/loops/outerloop', 'exhibitions', array(
+					'step'  => $step
+				)); ?>
 			</div>
 		</div>
-
-
-
 
 	</section>
 
