@@ -96,74 +96,74 @@ function init() {
     let grid = document.querySelector('#grid');
 
 
+    if( loadMore !== null ) {
+
+        loadMore.addEventListener('click', function() {
+            //console.log('loadmore !');
 
 
-    loadMore.addEventListener('click', function() {
-        //console.log('loadmore !');
+            // FRONT STUFFS
+
+            if( document.querySelector('.exhibitions-grid-past') !== null  ) {
+                grid = document.querySelector('.exhibitions-grid-past');
+            }
+            else {
+                grid = document.querySelector('#grid');
+            }
+
+            grid.style.opacity = '.5';
 
 
-        // FRONT STUFFS
+            // QUERY DATAS
 
-        if( document.querySelector('.exhibitions-grid-past') !== null  ) {
-            grid = document.querySelector('.exhibitions-grid-past');
-        }
-        else {
-            grid = document.querySelector('#grid');
-        }
+            if( query_data.get('term') === null ) {
+                setQueryDatas( this );
+            }
+            query_data.set('loadmore', true);
 
-        grid.style.opacity = '.5';
+            let current_offset;
+            let step = parseInt(query_data.get('step'));
 
+            if( query_data.get('offset') !== null ) {
+                current_offset = parseInt(query_data.get('offset'));
+            }
+            else {
+                current_offset = parseInt(0);
+            }
 
-        // QUERY DATAS
-
-        if( query_data.get('term') === null ) {
-            setQueryDatas( this );
-        }
-        query_data.set('loadmore', true);
-
-        let current_offset;
-        let step = parseInt(query_data.get('step'));
-
-        if( query_data.get('offset') !== null ) {
-            current_offset = parseInt(query_data.get('offset'));
-        }
-        else {
-            current_offset = parseInt(0);
-        }
-
-        let new_offset = parseInt(current_offset + step )
-        query_data.set('offset', new_offset);
-    
-
-        // FETCH POSTS
+            let new_offset = parseInt(current_offset + step )
+            query_data.set('offset', new_offset);
         
-        fetch(ajax_var.ajax_url, {
-            method: "POST",
-            credentials: 'same-origin',
-            body: query_data
-        })
-            .then((response) => {
-                return response.json()
-            })
-            .then((data) => {
-                         
-                if( !data || data.length < 20 ) {
-                    loadMore.classList.add('hidden'); 
-                }
-                else {
-                    grid.insertAdjacentHTML("beforeend", data);
-                    // grid.querySelectorAll('.posts_navigation').forEach(el => {
-                    //     el.remove();
-                    // })
-                }
-                grid.style.opacity = '1';
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    
-    });
 
+            // FETCH POSTS
+            
+            fetch(ajax_var.ajax_url, {
+                method: "POST",
+                credentials: 'same-origin',
+                body: query_data
+            })
+                .then((response) => {
+                    return response.json()
+                })
+                .then((data) => {
+                            
+                    if( !data || data.length < 20 ) {
+                        loadMore.classList.add('hidden'); 
+                    }
+                    else {
+                        grid.insertAdjacentHTML("beforeend", data);
+                        // grid.querySelectorAll('.posts_navigation').forEach(el => {
+                        //     el.remove();
+                        // })
+                    }
+                    grid.style.opacity = '1';
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        
+        });
+    }
     
 
     
@@ -231,9 +231,10 @@ function init() {
     }
 
     const filter_buttons = document.querySelectorAll('.filter-item');
-    get_filters(filter_buttons);
 
-
+    if( filter_buttons !== null ) {
+        get_filters(filter_buttons);
+    }
 
 
 
