@@ -3,28 +3,35 @@
 
 
     <div class="studio_intro">
-        <div class="intro_text">
+
+        <div class="intro_dates">
             <h2 class="studio_dates">
                 <?php the_field('date_start'); ?><br>
                 <?php the_field('date_end'); ?>
             </h2>
+        </div>
 
-            <h3 class="studio_title">
-                <?php the_title(); ?>
-            </h3>
+        <div class="intro_titles_image">
 
-            <div class="txt-wrap wyg">
-                <?php the_field('studio_introduction'); ?>
+            <div class="intro_text">
+                <h3 class="studio_title">
+                    <?php the_title(); ?>
+                </h3>
+
+                <div class="txt-wrap wyg">
+                    <?php the_field('studio_introduction'); ?>
+                </div>
+            </div>
+
+            <div class="intro_image">
+                <?php if (has_post_thumbnail()) {
+                    echo '<div class="img-wrap">';
+                        echo wp_get_attachment_image(get_post_thumbnail_id($pID), 'thumbnail', false);
+                    echo '</div>';
+                } ?>
             </div>
         </div>
 
-        <div class="intro_image">
-            <?php if (has_post_thumbnail()) {
-                echo '<div class="img-wrap">';
-                    echo wp_get_attachment_image(get_post_thumbnail_id($pID), 'thumbnail', false);
-                echo '</div>';
-            } ?>
-        </div>
     </div>
 
     <div class="studio_content">

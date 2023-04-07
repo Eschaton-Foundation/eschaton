@@ -1693,22 +1693,29 @@ section:not(.bleed).section-w-filters {
     padding-top: 175px;
     top: 0; } }
 
-.studio_intro {
-  display: flex;
-  gap: 40px;
+.intro_titles_image {
   margin-bottom: 4rem; }
+  @media (min-width: 767px) {
+    .intro_titles_image {
+      display: flex;
+      gap: 40px; } }
 
 .intro_text {
   flex: 1 1 40%; }
 
 .intro_image {
   flex: 1 1 60%; }
+  @media (max-width: 767px) {
+    .intro_image {
+      margin-top: 2rem; }
+      .intro_image img {
+        width: 100%; } }
 
-.studio_dates {
+h2.studio_dates {
   font-size: 6rem;
   text-align: left;
   line-height: .8;
-  margin-bottom: 6rem;
+  margin-bottom: 2rem;
   font-weight: bold; }
 
 .studio_title {
