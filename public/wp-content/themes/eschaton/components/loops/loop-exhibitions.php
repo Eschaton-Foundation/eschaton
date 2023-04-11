@@ -32,6 +32,7 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
 
         if(  array_key_exists('taxonomy', $args) && $args['term'] !== "all" && $args['term'] !== "null" ) {
             $query_args['tax_query'] = array(
+                'relation' => 'OR',
                 array(
                     'taxonomy' => $args['taxonomy'],
                     'field'    => 'term_id',
@@ -39,6 +40,10 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                 )
             );
         }
+        else {
+            $query_args['tax_query'] = array();
+        }
+
         if( !isset( $args['step'] ) ) {
             $step = $_POST['step'];
         }
@@ -63,8 +68,11 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                         'key'     => 'date_end',
                         'compare' => '>=',
                         'value'   => $today,
-                    )
+                    ),
                 );
+
+
+
             }
             else if( $period === 'Past' ) {
                 $query_args['meta_query'] = array(
@@ -79,6 +87,8 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                         'value'   => $today,
                     )
                 );
+
+
             }
             else if( $period === 'Forthcoming' ) {
                 $query_args['meta_query'] = array(
@@ -95,6 +105,7 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                 );
             }
 	
+
 
 
         $the_query = new WP_Query( 

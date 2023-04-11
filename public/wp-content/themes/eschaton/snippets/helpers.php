@@ -13,7 +13,7 @@ if ( ! function_exists( 'get_event_dates' ) ) :
         $start_end_timestamp = strtotime( $end_date );
         $end_year = date('Y', $start_end_timestamp);
 
-        if( get_field('permanent', $id) ) {
+        if( has_term( 'permanent', 'exhpermanent' )) {
             $end_date = 'Ongoing';
         }
 

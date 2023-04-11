@@ -174,6 +174,8 @@ function init() {
                 //console.log('please do filter');
 
                 grid = document.querySelector('#grid');
+                const el_parent = el.closest('.filters_group')
+                const el_parent_children = el_parent.querySelectorAll('.filter-item')
 
 
                 // GET QUERY DATAS
@@ -187,7 +189,7 @@ function init() {
 
                 // FRONT STUFFS
 
-                els.forEach(element => {
+                el_parent_children.forEach(element => {
                     element.classList.remove('active');
                 });
 
