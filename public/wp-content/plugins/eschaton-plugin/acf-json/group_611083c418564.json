@@ -3,6 +3,26 @@
     "title": "Exhibitions",
     "fields": [
         {
+            "key": "field_64493157a08de",
+            "label": "Formated Title",
+            "name": "formated_title",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_63e4fb6924358",
             "label": "Gallery \/ Museum Name",
             "name": "exhibition_place",
@@ -106,7 +126,7 @@
         ]
     ],
     "menu_order": 0,
-    "position": "normal",
+    "position": "acf_after_title",
     "style": "seamless",
     "label_placement": "top",
     "instruction_placement": "label",
@@ -114,5 +134,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1681222426
+    "modified": 1682518508
 }

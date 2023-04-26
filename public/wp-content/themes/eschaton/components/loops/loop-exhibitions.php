@@ -124,7 +124,7 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                     $gridClasses = "gridCount-" . $the_query->found_posts;
                 } 
                 else if ( $period === 'Past' ) {
-                    $gridClasses = 'exhibitions-grid-past gridCount-3';
+                    $gridClasses = 'exhibitions-grid-past gridCount-2';
                 }
                 ?>
 

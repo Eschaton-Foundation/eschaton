@@ -177,7 +177,8 @@
 		font-size: .8rem;
 		color: var(--colorSubdue);
 		min-height: 30px;
-		line-height: 2;
+		line-height: 1;
+		padding-top: 2px;
 		align-self: baseline;
 	}
 	.exhibition_title {
@@ -1045,8 +1046,6 @@ section:not(.bleed).section-w-filters {
 	}
 }
 
-.studio_intro {
-}
 
 .intro_titles_image {
 	margin-bottom: 4rem;

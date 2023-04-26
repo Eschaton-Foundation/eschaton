@@ -1,4 +1,12 @@
+<?php 
 
+    if( get_field("formated_title") == '' ) {
+        $title = get_the_title();
+    }
+    else {
+        $title = get_field("formated_title");
+    }
+    ?>
 
 <article class="exhibition-single">
 
@@ -17,9 +25,13 @@
     <?php } ?>
 
     <div class="txt-wrap">
-        <a href="<?php the_field('link'); ?>" target="_blank" class="exhibition_title">
-            <h3 class=""><?php the_title(); ?></h3>
-        </a>
+        <?php if( get_field('link') !== '' ) : ?>
+            <a href="<?php the_field('link'); ?>" target="_blank" class="exhibition_title">
+                <h3 class=""><?php echo $title; ?></h3>
+            </a>
+        <?php else : ?>
+            <h3 class="exhibition_title"><?php echo $title; ?></h3>
+        <?php endif; ?>
 
         <div class="wyg">
             <div><?php the_field("exhibition_place"); ?></div>
