@@ -179,11 +179,12 @@
 	</header>
 	<?php
 	wp_nav_menu(array(
-		// 'menu'	=>	'Primary Nav',
 		'theme_location' => 'primary',
 		'items_wrap'	=>	'<ul>%3$s</ul>',
 		'menu_class' => 'header-menu',
-		'container' => 'nav'
+		'container' => 'nav',
+		'container_class'	=> 'menu-primary-nav-container',
+
 	));
 	?>
 	<main data-barba="container" data-barba-namespace="<?php
