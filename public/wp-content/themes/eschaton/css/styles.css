@@ -1517,6 +1517,9 @@ section:not(.bleed).section-w-filters {
 @media (max-width: 767px) {
   .page_filters {
     display: flex; } }
+@media (max-width: 1250px) {
+  .page_filters {
+    flex: 0 0 15rem; } }
 @media (min-width: 1250px) {
   .page_filters {
     position: sticky;

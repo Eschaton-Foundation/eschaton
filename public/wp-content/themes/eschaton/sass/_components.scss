@@ -788,7 +788,9 @@ section:not(.bleed).section-w-filters {
 	@media (max-width: 767px) {
 		display: flex;
     }
-	
+	@media (max-width: 1250px) {
+		flex: 0 0 15rem;
+    }
 	@media (min-width: 1250px) {
 		position: sticky;
 		top: 150px;
