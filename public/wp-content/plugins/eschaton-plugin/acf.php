@@ -3,7 +3,7 @@
 function abm_acf_load_json($paths)
 {
     $paths = array(
-        ABM_DIR . '/acf-json'
+        ESC_DIR . '/acf-json'
     );
 
     return $paths;
@@ -12,7 +12,7 @@ function abm_acf_load_json($paths)
 function abm_acf_save_json($paths)
 {
 
-    $paths = ABM_DIR . '/acf-json';
+    $paths = ESC_DIR . '/acf-json';
 
     return $paths;
 }
