@@ -18,7 +18,7 @@ function eschaton_tarteaucitron_init() { ?>
     if( typeof tarteaucitron !== 'undefined' ) {
 
       tarteaucitron.init({
-        "privacyUrl": "", /* Privacy policy url */
+        "privacyUrl": "/privacy-policy/", /* Privacy policy url */
         "bodyPosition": "bottom", /* or top to bring it as first element for accessibility */
 
         "hashtag": "#tarteaucitron", /* Open the panel with this hashtag */
