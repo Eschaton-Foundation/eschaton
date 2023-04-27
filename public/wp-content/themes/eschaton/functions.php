@@ -831,6 +831,18 @@ function custom_tours_column( $column, $post_id ) {
 
 
 
+function custom_menus() {
+	register_nav_menus(
+		array(
+			'primary' => 'Primary menu',
+			'footer' => 'Footer menu',
+		)
+	);
+}
+	
+add_action( 'init', 'custom_menus' );
+
+
 
 
 /*

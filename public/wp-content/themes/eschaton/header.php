@@ -135,7 +135,7 @@
     <link href="https://kit-pro.fontawesome.com/releases/v5.15.4/css/pro.min.css" rel="stylesheet">
 	
 	<?php wp_head(); ?>
-	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<!-- Global site tag (gtag.js) - Google Analytics 
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8K5WSFSGV"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
@@ -146,7 +146,7 @@
 		gtag('js', new Date());
 
 		gtag('config', 'G-D8K5WSFSGV');
-	</script>
+	</script>-->
 </head>
 
 <body data-barba="wrapper" <?php
@@ -179,7 +179,8 @@
 	</header>
 	<?php
 	wp_nav_menu(array(
-		'menu'	=>	'Primary Nav',
+		// 'menu'	=>	'Primary Nav',
+		'theme_location' => 'primary',
 		'items_wrap'	=>	'<ul>%3$s</ul>',
 		'menu_class' => 'header-menu',
 		'container' => 'nav'
