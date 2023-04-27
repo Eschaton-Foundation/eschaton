@@ -789,11 +789,12 @@ section:not(.bleed).section-w-filters {
 		display: flex;
     }
 	@media (max-width: 1250px) {
-		flex: 0 0 15rem;
-    }
-	@media (min-width: 1250px) {
 		position: sticky;
 		top: 150px;
+		width: 20%;
+		flex: 0 0 20%;
+    }
+	@media (min-width: 767px) {
 		width: 15rem;
 		flex: 0 0 15rem;
     }
