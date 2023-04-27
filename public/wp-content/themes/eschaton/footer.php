@@ -9,7 +9,7 @@
 	</div>
 </div>
 
-<?php if(!is_page('privacy-policy')){ ?>
+<?php if( false && !is_page('privacy-policy')){ ?>
 	<span class="consent-bg"></span>
 	<div class="consent-wrap mid">
 		<?php echo get_field("consent_text", "options"); ?>
