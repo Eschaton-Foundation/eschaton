@@ -855,11 +855,37 @@ add_action( 'init', 'custom_menus' );
  function loadposts() {
 
 	$postType = $_POST['postType'];
+	$unwanted_chars = array('"', '\\', '[[', ']]');
+	$tax_query = [
+		'relation' => 'AND'
+	];
 
 	ob_start();	
 
+	$taxonomies = $_POST['taxonomy'];
+	//var_dump($_POST['taxonomy']);
+
+	$taxonomies = str_replace($unwanted_chars, '', $taxonomies );
+	//var_dump( $taxonomies );
+
+	$taxonomies = explode( '],[', $taxonomies );
+	//var_dump( $taxonomies );
+
+	foreach( $taxonomies as $tax ) {
+		$tax = explode(',', $tax );
+		array_push($tax_query, array(
+			'taxonomy' => $tax[0],
+			'field' => 'term_id',
+			'terms' => array( $tax[1] ),
+		));
+	}
+
+
+
+	
 	if( $postType === "exhibitions" && $_POST['loadmore'] === "false" ) {
 		get_template_part('components/loops/outerloop', $postType, array(
+			'tax_query' => $tax_query,
 			'taxonomy' 	=> $_POST['taxonomy'],
 			'term' 		=> $_POST['term'],
 			'termID' 	=> $_POST['termID'],
@@ -868,6 +894,7 @@ add_action( 'init', 'custom_menus' );
 	}
 	else {
 		get_template_part('components/loops/loop', $postType, array(
+			'tax_query' => $tax_query,
 			'taxonomy' 	=> $_POST['taxonomy'],
 			'term' 		=> $_POST['term'],
 			'termID' 	=> $_POST['termID'],

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function init() {
 
+    
 
     // ACCORDEONS
     const closeDropdownsContent = function( $els ) {
@@ -74,6 +75,7 @@ function init() {
     */
 
     const query_data = new FormData();
+    let taxonomies = [];
 
     function setQueryDatas( el ) {
         const taxonomy = el.getAttribute('data-taxonomy');
@@ -82,14 +84,46 @@ function init() {
         const postType = grid.getAttribute('data-posttype');
         const step = grid.getAttribute('data-step');
 
+        if( taxonomy === "" && term == "all") {
+            query_data.delete('taxonomy');
+            taxonomies = [];
+        }
+        else {
+
+            let tax_is_in = false;
+            let i = 0;
+            let tax_is_in_key;
+
+            for (const [key, value] of taxonomies) {
+                if( key == taxonomy ) {
+                    tax_is_in = true;
+                    tax_is_in_key = i;
+                }
+                i++;
+            }
+
+            if( tax_is_in ) {
+                taxonomies[tax_is_in_key][1] = termID;
+            }
+            else {
+                taxonomies.push( [taxonomy, termID] )
+            }
+
+            query_data.set( 'taxonomy', JSON.stringify(taxonomies) );
+
+        }
+
+        console.log(taxonomies);
+
         query_data.set( 'action', 'loadposts' );
         query_data.set( 'nonce', ajax_var.nonce );
-        query_data.set( 'taxonomy', taxonomy);
-        query_data.set( 'term', term);
+        query_data.set( 'term', term );
         query_data.set( 'termID', termID);
         query_data.set( 'postType', postType);
         query_data.set( 'step', step);
     }
+
+    console.log(query_data);
 
 
     let loadMore = document.querySelector('#loadMore');
@@ -184,8 +218,6 @@ function init() {
                 query_data.set('offset', 0);
                 query_data.set('loadmore', false);
 
-                //console.log(query_data);
-
 
                 // FRONT STUFFS
 
@@ -194,9 +226,14 @@ function init() {
                 });
 
                 if( query_data.get('term') == "all" ) {
+                    
+                    els.forEach(el => {
+                        el.classList.remove('active');
+                    })
                     document.querySelectorAll('[data-term="all"]').forEach(el => {
                         el.classList.add('active');
                     });
+                    
                 }
                 else {
                     this.classList.add('active');

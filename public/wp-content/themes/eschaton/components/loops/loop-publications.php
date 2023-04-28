@@ -17,7 +17,14 @@ if( $args['term'] != "all" && $args['term'] != "null" ) {
             'terms'    => array( $args['termID'] ),
         )
     );
+    $loop_args['tax_query'] = $args['tax_query'];
+
 }
+else {
+    $loop_args['tax_query'] = array();
+}
+
+
 
 if( isset( $args['offset'] ) ) {
     $loop_args['offset'] = $args['offset'];
@@ -40,6 +47,10 @@ if ( $the_query->have_posts() ) :
         get_template_part('components/blocs/bloc', 'publication');
 
     endwhile;
+
+else : 
+    echo '<p>...</p>';
+
 endif;
 wp_reset_query(); ?>
 

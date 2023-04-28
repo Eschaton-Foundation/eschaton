@@ -39,6 +39,8 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                     'terms'    => array( $args['termID'] ),
                 )
             );
+            $query_args['tax_query'] = $args['tax_query'];
+
         }
         else {
             $query_args['tax_query'] = array();

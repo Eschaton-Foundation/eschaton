@@ -6,6 +6,7 @@
 
         if( isset( $args['term'] ) ) {
             $args = array(
+                'tax_query' => $args['tax_query'],
                 'step'      => $args['step'],
                 'period'    => $period,
                 'taxonomy' 	=> $args['taxonomy'],
