@@ -2829,7 +2829,9 @@ nav + main:not([data-barba-namespace="home"]) .subnav + * {
       margin-top: 4rem; } }
 
 @media (max-width: 1250px) {
-  main[data-barba-namespace="exhibitions"] section {
+  main[data-barba-namespace="exhibitions"] section,
+  main[data-barba-namespace="studios"] section,
+  main[data-barba-namespace="publications"] section {
     width: 95%; } }
 
 .wyg > :first-child,

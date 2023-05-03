@@ -559,7 +559,9 @@ nav+main:not([data-barba-namespace="home"]) {
     }
 }
 
-main[data-barba-namespace="exhibitions"] {
+main[data-barba-namespace="exhibitions"],
+main[data-barba-namespace="studios"],
+main[data-barba-namespace="publications"] {
     section {
         @media (max-width: 1250px) {
             width: 95%;
