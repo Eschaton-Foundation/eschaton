@@ -1515,15 +1515,23 @@ details {
 section:not(.bleed).section-w-filters {
   max-width: 55em; }
 
-@media (max-width: 767px) {
-  .page_filters {
-    display: flex; } }
 @media (max-width: 1250px) {
   .page_filters {
     position: sticky;
     top: 150px;
     width: 20%;
     flex: 0 0 20%; } }
+@media (max-width: 767px) {
+  .page_filters {
+    display: flex;
+    width: 100vw;
+    background-color: white;
+    flex: 0 0 100%;
+    z-index: 999;
+    top: 38px;
+    box-shadow: 0 0 30px rgba(128, 128, 128, 0.2);
+    padding: 20px 10px;
+    margin-left: -2.5vw; } }
 @media (min-width: 767px) {
   .page_filters {
     width: 15rem;
@@ -2819,6 +2827,10 @@ nav + main:not([data-barba-namespace="home"]) .subnav + * {
     nav + main:not([data-barba-namespace="home"]) > section:first-child,
     nav + main:not([data-barba-namespace="home"]) .subnav + * {
       margin-top: 4rem; } }
+
+@media (max-width: 1250px) {
+  main[data-barba-namespace="exhibitions"] section {
+    width: 95%; } }
 
 .wyg > :first-child,
 .caption > :first-child,

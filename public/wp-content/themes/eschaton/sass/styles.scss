@@ -559,6 +559,14 @@ nav+main:not([data-barba-namespace="home"]) {
     }
 }
 
+main[data-barba-namespace="exhibitions"] {
+    section {
+        @media (max-width: 1250px) {
+            width: 95%;
+        }
+    }
+}
+
 .wyg,
 .caption,
 .gfield_consent_label {
