@@ -1,12 +1,8 @@
 <?php 
 
-    if( get_field("formated_title") == '' ) {
-        $title = get_the_title();
-    }
-    else {
-        $title = get_field("formated_title");
-    }
-    ?>
+    $title = get_the_title();
+
+?>
 
 <article class="exhibition-single">
 
