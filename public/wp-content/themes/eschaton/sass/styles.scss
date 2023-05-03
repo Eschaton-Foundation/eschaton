@@ -264,13 +264,13 @@ textarea {
 h4.hang-year {
     font-variant: none;
 
-    @media (min-width: 800px) {
+    @media (min-width: 768px) {
         float: left;
         width: 75px;
         margin: 0 0 0 -75px;
     }
 
-    @media (max-width: 799px) {
+    @media (max-width: 767px) {
         margin-bottom: 0;
 
         &+* {
@@ -395,7 +395,6 @@ section {
         margin-right: auto;
 
         @media (max-width: 1250px) {
-            width: 95%;
             max-width: none;
         }
 
