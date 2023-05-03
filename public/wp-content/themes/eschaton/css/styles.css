@@ -719,6 +719,9 @@ footer {
         flex: 1 1 auto;
         padding-top: 10px;
         justify-content: flex-start; }
+    .exhibitions-grid.gridCount-2 .exhibition_title {
+      font-size: 2rem;
+      line-height: 1.1; }
   .exhibitions-grid.gridCount-3 {
     grid-template-columns: repeat(3, 1fr);
     display: grid;
