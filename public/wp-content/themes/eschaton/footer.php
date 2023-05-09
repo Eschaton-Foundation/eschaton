@@ -40,7 +40,20 @@ if (isset($_GET['trp-edit-translation']) && $_GET['trp-edit-translation'] == tru
 		//})
 	</script>';
 }
-?>
+
+
+if( get_locale() == 'fr_FR' ) { ?>
+	<script>
+		tarteaucitronForceLanguage = 'fr'; /* supported: fr, en, de, es, it, pt, pl, ru */
+	</script>
+<?php }
+elseif( get_locale() == 'de_DE'  ) {?>
+	<script>
+		tarteaucitronForceLanguage = 'de'; /* supported: fr, en, de, es, it, pt, pl, ru */
+	</script>
+<?php } ?>
+
+
 </body>
 
 </html>
