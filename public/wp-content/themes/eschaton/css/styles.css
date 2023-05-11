@@ -958,26 +958,26 @@ section.section-artists-headshot:not(.bleed) img {
   .img-enlarge:focus-visible {
     outline: solid 2px black; }
 
-main #gform_wrapper_2,
-main .section-text #gform_wrapper_2,
+main .gform_contact_wrapper,
+main .section-text .gform_contact_wrapper,
 main .pre-form {
   max-width: 500px;
   margin-left: auto;
   margin-right: auto; }
-  main #gform_wrapper_2 .gfield_error,
-  main .section-text #gform_wrapper_2 .gfield_error,
+  main .gform_contact_wrapper .gfield_error,
+  main .section-text .gform_contact_wrapper .gfield_error,
   main .pre-form .gfield_error {
     padding-left: 1rem;
     padding-right: 1rem; }
-    main #gform_wrapper_2 .gfield_error input,
-    main #gform_wrapper_2 .gfield_error textarea,
-    main .section-text #gform_wrapper_2 .gfield_error input,
-    main .section-text #gform_wrapper_2 .gfield_error textarea,
+    main .gform_contact_wrapper .gfield_error input,
+    main .gform_contact_wrapper .gfield_error textarea,
+    main .section-text .gform_contact_wrapper .gfield_error input,
+    main .section-text .gform_contact_wrapper .gfield_error textarea,
     main .pre-form .gfield_error input,
     main .pre-form .gfield_error textarea {
       max-width: calc(100% - 1rem) !important; }
-  main #gform_wrapper_2 input,
-  main .section-text #gform_wrapper_2 input,
+  main .gform_contact_wrapper input,
+  main .section-text .gform_contact_wrapper input,
   main .pre-form input {
     font-family: "Romaine";
     font-size: 22px;
@@ -988,64 +988,64 @@ main .pre-form {
     border-bottom: solid 1px;
     border-color: var(--colorFG); }
     @media (max-width: 767px) {
-      main #gform_wrapper_2 input,
-      main .section-text #gform_wrapper_2 input,
+      main .gform_contact_wrapper input,
+      main .section-text .gform_contact_wrapper input,
       main .pre-form input {
         font-size: 20px; } }
-    main #gform_wrapper_2 input::-webkit-input-placeholder,
-    main .section-text #gform_wrapper_2 input::-webkit-input-placeholder,
+    main .gform_contact_wrapper input::-webkit-input-placeholder,
+    main .section-text .gform_contact_wrapper input::-webkit-input-placeholder,
     main .pre-form input::-webkit-input-placeholder {
       /* Chrome/Opera/Safari */
       color: #000; }
-    main #gform_wrapper_2 input::-moz-placeholder,
-    main .section-text #gform_wrapper_2 input::-moz-placeholder,
+    main .gform_contact_wrapper input::-moz-placeholder,
+    main .section-text .gform_contact_wrapper input::-moz-placeholder,
     main .pre-form input::-moz-placeholder {
       /* Firefox 19+ */
       color: #000; }
-    main #gform_wrapper_2 input:-ms-input-placeholder,
-    main .section-text #gform_wrapper_2 input:-ms-input-placeholder,
+    main .gform_contact_wrapper input:-ms-input-placeholder,
+    main .section-text .gform_contact_wrapper input:-ms-input-placeholder,
     main .pre-form input:-ms-input-placeholder {
       /* IE 10+ */
       color: #000; }
-    main #gform_wrapper_2 input::placeholder,
-    main .section-text #gform_wrapper_2 input::placeholder,
+    main .gform_contact_wrapper input::placeholder,
+    main .section-text .gform_contact_wrapper input::placeholder,
     main .pre-form input::placeholder {
       color: var(--colorSubdue); }
-    main #gform_wrapper_2 input[type="text"]:placeholder-shown,
-    main .section-text #gform_wrapper_2 input[type="text"]:placeholder-shown,
+    main .gform_contact_wrapper input[type="text"]:placeholder-shown,
+    main .section-text .gform_contact_wrapper input[type="text"]:placeholder-shown,
     main .pre-form input[type="text"]:placeholder-shown {
       border-color: #99998c; }
-    main #gform_wrapper_2 input[type="text"]:focus,
-    main .section-text #gform_wrapper_2 input[type="text"]:focus,
+    main .gform_contact_wrapper input[type="text"]:focus,
+    main .section-text .gform_contact_wrapper input[type="text"]:focus,
     main .pre-form input[type="text"]:focus {
       border-color: var(--colorFG); }
-  main #gform_wrapper_2 textarea,
-  main .section-text #gform_wrapper_2 textarea,
+  main .gform_contact_wrapper textarea,
+  main .section-text .gform_contact_wrapper textarea,
   main .pre-form textarea {
     border: solid 1px #99998c;
     border-color: var(--colorFG); }
-    main #gform_wrapper_2 textarea:focus,
-    main .section-text #gform_wrapper_2 textarea:focus,
+    main .gform_contact_wrapper textarea:focus,
+    main .section-text .gform_contact_wrapper textarea:focus,
     main .pre-form textarea:focus {
       outline: none; }
-    main #gform_wrapper_2 textarea.empty,
-    main .section-text #gform_wrapper_2 textarea.empty,
+    main .gform_contact_wrapper textarea.empty,
+    main .section-text .gform_contact_wrapper textarea.empty,
     main .pre-form textarea.empty {
       border-color: #99998c; }
-    main #gform_wrapper_2 textarea:focus,
-    main .section-text #gform_wrapper_2 textarea:focus,
+    main .gform_contact_wrapper textarea:focus,
+    main .section-text .gform_contact_wrapper textarea:focus,
     main .pre-form textarea:focus {
       border-color: var(--colorFG); }
-  main #gform_wrapper_2 input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]),
-  main .section-text #gform_wrapper_2 input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]),
+  main .gform_contact_wrapper input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]),
+  main .section-text .gform_contact_wrapper input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]),
   main .pre-form input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]) {
     padding: 0.5rem 0; }
-    main #gform_wrapper_2 input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]):focus-visible,
-    main .section-text #gform_wrapper_2 input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]):focus-visible,
+    main .gform_contact_wrapper input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]):focus-visible,
+    main .section-text .gform_contact_wrapper input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]):focus-visible,
     main .pre-form input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]):focus-visible {
       outline: solid 1px transparent; }
-  main #gform_wrapper_2 .gfield_label,
-  main .section-text #gform_wrapper_2 .gfield_label,
+  main .gform_contact_wrapper .gfield_label,
+  main .section-text .gform_contact_wrapper .gfield_label,
   main .pre-form .gfield_label {
     display: block !important;
     text-align: center;
@@ -1056,38 +1056,38 @@ main .pre-form {
     font-variant: small-caps;
     font-weight: normal; }
     @media (max-width: 767px) {
-      main #gform_wrapper_2 .gfield_label,
-      main .section-text #gform_wrapper_2 .gfield_label,
+      main .gform_contact_wrapper .gfield_label,
+      main .section-text .gform_contact_wrapper .gfield_label,
       main .pre-form .gfield_label {
         font-size: 17px; } }
     @media (max-width: 480px) {
-      main #gform_wrapper_2 .gfield_label,
-      main .section-text #gform_wrapper_2 .gfield_label,
+      main .gform_contact_wrapper .gfield_label,
+      main .section-text .gform_contact_wrapper .gfield_label,
       main .pre-form .gfield_label {
         font-size: 16px; } }
-  main #gform_wrapper_2 .gfield,
-  main .section-text #gform_wrapper_2 .gfield,
+  main .gform_contact_wrapper .gfield,
+  main .section-text .gform_contact_wrapper .gfield,
   main .pre-form .gfield {
     margin-bottom: 2rem; }
-  main #gform_wrapper_2 li.hidden_label input,
-  main .section-text #gform_wrapper_2 li.hidden_label input,
+  main .gform_contact_wrapper li.hidden_label input,
+  main .section-text .gform_contact_wrapper li.hidden_label input,
   main .pre-form li.hidden_label input {
     margin-top: 0; }
-  main #gform_wrapper_2 .gfield_required_asterisk,
-  main .section-text #gform_wrapper_2 .gfield_required_asterisk,
+  main .gform_contact_wrapper .gfield_required_asterisk,
+  main .section-text .gform_contact_wrapper .gfield_required_asterisk,
   main .pre-form .gfield_required_asterisk {
     display: none; }
-  main #gform_wrapper_2 div.ginput_container_radio,
-  main .section-text #gform_wrapper_2 div.ginput_container_radio,
+  main .gform_contact_wrapper div.ginput_container_radio,
+  main .section-text .gform_contact_wrapper div.ginput_container_radio,
   main .pre-form div.ginput_container_radio {
     margin-top: 0 !important; }
-    main #gform_wrapper_2 div.ginput_container_radio label,
-    main .section-text #gform_wrapper_2 div.ginput_container_radio label,
+    main .gform_contact_wrapper div.ginput_container_radio label,
+    main .section-text .gform_contact_wrapper div.ginput_container_radio label,
     main .pre-form div.ginput_container_radio label {
       color: var(--colorSubdue);
       position: relative; }
-      main #gform_wrapper_2 div.ginput_container_radio label:before,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio label:before,
+      main .gform_contact_wrapper div.ginput_container_radio label:before,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio label:before,
       main .pre-form div.ginput_container_radio label:before {
         content: "";
         position: absolute;
@@ -1097,22 +1097,22 @@ main .pre-form {
         height: 18px;
         border: solid 1px;
         border-radius: 50%; }
-    main #gform_wrapper_2 div.ginput_container_radio input[type="radio"],
-    main .section-text #gform_wrapper_2 div.ginput_container_radio input[type="radio"],
+    main .gform_contact_wrapper div.ginput_container_radio input[type="radio"],
+    main .section-text .gform_contact_wrapper div.ginput_container_radio input[type="radio"],
     main .pre-form div.ginput_container_radio input[type="radio"] {
       position: absolute;
       opacity: 0; }
-      main #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label,
+      main .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label,
       main .pre-form div.ginput_container_radio input[type="radio"]:checked + label {
         font-weight: normal;
         color: inherit; }
-        main #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label:before,
-        main .section-text #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label:before,
+        main .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label:before,
+        main .section-text .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label:before,
         main .pre-form div.ginput_container_radio input[type="radio"]:checked + label:before {
           border-color: black; }
-        main #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label:after,
-        main .section-text #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:checked + label:after,
+        main .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label:after,
+        main .section-text .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:checked + label:after,
         main .pre-form div.ginput_container_radio input[type="radio"]:checked + label:after {
           content: "";
           position: absolute;
@@ -1122,71 +1122,71 @@ main .pre-form {
           height: 8px;
           background: black;
           border-radius: 50%; }
-      main #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:focus-visible + label,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio input[type="radio"]:focus-visible + label,
+      main .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:focus-visible + label,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio input[type="radio"]:focus-visible + label,
       main .pre-form div.ginput_container_radio input[type="radio"]:focus-visible + label {
         outline: solid 1px black;
         outline-offset: 3px; }
-    main #gform_wrapper_2 div.ginput_container_radio ul,
-    main .section-text #gform_wrapper_2 div.ginput_container_radio ul,
+    main .gform_contact_wrapper div.ginput_container_radio ul,
+    main .section-text .gform_contact_wrapper div.ginput_container_radio ul,
     main .pre-form div.ginput_container_radio ul {
       margin: 0; }
-      main #gform_wrapper_2 div.ginput_container_radio ul li label,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio ul li label,
+      main .gform_contact_wrapper div.ginput_container_radio ul li label,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio ul li label,
       main .pre-form div.ginput_container_radio ul li label {
         margin: 0; }
     @media (max-width: 767px) {
-      main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio,
+      main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio,
       main .pre-form div.ginput_container_radio ul.gfield_radio {
         padding-left: 1.75rem; } }
-    main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li,
-    main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li,
+    main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li,
+    main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li,
     main .pre-form div.ginput_container_radio ul.gfield_radio li {
       overflow: visible; }
-      main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label,
-      main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label,
+      main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label,
+      main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label,
       main .pre-form div.ginput_container_radio ul.gfield_radio li label {
         font-family: "Romaine";
         font-size: 22px;
         border-radius: 0; }
         @media (max-width: 767px) {
-          main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label,
-          main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label,
+          main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label,
+          main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label,
           main .pre-form div.ginput_container_radio ul.gfield_radio li label {
             font-size: 20px; } }
-        main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label::-webkit-input-placeholder,
-        main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label::-webkit-input-placeholder,
+        main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label::-webkit-input-placeholder,
+        main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label::-webkit-input-placeholder,
         main .pre-form div.ginput_container_radio ul.gfield_radio li label::-webkit-input-placeholder {
           /* Chrome/Opera/Safari */
           color: #000; }
-        main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label::-moz-placeholder,
-        main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label::-moz-placeholder,
+        main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label::-moz-placeholder,
+        main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label::-moz-placeholder,
         main .pre-form div.ginput_container_radio ul.gfield_radio li label::-moz-placeholder {
           /* Firefox 19+ */
           color: #000; }
-        main #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label:-ms-input-placeholder,
-        main .section-text #gform_wrapper_2 div.ginput_container_radio ul.gfield_radio li label:-ms-input-placeholder,
+        main .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label:-ms-input-placeholder,
+        main .section-text .gform_contact_wrapper div.ginput_container_radio ul.gfield_radio li label:-ms-input-placeholder,
         main .pre-form div.ginput_container_radio ul.gfield_radio li label:-ms-input-placeholder {
           /* IE 10+ */
           color: #000; }
-  main #gform_wrapper_2 label.gfield_label,
-  main .section-text #gform_wrapper_2 label.gfield_label,
+  main .gform_contact_wrapper label.gfield_label,
+  main .section-text .gform_contact_wrapper label.gfield_label,
   main .pre-form label.gfield_label {
     margin: 4.625rem 0 2.75rem; }
-main #gform_wrapper_2 .gform_footer {
+main .gform_contact_wrapper .gform_footer {
   padding: 1.5rem 0 0;
   margin: 0; }
-  main #gform_wrapper_2 .gform_footer br {
+  main .gform_contact_wrapper .gform_footer br {
     display: none; }
 main .gform_legacy_markup_wrapper ul.gform_fields li.gfield {
   padding-right: 0; }
-main #gform_wrapper_2 input.button,
-main #gform_wrapper_2 input[type="submit"],
-main #gform_wrapper_2 .gform_footer input.button,
-main #gform_wrapper_2 .gform_footer input[type="submit"],
-main #gform_wrapper_2 .gform_page_footer input.button,
-main #gform_wrapper_2 .gform_page_footer input[type="submit"] {
+main .gform_contact_wrapper input.button,
+main .gform_contact_wrapper input[type="submit"],
+main .gform_contact_wrapper .gform_footer input.button,
+main .gform_contact_wrapper .gform_footer input[type="submit"],
+main .gform_contact_wrapper .gform_page_footer input.button,
+main .gform_contact_wrapper .gform_page_footer input[type="submit"] {
   font-weight: normal;
   font-size: 19px;
   letter-spacing: 0.015em;
@@ -1203,46 +1203,46 @@ main #gform_wrapper_2 .gform_page_footer input[type="submit"] {
   border-radius: 4px;
   color: var(--colorFG); }
   @media (max-width: 767px) {
-    main #gform_wrapper_2 input.button,
-    main #gform_wrapper_2 input[type="submit"],
-    main #gform_wrapper_2 .gform_footer input.button,
-    main #gform_wrapper_2 .gform_footer input[type="submit"],
-    main #gform_wrapper_2 .gform_page_footer input.button,
-    main #gform_wrapper_2 .gform_page_footer input[type="submit"] {
+    main .gform_contact_wrapper input.button,
+    main .gform_contact_wrapper input[type="submit"],
+    main .gform_contact_wrapper .gform_footer input.button,
+    main .gform_contact_wrapper .gform_footer input[type="submit"],
+    main .gform_contact_wrapper .gform_page_footer input.button,
+    main .gform_contact_wrapper .gform_page_footer input[type="submit"] {
       font-size: 17px; } }
   @media (max-width: 480px) {
-    main #gform_wrapper_2 input.button,
-    main #gform_wrapper_2 input[type="submit"],
-    main #gform_wrapper_2 .gform_footer input.button,
-    main #gform_wrapper_2 .gform_footer input[type="submit"],
-    main #gform_wrapper_2 .gform_page_footer input.button,
-    main #gform_wrapper_2 .gform_page_footer input[type="submit"] {
+    main .gform_contact_wrapper input.button,
+    main .gform_contact_wrapper input[type="submit"],
+    main .gform_contact_wrapper .gform_footer input.button,
+    main .gform_contact_wrapper .gform_footer input[type="submit"],
+    main .gform_contact_wrapper .gform_page_footer input.button,
+    main .gform_contact_wrapper .gform_page_footer input[type="submit"] {
       font-size: 16px; } }
-  main #gform_wrapper_2 input.button:hover, main #gform_wrapper_2 input.button:active,
-  main #gform_wrapper_2 input[type="submit"]:hover,
-  main #gform_wrapper_2 input[type="submit"]:active,
-  main #gform_wrapper_2 .gform_footer input.button:hover,
-  main #gform_wrapper_2 .gform_footer input.button:active,
-  main #gform_wrapper_2 .gform_footer input[type="submit"]:hover,
-  main #gform_wrapper_2 .gform_footer input[type="submit"]:active,
-  main #gform_wrapper_2 .gform_page_footer input.button:hover,
-  main #gform_wrapper_2 .gform_page_footer input.button:active,
-  main #gform_wrapper_2 .gform_page_footer input[type="submit"]:hover,
-  main #gform_wrapper_2 .gform_page_footer input[type="submit"]:active {
+  main .gform_contact_wrapper input.button:hover, main .gform_contact_wrapper input.button:active,
+  main .gform_contact_wrapper input[type="submit"]:hover,
+  main .gform_contact_wrapper input[type="submit"]:active,
+  main .gform_contact_wrapper .gform_footer input.button:hover,
+  main .gform_contact_wrapper .gform_footer input.button:active,
+  main .gform_contact_wrapper .gform_footer input[type="submit"]:hover,
+  main .gform_contact_wrapper .gform_footer input[type="submit"]:active,
+  main .gform_contact_wrapper .gform_page_footer input.button:hover,
+  main .gform_contact_wrapper .gform_page_footer input.button:active,
+  main .gform_contact_wrapper .gform_page_footer input[type="submit"]:hover,
+  main .gform_contact_wrapper .gform_page_footer input[type="submit"]:active {
     background: #d8d8d3; }
-main #gform_wrapper_2 div.validation_error {
+main .gform_contact_wrapper div.validation_error {
   font-weight: normal;
   font-weight: normal;
   font-size: 18px;
   font-style: italic;
   border: none;
   padding: 0; }
-main #gform_wrapper_2 li.gfield.gfield_error,
-main #gform_wrapper_2
+main .gform_contact_wrapper li.gfield.gfield_error,
+main .gform_contact_wrapper
 li.gfield.gfield_error.gfield_contains_required.gfield_creditcard_warning {
   border: solid 1px;
   border-color: #c89797; }
-main #gform_wrapper_2 .validation_message {
+main .gform_contact_wrapper .validation_message {
   font-weight: normal;
   margin-bottom: 1rem;
   text-align: center; }

@@ -333,8 +333,8 @@ section.section-artists-headshot:not(.bleed) {
 main {
 //	min-height: 50vh;
 	
-	#gform_wrapper_2,
-	.section-text #gform_wrapper_2,
+	.gform_contact_wrapper,
+	.section-text .gform_contact_wrapper,
 	.pre-form {
 		max-width: 500px;
 		margin-left: auto;
@@ -506,7 +506,7 @@ main {
 		// 	}
 		// }
 	}
-	#gform_wrapper_2 .gform_footer {
+	.gform_contact_wrapper .gform_footer {
 		padding: 1.5rem 0 0;
 		margin: 0;
 		br {
@@ -516,12 +516,12 @@ main {
 	.gform_legacy_markup_wrapper ul.gform_fields li.gfield {
 		padding-right: 0;
 	}
-	#gform_wrapper_2 input.button,
-	#gform_wrapper_2 input[type="submit"],
-	#gform_wrapper_2 .gform_footer input.button,
-	#gform_wrapper_2 .gform_footer input[type="submit"],
-	#gform_wrapper_2 .gform_page_footer input.button,
-	#gform_wrapper_2 .gform_page_footer input[type="submit"] {
+	.gform_contact_wrapper input.button,
+	.gform_contact_wrapper input[type="submit"],
+	.gform_contact_wrapper .gform_footer input.button,
+	.gform_contact_wrapper .gform_footer input[type="submit"],
+	.gform_contact_wrapper .gform_page_footer input.button,
+	.gform_contact_wrapper .gform_page_footer input[type="submit"] {
 		@include title;
 		cursor: pointer;
 		background: var(--bgSubdue);
@@ -539,20 +539,20 @@ main {
 			background: #d8d8d3;
 		}
 	}
-	#gform_wrapper_2 div.validation_error {
+	.gform_contact_wrapper div.validation_error {
 		font-weight: normal;
 		@include typeBase;
 		font-style: italic;
 		border: none;
 		padding: 0;
 	}
-	#gform_wrapper_2 li.gfield.gfield_error,
-	#gform_wrapper_2
+	.gform_contact_wrapper li.gfield.gfield_error,
+	.gform_contact_wrapper
 		li.gfield.gfield_error.gfield_contains_required.gfield_creditcard_warning {
 		border: solid 1px;
 		border-color: #c89797;
 	}
-	#gform_wrapper_2 .validation_message {
+	.gform_contact_wrapper .validation_message {
 		font-weight: normal;
 		margin-bottom: 1rem;
 		text-align: center;
