@@ -261,6 +261,8 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	protected $billing_portal_handler;
 
+	protected $_enable_theme_layer = true;
+
 	/**
 	 * Get an instance of this class.
 	 *
@@ -414,7 +416,7 @@ class GFStripe extends GFPaymentAddOn {
 		$styles = array(
 			array(
 				'handle'    => 'gforms_stripe_frontend',
-				'src'       => $this->get_base_url() . "/css/frontend{$min}.css",
+				'src'       => $this->get_base_url() . "/assets/css/dist/theme{$min}.css",
 				'version'   => $this->_version,
 				'in_footer' => false,
 				'enqueue'   => array(
@@ -423,7 +425,7 @@ class GFStripe extends GFPaymentAddOn {
 			),
 			array(
 				'handle'  => 'gform_stripe_pluginsettings',
-				'src'     => $this->get_base_url() . "/css/plugin_settings{$min}.css",
+				'src'     => $this->get_base_url() . "/assets/css/dist/admin{$min}.css",
 				'version' => $this->_version,
 				'deps'    => array( 'thickbox' ),
 				'enqueue' => array(
@@ -439,6 +441,97 @@ class GFStripe extends GFPaymentAddOn {
 
 	}
 
+	/**
+	 * An array of styles to enqueue.
+	 *
+	 * @since 4.3
+	 *
+	 * @param $form
+	 * @param $ajax
+	 * @param $settings
+	 * @param $block_settings
+	 *
+	 * @return array|\string[][]
+	 */
+	public function theme_layer_styles( $form, $ajax, $settings, $block_settings = array() ) {
+		$theme_slug = \GFFormDisplay::get_form_theme_slug( $form );
+
+		if ( $theme_slug !== 'orbital' ) {
+			return array();
+		}
+
+		$base_url = plugins_url( '', __FILE__ );
+
+		return array(
+			'foundation' => array(
+				array( 'gravity_forms_stripe_theme_foundation', "$base_url/assets/css/dist/theme-foundation.css" ),
+			),
+			'framework' => array(
+				array( 'gravity_forms_stripe_theme_framework', "$base_url/assets/css/dist/theme-framework.css" ),
+			),
+		);
+	}
+
+	/**
+	 * Styles to pass to the Stripe JS widget as part of its CSS properties object.
+	 *
+	 * @since 4.3
+	 *
+	 * @param $form_id
+	 * @param $settings
+	 * @param $block_settings
+	 *
+	 * @return array
+	 */
+	public function theme_layer_third_party_styles( $form_id, $settings, $block_settings ) {
+		$default_settings = \GFForms::get_service_container()->get( \Gravity_Forms\Gravity_Forms\Form_Display\GF_Form_Display_Service_Provider::BLOCK_STYLES_DEFAULTS );
+		$applied_settings = wp_parse_args( $block_settings, $default_settings );
+
+		if ( $applied_settings['theme'] !== 'orbital' ) {
+			return array();
+		}
+
+		return array(
+			'base'    => array(
+				'backgroundColor' => 'transparent',
+				'color'           => '--gform-theme-control-color',
+				'fontFamily'      => '--gform-theme-control-font-family',
+				'fontSize'        => '--gform-theme-control-font-size',
+				'fontSmoothing'   => '--gform-theme-control-font-smoothing',
+				'fontStyle'       => '--gform-theme-control-font-style',
+				'fontWeight'      => '--gform-theme-control-font-weight',
+				'iconColor'       => '--gform-theme-control-icon-color',
+				'letterSpacing'   => '--gform-theme-control-letter-spacing',
+				':hover'          => array(
+					'backgroundColor' => 'transparent',
+					'color'           => '--gform-theme-control-color-hover',
+					'iconColor'       => '--gform-theme-control-icon-color-hover',
+				),
+				':focus'          => array(
+					'backgroundColor' => 'transparent',
+					'color'           => '--gform-theme-control-color-focus',
+					'iconColor'       => '--gform-theme-control-icon-color-focus',
+				),
+				':disabled'       => array(
+					'backgroundColor' => 'transparent',
+					'color'           => '--gform-theme-control-color-disabled',
+					'iconColor'       => '--gform-theme-control-icon-color-disabled',
+				),
+				'::placeholder'   => array(
+					'color'         => '--gform-theme-control-placeholder-color',
+					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+					'fontSize'      => '--gform-theme-control-placeholder-font-size',
+					'fontStyle'     => '--gform-theme-control-placeholder-font-style',
+					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+				),
+			),
+			'invalid' => array(
+				'color'     => '--gform-theme-control-color',
+				'iconColor' => '--gform-theme-color-danger',
+			),
+		);
+	}
 
 	// # PLUGIN SETTINGS -----------------------------------------------------------------------------------------------
 
@@ -2384,6 +2477,7 @@ class GFStripe extends GFPaymentAddOn {
 		$args = array(
 			'apiKey'         => $this->get_publishable_api_key(),
 			'formId'         => $form['id'],
+			'pageInstance'   => isset( $form['page_instance'] ) ? $form['page_instance'] : 0,
 			'isAjax'         => $is_ajax,
 			'stripe_payment' => ( $this->has_stripe_card_field( $form ) ) ? 'elements' : 'stripe.js',
 		);
@@ -2410,8 +2504,32 @@ class GFStripe extends GFPaymentAddOn {
 		$feeds            = $this->get_feeds_by_slug( $this->_slug, $form['id'] );
 		if ( $this->has_stripe_card_field( $form ) ) {
 			// Add options when creating Stripe Elements.
+
+			/**
+			 * This filter allows classes to be used with Stripe Elements
+             * to control the look of the Credit Card field.
+			 *
+			 * @since 2.6
+			 *
+			 * @link https://stripe.com/docs/js/elements_object/create#elements_create-options-classes
+			 *
+			 * @param array The list of classes to be passed along to the Stripe element.
+			 */
 			$args['cardClasses'] = apply_filters( 'gform_stripe_elements_classes', array(), $form['id'] );
+
+			/**
+			 * This filter allows styles to be used with Stripe Elements
+             * to control the look of the Credit Card field.
+			 * NOTE: this filter does not apply to forms using the Orbital form theme (theme framework)
+			 *
+			 * @since 2.6
+			 *
+			 * @link https://stripe.com/docs/js/elements_object/create_element?type=card#elements_create-options-style
+			 *
+			 * @param array The list of styles to be passed along to the Stripe element.
+			 */
 			$args['cardStyle']   = apply_filters( 'gform_stripe_elements_style', array(), $form['id'] );
+
 			foreach ( $feeds as $feed ) {
 				if ( rgar( $feed, 'is_active' ) === '0' ) {
 					continue;
@@ -3127,6 +3245,9 @@ class GFStripe extends GFPaymentAddOn {
 		$payment_amount = rgar( $submission_data, 'payment_amount' );
 
 		if ( ! $is_subscription ) {
+			$session_data['mode']              = 'payment';
+			$session_data['customer_creation'] = 'always';
+
 			// add discounts from the GF Coupon add-on.
 			// Stripe Checkout cannot display our coupon as a negative value,
 			// so we couldn't display the line items when an order contains coupons.
@@ -3153,11 +3274,15 @@ class GFStripe extends GFPaymentAddOn {
 				$line_items_name = apply_filters( 'gform_stripe_discounted_line_items_name', esc_html__( 'Payment with Discounts', 'gravityformsstripe' ), $feed, $submission_data, $form, $entry );
 
 				$session_data['line_items'][] = array(
-					'amount'      => $this->get_amount_export( $payment_amount, rgar( $entry, 'currency' ) ),
-					'currency'    => $entry['currency'],
-					'name'        => $line_items_name,
-					'quantity'    => 1,
-					'description' => $this->get_payment_description( $entry, $submission_data, $feed ),
+					'quantity'   => 1,
+					'price_data' => array(
+						'unit_amount'  => $this->get_amount_export( $payment_amount, rgar( $entry, 'currency' ) ),
+						'currency'     => $entry['currency'],
+						'product_data' => array(
+							'name'        => $line_items_name,
+							'description' => $this->get_payment_description( $entry, $submission_data, $feed ),
+						),
+					),
 				);
 			} else {
 				foreach ( $submission_data['line_items'] as $line_item ) {
@@ -3166,14 +3291,18 @@ class GFStripe extends GFPaymentAddOn {
 					// Stripe Checkout doesn't allow 0 or negative price.
 					if ( $unit_price > 0 ) {
 						$data = array(
-							'amount'   => $this->get_amount_export( $unit_price, rgar( $entry, 'currency' ) ),
-							'currency' => $entry['currency'],
-							'name'     => $line_item['name'],
-							'quantity' => $line_item['quantity'],
+							'quantity'   => $line_item['quantity'],
+							'price_data' => array(
+								'unit_amount'  => $this->get_amount_export( $unit_price, rgar( $entry, 'currency' ) ),
+								'currency'     => $entry['currency'],
+								'product_data' => array(
+									'name' => $line_item['name'],
+								),
+							),
 						);
 
 						if ( ! empty( $line_item['description'] ) ) {
-							$data['description'] = $line_item['description'];
+							$data['price_data']['product_data']['description'] = $line_item['description'];
 						}
 
 						$session_data['line_items'][] = $data;
@@ -3199,6 +3328,7 @@ class GFStripe extends GFPaymentAddOn {
 				$session_data['customer_email'] = $this->get_field_value( $form, $entry, $customer_email_field );
 			}
 		} else {
+			$session_data['mode'] = 'subscription';
 			// Prepare payment amount and trial period data.
 			$single_payment_amount = $submission_data['setup_fee'];
 			$trial_period_days     = rgars( $feed, 'meta/trialPeriod' ) ? $submission_data['trial'] : 0;
@@ -3208,10 +3338,14 @@ class GFStripe extends GFPaymentAddOn {
 				// Create invoice line items for setup fee.
 				$line_items                 = array(
 					array(
-						'amount'   => $this->get_amount_export( $single_payment_amount, $currency ),
-						'currency' => $currency,
-						'name'     => esc_html__( 'Setup Fee', 'gravityformsstripe' ),
-						'quantity' => 1,
+						'quantity'   => 1,
+						'price_data' => array(
+							'unit_amount'  => $this->get_amount_export( $single_payment_amount, $currency ),
+							'currency'     => $currency,
+							'product_data' => array(
+								'name' => esc_html__( 'Setup Fee', 'gravityformsstripe' ),
+							),
+						),
 					),
 				);
 				$session_data['line_items'] = $line_items;
@@ -3231,10 +3365,11 @@ class GFStripe extends GFPaymentAddOn {
 			}
 
 			$items = array(
-				'plan' => $plan->id,
+				'quantity' => 1,
+				'price'    => $plan->id,
 			);
 
-			$session_data['subscription_data']['items'][] = $items;
+			$session_data['line_items'][] = $items;
 			if ( $trial_period_days ) {
 				$session_data['subscription_data']['trial_period_days'] = $trial_period_days;
 			}

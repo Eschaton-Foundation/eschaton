@@ -4,6 +4,10 @@
 
 window.GFStripe = null;
 
+gform.extensions = gform.extensions || {};
+gform.extensions.styles = gform.extensions.styles || {};
+gform.extensions.styles.gravityformsstripe = gform.extensions.styles.gravityformsstripe || {};
+
 (function ($) {
 
 	GFStripe = function (args) {
@@ -22,6 +26,106 @@ window.GFStripe = null;
 		this.stripeResponse = null;
 
 		this.hasPaymentIntent = false;
+
+		this.cardStyle = this.cardStyle || {};
+
+		gform.extensions.styles.gravityformsstripe[ this.formId ] = gform.extensions.styles.gravityformsstripe[ this.formId ] || {};
+
+		const componentStyles = gform.extensions.styles.gravityformsstripe[ this.formId ][ this.pageInstance ] || {};
+
+		this.setComponentStyleValue = function( key, value, themeFrameworkStyles, manualElement ) {
+			let resolvedValue = '';
+
+			// If the value provided is a custom property let's begin
+			if ( value.indexOf( '--' ) === 0 ) {
+				const computedValue = themeFrameworkStyles.getPropertyValue( value );
+
+				// If we have a computed end value from the custom property, let's use that
+				if ( computedValue ) {
+					resolvedValue = computedValue;
+				}
+				// Otherwise, let's use a provided element or the form wrapper
+				// along with the key to nab the computed end value for the CSS property
+				else {
+					const selector = manualElement ? getComputedStyle( manualElement ) : themeFrameworkStyles;
+					const resolvedKey = key === 'fontSmoothing' ? '-webkit-font-smoothing' : key;
+					resolvedValue = selector.getPropertyValue( resolvedKey.replace( /([a-z])([A-Z])/g, '$1-$2' ).toLowerCase() );
+				}
+			}
+			// Otherwise let's treat the provided value as the actual CSS value wanted
+			else {
+				resolvedValue = value;
+			}
+
+			return resolvedValue.trim();
+		};
+
+		this.setComponentStyles = function( obj, objKey, parentKey ) {
+			// If our object doesn't have any styles specified, let's bail here
+			if ( Object.keys( obj ).length === 0 ) {
+				return;
+			}
+
+			// Grab the computed styles for the form, which the global CSS API and theme framework are scoped to
+			const form = document.getElementById( 'gform_' + this.formId );
+			const themeFrameworkStyles = getComputedStyle( form );
+
+			// Grab the first form control in the form for fallback CSS property value computation
+			const firstFormControl = form.querySelector( '.gfield input' )
+
+			// Note, this currently only supports three levels deep of object nesting.
+			Object.keys( obj ).forEach( ( key ) => {
+				// Handling of keys that are objects with additional key/value pairs
+				if ( typeof obj[ key ] === 'object' ) {
+
+					// Create object for top level key
+					if ( ! parentKey ) {
+						this.cardStyle[ key ] = {};
+					}
+
+					// Create object for second level key
+					if ( parentKey ) {
+						this.cardStyle[ parentKey ][ key ] = {};
+					}
+
+					const objPath = parentKey ? parentKey : key;
+
+					// Recursively pass each key's object through our method for continued processing
+					this.setComponentStyles( obj[ key ], key, objPath );
+
+					return;
+				}
+
+				// Handling of keys that are not objects and need their value to be set
+				if ( typeof obj[ key ] !== 'object' ) {
+					let value = '';
+					// Handling of nested keys
+					if ( parentKey ) {
+						if ( objKey && objKey !== parentKey ) {
+							// Setting value for a key three levels into the object
+							value = this.setComponentStyleValue( key, componentStyles[ parentKey ][ objKey ][ key ], themeFrameworkStyles, firstFormControl );
+							if ( value ) {
+								this.cardStyle[ parentKey ][ objKey ][ key ] = value;
+							}
+						} else {
+							// Setting value for a key two levels into the object
+							value = this.setComponentStyleValue( key, componentStyles[ parentKey ][ key ], themeFrameworkStyles, firstFormControl );
+							if ( value ) {
+								this.cardStyle[ parentKey ][ key ] = value;
+							}
+						}
+					} else {
+						// Setting value for a key one level into the object
+						value = this.setComponentStyleValue( key, componentStyles[ key ], themeFrameworkStyles, firstFormControl );
+						if ( value ) {
+							this.cardStyle[ key ] = value;
+						}
+					}
+				}
+			} );
+		};
+
+		this.setComponentStyles( componentStyles );
 
 		this.init = function () {
 
@@ -120,7 +224,7 @@ window.GFStripe = null;
 						}
 
 						if (!GFStripeObj.GFCCField.next('.validation_message').length) {
-							GFStripeObj.GFCCField.after('<div class="gfield_description validation_message">' + gforms_stripe_frontend_strings.no_active_frontend_feed + '</div>');
+							GFStripeObj.GFCCField.after('<div class="gfield_description validation_message gfield_validation_message">' + gforms_stripe_frontend_strings.no_active_frontend_feed + '</div>');
 						}
 
 						wp.a11y.speak( gforms_stripe_frontend_strings.no_active_frontend_feed );
@@ -483,7 +587,7 @@ window.GFStripe = null;
 
 		this.displayStripeCardError = function (event) {
 			if (event.error && !this.GFCCField.next('.validation_message').length) {
-				this.GFCCField.after('<div class="gfield_description validation_message"></div>');
+				this.GFCCField.after('<div class="gfield_description validation_message gfield_validation_message"></div>');
 			}
 
 			var cardErrors = this.GFCCField.next('.validation_message');

@@ -1,3 +1,9 @@
+### 4.3 | 2023-01-19
+- Added support for changes in the Stripe API.
+- Added support for the new theme framework.
+- Fixed a fatal error which can occur with the Stripe API Client if the add-on isn't connected to a Stripe account.
+
+
 ### 4.2 | 2022-02-03
 - Added security enhancements.
 - Added the ability to refund payments from the entry detail page.

@@ -246,7 +246,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		$form_sub_label_placement  = rgar( $form, 'subLabelPlacement' );
 		$field_sub_label_placement = $this->subLabelPlacement;
 		$is_sub_label_above        = $field_sub_label_placement === 'above' || ( empty( $field_sub_label_placement ) && $form_sub_label_placement === 'above' );
-		$sub_label_class_attribute = $field_sub_label_placement === 'hidden_label' ? " class='hidden_sub_label screen-reader-text'" : '';
+		$sub_label_class_attribute = $field_sub_label_placement === 'hidden_label' ? " class='hidden_sub_label screen-reader-text'" : " class='gform-field-label gform-field-label--type-sub'";
 
 		$card_details_input     = GFFormsModel::get_input( $this, $this->id . '.1' );
 		$card_details_sub_label = rgar( $card_details_input, 'customLabel' ) !== '' ? $card_details_input['customLabel'] : esc_html__( 'Card Details', 'gravityformsstripe' );
@@ -301,10 +301,10 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			$hide_cardholder_name = true;
 		}
 
-		$cc_input = "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard ginput_stripe_creditcard' id='{$field_id}'>";
+		$cc_input = "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard ginput_stripe_creditcard gform-grid-row' id='{$field_id}'>";
 
 		if ( $is_sub_label_above ) {
-			$cc_input .= "<div class='ginput_full' id='{$field_id}_1_container'>";
+			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container'>";
 
 			if ( ! $hide_cardholder_name ) {
 				$cc_input .= "<label for='{$field_id}_1' id='{$field_id}_1_label'{$sub_label_class_attribute}>" . $card_details_sub_label . '</label>';
@@ -316,15 +316,15 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			$cc_input .= '</div><!-- .ginput_full -->';
 
 			if ( ! $hide_cardholder_name ) {
-				$cc_input .= "<div class='ginput_full' id='{$field_id}_5_container'>
+				$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_5_container'>
 					<label for='{$field_id}_5' id='{$field_id}_5_label'{$sub_label_class_attribute}>" . $cardholder_name_sub_label . "</label>
 					<input type='text' name='input_{$id}.5' id='{$field_id}_5' value='{$cardholder_name}'{$cardholder_name_placeholder}>
 				</div>";
 			}
 		} else {
-			$cc_input .= "<div class='ginput_full' id='{$field_id}_1_container'>";
+			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container'>";
 
-			$cc_input .= "<div id='{$field_id}_1'></div>";
+			$cc_input .= "<div id='{$field_id}_1' class='gform-theme-field-control'></div>";
 			$cc_input .= $card_error;
 
 			if ( ! $hide_cardholder_name ) {
@@ -334,7 +334,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			$cc_input .= '</div><!-- .ginput_full -->';
 
 			if ( ! $hide_cardholder_name ) {
-				$cc_input .= "<div class='ginput_full' id='{$field_id}_5_container'>
+				$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_5_container'>
 					<input type='text' name='input_{$id}.5' id='{$field_id}_5' value='{$cardholder_name}'{$cardholder_name_placeholder}>
 					<label for='{$field_id}_5' id='{$field_id}_5_label'{$sub_label_class_attribute}>" . $cardholder_name_sub_label . '</label>
 				</div>';
@@ -491,7 +491,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return string
 	 */
 	public function get_field_label_class() {
-		return 'gfield_label gfield_label_before_complex';
+		return 'gfield_label gfield_label_before_complex gform-field-label';
 	}
 
 	/**
@@ -615,7 +615,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			return sprintf( $message, '<div class="gform_stripe_card_error">', '</div>', '<a href="' . esc_attr( $url ) . '" target="_blank">', '</a>' );
 		}
 
-		return sprintf( $message, '<div class="gfield_description validation_message">', '</div>', '', '' );
+		return sprintf( $message, '<div class="gfield_description validation_message gfield_validation_message">', '</div>', '', '' );
 	}
 
 	/**
