@@ -39,19 +39,14 @@ class PLL_Links_Domain extends PLL_Links_Abstract_Domain {
 	 * Switches the primary domain to a secondary domain in the url.
 	 *
 	 * @since 1.2
-	 * @since 3.4 Accepts now a language slug.
 	 *
-	 * @param string                    $url      The url to modify.
-	 * @param PLL_Language|string|false $language Language object or slug.
+	 * @param string             $url  The url to modify.
+	 * @param PLL_Language|false $lang The language object.
 	 * @return string The modified url.
 	 */
-	public function add_language_to_link( $url, $language ) {
-		if ( $language instanceof PLL_Language ) {
-			$language = $language->slug;
-		}
-
-		if ( ! empty( $language ) && ! empty( $this->hosts[ $language ] ) ) {
-			$url = preg_replace( '#://(' . wp_parse_url( $this->home, PHP_URL_HOST ) . ')($|/.*)#', '://' . $this->hosts[ $language ] . '$2', $url );
+	public function add_language_to_link( $url, $lang ) {
+		if ( ! empty( $lang ) && ! empty( $this->hosts[ $lang->slug ] ) ) {
+			$url = preg_replace( '#://(' . wp_parse_url( $this->home, PHP_URL_HOST ) . ')($|/.*)#', '://' . $this->hosts[ $lang->slug ] . '$2', $url );
 		}
 		return $url;
 	}
@@ -75,17 +70,12 @@ class PLL_Links_Domain extends PLL_Links_Abstract_Domain {
 	 * Returns the home url in a given language.
 	 *
 	 * @since 1.3.1
-	 * @since 3.4 Accepts now a language slug.
 	 *
-	 * @param PLL_Language|string $language Language object or slug.
+	 * @param PLL_Language $lang The language object.
 	 * @return string
 	 */
-	public function home_url( $language ) {
-		if ( $language instanceof PLL_Language ) {
-			$language = $language->slug;
-		}
-
-		return trailingslashit( empty( $this->options['domains'][ $language ] ) ? $this->home : $this->options['domains'][ $language ] );
+	public function home_url( $lang ) {
+		return trailingslashit( empty( $this->options['domains'][ $lang->slug ] ) ? $this->home : $this->options['domains'][ $lang->slug ] );
 	}
 
 	/**

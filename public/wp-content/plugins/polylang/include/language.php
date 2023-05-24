@@ -8,56 +8,27 @@
  * Manipulating only one object per language instead of two terms should make things easier.
  *
  * @since 1.2
- * @immutable
- *
- * @phpstan-type LanguagePropData array{
- *     term_id: positive-int,
- *     term_taxonomy_id: positive-int,
- *     count: int<0, max>
- * }
- * @phpstan-type LanguageData array{
- *     term_props: array{
- *         language: LanguagePropData,
- *     }&array<non-empty-string, LanguagePropData>,
- *     name: non-empty-string,
- *     slug: non-empty-string,
- *     locale: non-empty-string,
- *     w3c: non-empty-string,
- *     flag_code: non-empty-string,
- *     term_group: int,
- *     is_rtl: int<0, 1>,
- *     facebook?: string,
- *     home_url: non-empty-string,
- *     search_url: non-empty-string,
- *     host: non-empty-string,
- *     flag_url: non-empty-string,
- *     flag: non-empty-string,
- *     custom_flag_url?: string,
- *     custom_flag?: string,
- *     page_on_front: int<0, max>,
- *     page_for_posts: int<0, max>,
- *     active: bool,
- *     fallbacks?: array<non-empty-string>,
- *     is_default: bool
- * }
  */
-class PLL_Language extends PLL_Language_Deprecated {
+#[AllowDynamicProperties]
+class PLL_Language {
+	/**
+	 * Id of the term in 'language' taxonomy.
+	 *
+	 * @var int
+	 */
+	public $term_id;
 
 	/**
 	 * Language name. Ex: English.
 	 *
 	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
 	 */
 	public $name;
 
 	/**
-	 * Language code used in URL. Ex: en.
+	 * Language code used in url. Ex: en.
 	 *
 	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
 	 */
 	public $slug;
 
@@ -69,22 +40,44 @@ class PLL_Language extends PLL_Language_Deprecated {
 	public $term_group;
 
 	/**
-	 * ID of the term in 'language' taxonomy.
-	 * Duplicated from `$this->term_props['language']['term_id'],
-	 * but kept to facilitate the use of it.
+	 * Term taxonomy id in 'language' taxonomy.
 	 *
 	 * @var int
-	 *
-	 * @phpstan-var int<1, max>
 	 */
-	public $term_id;
+	public $term_taxonomy_id;
+
+	/**
+	 * Number of posts and pages in that language.
+	 *
+	 * @var int
+	 */
+	public $count;
+
+	/**
+	 * Id of the term in 'term_language' taxonomy.
+	 *
+	 * @var int
+	 */
+	public $tl_term_id;
+
+	/**
+	 * Term taxonomy id in 'term_language' taxonomy.
+	 *
+	 * @var int
+	 */
+	public $tl_term_taxonomy_id;
+
+	/**
+	 * Number of terms in that language.
+	 *
+	 * @var int
+	 */
+	public $tl_count;
 
 	/**
 	 * WordPress language locale. Ex: en_US.
 	 *
 	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
 	 */
 	public $locale;
 
@@ -92,8 +85,6 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 * 1 if the language is rtl, 0 otherwise.
 	 *
 	 * @var int
-	 *
-	 * @phpstan-var int<0, 1>
 	 */
 	public $is_rtl;
 
@@ -101,257 +92,138 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 * W3C locale.
 	 *
 	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
 	 */
 	public $w3c;
 
 	/**
 	 * Facebook locale.
 	 *
-	 * @var string
+	 * @var string|null
 	 */
-	public $facebook = '';
+	public $facebook;
 
 	/**
-	 * Home URL in this language.
+	 * Home url in this language.
 	 *
-	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
+	 * @var string|null
 	 */
-	private $home_url;
+	public $home_url;
 
 	/**
-	 * Home URL to use in search forms.
+	 * Home url to use in search forms.
 	 *
-	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
+	 * @var string|null
 	 */
-	private $search_url;
+	public $search_url;
 
 	/**
 	 * Host corresponding to this language.
 	 *
-	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
+	 * @var string|null
 	 */
 	public $host;
 
 	/**
-	 * ID of the page on front in this language (set from pll_additional_language_data filter).
+	 * Id of the post storing strings translations.
 	 *
 	 * @var int
-	 *
-	 * @phpstan-var int<0, max>
 	 */
-	public $page_on_front = 0;
+	public $mo_id;
 
 	/**
-	 * ID of the page for posts in this language (set from pll_additional_language_data filter).
+	 * Id of the page on front in this language ( set from pll_languages_list filter ).
 	 *
-	 * @var int
-	 *
-	 * @phpstan-var int<0, max>
+	 * @var int|null
 	 */
-	public $page_for_posts = 0;
+	public $page_on_front;
+
+	/**
+	 * Id of the page for posts in this language ( set from pll_languages_list filter ).
+	 *
+	 * @var int|null
+	 */
+	public $page_for_posts;
 
 	/**
 	 * Code of the flag.
 	 *
 	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
 	 */
 	public $flag_code;
 
 	/**
-	 * URL of the flag. Always set to the main domain.
+	 * Url of the flag.
 	 *
-	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
+	 * @var string|null
 	 */
 	public $flag_url;
 
 	/**
-	 * HTML markup of the flag.
+	 * Html markup of the flag.
 	 *
-	 * @var string
-	 *
-	 * @phpstan-var non-empty-string
+	 * @var string|null
 	 */
 	public $flag;
 
 	/**
-	 * URL of the custom flag if it exists. Always set to the main domain.
+	 * Url of the custom flag if it exists.
 	 *
-	 * @var string
+	 * @var string|null
 	 */
-	public $custom_flag_url = '';
+	public $custom_flag_url;
 
 	/**
-	 * HTML markup of the custom flag if it exists.
+	 * Html markup of the custom flag if it exists.
 	 *
-	 * @var string
+	 * @var string|null
 	 */
-	public $custom_flag = '';
+	public $custom_flag;
 
 	/**
-	 * Whether or not the language is active. Default `true`.
-	 *
-	 * @var bool
-	 */
-	public $active = true;
-
-	/**
-	 * List of WordPress language locales. Ex: array( 'en_GB' ).
-	 *
-	 * @var string[]
-	 *
-	 * @phpstan-var list<non-empty-string>
-	 */
-	public $fallbacks = array();
-
-	/**
-	 * Whether the language is the default one.
-	 *
-	 * @var bool
-	 */
-	public $is_default;
-
-	/**
-	 * Stores language term properties (like term IDs and counts) for each language taxonomy (`language`,
-	 * `term_language`, etc).
-	 * This stores the values of the properties `$term_id` + `$term_taxonomy_id` + `$count` (`language`), `$tl_term_id`
-	 * + `$tl_term_taxonomy_id` + `$tl_count` (`term_language`), and the `term_id` + `term_taxonomy_id` + `count` for
-	 * other language taxonomies.
-	 *
-	 * @var array[] Array keys are language term names.
-	 *
-	 * @exemple array(
-	 *     'language'       => array(
-	 *         'term_id'          => 7,
-	 *         'term_taxonomy_id' => 8,
-	 *         'count'            => 11,
-	 *     ),
-	 *     'term_language' => array(
-	 *         'term_id'          => 11,
-	 *         'term_taxonomy_id' => 12,
-	 *         'count'            => 6,
-	 *     ),
-	 *     'foo_language'  => array(
-	 *         'term_id'          => 33,
-	 *         'term_taxonomy_id' => 34,
-	 *         'count'            => 0,
-	 *     ),
-	 * )
-	 *
-	 * @phpstan-var array{
-	 *         language: LanguagePropData,
-	 *     }
-	 *     &array<non-empty-string, LanguagePropData>
-	 */
-	protected $term_props;
-
-	/**
-	 * Constructor: builds a language object given the corresponding data.
+	 * Constructor: builds a language object given its two corresponding terms in 'language' and 'term_language' taxonomies.
 	 *
 	 * @since 1.2
-	 * @since 3.4 Only accepts one argument.
 	 *
-	 * @param array $language_data {
-	 *     Language object properties stored as an array.
-	 *
-	 *     @type array[]  $term_props      An array of language term properties. Array keys are language taxonomy names
-	 *                                     (`language` and `term_language` are mandatory), array values are arrays of
-	 *                                     language term properties (`term_id`, `term_taxonomy_id`, and `count`).
-	 *     @type string   $name            Language name. Ex: English.
-	 *     @type string   $slug            Language code used in URL. Ex: en.
-	 *     @type string   $locale          WordPress language locale. Ex: en_US.
-	 *     @type string   $w3c             W3C locale.
-	 *     @type string   $flag_code       Code of the flag.
-	 *     @type int      $term_group      Order of the language when displayed in a list of languages.
-	 *     @type int      $is_rtl          `1` if the language is rtl, `0` otherwise.
-	 *     @type string   $facebook        Optional. Facebook locale.
-	 *     @type string   $home_url        Home URL in this language.
-	 *     @type string   $search_url      Home URL to use in search forms.
-	 *     @type string   $host            Host corresponding to this language.
-	 *     @type string   $flag_url        URL of the flag.
-	 *     @type string   $flag            HTML markup of the flag.
-	 *     @type string   $custom_flag_url Optional. URL of the custom flag if it exists.
-	 *     @type string   $custom_flag     Optional. HTML markup of the custom flag if it exists.
-	 *     @type int      $page_on_front   Optional. ID of the page on front in this language.
-	 *     @type int      $page_for_posts  Optional. ID of the page for posts in this language.
-	 *     @type bool     $active          Whether or not the language is active. Default `true`.
-	 *     @type string[] $fallbacks       List of WordPress language locales. Ex: array( 'en_GB' ).
-	 *     @type bool     $is_default      Whether or not the language is the default one.
-	 * }
-	 *
-	 * @phpstan-param LanguageData $language_data
+	 * @param WP_Term|array $language      Term in 'language' taxonomy or language object properties stored as an array.
+	 * @param WP_Term       $term_language Corresponding 'term_language' term.
 	 */
-	public function __construct( array $language_data ) {
-		foreach ( $language_data as $prop => $value ) {
-			$this->$prop = $value;
-		}
+	public function __construct( $language, $term_language = null ) {
+		if ( empty( $term_language ) ) {
+			// Build the object from all properties stored as an array.
+			foreach ( $language as $prop => $value ) {
+				$this->$prop = $value;
+			}
+		} else {
+			// Build the object from taxonomy terms.
+			$this->term_id = (int) $language->term_id;
+			$this->name = $language->name;
+			$this->slug = $language->slug;
+			$this->term_group = (int) $language->term_group;
+			$this->term_taxonomy_id = (int) $language->term_taxonomy_id;
+			$this->count = (int) $language->count;
 
-		$this->term_id = $this->term_props['language']['term_id'];
+			$this->tl_term_id = (int) $term_language->term_id;
+			$this->tl_term_taxonomy_id = (int) $term_language->term_taxonomy_id;
+			$this->tl_count = (int) $term_language->count;
+
+			// The description field can contain any property.
+			$description = maybe_unserialize( $language->description );
+			foreach ( $description as $prop => $value ) {
+				'rtl' == $prop ? $this->is_rtl = $value : $this->$prop = $value;
+			}
+
+			$this->mo_id = PLL_MO::get_id( $this );
+
+			$languages = include POLYLANG_DIR . '/settings/languages.php';
+			$this->w3c = isset( $languages[ $this->locale ]['w3c'] ) ? $languages[ $this->locale ]['w3c'] : str_replace( '_', '-', $this->locale );
+			if ( isset( $languages[ $this->locale ]['facebook'] ) ) {
+				$this->facebook = $languages[ $this->locale ]['facebook'];
+			}
+		}
 	}
 
 	/**
-	 * Returns a language term property value (term ID, term taxonomy ID, or count).
-	 *
-	 * @since 3.4
-	 *
-	 * @param string $taxonomy_name Name of the taxonomy.
-	 * @param string $prop_name     Name of the property: 'term_taxonomy_id', 'term_id', 'count'.
-	 * @return int
-	 *
-	 * @phpstan-param non-empty-string $taxonomy_name
-	 * @phpstan-param 'term_taxonomy_id'|'term_id'|'count' $prop_name
-	 * @phpstan-return int<0, max>
-	 */
-	public function get_tax_prop( $taxonomy_name, $prop_name ) {
-		return isset( $this->term_props[ $taxonomy_name ][ $prop_name ] ) ? $this->term_props[ $taxonomy_name ][ $prop_name ] : 0;
-	}
-
-	/**
-	 * Returns the language term props for all content types.
-	 *
-	 * @since 3.4
-	 *
-	 * @param string $property Name of the field to return. An empty string to return them all.
-	 * @return (int[]|int)[] Array keys are taxonomy names, array values depend of `$property`.
-	 *
-	 * @phpstan-param 'term_taxonomy_id'|'term_id'|'count'|'' $property
-	 * @phpstan-return array<non-empty-string, (
-	 *     $property is non-empty-string ?
-	 *     (
-	 *         $property is 'count' ?
-	 *         int<0, max> :
-	 *         positive-int
-	 *     ) :
-	 *     LanguagePropData
-	 * )>
-	 */
-	public function get_tax_props( $property = '' ) {
-		if ( empty( $property ) ) {
-			return $this->term_props;
-		}
-
-		$term_props = array();
-
-		foreach ( $this->term_props as $taxonomy_name => $props ) {
-			$term_props[ $taxonomy_name ] = $props[ $property ];
-		}
-
-		return $term_props;
-	}
-
-	/**
-	 * Returns the flag informations.
+	 * Get the flag informations:
 	 *
 	 * @since 2.6
 	 *
@@ -364,13 +236,6 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 *   @type int    $width  Optional, flag width in pixels.
 	 *   @type int    $height Optional, flag height in pixels.
 	 * }
-	 *
-	 * @phpstan-return array{
-	 *     url: string,
-	 *     src: string,
-	 *     width?: positive-int,
-	 *     height?: positive-int
-	 * }
 	 */
 	public static function get_flag_informations( $code ) {
 		$flag = array( 'url' => '' );
@@ -381,10 +246,7 @@ class PLL_Language extends PLL_Language_Deprecated {
 
 			// If base64 encoded flags are preferred.
 			if ( ! defined( 'PLL_ENCODED_FLAGS' ) || PLL_ENCODED_FLAGS ) {
-				$imagesize = getimagesize( POLYLANG_DIR . $file );
-				if ( is_array( $imagesize ) ) {
-					list( $flag['width'], $flag['height'] ) = $imagesize;
-				}
+				list( $flag['width'], $flag['height'] ) = getimagesize( POLYLANG_DIR . $file );
 				$file_contents = file_get_contents( POLYLANG_DIR . $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 				$flag['src'] = 'data:image/png;base64,' . base64_encode( $file_contents ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 			}
@@ -417,7 +279,89 @@ class PLL_Language extends PLL_Language_Deprecated {
 	}
 
 	/**
-	 * Returns HTML code for flag.
+	 * Sets flag_url and flag properties.
+	 *
+	 * @since 1.2
+	 *
+	 * @return void
+	 */
+	public function set_flag() {
+		$flags = array( 'flag' => self::get_flag_informations( $this->flag_code ) );
+
+		// Custom flags?
+		$directories = array(
+			PLL_LOCAL_DIR,
+			get_stylesheet_directory() . '/polylang',
+			get_template_directory() . '/polylang',
+		);
+
+		foreach ( $directories as $dir ) {
+			if ( is_readable( $file = "{$dir}/{$this->locale}.png" ) || is_readable( $file = "{$dir}/{$this->locale}.jpg" ) || is_readable( $file = "{$dir}/{$this->locale}.svg" ) ) {
+				$flags['custom_flag']['url'] = content_url( '/' . str_replace( WP_CONTENT_DIR, '', $file ) );
+				break;
+			}
+		}
+
+		/**
+		 * Filters the custom flag informations.
+		 *
+		 * @param array  $flag {
+		 *   Information about the custom flag.
+		 *
+		 *   @type string $url    Flag url.
+		 *   @type string $src    Optional, src attribute value if different of the url, for example if base64 encoded.
+		 *   @type int    $width  Optional, flag width in pixels.
+		 *   @type int    $height Optional, flag height in pixels.
+		 * }
+		 * @param string $code Flag code.
+		 *
+		 * @since 2.4
+		 */
+		$flags['custom_flag'] = apply_filters( 'pll_custom_flag', empty( $flags['custom_flag'] ) ? null : $flags['custom_flag'], $this->flag_code );
+
+		if ( ! empty( $flags['custom_flag']['url'] ) ) {
+			if ( empty( $flags['custom_flag']['src'] ) ) {
+				$flags['custom_flag']['src'] = esc_url( set_url_scheme( $flags['custom_flag']['url'], 'relative' ) );
+			}
+
+			$flags['custom_flag']['url'] = esc_url_raw( $flags['custom_flag']['url'] );
+		} else {
+			unset( $flags['custom_flag'] );
+		}
+
+		/**
+		 * Filters the flag title attribute.
+		 * Defaults to the language name.
+		 *
+		 * @since 0.7
+		 *
+		 * @param string $title  The flag title attribute.
+		 * @param string $slug   The language code.
+		 * @param string $locale The language locale.
+		 */
+		$title = apply_filters( 'pll_flag_title', $this->name, $this->slug, $this->locale );
+
+		foreach ( $flags as $key => $flag ) {
+			$this->{$key . '_url'} = empty( $flag['url'] ) ? '' : $flag['url'];
+
+			/**
+			 * Filters the html markup of a flag.
+			 *
+			 * @since 1.0.2
+			 *
+			 * @param string $flag Html markup of the flag or empty string.
+			 * @param string $slug Language code.
+			 */
+			$this->{$key} = apply_filters(
+				'pll_get_flag',
+				self::get_flag_html( $flag, $title, $this->name ),
+				$this->slug
+			);
+		}
+	}
+
+	/**
+	 * Get HTML code for flag.
 	 *
 	 * @since 2.7
 	 *
@@ -425,12 +369,6 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 * @param string $title Optional title attribute.
 	 * @param string $alt   Optional alt attribute.
 	 * @return string
-	 *
-	 * @phpstan-param array{
-	 *     src: string,
-	 *     width?: int|numeric-string,
-	 *     height?: int|numeric-string
-	 * } $flag
 	 */
 	public static function get_flag_html( $flag, $title = '', $alt = '' ) {
 		if ( empty( $flag['src'] ) ) {
@@ -483,12 +421,7 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 * @return string
 	 */
 	public function get_display_flag_url() {
-		$flag_url = empty( $this->custom_flag_url ) ? $this->flag_url : $this->custom_flag_url;
-
-		/**
-		 * Let's use `site_url()` so the returned URL will be filtered properly according to the current domain.
-		 */
-		return site_url( set_url_scheme( $flag_url, 'relative' ) );
+		return empty( $this->custom_flag_url ) ? $this->flag_url : $this->custom_flag_url;
 	}
 
 	/**
@@ -499,8 +432,49 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 * @return void
 	 */
 	public function update_count() {
-		foreach ( $this->term_props as $taxonomy => $props ) {
-			wp_update_term_count( $props['term_taxonomy_id'], $taxonomy );
+		wp_update_term_count( $this->term_taxonomy_id, 'language' ); // Posts count.
+		wp_update_term_count( $this->tl_term_taxonomy_id, 'term_language' ); // Terms count.
+	}
+
+	/**
+	 * Set home_url and search_url properties.
+	 *
+	 * @since 1.3
+	 *
+	 * @param string $search_url Home url to use in search forms.
+	 * @param string $home_url   Home url.
+	 * @return void
+	 */
+	public function set_home_url( $search_url, $home_url ) {
+		$this->search_url = $search_url;
+		$this->home_url = $home_url;
+	}
+
+	/**
+	 * Sets the scheme of the home url and the flag urls.
+	 *
+	 * This can't be cached across pages.
+	 *
+	 * @since 2.8
+	 *
+	 * @return void
+	 */
+	public function set_url_scheme() {
+		if ( ! empty( $this->home_url ) ) {
+			$this->home_url = set_url_scheme( $this->home_url );
+		}
+
+		if ( ! empty( $this->search_url ) ) {
+			$this->search_url = set_url_scheme( $this->search_url );
+		}
+
+		// Set url scheme, also for the flags.
+		if ( ! empty( $this->flag_url ) ) {
+			$this->flag_url = set_url_scheme( $this->flag_url );
+		}
+
+		if ( ! empty( $this->custom_flag_url ) ) {
+			$this->custom_flag_url = set_url_scheme( $this->custom_flag_url );
 		}
 	}
 
@@ -512,143 +486,8 @@ class PLL_Language extends PLL_Language_Deprecated {
 	 *
 	 * @param string $filter Either 'display' or 'raw', defaults to raw.
 	 * @return string
-	 *
-	 * @phpstan-param 'display'|'raw' $filter
-	 * @phpstan-return non-empty-string
 	 */
 	public function get_locale( $filter = 'raw' ) {
 		return 'display' === $filter ? $this->w3c : $this->locale;
-	}
-
-	/**
-	 * Returns the values of this instance's properties, which can be filtered if required.
-	 *
-	 * @since 3.4
-	 *
-	 * @param string $context Whether or not properties should be filtered. Accepts `db` or `display`.
-	 *                        Default to `display` which filters some properties.
-	 *
-	 * @return array Array of language object properties.
-	 *
-	 * @phpstan-return LanguageData
-	 */
-	public function to_array( $context = 'display' ) {
-		$language = get_object_vars( $this );
-
-		if ( 'db' !== $context ) {
-			$language['home_url']   = $this->get_home_url();
-			$language['search_url'] = $this->get_search_url();
-		}
-
-		/** @phpstan-var LanguageData $language */
-		return $language;
-	}
-
-	/**
-	 * Converts current `PLL_language` into a `stdClass` object. Mostly used to allow dynamic properties.
-	 *
-	 * @since 3.4
-	 *
-	 * @return stdClass Converted `PLL_Language` object.
-	 */
-	public function to_std_class() {
-		return (object) $this->to_array();
-	}
-
-	/**
-	 * Returns a predefined HTML flag.
-	 *
-	 * @since 3.4
-	 *
-	 * @param string $flag_code Flag code to render.
-	 * @return string HTML code for the flag.
-	 */
-	public static function get_predefined_flag( $flag_code ) {
-		$flag = self::get_flag_informations( $flag_code );
-
-		return self::get_flag_html( $flag );
-	}
-
-	/**
-	 * Returns language's home URL. Takes care to render it dynamically if no cache is allowed.
-	 *
-	 * @since 3.4
-	 *
-	 * @return string Language home URL.
-	 *
-	 * @phpstan-return non-empty-string
-	 */
-	public function get_home_url() {
-		if ( ( defined( 'PLL_CACHE_LANGUAGES' ) && ! PLL_CACHE_LANGUAGES ) || ( defined( 'PLL_CACHE_HOME_URL' ) && ! PLL_CACHE_HOME_URL ) ) {
-			/**
-			 * Let's use `site_url()` so the returned URL will be filtered properly according to the current domain.
-			 *
-			 * @phpstan-var non-empty-string
-			 */
-			return site_url( set_url_scheme( $this->home_url, 'relative' ) );
-		}
-
-		return $this->home_url;
-	}
-
-	/**
-	 * Returns language's search URL. Takes care to render it dynamically if no cache is allowed.
-	 *
-	 * @since 3.4
-	 *
-	 * @return string Language search URL.
-	 *
-	 * @phpstan-return non-empty-string
-	 */
-	public function get_search_url() {
-		if ( ( defined( 'PLL_CACHE_LANGUAGES' ) && ! PLL_CACHE_LANGUAGES ) || ( defined( 'PLL_CACHE_HOME_URL' ) && ! PLL_CACHE_HOME_URL ) ) {
-			/**
-			 * Let's use `site_url()` so the returned URL will be filtered properly according to the current domain.
-			 *
-			 * @phpstan-var non-empty-string
-			*/
-			return site_url( set_url_scheme( $this->search_url, 'relative' ) );
-		}
-
-		return $this->search_url;
-	}
-
-	/**
-	 * Returns the value of a language property.
-	 * This is handy to get a property's value without worrying about triggering a deprecation warning or anything.
-	 *
-	 * @since 3.4
-	 *
-	 * @param string $property A property name. A composite value can be used for language term property values, in the
-	 *                         form of `{language_taxonomy_name}:{property_name}` (see {@see PLL_Language::get_tax_prop()}
-	 *                         for the possible values). Ex: `term_language:term_taxonomy_id`.
-	 * @return string|int|bool|string[] The requested property for the language, `false` if the property doesn't exist.
-	 *
-	 * @phpstan-return (
-	 *     $property is 'slug' ? non-empty-string : string|int|bool|list<non-empty-string>
-	 * )
-	 */
-	public function get_prop( $property ) {
-		// Deprecated property.
-		if ( $this->is_deprecated_term_property( $property ) ) {
-			return $this->get_deprecated_term_property( $property );
-		}
-
-		if ( $this->is_deprecated_url_property( $property ) ) {
-			return $this->get_deprecated_url_property( $property );
-		}
-
-		// Composite property like 'term_language:term_taxonomy_id'.
-		if ( preg_match( '/^(?<tax>.{1,32}):(?<field>term_id|term_taxonomy_id|count)$/', $property, $matches ) ) {
-			/** @var array{tax:non-empty-string, field:'term_id'|'term_taxonomy_id'|'count'} $matches */
-			return $this->get_tax_prop( $matches['tax'], $matches['field'] );
-		}
-
-		// Any other public property.
-		if ( isset( $this->$property ) ) {
-			return $this->$property;
-		}
-
-		return false;
 	}
 }

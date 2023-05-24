@@ -251,7 +251,7 @@ class PLL_Frontend_Nav_Menu extends PLL_Nav_Menu {
 						$infos = $this->explode_location( $loc );
 						if ( $infos['lang'] === $this->curlang->slug ) {
 							$menus[ $infos['location'] ] = (int) $value;
-						} elseif ( $this->curlang->is_default ) {
+						} elseif ( $this->curlang->slug === $this->options['default_lang'] ) {
 							$menus[ $loc ] = (int) $value;
 						}
 					}

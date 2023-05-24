@@ -158,10 +158,8 @@ class PLL_OLT_Manager {
 		 */
 		do_action_ref_array( 'pll_translate_labels', array( &$this->labels ) );
 
-		// Free memory.
-		$this->default_locale   = null;
-		$this->list_textdomains = array();
-		$this->labels           = array();
+		// Free memory
+		unset( $this->default_locale, $this->list_textdomains, $this->labels );
 	}
 
 	/**

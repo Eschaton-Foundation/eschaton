@@ -91,7 +91,8 @@ class PLL_License {
 		}
 
 		// Updater
-		$this->auto_updater();
+		add_action( 'admin_init', array( $this, 'auto_updater' ), 0 );
+		add_action( 'cli_init', array( $this, 'auto_updater' ), 0 ); // For WP CLI.
 
 		// Register settings
 		add_filter( 'pll_settings_licenses', array( $this, 'settings' ) );
@@ -171,10 +172,11 @@ class PLL_License {
 	 *
 	 * @since 1.9
 	 *
-	 * @return void
+	 * @return PLL_License Updated PLL_License object.
 	 */
 	public function check_license() {
 		$this->api_request( 'check_license' );
+		return $this;
 	}
 
 	/**

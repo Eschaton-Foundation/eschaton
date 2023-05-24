@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 };
 
 $languages_list = $this->model->get_languages_list();
+$default_language = ! empty( $languages_list ) ? $this->options['default_lang'] : '';
 ?>
 <h2><?php esc_html_e( 'Content without language', 'polylang' ); ?></h2>
 <p>
@@ -29,7 +30,7 @@ $languages_list = $this->model->get_languages_list();
 				esc_attr( $lg->locale ),
 				esc_html( $lg->name ),
 				esc_html( $lg->flag ),
-				$lg->is_default ? ' selected="selected"' : ''
+				$lg->slug === $default_language ? ' selected="selected"' : ''
 			);
 		}
 		?>

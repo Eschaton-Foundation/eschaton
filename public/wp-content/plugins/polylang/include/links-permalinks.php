@@ -108,39 +108,29 @@ abstract class PLL_Links_Permalinks extends PLL_Links_Model {
 	 * Returns the home url in a given language.
 	 *
 	 * @since 1.3.1
-	 * @since 3.4 Accepts now a language slug.
 	 *
-	 * @param PLL_Language|string $language Language object or slug.
+	 * @param PLL_Language $lang A language object.
 	 * @return string
 	 */
-	public function home_url( $language ) {
-		if ( $language instanceof PLL_Language ) {
-			$language = $language->slug;
-		}
-
-		return trailingslashit( parent::home_url( $language ) );
+	public function home_url( $lang ) {
+		return trailingslashit( parent::home_url( $lang ) );
 	}
 
 	/**
 	 * Returns the static front page url.
 	 *
 	 * @since 1.8
-	 * @since 3.4 Accepts now an array of language properties.
 	 *
-	 * @param PLL_Language|array $language Language object or array of language properties.
+	 * @param PLL_Language $lang The language object.
 	 * @return string The static front page url.
 	 */
-	public function front_page_url( $language ) {
-		if ( $language instanceof PLL_Language ) {
-			$language = $language->to_array();
-		}
-
-		if ( $this->options['hide_default'] && $language['is_default'] ) {
+	public function front_page_url( $lang ) {
+		if ( $this->options['hide_default'] && $lang->slug == $this->options['default_lang'] ) {
 			return trailingslashit( $this->home );
 		}
-		$url = home_url( $this->root . get_page_uri( $language['page_on_front'] ) );
+		$url = home_url( $this->root . get_page_uri( $lang->page_on_front ) );
 		$url = $this->use_trailing_slashes ? trailingslashit( $url ) : untrailingslashit( $url );
-		return $this->options['force_lang'] ? $this->add_language_to_link( $url, $language['slug'] ) : $url;
+		return $this->options['force_lang'] ? $this->add_language_to_link( $url, $lang ) : $url;
 	}
 
 	/**

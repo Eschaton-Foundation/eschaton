@@ -84,10 +84,7 @@ class PLL_Uninstall {
 			wp_delete_post( $id, true );
 		}
 
-		/*
-		 * Backward compatibility with Polylang < 3.4.
-		 * Delete the legacy strings translations.
-		 */
+		// Delete the strings translations.
 		register_post_type( 'polylang_mo', array( 'rewrite' => false, 'query_var' => false ) );
 		$ids = get_posts(
 			array(
@@ -115,7 +112,6 @@ class PLL_Uninstall {
 			$term_ids = array_unique( $term_ids );
 			$wpdb->query( "DELETE FROM {$wpdb->terms} WHERE term_id IN ( " . implode( ',', $term_ids ) . ' )' ); // PHPCS:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->query( "DELETE FROM {$wpdb->term_taxonomy} WHERE term_id IN ( " . implode( ',', $term_ids ) . ' )' ); // PHPCS:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "DELETE FROM {$wpdb->termmeta} WHERE term_id IN ( " . implode( ',', $term_ids ) . " ) AND meta_key='_pll_strings_translations'" ); // PHPCS:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 
 		if ( ! empty( $tt_ids ) ) {

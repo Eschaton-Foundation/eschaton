@@ -23,7 +23,7 @@ class PLL_WPML_Compat {
 	 *
 	 * @var array
 	 */
-	protected static $strings = array();
+	protected static $strings;
 
 	/**
 	 * @var PLL_WPML_API
@@ -41,10 +41,6 @@ class PLL_WPML_Compat {
 		$this->api = new PLL_WPML_API();
 
 		self::$strings = get_option( 'polylang_wpml_strings', array() );
-
-		if ( ! is_array( self::$strings ) ) {
-			self::$strings = array(); // In case the serialized option is corrupted.
-		}
 
 		add_action( 'pll_language_defined', array( $this, 'define_constants' ) );
 		add_action( 'pll_no_language_defined', array( $this, 'define_constants' ) );
@@ -118,13 +114,12 @@ class PLL_WPML_Compat {
 
 			// Assign translations of the old string to the new string, except for the default language.
 			foreach ( $languages as $language ) {
-				if ( $language->is_default ) {
-					continue;
+				if ( pll_default_language() !== $language->slug ) {
+					$mo = new PLL_MO();
+					$mo->import_from_db( $language );
+					$mo->add_entry( $mo->make_entry( $string, $mo->translate( $exist_string ) ) );
+					$mo->export_to_db( $language );
 				}
-				$mo = new PLL_MO();
-				$mo->import_from_db( $language );
-				$mo->add_entry( $mo->make_entry( $string, $mo->translate( $exist_string ) ) );
-				$mo->export_to_db( $language );
 			}
 			$this->unregister_string( $context, $name );
 		}
