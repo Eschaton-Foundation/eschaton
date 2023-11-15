@@ -2,6 +2,62 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.1] - 2023-11-15
+### Added:
+- Cleanup of duplicate Action Scheduler tasks.
+
+### Fixed:
+- Compatibility issue with Action Scheduler lover than 3.3.0.
+
+## [3.10.0] - 2023-11-07
+### Added:
+- Connection (mailer) selector for single and bulk emails resend.
+- Ability to switch additional connection to the primary connection.
+- Ability to trigger alert when deliverability verification process detects a hard bounce.
+- Allow visibility toggle of the Amazon SES Identities through the PHP constant `WPMS_AMAZONSES_DISPLAY_IDENTITIES`.
+- Filter that allows to use self website Google OAuth redirect URL.
+
+### Changed:
+- Improved plugin settings UI.
+- Replaced our moment.js library with the WP Core's bundled one.
+
+### Fixed:
+- Translation strings on the Dashboard widget.
+- Error when email content failed to be encoded while click link tracking injection.
+- Missing "Delete Connection" link on the single additional connection page for some connections.
+
+## [3.9.0] - 2023-08-29
+### Added:
+- Pro plugin translations for: Spanish (Spain), German, Portuguese (Brazil), Italian, French, Japanese, Polish, Dutch, Russian, Turkish.
+- Email Log: ability to manually re-check email delivery status.
+- Alerts: ability to test alerts.
+
+### Changed:
+- Moved the Email Test tab from the settings page to the tools page.
+- Improved the dashboard widget settings' user experience.
+- Removed Sendinblue SDK library because it was deprecated.
+- Updated AWS SDK library to 3.277.11.
+- Mailgun API instructions and webhooks verification process.
+
+### Fixed:
+- Debug Event details popup scrolling.
+- Email logs import from the WP Mail Logging plugin caused by long non-English subjects.
+- Conflict with other plugins (Alt Manager) that made the WP Plugins install page unusable.
+- Fixed: Missed email sending debug log for the Brevo mailer.
+
+## [3.8.2] - 2023-07-18
+### Changed:
+- Improved notifications formatting and styles.
+- Sendinblue rebranded to Brevo.
+- Updated Action Scheduler library to 3.6.1.
+
+### Fixed:
+- Explicitly set "Content-Type" header for the HTML test email.
+
+## [3.8.1] - 2023-06-23
+### Fixed:
+- Print email log headers data security issue.
+
 ## [3.8.0] - 2023-04-25
 ### IMPORTANT
 - Support for PHP 5.6, 7.0, and 7.1 has been discontinued. If you are running one of those versions, you MUST upgrade PHP before installing or upgrading to WP Mail SMTP v3.8. Failure to do that will disable WP Mail SMTP functionality.

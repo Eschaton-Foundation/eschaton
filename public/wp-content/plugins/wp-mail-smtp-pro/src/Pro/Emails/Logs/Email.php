@@ -2,6 +2,7 @@
 
 namespace WPMailSMTP\Pro\Emails\Logs;
 
+use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\WP;
 use Exception;
 use DateTime;
@@ -628,7 +629,11 @@ class Email {
 	 */
 	public function set_subject( $subject ) {
 
-		$this->subject = substr( wp_kses( $subject, [] ), 0, 191 );
+		if ( ! function_exists( 'mb_substr' ) ) {
+			Helpers::include_mbstring_polyfill();
+		}
+
+		$this->subject = mb_substr( wp_kses( $subject, [] ), 0, 191 );
 
 		return $this;
 	}
@@ -1060,6 +1065,18 @@ class Email {
 	}
 
 	/**
+	 * Whether the email is waiting for delivery verification.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @return bool
+	 */
+	public function is_waiting_for_delivery_verification() {
+
+		return $this->get_status() === self::STATUS_WAITING;
+	}
+
+	/**
 	 * Whether the email sending has failed.
 	 *
 	 * @since 2.5.0
@@ -1093,5 +1110,26 @@ class Email {
 	public function has_error() {
 
 		return ! empty( $this->get_error_text() );
+	}
+
+	/**
+	 * If the email is a test.
+	 *
+	 * @since 3.10.0
+	 *
+	 * @return bool
+	 */
+	public function is_test() {
+
+		$mailer_type = $this->get_header( 'X-Mailer-Type' );
+
+		return in_array(
+			$mailer_type,
+			[
+				'WPMailSMTP/Admin/Test',
+				'WPMailSMTP/Admin/SetupWizard/Test',
+			],
+			true
+		);
 	}
 }

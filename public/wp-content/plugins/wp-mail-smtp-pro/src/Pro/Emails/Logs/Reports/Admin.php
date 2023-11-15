@@ -143,17 +143,9 @@ class Admin extends EmailReportsTab {
 		$min = WP::asset_min();
 
 		wp_enqueue_script(
-			'wp-mail-smtp-moment',
-			wp_mail_smtp()->assets_url . '/js/vendor/moment.min.js',
-			[],
-			'2.29.4',
-			true
-		);
-
-		wp_enqueue_script(
 			'wp-mail-smtp-chart',
 			wp_mail_smtp()->assets_url . '/js/vendor/chart.min.js',
-			[ 'wp-mail-smtp-moment' ],
+			[ 'moment' ],
 			'2.9.4.1',
 			true
 		);
@@ -341,7 +333,7 @@ class Admin extends EmailReportsTab {
 					<?php
 					echo wp_kses(
 						sprintf( /* translators: %1$d - items count; %2$s - search term. */
-							__( 'Found <strong>%1$d items</strong> where the subject contains <i>%2$s</i>', 'wp-mail-smtp-pro' ),
+							_n( 'Found <strong>%1$d item</strong> where the subject contains <i>%2$s</i>', 'Found <strong>%1$d items</strong> where the subject contains <i>%2$s</i>', count( $this->table->items ), 'wp-mail-smtp-pro' ),
 							count( $this->table->items ),
 							$this->report->get_params( 'search' )
 						),

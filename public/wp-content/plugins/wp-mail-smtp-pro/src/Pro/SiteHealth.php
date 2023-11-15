@@ -2,6 +2,7 @@
 
 namespace WPMailSMTP\Pro;
 
+use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Pro\Emails\Logs\EmailsCollection;
 
 /**
@@ -173,7 +174,15 @@ class SiteHealth {
 		);
 
 		// Send dummy timestamp data to prevent issues with some cURL configurations which don't allow empty requests.
-		$response = wp_remote_post( self::CONNECTION_PING_URL, [ 'body' => [ 'timestamp' => time() ] ] );
+		$response = wp_remote_post(
+			self::CONNECTION_PING_URL,
+			[
+				'user-agent' => Helpers::get_default_user_agent(),
+				'body'       => [
+					'timestamp' => time(),
+				],
+			]
+		);
 
 		if ( wp_remote_retrieve_response_code( $response ) !== 200 ) {
 			$result['status']         = 'critical';

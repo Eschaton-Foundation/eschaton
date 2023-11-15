@@ -69,13 +69,17 @@ class PrintPreview {
 			return;
 		}
 
+		if ( ! current_user_can( wp_mail_smtp()->get_admin()->get_logs_access_capability() ) ) {
+			wp_die( esc_html__( 'Access rejected.', 'wp-mail-smtp-pro' ) );
+		}
+
 		?>
 		<!doctype html>
 		<html>
 		<head>
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-			<title><?php esc_html_e( 'WPMailSMTP - Email Details', 'wp-mail-smtp-pro' ); ?></title>
+			<title><?php esc_html_e( 'WP Mail SMTP - Email Details', 'wp-mail-smtp-pro' ); ?></title>
 			<meta name="description" content="">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<meta name="robots" content="noindex,nofollow,noarchive">

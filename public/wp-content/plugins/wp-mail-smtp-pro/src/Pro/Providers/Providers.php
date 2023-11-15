@@ -45,6 +45,8 @@ class Providers {
 		add_action( 'wp_ajax_wp_mail_smtp_pro_providers_ajax', [ $this, 'process_ajax' ] );
 
 		add_action( 'wp_mail_smtp_mailcatcher_pre_send_before', [ $this, 'update_php_mailer_properties' ] );
+
+		add_action( 'admin_notices', [ $this, 'display_notices' ] );
 	}
 
 	/**
@@ -243,11 +245,13 @@ class Providers {
 				'loader_white_small'                   => wp_mail_smtp()->prepare_loader( 'white', 'sm' ),
 				'nonce'                                => wp_create_nonce( 'wp-mail-smtp-pro-admin' ),
 				'text_heads_up_title'                  => esc_html__( 'Heads up!', 'wp-mail-smtp-pro' ),
+				'text_yes'                             => esc_html__( 'Yes', 'wp-mail-smtp-pro' ),
 				'text_yes_delete'                      => esc_html__( 'Yes, Delete', 'wp-mail-smtp-pro' ),
 				'text_cancel'                          => esc_html__( 'Cancel', 'wp-mail-smtp-pro' ),
 				'text_delete_connection'               => esc_html__( 'You\'re about to delete a connection. Are you sure you want to proceed?', 'wp-mail-smtp-pro' ),
 				'text_delete_backup_connection'        => esc_html__( 'You\'re about to delete your Backup Connection. Are you sure you want to proceed?', 'wp-mail-smtp-pro' ),
-				'text_delete_smart_routing_connection' => esc_html__( 'You\'re about to delete a connection that is used in Smart Routing. Are you sure you want to proceed? You will need to reconfigure your Smart Routing rules. ', 'wp-mail-smtp-pro' ),
+				'text_delete_smart_routing_connection' => esc_html__( 'You\'re about to delete a connection that is used in Smart Routing. Are you sure you want to proceed? You will need to reconfigure your Smart Routing rules.', 'wp-mail-smtp-pro' ),
+				'text_switch_witch_primary_connection' => esc_html__( 'Are you sure you want to use this additional connection as your new primary connection? Your existing primary connection will be moved to the additional connections list.', 'wp-mail-smtp-pro' ),
 				'connection_id'                        => $connection_id,
 			]
 		);
@@ -360,11 +364,14 @@ class Providers {
 				if ( $ses->do_delete_identity( $value ) === true ) {
 					wp_send_json_success(
 						sprintf(
-							wp_kses( /* translators: %1$s - "Email address" or "Domain"; %2$s - actual email address or domain name. */
-								__( '%1$s <code>%2$s</code> was successfully deleted.', 'wp-mail-smtp-pro' ),
+							wp_kses(
+								( $type === 'email' ) ?
+									/* translators: %s - actual email address. */
+									__( 'Email address <code>%s</code> was successfully deleted.', 'wp-mail-smtp-pro' ) :
+									/* translators: %s - actual domain name. */
+									__( 'Domain <code>%s</code> was successfully deleted.', 'wp-mail-smtp-pro' ),
 								[ 'code' => [] ]
 							),
-							( $type === 'email' ) ? esc_html__( 'Email address', 'wp-mail-smtp-pro' ) : esc_html__( 'Domain', 'wp-mail-smtp-pro' ),
 							esc_html( $value )
 						)
 					);
@@ -422,6 +429,29 @@ class Providers {
 		if ( $mailer === 'amazonses' ) {
 			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			$phpmailer->Mailer = 'sendmail';
+		}
+	}
+
+	/**
+	 * Display providers related notices.
+	 *
+	 * @since 3.10.0
+	 */
+	public function display_notices() {
+
+		if ( ! wp_mail_smtp()->get_admin()->is_admin_page() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$message = isset( $_GET['message'] ) ? sanitize_key( $_GET['message'] ) : '';
+
+		switch ( $message ) {
+			case 'additional_connection_switched_with_primary':
+				WP::add_admin_notice(
+					esc_html__( 'The additional connection has been successfully switched to the primary connection.', 'wp-mail-smtp-pro' ),
+					WP::ADMIN_NOTICE_SUCCESS
+				);
 		}
 	}
 }

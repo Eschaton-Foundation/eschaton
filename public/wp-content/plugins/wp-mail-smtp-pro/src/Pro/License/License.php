@@ -2,6 +2,7 @@
 
 namespace WPMailSMTP\Pro\License;
 
+use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Pro;
 use WPMailSMTP\WP;
@@ -100,11 +101,6 @@ class License {
 
 		if ( WP::use_global_plugin_settings() ) {
 			add_action( 'network_admin_notices', array( $this, 'notices' ) );
-		}
-
-		// Periodic background license check.
-		if ( wp_mail_smtp()->get_license_key() ) {
-			$this->maybe_validate_key();
 		}
 	}
 
@@ -816,6 +812,7 @@ class License {
 
 		$args = [
 			'headers' => $headers,
+			'user-agent' => Helpers::get_default_user_agent(),
 		];
 
 		if ( defined( 'WPMS_UPDATER_API' ) ) {
@@ -1016,7 +1013,12 @@ class License {
 	private function remote_fetch_and_cache_latest_plugin_version() {
 
 		// Perform the query and retrieve the response.
-		$response      = wp_remote_get( $this->latest_version_remote_url );
+		$response      = wp_remote_get(
+			$this->latest_version_remote_url,
+			[
+				'user-agent' => Helpers::get_default_user_agent(),
+			]
+		);
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
 
