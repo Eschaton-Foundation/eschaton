@@ -65,4 +65,8 @@ AND ANY CHANGES MADE HERE WILL BE OVERWRITTEN.
 	width: 4rem;
 }
 
+.gform-stripe--disabled label.inline, .gform-stripe--disabled #field_multiple_payment_methods_description {
+		opacity: 0.6;
+	}
+
 /*# sourceMappingURL=admin.css.map */

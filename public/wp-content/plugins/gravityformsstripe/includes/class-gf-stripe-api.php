@@ -37,7 +37,7 @@ class GF_Stripe_API {
 	/**
 	 * Null or an instance of the Gravity Forms Stripe Add-On.
 	 *
-	 * @since 4.3
+	 * @since 5.0
 	 *
 	 * @var GFStripe
 	 */
@@ -47,7 +47,7 @@ class GF_Stripe_API {
 	 * Initialize Stripe API library.
 	 *
 	 * @since 3.4
-	 * @since 4.3 Added the $addon param.
+	 * @since 5.0 Added the $addon param.
 	 *
 	 * @param string        $api_key Stripe API key.
 	 * @param null|GFStripe $addon   Null or an instance of the Gravity Forms Stripe Add-On.
@@ -81,7 +81,7 @@ class GF_Stripe_API {
 	/**
 	 * Initializes the StripeClient with the API key.
 	 *
-	 * @since 4.3
+	 * @since 5.0
 	 */
 	private function init_client() {
 		if ( ! class_exists( '\Stripe\StripeClient' ) ) {
@@ -270,6 +270,31 @@ class GF_Stripe_API {
 	}
 
 	/**
+	 * Adjusts a customer's balance.
+	 *
+	 * @since 5.0
+	 *
+	 * @param string $customer_id The ID of the customer.
+	 * @param double $amount      The amount to add to the customer balance.
+	 * @param string $currency    The currency of the transaction.
+	 *
+	 * @return \Stripe\CustomerBalanceTransaction|WP_Error
+	 */
+	public function adjust_customer_balance( $customer_id, $amount, $currency ) {
+		try {
+			return $this->stripe_client->customers->createBalanceTransaction(
+				$customer_id,
+				array(
+					'amount'   => $amount,
+					'currency' => $currency,
+				)
+			);
+		} catch ( Exception $e ) {
+			return $this->get_error( $e );
+		}
+	}
+
+	/**
 	 * Get the Stripe Product.
 	 *
 	 * @since 4.2
@@ -395,23 +420,66 @@ class GF_Stripe_API {
 			return $this->get_error( $e );
 		}
 	}
-
 	/**
-	 * Update Stripe payment intent.
+	 * Create Stripe Setup intent.
 	 *
-	 * @since 3.4
+	 * @since 5.0
 	 *
-	 * @param string $id   The payment intent ID.
+	 * @param array $data The payment intent data.
 	 *
-	 * @return \Stripe\PaymentIntent|WP_Error Return WP_Error if exceptions thrown.
+	 * @return \Stripe\SetupIntent|WP_Error Return WP_Error if exceptions thrown.
 	 */
-	public function get_payment_intent( $id ) {
+	public function create_setup_intent( $data ) {
 		if ( empty( $this->stripe_client ) ) {
 			return $this->get_client_error();
 		}
 
 		try {
-			return $this->stripe_client->paymentIntents->retrieve( $id );
+			return $this->stripe_client->setupIntents->create( $data );
+		} catch ( \Exception $e ) {
+			return $this->get_error( $e );
+		}
+	}
+
+	/**
+	 * Gets a payment intent.
+	 *
+	 * @since 3.4
+	 *
+	 * @param string $id      The payment intent ID.
+	 * @param array  $options Additional request options.
+	 *
+	 * @return \Stripe\PaymentIntent|WP_Error Return WP_Error if exceptions thrown.
+	 */
+	public function get_payment_intent( $id, $options = array() ) {
+		if ( empty( $this->stripe_client ) ) {
+			return $this->get_client_error();
+		}
+
+		try {
+			return $this->stripe_client->paymentIntents->retrieve( $id, $options );
+		} catch ( \Exception $e ) {
+			return $this->get_error( $e );
+		}
+	}
+
+	/**
+	 * Gets a setup intent.
+	 *
+	 * @since 5.0
+	 *
+	 * @param string $id      The setup intent ID.
+	 * @param array  $options Additional request options.
+	 *
+	 * @return \Stripe\SetupIntent|WP_Error Return WP_Error if exceptions thrown.
+	 */
+	public function get_setup_intent( $id, $options = array() ) {
+		if ( empty( $this->stripe_client ) ) {
+			return $this->get_client_error();
+		}
+
+		try {
+			return $this->stripe_client->setupIntents->retrieve( $id, $options );
 		} catch ( \Exception $e ) {
 			return $this->get_error( $e );
 		}
@@ -434,6 +502,28 @@ class GF_Stripe_API {
 
 		try {
 			return $this->stripe_client->paymentIntents->update( $id, $data );
+		} catch ( \Exception $e ) {
+			return $this->get_error( $e );
+		}
+	}
+
+	/**
+	 * Update Stripe Setup intent.
+	 *
+	 * @since 3.4
+	 *
+	 * @param string $id   The setup intent ID.
+	 * @param array  $data The setup intent data.
+	 *
+	 * @return \Stripe\PaymentIntent|WP_Error Return WP_Error if exceptions thrown.
+	 */
+	public function update_setup_intent( $id, $data ) {
+		if ( empty( $this->stripe_client ) ) {
+			return $this->get_client_error();
+		}
+
+		try {
+			return $this->stripe_client->setupIntents->update( $id, $data );
 		} catch ( \Exception $e ) {
 			return $this->get_error( $e );
 		}
@@ -846,8 +936,8 @@ class GF_Stripe_API {
 	 *
 	 * @since 4.2
 	 *
-	 * @param string  $transaction_id The transaction ID to refund
-	 * @param boolean $payment_intent Whether the payment was created with the payment intents API (true) or charges API (false)
+	 * @param string  $transaction_id The transaction ID to refund.
+	 * @param boolean $payment_intent Whether the payment was created with the payment intents API (true) or charges API (false).
 	 *
 	 * @return \Stripe\Refund|WP_Error
 	 */
@@ -859,7 +949,7 @@ class GF_Stripe_API {
 		$key = $payment_intent ? 'payment_intent' : 'charge';
 
 		try {
-			return $this->stripe_client->refunds->create( [ $key => $transaction_id ] );
+			return $this->stripe_client->refunds->create( array( $key => $transaction_id ) );
 		} catch ( \Exception $e ) {
 			return $this->get_error( $e );
 		}
@@ -890,7 +980,7 @@ class GF_Stripe_API {
 	/**
 	 * Return the WP_Error for when the Stripe API client wasn't initialized.
 	 *
-	 * @since 4.3
+	 * @since 5.0
 	 *
 	 * @return WP_Error
 	 */
@@ -902,4 +992,14 @@ class GF_Stripe_API {
 		return new WP_Error( 'stripe_client_not_connected', __( 'The Stripe API Client is not initialized. Please connect the add-on to a Stripe account.', 'gravityformsstripe' ) );
 	}
 
+	/**
+	 * Finalize an invoice.
+	 *
+	 * @since 5.0
+	 *
+	 * @return \Stripe\InVoice|WP_Error
+	 */
+	public function finalize_invoice( $invoice_id ) {
+		return $this->stripe_client->invoices->finalizeInvoice( $invoice_id );
+	}
 }

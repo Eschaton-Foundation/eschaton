@@ -24,7 +24,7 @@ AND ANY CHANGES MADE HERE WILL BE OVERWRITTEN.
 ----------------------------------------------------------------
 */
 
-.gravity-theme .StripeElement, .gform_legacy_markup_wrapper .StripeElement {
+.gravity-theme .ginput_full[data-payment-element="false"] .StripeElement, .gform_legacy_markup_wrapper .ginput_full[data-payment-element="false"] .StripeElement {
 		background-color: #fff;
 		border: 1px solid #bbb;
 		border-radius: 2px;
@@ -89,6 +89,22 @@ AND ANY CHANGES MADE HERE WILL BE OVERWRITTEN.
 .gravity-theme .ginput_stripe_creditcard .cc-placeholders span, .gform_legacy_markup_wrapper .ginput_stripe_creditcard .cc-placeholders span {
 		color: #9092b0;
 		display: inline-block;
+	}
+
+.gravity-theme #stripe-payment-link, .gform_legacy_markup_wrapper #stripe-payment-link {
+		margin-bottom: 12px;
+	}
+
+.gravity-theme #stripe-payment-link::before, .gform_legacy_markup_wrapper #stripe-payment-link::before {
+		content: var(--link-login-string);
+		display: inline-block;
+		font-size: 14.88px;
+		font-weight: 400;
+		margin-bottom: 12px;
+	}
+
+.gravity-theme #stripe-payment-link:not(.visible), .gform_legacy_markup_wrapper #stripe-payment-link:not(.visible) {
+		display: none;
 	}
 
 html[dir="rtl"] .gravity-theme .ginput_stripe_creditcard .cc-details-container .cc-cardnumber, html[dir="rtl"] .gform_legacy_markup_wrapper .ginput_stripe_creditcard .cc-details-container .cc-cardnumber {

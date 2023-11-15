@@ -264,6 +264,15 @@ class GFStripe extends GFPaymentAddOn {
 	protected $_enable_theme_layer = true;
 
 	/**
+	 * Instance of the payment element handler.
+	 *
+	 * @since 5.0
+	 *
+	 * @var GF_Stripe_Payment_Elements
+	 */
+	protected $payment_element_handler;
+
+	/**
 	 * Get an instance of this class.
 	 *
 	 * @since  1.0
@@ -297,7 +306,6 @@ class GFStripe extends GFPaymentAddOn {
 
 		// When the manage subscription link is clicked, it should be handled here.
 		add_action( 'wp', array( $this->get_billing_portal_handler(), 'maybe_redirect_logged_in_user_to_self_serve_link' ), 10 );
-
 		parent::pre_init();
 
 		require_once 'includes/class-gf-field-stripe-creditcard.php';
@@ -319,8 +327,7 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return array The scripts to be enqueued.
 	 */
 	public function scripts() {
-		$min = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || isset( $_GET['gform_debug'] ) ? '' : '.min';
-
+		$min     = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || isset( $_GET['gform_debug'] ) ? '' : '.min';
 		$scripts = array(
 			array(
 				'handle'    => 'stripe.js',
@@ -352,10 +359,22 @@ class GFStripe extends GFPaymentAddOn {
 					array( $this, 'frontend_script_callback' ),
 				),
 				'strings'   => array(
-					'no_active_frontend_feed'     => wp_strip_all_tags( __( 'The credit card field will initiate once the payment condition is met.', 'gravityformsstripe' ) ),
-					'requires_action'             => wp_strip_all_tags( __( 'Please follow the instructions on the screen to validate your card.', 'gravityformsstripe' ) ),
-					'create_payment_intent_nonce' => wp_create_nonce( 'gf_stripe_create_payment_intent' ),
-					'ajaxurl'                     => admin_url( 'admin-ajax.php' ),
+					'no_active_frontend_feed'         => wp_strip_all_tags( __( 'The credit card field will initiate once the payment condition is met.', 'gravityformsstripe' ) ),
+					'requires_action'                 => wp_strip_all_tags( __( 'Please follow the instructions on the screen to validate your card.', 'gravityformsstripe' ) ),
+					'create_payment_intent_nonce'     => wp_create_nonce( 'gf_stripe_create_payment_intent' ),
+					'ajaxurl'                         => admin_url( 'admin-ajax.php' ),
+					'payment_incomplete'              => wp_strip_all_tags( __( 'Please enter all required payment information.', 'gravityformsstripe' ) ),
+					'failed_to_create_draft'          => wp_strip_all_tags( __( 'We could not process your request at the moment.', 'gravityformsstripe' ) ),
+					'failed_to_create_initial_intent' => wp_strip_all_tags( __( 'Payment information field failed to be displayed, please contact support.', 'gravityformsstripe' ) ),
+					'failed_to_confirm_intent'        => wp_strip_all_tags( __( 'The payment gateway failed to process the request. Please use a different payment method.', 'gravityformsstripe' ) ),
+					'rate_limit_exceeded'             => esc_html__( 'We are not able to process your payment request at the moment. Please try again later.', 'gravityformsstripe' ),
+					'payment_element_intent_failure'  => esc_html__( 'The payment has failed', 'gravityformsstripe' ),
+					'stripe_connect_enabled'          => $this->is_stripe_connect_enabled() === true,
+					'validate_form_nonce'             => wp_create_nonce( 'gfstripe_validate_form' ),
+					'delete_draft_nonce'              => wp_create_nonce( 'gfstripe_delete_draft_entry' ),
+					'rate_limiting_nonce'             => wp_create_nonce( 'gfstripe_payment_element_check_rate_limiting' ),
+					'get_stripe_coupon_nonce'         => wp_create_nonce( 'gfstripe_get_stripe_coupon' ),
+					'coupon_invalid'                  => esc_html__( 'You have entered an invalid coupon code.', 'gravityformsstripe' ),
 				),
 			),
 			array(
@@ -394,6 +413,27 @@ class GFStripe extends GFPaymentAddOn {
 					'capture_complete'                => wp_strip_all_tags( __( 'Transaction successfully captured', 'gravityformsstripe' ) ),
 				),
 			),
+			array(
+				'handle'    => 'gform_stripe_payment_element_form_editor',
+				'src'       => $this->get_base_url() . "/js/payment_element_form_editor{$min}.js",
+				'version'   => $this->_version,
+				'deps'      => array( 'jquery', 'stripe_v3' ),
+				'in_footer' => false,
+				'enqueue'   => array(
+					array(
+						'admin_page' => array( 'form_editor' ),
+					),
+				),
+				'strings'   => array(
+					'payment_element_error'            => wp_strip_all_tags( __( 'Please check your Stripe settings', 'gravityformsstripe' ) ),
+					'payment_element_currency'         => strtolower( GFCommon::get_currency() ),
+					'api_key'                          => $this->get_publishable_api_key(),
+					'field_position_validation_error'  => wp_strip_all_tags( __( 'When the additional payment methods option is enabled, the Stripe field must be on the last page of the form.', 'gravityformsstripe' ) ),
+					'stripe_connect_enabled'           => $this->is_stripe_connect_enabled() === true,
+					'payment_element_supported'        => $this->is_payment_element_supported(),
+					'payment_element_disabled_message' => wp_strip_all_tags( __( 'To enable additional payment methods, you must update Gravity Forms to the latest version.', 'gravityformsstripe' ) ),
+				),
+			),
 		);
 
 		return array_merge( parent::scripts(), $scripts );
@@ -430,7 +470,7 @@ class GFStripe extends GFPaymentAddOn {
 				'deps'    => array( 'thickbox' ),
 				'enqueue' => array(
 					array(
-						'admin_page' => array( 'plugin_settings', 'form_settings' ),
+						'admin_page' => array( 'plugin_settings', 'form_settings', 'form_editor' ),
 						'tab'        => $this->_slug,
 					),
 				),
@@ -491,6 +531,27 @@ class GFStripe extends GFPaymentAddOn {
 			return array();
 		}
 
+		$form = GFAPI::get_form( $form_id );
+		if ( ! $this->has_stripe_card_field( $form ) ) {
+			return array();
+		}
+
+		if ( $this->is_payment_element_enabled( $form ) ) {
+			return $this->get_stripe_payment_element_styles();
+		} else {
+			return $this->get_stripe_card_styles();
+		}
+
+	}
+
+	/**
+	 * Gets the styles for the payment element control/widget.
+	 *
+	 * @since 5.0
+	 *
+	 * @return array Returns an array containg styles for the card element.
+	 */
+	private function get_stripe_card_styles() {
 		return array(
 			'base'    => array(
 				'backgroundColor' => 'transparent',
@@ -500,22 +561,22 @@ class GFStripe extends GFPaymentAddOn {
 				'fontSmoothing'   => '--gform-theme-control-font-smoothing',
 				'fontStyle'       => '--gform-theme-control-font-style',
 				'fontWeight'      => '--gform-theme-control-font-weight',
-				'iconColor'       => '--gform-theme-control-icon-color',
+				'iconColor'       => '--gform-theme-control-color',
 				'letterSpacing'   => '--gform-theme-control-letter-spacing',
 				':hover'          => array(
 					'backgroundColor' => 'transparent',
 					'color'           => '--gform-theme-control-color-hover',
-					'iconColor'       => '--gform-theme-control-icon-color-hover',
+					'iconColor'       => '--gform-theme-control-color-hover',
 				),
 				':focus'          => array(
 					'backgroundColor' => 'transparent',
 					'color'           => '--gform-theme-control-color-focus',
-					'iconColor'       => '--gform-theme-control-icon-color-focus',
+					'iconColor'       => '--gform-theme-control-color-focus',
 				),
 				':disabled'       => array(
 					'backgroundColor' => 'transparent',
 					'color'           => '--gform-theme-control-color-disabled',
-					'iconColor'       => '--gform-theme-control-icon-color-disabled',
+					'iconColor'       => '--gform-theme-control-color-disabled',
 				),
 				'::placeholder'   => array(
 					'color'         => '--gform-theme-control-placeholder-color',
@@ -529,6 +590,211 @@ class GFStripe extends GFPaymentAddOn {
 			'invalid' => array(
 				'color'     => '--gform-theme-control-color',
 				'iconColor' => '--gform-theme-color-danger',
+			),
+		);
+	}
+
+	/**
+	 * Gets the styles for Stripe's payment element.
+	 *
+	 * @since 5.0
+	 *
+	 * @return array Returns an array containg styles for Stripe's payment element.
+	 */
+	private function get_stripe_payment_element_styles() {
+		return array(
+			'labels'    => 'floating',
+			'theme'     => 'stripe',
+			'variables' => array(
+				'borderRadius'          => '--gform-theme-control-border-radius',
+				'colorBackground'       => '--gform-theme-control-background-color',
+				'colorBackgroundText'   => '--gform-theme-control-color',
+				'colorIcon'             => '--gform-theme-control-color',
+				'colorIconCardCvc'      => '--gform-theme-control-color',
+				'colorIconCardCvcError' => '--gform-theme-color-danger',
+				'colorIconCardError'    => '--gform-theme-color-danger',
+				//'colorIconSelectArrow' => '--gform-theme-color-inside-control-dark-lighter', not currently supported
+				'colorIconTab'          => '--gform-theme-control-button-icon-color-secondary',
+				'colorIconTabHover'     => '--gform-theme-control-button-icon-color-hover-secondary',
+				'colorIconTabSelected'  => '--gform-theme-control-button-color-secondary',
+				'colorIconTabMore'      => '--gform-theme-control-button-icon-color-secondary',
+				'colorIconTabMoreHover' => '--gform-theme-control-button-icon-color-hover-secondary',
+				'colorIconMenu'         => '--gform-theme-control-color',
+				'colorPrimary'          => '--gform-theme-color-primary',
+				'colorPrimaryText'      => '--gform-theme-color-primary-contrast',
+				'colorDanger'           => '--gform-theme-color-danger',
+				'colorDangerText'       => '--gform-theme-color-danger-contrast',
+				'colorSuccess'          => '--gform-theme-color-success',
+				'colorSuccessText'      => '--gform-theme-color-success-contrast',
+				'colorText'             => '--gform-theme-control-color',
+				'colorTextPlaceholder'  => '--gform-theme-control-placeholder-color',
+				'colorTextSecondary'    => '--gform-theme-control-color',
+				'fontFamily'            => '--gform-theme-font-family',
+				'fontSizeBase'          => '16px',
+				'fontSmooth'            => '--gform-theme-control-font-smoothing',
+				'spacingGridRow'        => '--gform-theme-field-row-gap',
+				'spacingGridColumn'     => '--gform-theme-field-col-gap',
+			),
+			'rules'     => array(
+				'.Input'                        => array(
+					'borderColor'   => '--gform-theme-control-border-color',
+					'borderWidth'   => '--gform-theme-control-border-width',
+					'borderStyle'   => '--gform-theme-control-border-style',
+					'color'         => '--gform-theme-control-color',
+					'fontWeight'    => '--gform-theme-control-font-weight',
+					'fontSize'      => '--gform-theme-control-font-size',
+					'letterSpacing' => '--gform-theme-control-letter-spacing',
+				),
+				'.Input:hover'                  => array(
+					'backgroundColor' => '--gform-theme-control-background-color-hover',
+					'borderColor'     => '--gform-theme-control-border-color-hover',
+					'color'           => '--gform-theme-control-color-hover',
+				),
+				'.Input:hover:focus'            => array(
+					'backgroundColor' => '--gform-theme-control-background-color-focus',
+					'borderColor'     => '--gform-theme-control-border-color-focus',
+					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+					'color'           => '--gform-theme-control-color-focus',
+				),
+				'.Input:focus'                  => array(
+					'backgroundColor' => '--gform-theme-control-background-color-focus',
+					'borderColor'     => '--gform-theme-control-border-color-focus',
+					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+					'color'           => '--gform-theme-control-color-focus',
+				),
+				'.Input:disabled'               => array(
+					'backgroundColor' => '--gform-theme-control-background-color-disabled',
+					'borderColor'     => '--gform-theme-control-border-color-disabled',
+					'color'           => '--gform-theme-control-color-disabled',
+				),
+				'.Input:disabled:hover'         => array(
+					'backgroundColor' => '--gform-theme-control-background-color-disabled',
+					'borderColor'     => '--gform-theme-control-border-color-disabled',
+					'color'           => '--gform-theme-control-color-disabled',
+				),
+				'.Input--invalid'               => array(
+					'color'           => '--gform-theme-control-color-error',
+					'backgroundColor' => '--gform-theme-control-background-color-error',
+					'borderColor'     => '--gform-theme-control-border-color-error',
+					'boxShadow'       => '0',
+				),
+				'.Input--invalid:hover'         => array(
+					'borderColor' => '--gform-theme-control-border-color-error',
+				),
+				'.Input::placeholder'           => array(
+					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+					'fontSize'      => '--gform-theme-control-placeholder-font-size',
+					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+				),
+				'.CodeInput'                    => array(
+					'borderColor'   => '--gform-theme-control-border-color',
+					'borderWidth'   => '--gform-theme-control-border-width',
+					'borderStyle'   => '--gform-theme-control-border-style',
+					'color'         => '--gform-theme-control-color',
+					'fontWeight'    => '--gform-theme-control-font-weight',
+					'fontSize'      => '--gform-theme-control-font-size',
+					'letterSpacing' => '--gform-theme-control-letter-spacing',
+				),
+				'.CodeInput:focus'              => array(
+					'backgroundColor' => '--gform-theme-control-background-color-focus',
+					'borderColor'     => '--gform-theme-control-border-color-focus',
+					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+					'color'           => '--gform-theme-control-color-focus',
+				),
+				'.CheckboxInput'                => array(
+					'borderColor'  => '--gform-theme-control-border-color',
+					'borderWidth'  => '--gform-theme-control-border-width',
+					'borderStyle'  => '--gform-theme-control-border-style',
+					'borderRadius' => '--gform-theme-control-checkbox-check-border-radius',
+				),
+				'.CheckboxInput:hover'          => array(
+					'backgroundColor' => '--gform-theme-control-background-color-hover',
+					'borderColor'     => '--gform-theme-control-border-color-hover',
+				),
+				'.CheckboxInput--checked:hover' => array(
+					'backgroundColor' => '--gform-theme-control-background-color',
+					'borderColor'     => '--gform-theme-control-border-color',
+				),
+				'.Error'                        => array(
+					'color'         => '--gform-theme-control-description-color-error',
+					'fontFamily'    => '--gform-theme-control-description-font-family-error',
+					'fontSize'      => '--gform-theme-control-description-font-size-error',
+					'fontWeight'    => '--gform-theme-control-description-font-weight-error',
+					'letterSpacing' => '--gform-theme-control-description-letter-spacing-error',
+					'lineHeight'    => '--gform-theme-control-description-line-height-error',
+					'marginTop'     => '--gform-theme-description-spacing',
+				),
+				'.Label--resting'               => array(
+					'color'         => '--gform-theme-control-placeholder-color',
+					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+					'fontSize'      => '--gform-theme-control-placeholder-font-size',
+					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+					'opacity'       => '--gform-theme-control-placeholder-opacity',
+				),
+				'.Label--floating'              => array(
+					'color'         => '--gform-theme-control-color',
+					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+					'fontWeight'    => '--gform-theme-control-label-font-weight-primary',
+					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+				),
+				'.Tab'                          => array(
+					'backgroundColor' => '--gform-theme-control-button-background-color-secondary',
+					'borderColor'     => '--gform-theme-control-button-border-color-secondary',
+					'borderWidth'     => '--gform-theme-control-button-border-width-secondary',
+					'borderStyle'     => '--gform-theme-control-button-border-style-secondary',
+					'color'           => '--gform-theme-control-button-color-secondary',
+				),
+				'.Tab:hover'                    => array(
+					'backgroundColor' => '--gform-theme-control-button-background-color-hover-secondary',
+					'borderColor'     => '--gform-theme-control-button-border-color-hover-secondary',
+					'color'           => '--gform-theme-control-button-color-hover-secondary',
+				),
+				'.Tab:focus'                    => array(
+					'backgroundColor' => '--gform-theme-control-button-background-color-focus-secondary',
+					'borderColor'     => '--gform-theme-control-button-border-color-focus-secondary',
+					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+					'color'           => '--gform-theme-control-button-color-focus-secondary',
+				),
+				'.Tab:disabled'                 => array(
+					'backgroundColor' => '--gform-theme-control-button-background-color-disabled-secondary',
+					'borderColor'     => '--gform-theme-control-button-border-color-disabled-secondary',
+					'color'           => '--gform-theme-control-button-color-disabled-secondary',
+				),
+				'.Tab--selected'                => array(
+					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+					'color'       => '--gform-theme-control-button-color-secondary',
+				),
+				'.Tab--selected:hover'          => array(
+					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+					'color'       => '--gform-theme-control-button-color-secondary',
+				),
+				'.Tab--selected:focus'          => array(
+					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+					'boxShadow'   => '--gform-theme-control-box-shadow-focus',
+					'color'       => '--gform-theme-control-button-color-secondary',
+				),
+				'.RedirectText'                 => array(
+					'color'         => '--gform-theme-color-primary',
+					'fontFamily'    => '--gform-theme-control-description-font-family',
+					'fontSize'      => '--gform-theme-control-description-font-size',
+					'fontWeight'    => '--gform-theme-control-description-font-weight',
+					'letterSpacing' => '--gform-theme-control-description-letter-spacing',
+					'lineHeight'    => '--gform-theme-control-description-line-height',
+				),
+				'.PickerItem--new'              => array(
+					'color' => '--gform-theme-control-color',
+				),
+				'.TermsText'                    => array(
+					'color' => '--gform-theme-control-description-color',
+				),
+				'.TermsLink'                    => array(
+					'color' => '--gform-theme-control-description-color',
+				),
+                '.Block'                        => array(
+                    'borderRadius' => '--gform-theme-control-border-radius-max-lg',
+                ),
 			),
 		);
 	}
@@ -576,6 +842,19 @@ class GFStripe extends GFPaymentAddOn {
 		add_action( 'wp_ajax_gfstripe_get_country_code', array( $this, 'get_country_code' ) );
 		add_action( 'wp_ajax_gfstripe_capture_action', array( $this, 'ajax_capture_payment' ) );
 		add_action( 'wp_ajax_gfstripe_refund', array( $this, 'ajax_refund' ) );
+
+		add_action( 'wp_ajax_nopriv_gfstripe_get_stripe_coupon', array( $this->get_payment_element_handler(), 'get_stripe_coupon' ) );
+		add_action( 'wp_ajax_gfstripe_get_stripe_coupon', array( $this->get_payment_element_handler(), 'get_stripe_coupon' ) );
+
+		add_action( 'wp_ajax_nopriv_gfstripe_validate_form', array( $this->get_payment_element_handler(), 'start_checkout' ) );
+		add_action( 'wp_ajax_gfstripe_validate_form', array( $this->get_payment_element_handler(), 'start_checkout' ) );
+
+		add_action( 'wp_ajax_nopriv_gfstripe_delete_draft_entry', array( $this->get_payment_element_handler(), 'delete_draft_entry' ) );
+		add_action( 'wp_ajax_gfstripe_delete_draft_entry', array( $this->get_payment_element_handler(), 'delete_draft_entry' ) );
+
+		add_action( 'wp_ajax_nopriv_gfstripe_payment_element_check_rate_limiting', array( $this->get_payment_element_handler(), 'check_rate_limiting' ) );
+		add_action( 'wp_ajax_gfstripe_payment_element_check_rate_limiting', array( $this->get_payment_element_handler(), 'check_rate_limiting' ) );
+
 	}
 
 	/**
@@ -591,6 +870,81 @@ class GFStripe extends GFPaymentAddOn {
 		add_action( 'admin_init', array( $this, 'maybe_update_auth_tokens' ) );
 		add_action( 'gform_payment_details', array( $this, 'maybe_display_capture_button' ), 10, 2 );
 		add_action( 'gform_payment_details', array( $this, 'maybe_display_refund_button' ), 10, 2 );
+		add_action( 'gform_field_standard_settings', array( $this, 'add_payment_method_setting' ), 10, 2 );
+	}
+
+	/**
+	 * Adds the enable additional payment methods (payment element) setting to the stripe field.
+	 *
+	 * @since 5.0
+	 *
+	 * @param int $placement The setting placement.
+	 * @param int $form_id   The current form ID.
+	 *
+	 * @return void
+	 */
+	public function add_payment_method_setting( $placement, $form_id ) {
+		if ( $placement !== 1415 ) {
+			return;
+		}
+		?>
+		<li class="enable_multiple_payment_methods_setting field_setting">
+			<label for="rules" class="section_label">
+				<?php esc_html_e( 'Payment Methods', 'gravityformsstripe' ); ?>
+				<?php gform_tooltip( 'form_field_enable_multiple_payment_methods' ); ?>
+			</label>
+			<?php
+			if ( $this->is_stripe_connect_enabled() === true ) {
+				$disabled = $this->is_payment_element_supported() ? '' : 'disabled="disabled"';
+				?>
+			<div>
+				<input type="checkbox" <?php echo $disabled; ?> id="field_enable_multiple_payment_methods" data-js="enable_multiple_payment_methods" onclick="SetFieldProperty('enableMultiplePaymentMethods', this.checked);" onkeypress="SetFieldProperty('enableMultiplePaymentMethods', this.checked);" />
+				<label for="field_enable_multiple_payment_methods" class="inline">
+					<?php esc_html_e( 'Enable additional payment methods', 'gravityformsstripe' ); ?>
+				</label>
+				<div id="field_multiple_payment_methods_description">
+					<?php
+					// translators: variables are the markup to generate a link.
+					printf( esc_html__( 'Available payment methods can be configured in your %1$sStripe Dashboard%2$s.', 'gravityformsstripe' ), '<a href="https://dashboard.stripe.com/settings/payment_methods" target="_blank">', '</a>' );
+					?>
+				</div>
+			</div>
+			<br>
+			<div id="link_email_field_container">
+				<label for="link_email_field" class="section_label">
+					<?php esc_html_e( 'Link Email Field', 'gravityformsstripe' ); ?>
+				</label>
+				<select id="link_email_field" name="link_email_field" class="inline">
+					<?php
+					$form = GFAPI::get_form( $form_id );
+					foreach ( $form['fields'] as $field ) {
+						if ( $field->type === 'email' ) {
+							?>
+								<option value="<?php echo esc_attr( $field->id ); ?>" <?php selected( $field->id, 1 ); ?>>
+								<?php echo esc_html( $field->label . ' - Field ID:' . $field->id ); ?>
+								</option>
+							<?php
+						}
+					}
+					?>
+				</select>
+				<div>
+					<?php
+					// translators: variables are the markup to generate a link.
+					printf( esc_html__( 'Link is a payment method that enables your customers to save their payment information so they can use it again on any site that uses Stripe Link. %1$sLearn more about Link%2$s.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/payments/link" target="_blank">', '</a>' );
+					?>
+				</div>
+			</div>
+			<?php } else { ?>
+				<div>
+					<?php
+					// translators: variables are the markup to generate a link.
+					printf( esc_html__( 'This option is disabled because Stripe is authenticated using API keys instead of Stripe Connect. To take advantage of additional payment methods, re-authenticate using Stripe Connect. %1$sLearn more about Stripe payment element%2$s.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/payments/payment-element" target="_blank">', '</a>' );
+					?>
+				</div>
+			<?php } ?>
+		</li>
+		<?php
 	}
 
 	/**
@@ -610,6 +964,27 @@ class GFStripe extends GFPaymentAddOn {
 		return $this->billing_portal_handler;
 
 	}
+
+	/**
+	 * Gets Payment Element handler instance if already initialized, otherwise, initialize it.
+	 *
+	 * @since 5.0
+	 *
+	 * @return GF_Stripe_Payment_Elements
+	 */
+	public function get_payment_element_handler() {
+
+		if ( $this->payment_element_handler instanceof GF_Stripe_Payment_Element === false ) {
+			require_once plugin_dir_path( __FILE__ ) . '/includes/payment-element/class-gf-payment-element-payment.php';
+			require_once plugin_dir_path( __FILE__ ) . '/includes/payment-element/class-gf-payment-element-submission.php';
+			require_once plugin_dir_path( __FILE__ ) . '/includes/payment-element/class-gf-payment-element.php';
+			$this->payment_element_handler = new GF_Stripe_Payment_Element( $this );
+		}
+
+		return $this->payment_element_handler;
+
+	}
+
 
 	/**
 	 * Handler for the gf_validate_secret_key AJAX request.
@@ -687,6 +1062,7 @@ class GFStripe extends GFPaymentAddOn {
 				'title'       => esc_html__( 'Payment Collection', 'gravityformsstripe' ),
 				'description' => $this->get_checkout_method_section_description(),
 				'fields'      => array(
+
 					array(
 						'name'          => 'checkout_method',
 						'label'         => esc_html__( 'Payment Collection Method', 'gravityformsstripe' ),
@@ -694,23 +1070,23 @@ class GFStripe extends GFPaymentAddOn {
 						'default_value' => 'stripe_elements',
 						'choices'       => array(
 							array(
-								'label'   => esc_html__( 'Stripe Credit Card Field (Elements, SCA-ready)', 'gravityformsstripe' ),
+								'label'   => esc_html__( 'Stripe Field (Elements, SCA-ready)', 'gravityformsstripe' ),
 								'value'   => 'stripe_elements',
-								'tooltip' => '<h6>' . esc_html__( 'Stripe Credit Card Field (Elements)', 'gravityformsstripe' ) . '</h6>' .
-								             '<p>' . esc_html__( 'Select this option to use a Credit Card field hosted by Stripe. This option offers the benefit of a streamlined user interface and the security of having the credit card field hosted on Stripe\'s servers. Selecting this option or "Stripe Payment Form" greatly simplifies the PCI compliance application process with Stripe.', 'gravityformsstripe' ) .
+								'tooltip' => '<h6>' . esc_html__( 'Stripe Field', 'gravityformsstripe' ) . '</h6>' .
+								             '<p>' . esc_html__( 'Select this option to use a Stripe field hosted by Stripe. The Stripe field can be embedded in a form and supports credit card payments as well as other payment methods such as Google Pay, Apple Pay and bank transfers.', 'gravityformsstripe' ) .
 								             '</p><p>' .
 								             /* translators: 1. Open link tag 2. Close link tag */
-								             sprintf( esc_html__( 'Stripe Elements is ready for %1$sStrong Customer Authentication%2$s for European customers.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/strong-customer-authentication" target="_blank">', '</a>' ) .
+								             sprintf( esc_html__( 'Stripe Field is ready for %1$sStrong Customer Authentication%2$s for European customers.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/strong-customer-authentication" target="_blank">', '</a>' ) .
 								             '</p>',
 							),
 							array(
 								'label'   => esc_html__( 'Stripe Payment Form (Stripe Checkout, SCA-ready)', 'gravityformsstripe' ),
 								'value'   => 'stripe_checkout',
 								'tooltip' => '<h6>' . esc_html__( 'Stripe Payment Form', 'gravityformsstripe' ) . '</h6>' .
-								             '<p>' . esc_html__( 'Select this option to collect all payment information in a separate page hosted by Stripe. This option is the simplest to implement since it doesn\'t require a credit card field in your form. Selecting this option or "Stripe Credit Card Field" greatly simplifies the PCI compliance application process with Stripe.', 'gravityformsstripe' ) .
+								             '<p>' . esc_html__( 'Select this option to collect all payment information in a separate page hosted by Stripe. This option is the simplest to implement since it doesn\'t require a Stripe field in your form. Stripe Checkout supports credit card payments as well as other payment methods such as Google Pay, Apple Pay and bank transfers.', 'gravityformsstripe' ) .
 								             '</p><p>' .
 								             /* translators: 1. Open link tag 2. Close link tag */
-								             sprintf( esc_html__( 'Stripe Checkout also supports Apple Pay and 3D secure, and is ready for %1$sStrong Customer Authentication%2$s for European customers.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/strong-customer-authentication" target="_blank">', '</a>' ) .
+								             sprintf( esc_html__( 'Stripe Checkout is ready for %1$sStrong Customer Authentication%2$s for European customers.', 'gravityformsstripe' ), '<a href="https://stripe.com/docs/strong-customer-authentication" target="_blank">', '</a>' ) .
 								             '</p>',
 							),
 						),
@@ -799,6 +1175,11 @@ class GFStripe extends GFPaymentAddOn {
 			array(
 				'label' => 'hidden',
 				'name'  => 'test_secret_key_is_valid',
+				'type'  => 'hidden',
+			),
+			array(
+				'label' => 'hidden',
+				'name'  => 'stripe_admin_init_intent',
 				'type'  => 'hidden',
 			),
 		);
@@ -1426,6 +1807,7 @@ class GFStripe extends GFPaymentAddOn {
 			$entry['transaction_type'] === '1'
 			&& $this->is_payment_gateway( $entry['id'] )
 			&& $entry['payment_status'] == 'Authorized'
+			&& gform_get_meta( rgar( $entry, 'id' ), 'payment_method' ) !== 'stripe_payment_element'
 		);
 	}
 
@@ -1693,15 +2075,13 @@ class GFStripe extends GFPaymentAddOn {
 
 		// Get default payment feed settings fields.
 		$default_settings = parent::feed_settings_fields();
-
-
 		// Prepare customer information fields.
 		$customer_info_field = array(
 			'name'       => 'customerInformation',
 			'label'      => esc_html__( 'Customer Information', 'gravityformsstripe' ),
 			'type'       => 'field_map',
 			'dependency' => array(
-				'field'  => 'transactionType',
+				'field' => 'transactionType',
 				'values' => array( 'subscription' ),
 			),
 			'field_map'  => array(
@@ -1710,7 +2090,7 @@ class GFStripe extends GFPaymentAddOn {
 					'label'      => esc_html__( 'Email', 'gravityformsstripe' ),
 					'required'   => true,
 					'field_type' => array( 'email', 'hidden' ),
-					'tooltip'    => '<h6>' . esc_html__( 'Email', 'gravityformsstripe' ) . '</h6>' . esc_html__( 'You can specify an email field and it will be sent to the Stripe Checkout screen as the customer\'s email.', 'gravityformsstripe' ),
+					'tooltip'    => '<h6>' . esc_html__( 'Email', 'gravityformsstripe' ) . '</h6>' . esc_html__( 'You can specify an email field and it will be sent to Stripe as the customer\'s email.', 'gravityformsstripe' ),
 				),
 				array(
 					'name'     => 'description',
@@ -1721,11 +2101,15 @@ class GFStripe extends GFPaymentAddOn {
 					'name'       => 'coupon',
 					'label'      => esc_html__( 'Coupon', 'gravityformsstripe' ),
 					'required'   => false,
-					'field_type' => array( 'coupon', 'text' ),
+					'field_type' => array( 'text' ),
 					'tooltip'    => '<h6>' . esc_html__( 'Coupon', 'gravityformsstripe' ) . '</h6><p>' . esc_html__( 'Select which field contains the coupon code to be applied to the recurring charge(s). The coupon must also exist in your Stripe Dashboard.', 'gravityformsstripe' ) . '</p><p>' . esc_html__( 'If you use Stripe Checkout, the coupon won\'t be applied to your first invoice.', 'gravityformsstripe' ) . '</p>',
 				),
 			),
 		);
+
+		if ( $this->is_payment_element_enabled( $this->get_current_form() ) ) {
+			$customer_info_field = $this->get_payment_element_handler()->update_customer_info_field( $customer_info_field );
+		}
 
 		// Replace default billing information fields with customer information fields.
 		$default_settings = $this->replace_field( 'billingInformation', $customer_info_field, $default_settings );
@@ -1885,7 +2269,7 @@ class GFStripe extends GFPaymentAddOn {
 					'field'  => 'transactionType',
 					'values' => array( 'product' ),
 				),
-				'tooltip'    => '<h6>' . esc_html__( 'Customer Email', 'gravityformsstripe' ) . '</h6>' . esc_html__( 'You can specify an email field and it will be sent to the Stripe Checkout screen as the customer\'s email.', 'gravityformsstripe' ),
+				'tooltip'    => '<h6>' . esc_html__( 'Customer Email', 'gravityformsstripe' ) . '</h6>' . esc_html__( 'You can specify an email field and it will be sent to Stripe as the customer\'s email.', 'gravityformsstripe' ),
 			),
 			array(
 				'name'          => 'billingAddress',
@@ -2425,12 +2809,13 @@ class GFStripe extends GFPaymentAddOn {
 		add_filter( 'gform_field_css_class', array( $this, 'stripe_card_field_css_class' ), 10, 3 );
 		add_filter( 'gform_submission_values_pre_save', array( $this, 'stripe_card_submission_value_pre_save' ), 10, 3 );
 		add_filter( 'gform_shortcode_stripe_customer_portal_link', array( $this->get_billing_portal_handler(), 'stripe_customer_portal_link_shortcode' ), 10, 3 );
-
 		// Supports frontend feeds.
 		$this->_supports_frontend_feeds = true;
 
-		if ( $this->get_plugin_setting( 'checkout_method' ) === 'credit_card' ) {
-			$this->_requires_credit_card = true;
+		switch ( $this->get_plugin_setting( 'checkout_method' ) ) {
+			case 'credit_card':
+				$this->_requires_credit_card = true;
+				break;
 		}
 
 		if ( $this->is_stripe_checkout_enabled() ) {
@@ -2479,8 +2864,14 @@ class GFStripe extends GFPaymentAddOn {
 			'formId'         => $form['id'],
 			'pageInstance'   => isset( $form['page_instance'] ) ? $form['page_instance'] : 0,
 			'isAjax'         => $is_ajax,
-			'stripe_payment' => ( $this->has_stripe_card_field( $form ) ) ? 'elements' : 'stripe.js',
+			'stripe_payment' => ( $this->has_stripe_card_field( $form ) ) ? ( $this->is_payment_element_enabled( $form ) ? 'payment_element' : 'elements' ) : 'stripe.js',
 		);
+
+		// When using the payment element, for some methods we can't decide if the payment has failed until the form is being reloaded
+		// if that happens a value is stored in cache, so we can pass it to front end here.
+		// Check  GF_Stripe_Payment_Element::validate_redirect_intent()
+		$args['payment_element_intent_failure'] = GFCache::get( 'payment_element_intent_failure' );
+		GFCache::delete( 'payment_element_intent_failure' );
 
 		if ( $this->is_rate_limits_enabled( $form['id'] ) ) {
 			$args['cardErrorCount'] = $this->get_card_error_count();
@@ -2503,8 +2894,9 @@ class GFStripe extends GFPaymentAddOn {
 		$args['currency'] = gf_apply_filters( array( 'gform_currency_pre_save_entry', $form['id'] ), GFCommon::get_currency(), $form );
 		$feeds            = $this->get_feeds_by_slug( $this->_slug, $form['id'] );
 		if ( $this->has_stripe_card_field( $form ) ) {
+			$field = $this->get_stripe_card_field( $form );
 			// Add options when creating Stripe Elements.
-
+			$args['field'] = $field;
 			/**
 			 * This filter allows classes to be used with Stripe Elements
              * to control the look of the Credit Card field.
@@ -2519,22 +2911,23 @@ class GFStripe extends GFPaymentAddOn {
 
 			/**
 			 * This filter allows styles to be used with Stripe Elements
-             * to control the look of the Credit Card field.
+             * to control the look of the Credit Card field and/or Payment Element.
 			 * NOTE: this filter does not apply to forms using the Orbital form theme (theme framework)
 			 *
 			 * @since 2.6
+             * @since 5.0 Added an argument to know whether or not the payment element is enabled.
 			 *
 			 * @link https://stripe.com/docs/js/elements_object/create_element?type=card#elements_create-options-style
+             * @link https://stripe.com/docs/elements/appearance-api
 			 *
 			 * @param array The list of styles to be passed along to the Stripe element.
 			 */
-			$args['cardStyle']   = apply_filters( 'gform_stripe_elements_style', array(), $form['id'] );
+			$args['cardStyle'] = apply_filters( 'gform_stripe_elements_style', array(), $form['id'], $this->is_payment_element_enabled( $form ) );
 
 			foreach ( $feeds as $feed ) {
 				if ( rgar( $feed, 'is_active' ) === '0' ) {
 					continue;
 				}
-
 				$feed_settings = array(
 					'feedId'          => $feed['id'],
 					'type'            => rgars( $feed, 'meta/transactionType' ),
@@ -2544,6 +2937,8 @@ class GFStripe extends GFPaymentAddOn {
 					'address_state'   => rgars( $feed, 'meta/billingInformation_address_state' ),
 					'address_zip'     => rgars( $feed, 'meta/billingInformation_address_zip' ),
 					'address_country' => rgars( $feed, 'meta/billingInformation_address_country' ),
+					'coupon'          => rgars( $feed, 'meta/customerInformation_coupon' ),
+					'hasTrial'        => rgars( $feed, 'meta/trial_enabled' ),
 				);
 
 				if ( rgars( $feed, 'meta/transactionType' ) === 'product' ) {
@@ -2557,6 +2952,12 @@ class GFStripe extends GFPaymentAddOn {
 
 				if ( $this->is_feed_stripe_connect_enabled( $feed['id'] ) ) {
 					$feed_settings['apiKey'] = $this->get_publishable_api_key( $feed['meta'] );
+				}
+
+				if ( $this->is_payment_element_enabled( $form ) ) {
+					$feed_settings['initial_payment_information'] = $this->get_payment_element_handler()->get_initial_payment_information( $feed, $form );
+					$stripe_field                                 = $this->get_stripe_card_field( $form );
+					$feed_settings['link_email_field_id']         = rgobj( $field, 'linkEmailFieldId' );
 				}
 
 				$args['feeds'][] = $feed_settings;
@@ -2579,12 +2980,43 @@ class GFStripe extends GFPaymentAddOn {
 			}
 		}
 
+
+
 		// Initialize Stripe script.
 		$args   = apply_filters( 'gform_stripe_object', $args, $form['id'] );
 		$script = 'new GFStripe( ' . json_encode( $args, JSON_FORCE_OBJECT ) . ' );';
 
 		// Add Stripe script to form scripts.
 		GFFormDisplay::add_init_script( $form['id'], 'stripe', GFFormDisplay::ON_PAGE_RENDER, $script );
+	}
+
+	/**
+	 * Checks if the payment element is enabled for the given form.
+	 *
+	 * @since 5.0
+	 *
+	 * @param array $form The current form object being processed.
+	 *
+	 * @return boolean Whether the payment element is enabled for the given form or not.
+	 */
+	public function is_payment_element_enabled( $form ) {
+		if ( ! $this->is_payment_element_supported() ) {
+			return false;
+		}
+
+		$cc_field = $this->get_stripe_card_field( $form );
+		return $cc_field && rgobj( $cc_field, 'enableMultiplePaymentMethods' ) && $this->is_stripe_connect_enabled() === true;
+	}
+
+	/**
+	 * Determines if the Payment Element is supported by the installed version of Gravity Forms.
+	 *
+	 * @since 5.0
+	 *
+	 * @return bool Returns true if Payment Element is supported by the installed version of Gravity Forms. Returns false otherwise.
+	 */
+	public function is_payment_element_supported() {
+		return is_callable( array( 'GFAPI', 'validate_form' ) );
 	}
 
 	/**
@@ -2951,10 +3383,7 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return string
 	 */
 	public function stripe_elements_requires_action_message( $validation_message = '', $form = array() ) {
-		return $this->get_validation_error_markup(
-			esc_html__( 'There was a problem with your submission:', 'gravityformsstripe' ) . ' ' .  $this->get_authorization_error_message(),
-			$form
-		);
+		return $this->get_validation_error_markup( $this->get_authorization_error_message(), $form );
 	}
 
 	/**
@@ -2983,7 +3412,6 @@ class GFStripe extends GFPaymentAddOn {
 	}
 
 	// # STRIPE TRANSACTIONS -------------------------------------------------------------------------------------------
-
 	/**
 	 * Initialize authorizing the transaction for the product & services type feed or return the Stripe.js error.
 	 *
@@ -3015,6 +3443,11 @@ class GFStripe extends GFPaymentAddOn {
 			$this->include_stripe_api( $this->get_api_mode( $feed['meta'], $feed['id'] ), $feed['meta'] );
 		} else {
 			$this->include_stripe_api();
+		}
+
+		// If Payment element is enabled, then this is called by submitting a form with 0 total or a hidden stripe field.
+		if ( $this->is_payment_element_enabled( $form ) ) {
+			return $this->authorize_product( $feed, $submission_data, $form, $entry );
 		}
 
 		// If there was an error when retrieving the Stripe.js token, return an authorization error.
@@ -3066,11 +3499,20 @@ class GFStripe extends GFPaymentAddOn {
 		if ( ! empty( $receipt_field ) && strtolower( $receipt_field ) !== 'do not send receipt' ) {
 			$data['receipt_email'] = $this->get_field_value( $form, $entry, $receipt_field );
 		}
-
+		$payment_element_enabled = $this->is_payment_element_enabled( $form );
 		// check if stripe_response has a payment id.
 		// if yes, confirm the payment here.
-		$stripe_response = $this->get_stripe_js_response();
-		if ( $this->is_payment_intent( $stripe_response->id ) ) {
+		if ( $payment_element_enabled ) {
+			$intent_id       = $this->get_payment_element_handler()->get_stripe_payment_object_id();
+			$stripe_response = $this->api->get_payment_intent( $intent_id );
+		} else {
+			$stripe_response = $this->get_stripe_js_response();
+		}
+
+		if (
+				! is_wp_error( $stripe_response )
+				&& ( $payment_element_enabled || $this->is_payment_intent( $stripe_response->id ) )
+		) {
 			$result = $this->api->get_payment_intent( $stripe_response->id );
 			if ( ! is_wp_error( $result ) ) {
 				$currency        = rgar( $entry, 'currency' );
@@ -3094,7 +3536,6 @@ class GFStripe extends GFPaymentAddOn {
 				// Change data before sending to Stripe.
 				$data = $this->get_product_payment_data( $data, $feed, $submission_data, $form, $entry );
 				$this->log_debug( __METHOD__ . '(): payment intent data to be updated => ' . print_r( $data, 1 ) );
-
 				// Compare the properties of the intent and the properties retrieved from the filter.
 				// If they are the same, then no need to update.
 				$intentArray = $result->toArray();
@@ -3104,7 +3545,6 @@ class GFStripe extends GFPaymentAddOn {
 						unset( $data[ $key ] );
 					}
 				}
-
 				// Update only if we have properties that are different from the intent's properties.
 				if ( ! empty( $data ) ) {
 					$result = $this->api->update_payment_intent( $result->id, $data );
@@ -3125,15 +3565,17 @@ class GFStripe extends GFPaymentAddOn {
 			}
 
 			// if status = requires_action, return validation error so we can do dynamic authentication on the front end.
-			if ( $result->status === 'requires_action' ) {
-				$error = $this->authorization_error( esc_html__( '3D Secure authentication is required for this payment. Please follow the instructions on the page to continue.', 'gravityformsstripe' ) );
+			if ( ! $payment_element_enabled && $result->status === 'requires_action' ) {
+				$error = $this->authorization_error( esc_html__( 'This payment might require 3D Secure authentication, please wait while we communicate with Stripe.', 'gravityformsstripe' ) );
 
 				return array_merge( $error, array( 'requires_action' => true ) );
+
 			} elseif ( $result->status === 'requires_payment_method' ) {
 				return $this->authorization_error( esc_html__( 'Your payment attempt has failed. Please enter your card details and try again.', 'gravityformsstripe' ) );
 			} elseif ( $result->status === 'canceled' ) {
 				return $this->authorization_error( esc_html__( 'The payment has been canceled', 'gravityformsstripe' ) );
 			} else {
+				$this->log_debug( __METHOD__ . '(): PaymentIntent status: ' . $result->status );
 				return array(
 					'is_authorized'  => true,
 					'transaction_id' => $stripe_response->id,
@@ -3225,13 +3667,28 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return array|boolean
 	 */
 	public function create_checkout_session( $feed, $submission_data, $form, $entry ) {
+
+		/**
+		 * Allow manually setting the payment methods used by Stripe Checkout.
+		 *
+		 * @since  5.0
+		 *
+		 * @param array $payment_methods An array of payment methods to be used.
+		 * @param array $feed            The feed currently being processed.
+		 * @param array $form            The form which created the current entry.
+		 */
+		$payment_methods = apply_filters( 'gform_stripe_checkout_payment_methods', array(), $feed, $form );
+
 		$is_subscription = $feed['meta']['transactionType'] === 'subscription';
 		$session_data    = array(
-			'payment_method_types'       => array( 'card' ),
 			'success_url'                => $this->get_success_url( $form['id'], $feed['id'] ),
 			'cancel_url'                 => $this->get_cancel_url( $form['id'] ),
 			'billing_address_collection' => ( boolval( rgars( $feed, 'meta/billingAddress' ) ) === true ) ? 'required' : 'auto',
 		);
+
+		if ( ! empty( $payment_methods ) ) {
+			$session_data['payment_method_types'] = $payment_methods;
+		}
 
 		// Get customer ID.
 		// Note here we cannot run create_customer() yet because the payment is not authorized yet.
@@ -3399,6 +3856,12 @@ class GFStripe extends GFPaymentAddOn {
 			unset( $session_data['customer_email'] );
 		}
 
+		// Remove 'customer_creation' if 'customer' is defined to prevent a session creation failure.
+		if ( isset( $session_data['customer'] ) && isset( $session_data['customer_creation'] ) ) {
+			$this->log_debug( __METHOD__ . '(): customer is defined; removing incompatible customer_creation property.' );
+			unset( $session_data['customer_creation'] );
+		}
+
 		$this->log_debug( __METHOD__ . '(): Session to be created => ' . print_r( $session_data, true ) );
 
 		$session = $this->api->create_checkout_session( $session_data );
@@ -3443,6 +3906,24 @@ class GFStripe extends GFPaymentAddOn {
 			$this->log_debug( __METHOD__ . '(): Stripe session will be created, but the payment hasn\'t been authorized yet. Mark it as processing.' );
 			GFAPI::update_entry_property( $entry['id'], 'payment_status', 'Processing' );
 
+			return true;
+		}
+
+		$form = GFAPI::get_form( $entry['form_id'] );
+		$feed = $this->get_feed( $this->get_feeds_by_entry( $entry['id'] )[0] );
+
+		if ( $this->is_payment_element_enabled( $form ) && ( $this->get_payment_element_capture_method( $form, $feed ) !== 'manual' ) || $this->get_payment_element_handler()->get_subscription_id() ) {
+			$this->log_debug( __METHOD__ . '(): Stripe payment element still processing the payment.' );
+			GFAPI::update_entry_property( $entry['id'], 'payment_status', 'Processing' );
+			GFAPI::update_entry_property( $entry['id'], 'transaction_id', $this->get_payment_element_handler()->get_subscription_id() );
+
+			gform_update_meta( $entry['id'], 'payment_element_intent_id', $this->get_payment_element_handler()->get_stripe_payment_object_id() );
+			gform_update_meta( $entry['id'], 'payment_element_feed_id', $this->get_payment_element_handler()->get_feed_id() );
+			gform_update_meta( $entry['id'], 'payment_element_draft_id', $this->get_payment_element_handler()->get_draft_id() );
+			gform_update_meta( $entry['id'], 'payment_element_subscription_id', $this->get_payment_element_handler()->get_subscription_id() );
+
+			$action['payment_status'] = 'Processing';
+			$this->post_payment_action( $entry, $action );
 			return true;
 		}
 
@@ -3542,6 +4023,11 @@ class GFStripe extends GFPaymentAddOn {
 				return in_array( $field->type, array( 'creditcard', 'stripe_creditcard' ), true );
 			}
 		);
+
+		// If payment element is enabled, then the payment was validated in the front end.
+		if ( rgobj( $credit_card_field, 'enableMultiplePaymentMethods' ) ) {
+			return true;
+		}
 
 		if ( $this->is_stripe_checkout_enabled() && empty( $credit_card_field ) ) {
 			return $this->get_stripe_checkout_validation_result( $validation_result );
@@ -3727,10 +4213,16 @@ class GFStripe extends GFPaymentAddOn {
 			return array();
 		}
 
+		$payment_element_enabled = $this->is_payment_element_enabled( $form );
 		// check if stripe_response has a payment id.
 		// if yes, confirm the payment here.
-		$response = $this->get_stripe_js_response();
-		if ( $this->is_payment_intent( $response->id ) ) {
+		if ( $payment_element_enabled ) {
+			$intent_id = $this->get_payment_element_handler()->get_stripe_payment_object_id();
+			$response  = $this->api->get_payment_intent( $intent_id );
+		} else {
+			$response = $this->get_stripe_js_response();
+		}
+		if ( $payment_element_enabled || $this->is_payment_intent( $response->id ) ) {
 			$intent = $this->api->get_payment_intent( $response->id );
 
 			if ( is_wp_error( $intent ) ) {
@@ -3760,20 +4252,40 @@ class GFStripe extends GFPaymentAddOn {
 				);
 			}
 
-			// Capture the payment if the filter not used.
-			if ( $this->get_capture_method( $feed, $submission_data, $form, $entry ) === 'manual' ) {
+			if ( $payment_element_enabled && $intent->status === 'processing' ) {
+
+				$this->log_debug( __METHOD__ . '(): Can not capture payment while it is still in pending status.' );
+
+				// Mark the payment status as Pending.
+				GFAPI::update_entry_property( $entry['id'], 'payment_status', 'Pending' );
+				GFAPI::update_entry_property( $entry['id'], 'payment_method', 'stripe_payment_element' );
+
 				return array();
 			}
 
-			// the filter not used, capture the payment intent.
-			$intent = $this->api->capture_payment_intent( $intent );
-			if ( is_wp_error( $intent ) ) {
-				$this->log_error( __METHOD__ . '(): Cannot capture payment intent data; ' . $intent->get_error_message() );
+			// Get the capture method.
+			$capture_method = $payment_element_enabled ? $this->get_payment_element_capture_method( $form, $feed ) : $this->get_capture_method( $feed, $submission_data, $form, $entry );
 
-				return array(
-					'is_success'    => false,
-					'error_message' => esc_html__( 'Cannot capture payment intent data.', 'gravityformsstripe' ),
-				);
+			// Return empty array if capture method is manual.
+			// An empty array will leave the payment status as authorized only.
+			if ( $capture_method === 'manual' ) {
+				return array();
+			}
+
+			// At this point, if the payment element is active, the intent has already been captured.
+			// Attempt capturing the payment only if the payment element is not enabled.
+			if ( $payment_element_enabled === false ) {
+				// Capturing payment intent.
+				$intent = $this->api->capture_payment_intent( $intent );
+
+				if ( is_wp_error( $intent ) ) {
+					$this->log_error( __METHOD__ . '(): Cannot capture payment intent data; ' . $intent->get_error_message() );
+
+					return array(
+						'is_success'    => false,
+						'error_message' => esc_html__( 'Cannot capture payment intent data.', 'gravityformsstripe' ),
+					);
+				}
 			}
 
 			if ( $intent->status !== 'succeeded' ) {
@@ -3783,7 +4295,7 @@ class GFStripe extends GFPaymentAddOn {
 					'is_success'     => true,
 					'transaction_id' => $response->id,
 					'amount'         => $this->get_amount_import( $intent->amount, $entry['currency'] ),
-					'payment_method' => rgpost( 'stripe_credit_card_type' ),
+					'payment_method' => $payment_element_enabled ? $intent->payment_method : rgpost( 'stripe_credit_card_type' ),
 				);
 			}
 		} else {
@@ -3867,7 +4379,11 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	public function process_subscription( $authorization, $feed, $submission_data, $form, $entry ) {
 		if ( empty( $authorization['subscription']['subscription_id'] ) && $this->is_stripe_checkout_enabled() ) {
+
 			gform_update_meta( $entry['id'], 'stripe_session_id', $authorization['subscription']['session_id'] );
+
+			$this->log_debug( __METHOD__ . '(): Marking entry as processing for a subscription created by Stripe Checkout.' );
+			GFAPI::update_entry_property( $entry['id'], 'payment_status', 'Processing' );
 
 			// return $entry directly for the new Stripe Checkout.
 			return $entry;
@@ -3939,6 +4455,12 @@ class GFStripe extends GFPaymentAddOn {
 			}
 		}
 
+		if ( $this->is_payment_element_enabled( $form ) && rgars( $authorization, 'subscription/status' ) === 'pending' ) {
+			gform_update_meta( $entry['id'], 'payment_element_order', $authorization['subscription']['order'] );
+			$this->complete_authorization( $entry, array() );
+			return $entry;
+		}
+
 		return parent::process_subscription( $authorization, $feed, $submission_data, $form, $entry );
 
 	}
@@ -3982,7 +4504,7 @@ class GFStripe extends GFPaymentAddOn {
 		if ( $hit_rate_limits = $this->maybe_hit_rate_limits( $form['id'] ) ) {
 			return $hit_rate_limits;
 		}
-
+		$payment_element_enabled = $this->is_payment_element_enabled( $form );
 		// Include Stripe API library.
 		if ( $this->is_feed_stripe_connect_enabled( $feed['id'] ) ) {
 			$this->include_stripe_api( $this->get_api_mode( $feed['meta'], $feed['id'] ), $feed['meta'] );
@@ -3991,11 +4513,12 @@ class GFStripe extends GFPaymentAddOn {
 		}
 
 		// If there was an error when retrieving the Stripe.js token, return an authorization error.
-		if ( $this->get_stripe_js_error() ) {
+		if ( ! $payment_element_enabled && $this->get_stripe_js_error() ) {
 			return $this->authorization_error( $this->get_stripe_js_error() );
 		}
 
 		if ( $this->is_stripe_checkout_enabled() ) {
+
 			// Create checkout session.
 			return $this->create_checkout_session( $feed, $submission_data, $form, $entry );
 		}
@@ -4017,7 +4540,13 @@ class GFStripe extends GFPaymentAddOn {
 		}
 
 		// Get Stripe.js token.
-		$stripe_response = $this->get_stripe_js_response();
+		// check if stripe_response has a payment id.
+		// if yes, confirm the payment here.
+		if ( $payment_element_enabled ) {
+				return $this->get_payment_element_handler()->subscribe( $feed, $submission_data, $form, $entry );
+		} else {
+			$stripe_response = $this->get_stripe_js_response();
+		}
 		// Subscription has been created but the invoice hasn't been paid.
 		if ( ! empty( $stripe_response->subscription ) ) {
 			$subscription = $this->api->get_subscription( $stripe_response->subscription );
@@ -4176,6 +4705,10 @@ class GFStripe extends GFPaymentAddOn {
 			return;
 		}
 
+		if ( rgget( 'resume_token' ) ) {
+			$this->get_payment_element_handler()->handle_redirect();
+		}
+
 		if ( $str = rgget( 'gf_stripe_success' ) ) {
 			$str = base64_decode( $str );
 
@@ -4204,23 +4737,16 @@ class GFStripe extends GFPaymentAddOn {
 						),
 					)
 				);
-
 				if ( is_wp_error( $entries ) || ! $entries ) {
 					return;
 				}
-
 				$entry = $entries[0];
 
-				// Check if the webhook event has completed session, if not, call complete_checkout_session().
-				if ( $subscription_id = rgar( $session, 'subscription' ) ) {
-					$is_checkout_session_completed = $entry['payment_status'] === 'Active';
-				} else {
-					$is_checkout_session_completed = $entry['payment_status'] === 'Paid' || $entry['payment_status'] === 'Authorized';
-				}
-
-				if ( ! $is_checkout_session_completed ) {
-					$this->log_debug( __METHOD__ . '(): Stripe Checkout session will be completed in the form confirmation page.' );
+				if ( $this->should_complete_checkout_session( $session, $entry ) ) {
+					$this->log_debug( __METHOD__ . '(): Stripe Checkout session will be completed by the thank you page.' );
 					$this->complete_checkout_session( $session, $entry, $feed, $form );
+				} else {
+					$this->log_debug( __METHOD__ . '(): Not completing the Stripe Checkout session on the thank you page.' );
 				}
 
 				if ( ! class_exists( 'GFFormDisplay' ) ) {
@@ -4245,6 +4771,50 @@ class GFStripe extends GFPaymentAddOn {
 	}
 
 	/**
+	 * Determines if Checkout Session should be completed, updating entry payment information.
+	 *
+	 * @since 5.0
+	 *
+	 * @param Session $session Stripe Session object.
+	 * @param array   $entry   Entry Object.
+	 *
+	 * @return bool Returns True if checkout session should be completed. False if not.
+	 */
+	private function should_complete_checkout_session( $session, $entry ) {
+		$subscription_id = rgar( $session, 'subscription' );
+		$is_session_paid = rgar( $session, 'payment_status' ) === 'paid';
+		if ( ! empty( $subscription_id ) ) {
+			$is_checkout_session_completed = $is_session_paid && $entry['payment_status'] === 'Active';
+		} else {
+			$is_checkout_session_completed = $is_session_paid && ( $entry['payment_status'] === 'Paid' || $entry['payment_status'] === 'Authorized' );
+		}
+
+		$capture_method = 'automatic';
+		$intent_status  = '';
+		if ( ! $subscription_id ) {
+			$intent = $this->api->get_payment_intent( $session['payment_intent'] );
+
+			if ( is_wp_error( $intent ) ) {
+				$this->log_error( __METHOD__ . '(): Could not retrieve intent from Stripe checkout session, Session should not be completed' );
+				return false;
+			}
+
+			$capture_method = $intent->capture_method;
+			$intent_status  = $intent->status;
+		}
+
+		$this->log_debug( __METHOD__ . '(): Stripe payment status: ' . $session['payment_status'] . '. Entry payment status: ' . $entry['payment_status'] );
+		if ( ! $is_checkout_session_completed || ( $capture_method === 'manual' && $intent_status === 'requires_capture' ) ) {
+			$this->log_debug( __METHOD__ . '(): Stripe checkout session should be completed.' );
+
+			return true;
+		} else {
+			$this->log_debug( __METHOD__ . '(): Stripe checkout session should NOT be completed.' );
+
+			return false;
+		}
+	}
+	/**
 	 * Complete payments or subscriptions when redirect back from Stripe Checkout or checkout.session.completed event
 	 * triggered.
 	 *
@@ -4258,6 +4828,15 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return array $action
 	 */
 	public function complete_checkout_session( $session, $entry, $feed, $form ) {
+
+		// If checkout session is locked by another process, abort.
+		if ( ! $this->get_checkout_session_lock( $session['id'] ) ) {
+			$this->log_debug( __METHOD__ . '(): Checkout session locked. Aborting to avoid duplication' );
+			$action['abort_callback'] = true;
+
+			return $action;
+		}
+
 		$action         = array();
 		$payment_status = rgar( $entry, 'payment_status' );
 
@@ -4265,6 +4844,7 @@ class GFStripe extends GFPaymentAddOn {
 			$subscription = $this->api->get_subscription( $subscription_id );
 			if ( is_wp_error( $subscription ) ) {
 				$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $subscription->get_error_message() );
+				$this->release_checkout_session_lock( $session['id'] );
 
 				return $action;
 			}
@@ -4286,6 +4866,7 @@ class GFStripe extends GFPaymentAddOn {
 				$customer = $this->api->get_customer( rgar( $session, 'customer' ) );
 				if ( is_wp_error( $customer ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $customer->get_error_message() );
+					$this->release_checkout_session_lock( $session['id'] );
 
 					return $action;
 				}
@@ -4293,6 +4874,7 @@ class GFStripe extends GFPaymentAddOn {
 				$plan = $this->get_plan( rgars( $subscription, 'items/data/0/plan/id' ) );
 				if ( is_wp_error( $subscription ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $subscription->get_error_message() );
+					$this->release_checkout_session_lock( $session['id'] );
 
 					return $action;
 				}
@@ -4312,6 +4894,7 @@ class GFStripe extends GFPaymentAddOn {
 
 					if ( is_wp_error( $subscription ) ) {
 						$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $subscription->get_error_message() );
+						$this->release_checkout_session_lock( $session['id'] );
 
 						return $action;
 					}
@@ -4322,6 +4905,7 @@ class GFStripe extends GFPaymentAddOn {
 				$invoice                   = $this->api->get_invoice( rgar( $subscription, 'latest_invoice' ) );
 				if ( is_wp_error( $invoice ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $invoice->get_error_message() );
+					$this->release_checkout_session_lock( $session['id'] );
 
 					return $action;
 				}
@@ -4356,6 +4940,7 @@ class GFStripe extends GFPaymentAddOn {
 
 				if ( is_wp_error( $payment_intent_object ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $payment_intent_object->get_error_message() );
+					$this->release_checkout_session_lock( $session['id'] );
 
 					return $action;
 				}
@@ -4403,8 +4988,43 @@ class GFStripe extends GFPaymentAddOn {
 				}
 			}
 		}
+		$this->release_checkout_session_lock( $session['id'] );
 
 		return $action;
+	}
+
+	/**
+	 * Gets a lock for completing the checkout session process.
+	 *
+	 * @since 5.0
+	 *
+	 * @param string $session_id The session id to be locked.
+	 *
+	 * @return bool Returns true if session was able to be locked. Returns false if session is already locked by another process.
+	 */
+	private function get_checkout_session_lock( $session_id ) {
+		$lock_key = "stripe_checkout_session_locked_{$session_id}";
+		$is_locked = get_transient( $lock_key );
+		if ( $is_locked ) {
+			return false;
+		}
+		// Locking session for 10 seconds, or until transient is deleted. Setting an expiration ensures session won't be locked forever if an error prevents it from being unlocked.
+		set_transient( $lock_key, 1, 10 );
+
+		return true;
+	}
+
+	/**
+	 * Releases the checkout session process lock.
+	 *
+	 * @since 5.0
+	 *
+	 * @param string $session_id The session to be released.
+	 *
+	 * @return void
+	 */
+	private function release_checkout_session_lock( $session_id ) {
+		delete_transient( "stripe_checkout_session_locked_{$session_id}" );
 	}
 
 	/**
@@ -4469,6 +5089,7 @@ class GFStripe extends GFPaymentAddOn {
 		$session = \Stripe\Checkout\Session::retrieve( $session_id );
 		if ( is_wp_error( $session ) ) {
 			$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $session->get_error_message() );
+
 			return new WP_Error( 'stripe_session_failed', __METHOD__ . '(): A Stripe API error occurs; ' . $session->get_error_message() );
 		}
 
@@ -4853,7 +5474,7 @@ class GFStripe extends GFPaymentAddOn {
 					)
 				);
 
-				$error = $this->authorization_error( esc_html__( '3D Secure authentication is required for this payment. Please follow the instructions on the page to continue.', 'gravityformsstripe' ) );
+				$error = $this->authorization_error( esc_html__( 'This payment might require 3D Secure authentication, please wait while we communicate with Stripe.', 'gravityformsstripe' ) );
 
 				return array_merge( $error, array( 'requires_action' => true ) );
 			}
@@ -5033,7 +5654,6 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return \Stripe\Token|null A valid Stripe response object or null
 	 */
 	public function get_stripe_js_response() {
-
 		$response = json_decode( rgpost( 'stripe_response' ) );
 
 		if ( isset( $response->token ) ) {
@@ -5322,7 +5942,6 @@ class GFStripe extends GFPaymentAddOn {
 				break;
 
 			case 'invoice.payment_succeeded':
-
 				$subscription = $this->get_subscription_line_item( $event );
 				if ( ! $subscription ) {
 					return new WP_Error( 'invalid_request', sprintf( __( 'Subscription line item not found in request', 'gravityformsstripe' ) ) );
@@ -5335,7 +5954,10 @@ class GFStripe extends GFPaymentAddOn {
 				}
 
 				$entry = GFAPI::get_entry( $entry_id );
-
+				$form  = GFAPI::get_form( $entry['form_id'] );
+				if ( $entry['payment_status'] === 'Processing' && $this->is_payment_element_enabled( $form ) ) {
+					return $this->get_payment_element_handler()->complete_processing_entry( $entry, $action, $event );
+				}
 				if ( ! $this->is_valid_entry_for_callback( $entry ) ) {
 					return $this->get_wrong_feed_wp_error( $entry_id );
 				}
@@ -5351,8 +5973,7 @@ class GFStripe extends GFPaymentAddOn {
 					$action['entry_id']       = $entry_id;
 					$action['type']           = 'add_subscription_payment';
 					$action['amount']         = $this->get_amount_import( rgars( $event, 'data/object/amount_due' ), $entry['currency'] );
-
-					$action['note'] = '';
+					$action['note']           = '';
 
 					// Get starting balance, assume this balance represents a setup fee or trial.
 					$starting_balance = $this->get_amount_import( rgars( $event, 'data/object/starting_balance' ), $entry['currency'] );
@@ -5395,7 +6016,6 @@ class GFStripe extends GFPaymentAddOn {
 				break;
 
 			case 'invoice.payment_failed':
-
 				$subscription = $this->get_subscription_line_item( $event );
 				if ( ! $subscription ) {
 					return new WP_Error( 'invalid_request', sprintf( __( 'Subscription line item not found in request', 'gravityformsstripe' ) ) );
@@ -5420,44 +6040,118 @@ class GFStripe extends GFPaymentAddOn {
 				break;
 
 			case 'checkout.session.completed':
-				// support this event so Checkout will return success in less than 10 seconds.
+			case 'checkout.session.async_payment_succeeded':
+				// Getting Stripe Session from event object.
 				$session_id = rgars( $event, 'data/object/id' );
 				$session    = $this->api->get_checkout_session( $session_id );
-
-				if ( ! is_wp_error( $session ) ) {
-					$entries = GFAPI::get_entries(
-						null,
-						array(
-							'field_filters' => array(
-								array(
-									'key'   => 'stripe_session_id',
-									'value' => $session_id,
-								),
-							),
-						)
-					);
-
-					if ( empty( $entries ) ) {
-						return $this->get_entry_not_found_wp_error( 'transaction', $action, $event );
-					} else {
-						$entry = $entries[0];
-
-						if ( ! $this->is_valid_entry_for_callback( $entry ) ) {
-							return $this->get_wrong_feed_wp_error( $entry['id'] );
-						}
-
-						$form = GFAPI::get_form( $entry['form_id'] );
-						$feed = $this->get_payment_feed( $entry, $form );
-
-						$this->log_debug( __METHOD__ . "(): Stripe Checkout session will be completed by the webhook event {$type}." );
-						$action = array_merge( $action, $this->complete_checkout_session( $session, $entry, $feed, $form ) );
-					}
-				} else {
+				if ( is_wp_error( $session ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $session->get_error_message() );
+
+					return new WP_Error( 'invalid_stripe_session', esc_html__( 'Invalid Checkout Session', 'gravityformsstripe' ) . ': ' . $session->get_error_message() );
+				}
+
+				// Getting entry associated with this Stripe Session.
+				$entry = $this->get_entry_by_session_id( $session_id, $action, $event );
+				if ( is_wp_error( $entry ) ) {
+					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $entry->get_error_message() );
+
+					return $entry;
+				}
+
+				if ( $this->should_complete_checkout_session( $session, $entry ) ) {
+					// Completing the checkout.
+					$form   = GFAPI::get_form( $entry['form_id'] );
+					$feed   = $this->get_payment_feed( $entry, $form );
+					$action = array_merge( $action, $this->complete_checkout_session( $session, $entry, $feed, $form ) );
+					$this->log_debug( __METHOD__ . "(): Stripe Checkout session will be completed by the webhook event {$type}." );
+				} else {
+					$this->log_debug( __METHOD__ . "(): Not completing the Stripe Checkout Session during the webhook event {$type}." );
+				}
+				break;
+
+			case 'checkout.session.async_payment_failed':
+				$session_id = rgars( $event, 'data/object/id' );
+				$session = $this->api->get_checkout_session( $session_id );
+				if ( is_wp_error( $session ) ) {
+					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $session->get_error_message() );
+
+					return new WP_Error( 'invalid_stripe_session', esc_html__( 'Invalid Checkout Session', 'gravityformsstripe' ) . ': ' . $session->get_error_message() );
+				}
+
+				$entry = $this->get_entry_by_session_id( $session_id, $action, $event );
+				if ( is_wp_error( $entry ) ) {
+					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $entry->get_error_message() );
+
+					return $entry;
+				}
+
+				$action['type']     = 'fail_payment';
+				$action['amount']   = $this->get_amount_import( rgars( $event, 'data/object/amount_total' ), $entry['currency'] );
+				$action['entry_id'] = $entry['id'];
+
+				$this->log_debug( __METHOD__ . "(): Stripe Checkout async payment has failed. Webhook: {$type}." );
+
+				break;
+
+			case 'payment_intent.succeeded':
+				$payment_intent_id = rgars( $event, 'data/object/id' );
+				$entries = GFAPI::get_entries(
+					null,
+					array(
+						'field_filters' => array(
+							array(
+								'key'   => 'payment_element_intent_id',
+								'value' => $payment_intent_id,
+							),
+						),
+					)
+				);
+
+				if ( empty( $entries ) ) {
+					$this->log_debug( __METHOD__ . '(): Entry associated with Payment Element Payment Intent ID: ' . $payment_intent_id . ' not found. Bypassing webhook.' );
+					$action['abort_callback'] = true;
+
+				} elseif ( rgar( $entries[0], 'payment_status' ) !== 'Processing' ) {
+					// If the entry is not an asynchronous payment, webhook events should be ignored.
+
+					$this->log_debug( __METHOD__ . '(): This is not an async payment, aborting as it will be already handled by the direct flow.' );
+					$action['abort_callback'] = true;
+
+				} else {
+
+					$this->log_debug( __METHOD__ . '(): Current Entry Status:' . rgar( $entries[0], 'payment_status' ) );
+					$action = $this->get_payment_element_handler()->complete_processing_entry( $entries[0], $action, $event );
 				}
 
 				break;
 
+			case 'payment_intent.payment_failed':
+				$payment_intent_id = rgars( $event, 'data/object/id' );
+				$entries = GFAPI::get_entries(
+					null,
+					array(
+						'field_filters' => array(
+							array(
+								'key'   => 'payment_element_intent_id',
+								'value' => $payment_intent_id,
+							),
+						),
+					)
+				);
+
+				if ( empty( $entries ) ) {
+					$this->log_debug( __METHOD__ . '(): Entry associated with Payment Element Payment Intent ID: ' . $payment_intent_id . ' not found. Bypassing webhook.' );
+					$action['abort_callback'] = true;
+
+				} else {
+
+					$entry              = $entries[0];
+					$action['type']     = 'fail_payment';
+					$action['amount']   = $this->get_amount_import( rgars( $event, 'data/object/amount' ), $entry['currency'] );
+					$action['entry_id'] = $entry['id'];
+				}
+
+				break;
 		}
 
 		if ( has_filter( 'gform_stripe_webhook' ) ) {
@@ -5482,6 +6176,43 @@ class GFStripe extends GFPaymentAddOn {
 
 		return $action;
 
+	}
+
+	/**
+	 * Gets an entry associated with the specified Stripe Checkout session id.
+	 *
+	 * @since 5.0
+	 *
+	 * @param int   $session_id The Session Id.
+	 * @param array $action     The webhook action array.
+	 * @param array $event      The webhook event array.
+	 *
+	 * @return array|WP_Error Returns the entry associated with the Stripe Checkout session, or a WP_Error
+	 */
+	private function get_entry_by_session_id( $session_id, $action, $event ) {
+		$entries = GFAPI::get_entries(
+			null,
+			array(
+				'field_filters' => array(
+					array(
+						'key'   => 'stripe_session_id',
+						'value' => $session_id,
+					),
+				),
+			)
+		);
+
+		if ( empty( $entries ) ) {
+			$action['session_id'] = $session_id;
+			return $this->get_entry_not_found_wp_error( 'session', $action, $event );
+		}
+		$entry = $entries[0];
+
+		if ( ! $this->is_valid_entry_for_callback( $entry ) ) {
+			return $this->get_wrong_feed_wp_error( $entry['id'] );
+		}
+
+		return $entry;
 	}
 
 	/**
@@ -5548,6 +6279,13 @@ class GFStripe extends GFPaymentAddOn {
 	}
 
 	/**
+	 * @var \Stripe\Event The Stripe event object for the webhook which was received. Used for caching in get_webhook_event().
+	 *
+	 * @since 5.2
+	 */
+	private static $webhook_event;
+
+	/**
 	 * Retrieve the Stripe Event for the received webhook.
 	 *
 	 * @since 2.8   Added support for webhooks per feed.
@@ -5556,6 +6294,19 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return bool|array|WP_Error|\Stripe\Event
 	 */
 	public function get_webhook_event() {
+
+		// Abort early if webhook isn't valid
+		if ( ! $this->is_callback_valid() ) {
+			return false;
+		}
+
+		// If the webhook event has already been retrieved, return it.
+		if ( ! empty( self::$webhook_event ) ) {
+			$this->log_debug( __METHOD__ . '(): Returning cached webhook event.');
+
+			return self::$webhook_event;
+
+		}
 
 		$body     = @file_get_contents( 'php://input' );
 		$response = json_decode( $body, true );
@@ -5569,7 +6320,6 @@ class GFStripe extends GFPaymentAddOn {
 		$feed            = ( ! empty( $feed_id ) ) ? $this->get_feed( $feed_id ) : null;
 		$settings        = ( ! empty( $feed ) ) ? $feed['meta'] : null;
 		$endpoint_secret = $this->get_webhook_signing_secret( $mode, $settings );
-		$error_message   = false;
 
 		$this->log_debug( __METHOD__ . sprintf( '(): Processing %s mode event%s.', $mode, $settings ? " for feed (#{$feed_id} - {$settings['feedName']})" : '' ) );
 
@@ -5590,9 +6340,7 @@ class GFStripe extends GFPaymentAddOn {
 
 		if ( is_wp_error( $event ) ) {
 			$error_message = $event->get_error_message();
-		}
 
-		if ( $error_message ) {
 			$this->log_error( __METHOD__ . '(): Unable to retrieve Stripe Event object. ' . $error_message );
 			$message = __( 'Invalid request. Webhook could not be processed.', 'gravityformsstripe' ) . ' ' . $error_message;
 
@@ -5602,6 +6350,8 @@ class GFStripe extends GFPaymentAddOn {
 		if ( $is_test_event ) {
 			return new WP_Error( 'test_webhook_succeeded', __( 'Test webhook succeeded. Your Stripe Account and Stripe Add-On are configured correctly to process webhooks.', 'gravityformsstripe' ), array( 'status_header' => 200 ) );
 		}
+
+		self::$webhook_event = $event;
 
 		return $event;
 	}
@@ -6008,6 +6758,39 @@ class GFStripe extends GFPaymentAddOn {
 	}
 
 	/**
+	 * Get capture method (automatic or manual) for the payment element.
+	 *
+	 * @since 5.0
+	 *
+	 * @param array $form The form object currently being processed.
+	 * @param array $feed The feed object currently being processed.
+	 *
+	 * @return string Returns "automatic" to immediately capture the payment or "manual" to authorize the payment and capture it later.
+	 */
+	public function get_payment_element_capture_method( $form, $feed ) {
+
+		/**
+		 * Allow authorization only transactions by preventing the capture request from being made after the entry has been saved.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param bool  $result Defaults to false, return true to prevent payment being captured.
+		 * @param array $form   The form object currently being processed.
+		 * @param array $feed   The feed object currently being processed.
+		 */
+		$authorization_only = apply_filters( 'gform_stripe_payment_element_authorization_only', false, $form, $feed );
+
+		if ( $authorization_only ) {
+			$this->log_debug( __METHOD__ . '(): The gform_stripe_payment_element_authorization_only filter was used to prevent capture.' );
+
+			return 'manual';
+		}
+
+		return 'automatic';
+	}
+
+
+	/**
 	 * Revoke token and remove them from Settings.
 	 *
 	 * @since  2.8
@@ -6186,7 +6969,14 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	public function populate_credit_card_last_four( $form ) {
 
-		if ( ! $this->is_payment_gateway || ( $this->is_stripe_checkout_enabled() && ! $this->has_credit_card_field( $form ) && ! $this->has_stripe_card_field( $form ) ) ) {
+		if (
+			! $this->is_payment_gateway
+			|| (
+				$this->is_stripe_checkout_enabled()
+				&& ! $this->has_credit_card_field( $form )
+				&& ! $this->has_stripe_card_field( $form )
+			)
+		) {
 			return;
 		}
 
@@ -6196,7 +6986,7 @@ class GFStripe extends GFPaymentAddOn {
 			$cc_field = $this->get_credit_card_field( $form );
 		}
 
-		$_POST[ 'input_' . $cc_field->id . '_1' ] = 'XXXXXXXXXXXX' . rgpost( 'stripe_credit_card_last_four' );
+		$_POST[ 'input_' . $cc_field->id . '_1' ] = $this->is_payment_element_enabled( $form ) ? rgpost( 'stripe_credit_card_last_four' ) : 'XXXXXXXXXXXX' . rgpost( 'stripe_credit_card_last_four' );
 		$_POST[ 'input_' . $cc_field->id . '_4' ] = rgpost( 'stripe_credit_card_type' );
 
 	}
@@ -6851,14 +7641,14 @@ class GFStripe extends GFPaymentAddOn {
 
 		$payment_method = rgpost( 'payment_method' );
 
-		$data = [
+		$data = array(
 			'payment_method'      => rgar( $payment_method, 'id' ),
 			'amount'              => intval( rgpost( 'amount' ) ),
 			'currency'            => sanitize_text_field( rgpost( 'currency' ) ),
 			'capture_method'      => 'manual', // Use manual capture by default, because we cannot update the capture_method after the payment intent crated.
 			'confirmation_method' => 'manual',
 			'confirm'             => false,
-		];
+		);
 
 		/**
 		 * Filter to change the payment intent data before creating it.
@@ -7093,7 +7883,7 @@ class GFStripe extends GFPaymentAddOn {
 	 *
 	 * @since 3.3
 	 *
-	 * @param array $payment_data     The properties for the charge to be created.
+	 * @param array $payment_data    The properties for the charge to be created.
 	 * @param array $feed            The feed object currently being processed.
 	 * @param array $submission_data The customer and transaction data.
 	 * @param array $form            The form object currently being processed.
@@ -7425,4 +8215,5 @@ class GFStripe extends GFPaymentAddOn {
 	private function is_payment_intent( $transaction_id ) {
 		return substr( $transaction_id, 0, 3 ) === 'pi_';
 	}
+
 }

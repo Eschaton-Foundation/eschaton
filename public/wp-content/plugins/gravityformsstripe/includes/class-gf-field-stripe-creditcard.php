@@ -30,7 +30,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return string
 	 */
 	public function get_form_editor_field_title() {
-		return esc_attr__( 'Stripe Card', 'gravityformsstripe' );
+		return esc_attr__( 'Stripe', 'gravityformsstripe' );
 	}
 
 	/**
@@ -54,7 +54,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return string
 	 */
 	public function get_form_editor_field_description() {
-		return esc_attr__( 'Allows accepting credit card information to make payments via Stripe payment gateway.', 'gravityformsstripe' );
+		return esc_attr__( 'Collects payments securely via Stripe payment gateway.', 'gravityformsstripe' );
 	}
 
 	/**
@@ -65,9 +65,12 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return string
 	 */
 	public function get_form_editor_inline_script_on_page_render() {
-		$js = sprintf( "function SetDefaultValues_%s(field) {field.label = '%s';
+		$multiple_payment_methods_enabled = gf_stripe()->is_payment_element_supported() ? 'true' : 'false';
+
+		$js = sprintf( "function SetDefaultValues_%s(field) {field.label = '%s'; field.enableMultiplePaymentMethods = %s;
+		field.linkEmailFieldId = '';
 		field.inputs = [new Input(field.id + '.1', %s), new Input(field.id + '.4', %s), new Input(field.id + '.5', %s)];
-		}", $this->type, esc_html__( 'Credit Card', 'gravityformsstripe' ), json_encode( gf_apply_filters( array( 'gform_card_details', rgget( 'id' ) ), esc_html__( 'Card Details', 'gravityformsstripe' ), rgget( 'id' ) ) ), json_encode( gf_apply_filters( array( 'gform_card_type', rgget( 'id' ) ), esc_html__( 'Card Type', 'gravityformsstripe' ), rgget( 'id' ) ) ), json_encode( gf_apply_filters( array( 'gform_card_name', rgget( 'id' ) ), esc_html__( 'Cardholder Name', 'gravityformsstripe' ), rgget( 'id' ) ) ) ) . PHP_EOL;
+		}", $this->type, esc_html__( 'Credit Card', 'gravityformsstripe' ), $multiple_payment_methods_enabled, json_encode( gf_apply_filters( array( 'gform_card_details', rgget( 'id' ) ), esc_html__( 'Card Details', 'gravityformsstripe' ), rgget( 'id' ) ) ), json_encode( gf_apply_filters( array( 'gform_card_type', rgget( 'id' ) ), esc_html__( 'Card Type', 'gravityformsstripe' ), rgget( 'id' ) ) ), json_encode( gf_apply_filters( array( 'gform_card_name', rgget( 'id' ) ), esc_html__( 'Cardholder Name', 'gravityformsstripe' ), rgget( 'id' ) ) ) ) . PHP_EOL;
 
 		$js .= /** @lang JavaScript */ "
 			gform.addFilter('gform_form_editor_can_field_be_added', function(result, type) {
@@ -150,6 +153,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			'rules_setting',
 			'description_setting',
 			'css_class_setting',
+			'enable_multiple_payment_methods_setting',
 			'sub_labels_setting',
 			'sub_label_placement_setting',
 			'input_placeholders_setting',
@@ -185,11 +189,14 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return bool
 	 */
 	public function is_value_submission_empty( $form_id ) {
+		// If payment element is used, validation already happened in the front end, and the field has no value now.
+		if ( gf_stripe()->is_payment_element_enabled( GFAPI::get_form( $form_id ) ) ) {
+			return false;
+		}
 		// check only the cardholder name.
 		$cardholder_name_input = GFFormsModel::get_input( $this, $this->id . '.5' );
 		$hide_cardholder_name  = rgar( $cardholder_name_input, 'isHidden' );
 		$cardholder_name       = rgpost( 'input_' . $this->id . '_5' );
-
 		if ( ! $hide_cardholder_name && empty( $cardholder_name ) ) {
 			return true;
 		}
@@ -299,18 +306,24 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 			$no_stripe_feed_error = esc_html__( '%1$sPlease check if you have activated a Stripe feed for your form.%2$s' );
 			$card_error           = $this->get_card_error_message( $no_stripe_feed_error );
 			$hide_cardholder_name = true;
+		} elseif ( $this->enableMultiplePaymentMethods && gf_stripe()->is_stripe_connect_enabled() === true ) {
+			$hide_cardholder_name = true;
 		}
 
 		$cc_input = "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard ginput_stripe_creditcard gform-grid-row' id='{$field_id}'>";
 
+		$is_payment_element = ( $this->enableMultiplePaymentMethods && gf_stripe()->is_stripe_connect_enabled() === true ) ? 'true' : 'false';
+		$field_control_class = $this->enableMultiplePaymentMethods ? 'StripeElement--payment-element' : 'gform-theme-field-control StripeElement--card';
+
 		if ( $is_sub_label_above ) {
-			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container'>";
+
+			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container' data-payment-element='{$is_payment_element}'>";
 
 			if ( ! $hide_cardholder_name ) {
 				$cc_input .= "<label for='{$field_id}_1' id='{$field_id}_1_label'{$sub_label_class_attribute}>" . $card_details_sub_label . '</label>';
 			}
 
-			$cc_input .= "<div id='{$field_id}_1'></div>";
+			$cc_input .= "<div id='{$field_id}_1' class='{$field_control_class}'></div>";
 			$cc_input .= $card_error;
 
 			$cc_input .= '</div><!-- .ginput_full -->';
@@ -322,9 +335,9 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 				</div>";
 			}
 		} else {
-			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container'>";
 
-			$cc_input .= "<div id='{$field_id}_1' class='gform-theme-field-control'></div>";
+			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container' data-payment-element='{$is_payment_element}'>";
+			$cc_input .= "<div id='{$field_id}_1' class='{$field_control_class}'></div>";
 			$cc_input .= $card_error;
 
 			if ( ! $hide_cardholder_name ) {
@@ -342,7 +355,12 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		}
 
 		$cc_input .= '</div><!-- .ginput_container -->';
-
+		$cc_input .= '
+			<style type="text/css">
+				:root {
+  					--link-login-string: "' . wp_strip_all_tags( __( 'Link login', 'gravityformsstripe' ) ) . '"
+				}
+			</style>';
 		return $cc_input;
 	}
 
@@ -453,6 +471,8 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 
 		$cc_input .= '</div>';
 
+		$cc_input .= '<div class="stripe-payment-element-container"></div>';
+
 		return $cc_input;
 	}
 
@@ -481,6 +501,23 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		}
 
 		return $field_content;
+	}
+
+
+	/**
+	 * Returns the HTML markup for the field's containing element.
+	 *
+	 * @since 2.5
+	 *
+	 * @param array $atts Container attributes.
+	 * @param array $form The current Form object.
+	 *
+	 * @return string
+	 */
+	public function get_field_container( $atts, $form ) {
+		$atts['class'] .= $this->enableMultiplePaymentMethods ? ' gfield--type-stripe_creditcard-payment-element' : ' gfield--type-stripe_creditcard-card';
+
+		return parent::get_field_container( $atts, $form );
 	}
 
 	/**
@@ -530,6 +567,7 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		if ( is_array( $value ) ) {
 			$card_number = trim( rgget( $this->id . '.1', $value ) );
 			$card_type   = trim( rgget( $this->id . '.4', $value ) );
+			$card_number = $format === 'html' ? nl2br( $card_number ) : $card_number;
 			$separator   = $format === 'html' ? '<br/>' : "\n";
 
 			return empty( $card_number ) ? '' : $card_type . $separator . $card_number;
@@ -552,6 +590,9 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 	 * @return array|string
 	 */
 	public function get_value_save_entry( $value, $form, $input_name, $lead_id, $lead ) {
+		if ( gf_stripe()->is_payment_element_enabled( $form ) ) {
+			return $this->sanitize_entry_value( $value, $form['id'] );
+		}
 		// saving last 4 digits of credit card.
 		list( $input_token, $field_id_token, $input_id ) = rgexplode( '_', $input_name, 3 );
 		if ( $input_id == '1' ) {

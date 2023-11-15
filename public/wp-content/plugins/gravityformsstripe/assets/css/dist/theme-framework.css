@@ -24,21 +24,23 @@ AND ANY CHANGES MADE HERE WILL BE OVERWRITTEN.
 ----------------------------------------------------------------
 */
 
-.gform-theme--framework .gfield--type-stripe_creditcard .StripeElement--focus {
+/* Stripe Card Element */
 
-		/* Theme Framework CSS API Integration */
-		--gform-theme-local-background-color: var(--gform-theme-control-background-color-focus);
-		--gform-theme-local-border-color: var(--gform-theme-control-border-color-focus);
-		--gform-theme-local-box-shadow: var(--gform-theme-control-box-shadow-focus);
-		--gform-theme-local-color: var(--gform-theme-control-color-focus);
-	}
+.gform-theme--framework .gfield--type-stripe_creditcard-card .StripeElement--focus {
 
-.gform-theme--framework .gfield--type-stripe_creditcard .StripeElement--invalid {
+			/* Theme Framework CSS API Integration */
+			--gform-theme-local-background-color: var(--gform-theme-control-background-color-focus);
+			--gform-theme-local-border-color: var(--gform-theme-control-border-color-focus);
+			--gform-theme-local-box-shadow: var(--gform-theme-control-box-shadow-focus);
+			--gform-theme-local-color: var(--gform-theme-control-color-focus);
+		}
 
-		/* Theme Framework CSS API Integration */
-		--gform-theme-local-background-color: var(--gform-theme-control-background-color-error);
-		--gform-theme-local-border-color: var(--gform-theme-control-border-color-error);
-		--gform-theme-local-color: var(--gform-theme-control-color-error);
-	}
+.gform-theme--framework .gfield--type-stripe_creditcard-card .StripeElement--invalid {
+
+			/* Theme Framework CSS API Integration */
+			--gform-theme-local-background-color: var(--gform-theme-control-background-color-error);
+			--gform-theme-local-border-color: var(--gform-theme-control-border-color-error);
+			--gform-theme-local-color: var(--gform-theme-control-color-error);
+		}
 
 /*# sourceMappingURL=theme-framework.css.map */
