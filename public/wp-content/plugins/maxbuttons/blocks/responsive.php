@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 $blockClass["responsive"] = "responsiveBlock";

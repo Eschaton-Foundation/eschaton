@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -17,14 +18,12 @@ abstract class maxBlock
 	protected $is_responsive = true; // exclude / include a whole block in responsive screens.
 	protected $is_new = false; // only display when adding a screen.
 
-
-
 	/** Block constructor
 	*
 	* Constructor for a button block. Hooks up all needed filters and inits data for a block.
 	*
 	*/
-	function __construct($priority = 10)
+	public function __construct($priority = 10)
 	{
 		$this->fields = apply_filters($this->blockname. "-block-fields",$this->fields);
 		$this->data[$this->blockname] = array(); //empty init
@@ -71,10 +70,8 @@ abstract class maxBlock
 			}
 
 		}
-
 		$data[$this->blockname] = $block;
 		return $data;
-
 	}
 
 	/**
@@ -87,6 +84,7 @@ abstract class maxBlock
 	{
 
 		$default = (isset($options["default"])) ? $options["default"] : '';
+
 		if ($is_responsive)
 			$default = false; // don't write defaults for responsive screens, omit.
 
@@ -195,7 +193,6 @@ abstract class maxBlock
 		$data = $this->getBlockData();
 
  		// get all fields from this block
-
 		foreach($screens as $screenObj) // these are our screens.
 		{
 			$mixins = array();
@@ -203,30 +200,21 @@ abstract class maxBlock
 			foreach($this->fields as $field => $field_data)
 			{
  						 $field_id = $screenObj->getFieldID($field);
-						 //$css = $this->parseField($css, $field, $field, $field_data);
 						 if (isset($data[$field_id]) )
 						 {
 
 							 	$css = $this->parseField($css, $field_id, $data[$field_id], $field_data, $screenObj);
 								if (isset($field_data['mixin']) && $screenObj->is_responsive()) // garantuee the whole mixin is present.
 								{
-
 										$mixin = $field_data['mixin'];
 									 	maxBlocks::addMixin($mixin, $field, $screenObj->id);
 								}
 						 }
+
 			 } // fields
 
 			 // check the mixins. This checks the field, not field_id since for responsive it'll need to add from the default screen when completing the data.
 		}  // screens
-
-		/*	foreach($responsive_mixins as $screen_id => $mixin_data)
-			{
-					foreach($mixin_data as $mixName => $field)
-					{
-
-					}
-			} */
 
 		return $css;
 	}
@@ -275,7 +263,6 @@ abstract class maxBlock
 	*/
 	protected function parseField($css, $field_id, $value, $field_data, $screenObj)
 	{
-	//	$data = $this->data[$this->blockname];
 		// get cssparts, can be comma-seperated value
 		$csspart = (isset($field_data["csspart"])) ? explode(",",$field_data["csspart"]) : array('maxbutton');
 		$csspseudo = (isset($field_data["csspseudo"])) ? explode(",", $field_data["csspseudo"]) : 'normal';
@@ -283,18 +270,22 @@ abstract class maxBlock
 		$is_responsive = ($screenObj->is_responsive() ) ? true : false;
 		$screen_id = $screenObj->id;
 
-
 		// if this field has a css property
 		if (isset($field_data["css"]))
 		{
-			// get the property value from the data
-	//	$value = isset($data[$field_id]) ? $data[$field_id] : '';
-			$value = str_replace(array(";"), '', $value);  //sanitize
 
+			// value can be int or otherwise.
+			if (is_string($value))
+			{
+				$value = str_replace(array(";"), '', $value);  //sanitize
+			}
+			else {
+				$value = strval($value); // cast to string for further checks
+			}
 
 			if (isset($field_data['unitfield']) && ! strpos($value,"px"))
 			{
-				if ($value == '') $value = 0; // pixel values, no empty but 0
+				if ($value == '') $value = '0'; // pixel values, no empty but 0
 				 $unitfield = $screenObj->getFieldID($field_data['unitfield']);
 
 				 if (isset($this->data[$this->blockname][$unitfield]))
@@ -313,15 +304,19 @@ abstract class maxBlock
 			}
 			elseif (isset($field_data["default"]) && strpos($field_data["default"],"px") && ! strpos($value,"px"))
 			{
-				if ($value == '') $value = 0; // pixel values, no empty but 0
+				if ($value == '')
+				{
+					 $value = '0'; // pixel values, no empty but 0
+				}
 				$value .= "px";
 			}
 			elseif (isset($field_data["default"]) && strpos($field_data["default"],"%") && ! strpos($value,"%"))
 			{
-				if ($value == '') $value = 0; // pixel values, no empty but 0
+				if ($value == '') $value = '0'; // pixel values, no empty but 0
 				$value .= "%";
 			}
 
+//echo "VALUE AFTER $field_id - $value <BR>";
 			/** CSSvalidate is a function reference for further shaping the value based on specific wishes.
 			* Can return a new value, or false which indicates removal. This aims to replace block specific parse_css functions.
 			*/
@@ -352,11 +347,7 @@ abstract class maxBlock
 							$css[$part][$csspseudo][$field_data["css"]] = $value ;
 					}
 				}
-
-
-
 		}
-
 
 		return $css;
 	}
@@ -394,7 +385,6 @@ abstract class maxBlock
  							$cssdef .= $multidef[$i];
  						else
  							$cssdef .= ucfirst($multidef[$i]);
- 						//$multidef[$i] . ucfirst($multidef[1]);
  					}
 				}
 				$map[$field]["css"] = $cssdef;
@@ -413,6 +403,12 @@ abstract class maxBlock
 			if (isset($field_data['csspseudo']))
 				$map[$field]['pseudo'] = $field_data['csspseudo'];
 
+
+				// Attempt to new relationship type.
+			if (isset($field_data['is_sub_of'] ))
+			{
+				 $map[$field]['is_sub_of'] = $field_data['is_sub_of'];
+			}
 		}
 		return $map;
 	}
@@ -422,7 +418,7 @@ abstract class maxBlock
 	*	This action is called from button class when data is pulled from the database and populates the dataArray to all blocks
 	*
 	*/
-	function set($dataArray)
+	public function set($dataArray)
 	{
 		$this->data = $dataArray;
 	}

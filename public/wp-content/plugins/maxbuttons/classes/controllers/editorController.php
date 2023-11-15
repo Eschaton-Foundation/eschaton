@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 
 // main thing for the button editor

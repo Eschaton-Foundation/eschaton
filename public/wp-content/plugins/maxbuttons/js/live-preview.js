@@ -42,7 +42,6 @@ maxLivePreview.prototype.bindFields = function()
   $('#maxbuttons select').on('change', $.proxy(this.update_preview_event, this));
 
 
-
    // Presets
  $('[data-action="set-preset"]').on('click', $.proxy(this.setPreset, this));
 
@@ -280,6 +279,7 @@ maxLivePreview.prototype.update_preview_event = function(e)
     this.update_preview(field, data);
   }
 
+  $(document).trigger('livepreview-field-updated', [e, field, data, id]);
 }
 
 /** Updates the preview buttons with new CSS lines. Extracts several fields from the fieldmap.
@@ -297,7 +297,7 @@ maxLivePreview.prototype.update_preview = function(field, data)
 	}
 
   // check all attributes. Fields can use any of those for different processes.
-  if (typeof data.css != 'undefined')
+  if (typeof data.css != 'undefined' && typeof data.func == 'undefined')
 	{
 		var value = field.value;
 
@@ -484,9 +484,9 @@ maxLivePreview.prototype.putCSS = function(data,value,state)
      var unitfielddata = this.getFieldByID(data.unitfield, true); //.filter(":checked"); // get by name, radio button
 		 for (var i = 0; i < unitfielddata.length; i++)
 		 {
-			  if (unitfielddata.checked == true)
+			  if (unitfielddata[i].checked == true)
 				{
-					 var unitvalue = unitfielddata.value;
+					 var unitvalue = unitfielddata[i].value;
 				}
 		 }
 
@@ -701,46 +701,80 @@ maxLivePreview.prototype.updateDimension = function (field)
 	{
       return;
 	}
-    var id = field.dataset.field;
-    if (typeof id == 'undefined')
-      var id = field.getAttribute('id');
-    if (typeof id == 'undefined') // still don't want, then no.
-      return;
-    var data = {};
 
-    // get the units.
-    if (id.indexOf('width') >= 0)
+    // Set on input like radio / checkbox which have multi-input for same field data.
+    if (typeof field.dataset !== 'undefined' && typeof field.dataset.field !== 'undefined')
     {
-        var field = this.getFieldByID('button_width');
-        var unitfield = this.getFieldByID('button_size_unit_width', true);
-        data.css = 'width';
-        var updatePreview = '.preview_border_width span';
-        var unitUpdate = '.input.' + field.getAttribute('name') + ' .unit';
+        var field_id = field.dataset.field;
     }
-    else if(id.indexOf('height') >= 0)
+    else if (typeof field.id !== 'undefined')
     {
-      var field = this.getFieldByID('button_height');
-      var unitfield = this.getFieldByID('button_size_unit_height', true);
-      data.css = 'height';
-      var updatePreview = '.preview_border_height span';
-      var unitUpdate = '.input.' + field.getAttribute('name') + ' .unit';
+       var field_id = field.id;
+    }
+    else {
+      return;
+    }
+
+    var data = {}; // to pass on to updateCS
+    var fieldData = this.getFieldData(field.id);
+    var state = '';
+
+
+    // New: see if this doesn't bug somehow
+    if (field_id.indexOf('width') >= 0)
+      var type = 'width';
+    else if (field_id.indexOf('height') >= 0)
+      var type = 'height';
+
+    // is_sub_of defined a sub relation to main field. So if set, the unitfield has been updated.
+    if (typeof fieldData.is_sub_of !== 'undefined')
+    {
+        var unitfields = this.getFieldByID(field_id, true);;
+        var field = this.getFieldByID(fieldData.is_sub_of);
+        var fieldData = this.getFieldData(field.id);
+    }
+    else {
+        var field = this.getFieldByID(field_id);
+        var unitfields = this.getFieldByID(fieldData.unitfield, true);
+        var fieldData = this.getFieldData(field.id);
+    }
+
+    var unitUpdate = '.input.' + field.getAttribute('name') + ' .unit';
+    data.css = type;
+
+    var updatePreview = '.preview_border_' + type + ' span';
+
+
+    // Support for changing the width only on certain states ( hover / normal)
+    // check if the button hover in effects is active, is so, the normal width/ height should only apply to normal in live preview
+    var enable = document.getElementById('button_hover_enable');
+
+    if (null !== enable && true === enable.checked && (field.id == 'button_width' || field_id == 'button_height'))
+    {
+        fieldData.pseudo = 'normal';
+    }
+
+    // If some pseudo is passed, update only the sizes for that one.
+    if (fieldData.pseudo)
+    {
+       state = fieldData.pseudo;
+       updatePreview = '.' + fieldData.pseudo + updatePreview;
     }
 
     var dimension = field.value;
-		for (var i = 0; i < unitfield.length; i++)
+		for (var i = 0; i < unitfields.length; i++)
 		{
-			 	if (unitfield[i].checked == true)
+			 	if (unitfields[i].checked == true)
 				{
-						var unit = unitfield[i].value;
+						var unit = unitfields[i].value;
 				}
 		}
-
 
     if (dimension == 0)
     {
        unit = '';
        dimension = 'auto';
-       this.putCSS(data, 'auto');
+       this.putCSS(data, 'auto', state);
     }
 
     if (unit == 'percent')
@@ -752,10 +786,22 @@ maxLivePreview.prototype.updateDimension = function (field)
 
     $(updatePreview).text(dimension + unit);
     $(updatePreview).css('width', dimension + unit);
-    this.putCSS(data, dimension);
+
+    this.putCSS(data, dimension, state);
     $(unitUpdate).text(unit);
 
     this.reloaded.dimension = true;
+}
+
+// Update the numbers on the rulers of the live preview ( preview_border )
+maxLivePreview.prototype.updatePreviewUnit = function(dimension, unit, type)
+{
+
+    var updatePreview = '.preview_border_' + type + ' span';
+
+    $(updatePreview).text(dimension + unit);
+    $(updatePreview).css('width', dimension + unit);
+
 }
 
 maxLivePreview.prototype.updateRadius = function(field)

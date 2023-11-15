@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -38,7 +39,7 @@ class maxButton
 
 	   Get als loads the various blocks of which a button is built up. Blocks can be added and removed using the mb-init-blocks filter
 	*/
-	function __construct()
+	public function __construct()
 	{
 		maxUtils::addTime("Button construct");
 
@@ -66,7 +67,7 @@ class maxButton
 		foreach($classes as $block => $class)
 		{
 			$block = new $class();
-
+			maxBlocks::add($block);
 			$this->blocks[] = $block;
 
 		}
@@ -132,15 +133,16 @@ class maxButton
 		$this->id = 0; // clear id
 		$this->button_css = array();
 		$this->button_js = array();
+		// reset data to defaults.
 		$this->data = array('id' => 0);
 		$this->data = $this->save(array(),array(), false);
-		$this->updated = 0;
+		$this->updated = '0';
 
 		$this->cache = '';
 		$this->button_loaded = false;
 
 		maxBlocks::clearFoundMixins();
-		Screen::setupScreens(array());
+		Screen::setupScreens($this->data);
 
 		foreach($this->blocks as $block)
 		{
@@ -148,9 +150,8 @@ class maxButton
 		}
 	}
 
-	function setupData($data)
+	public function setupData($data)
 	{
-
 		maxUtils::addTime("Button: Setup data");
 		foreach($this->blocks as $block)
 		{
@@ -176,8 +177,9 @@ class maxButton
 		$this->data["document_id"] = $this->document_id; // bound to JS and others.
 		$this->name = $data["name"];
 		$this->status = $data["status"];
-		$this->updated = isset($data['updated']) ? $data['updated'] : 0;
-		$this->description = $this->data["basic"]["description"];
+		// strval because this field does a lot of strtotime conversions
+		$this->updated = isset($data['updated']) ? strval($data['updated']) : '0';
+		$this->description = isset($this->data["basic"]["description"]) ? $this->data["basic"]["description"] : '';
 
 		foreach($this->blocks as $block)
 		{
@@ -190,7 +192,7 @@ class maxButton
 	}
 
 	/* Used by collections and import. Use sparingly. Button data is reput to blocks on display */
-	function setData($blockname, $data )
+	public function setData($blockname, $data )
 	{
 		foreach($data as $key => $value)
 		{
@@ -199,7 +201,7 @@ class maxButton
 		}
 	}
 
-	function get( )
+	public function get( )
 	{
 		return $this->data;
 	}
@@ -230,10 +232,12 @@ class maxButton
 
 	public function getUpdated($forDisplay = true)
 	{
+		$updated = strval($this->updated);
+
 		if ($forDisplay)
-			return date_i18n( get_option( 'date_format' ), strtotime($this->updated) );
+			return date_i18n( get_option( 'date_format' ), strtotime($updated) );
 		else
-			return strtotime($this->updated);
+			return strtotime($updated);
 	}
 
 	public function getParsedCSS()
@@ -247,7 +251,7 @@ class maxButton
 		return $this->button_css;
 	}
 
-	function getCSSParser()
+	protected function getCSSParser()
 	{
 		if (! $this->cssParser)
 			$this->cssParser = new maxCSSParser();
@@ -258,31 +262,30 @@ class maxButton
 	/** Get responsive declarations via screens
 	* Migration of old formats should be via installation class
 	*/
-	function getResponsiveScreens()
+	public function getResponsiveScreens()
 	{
-		return Screen::setupScreens($this->data);
+		// Doesn't return setup screen, since that already happens on button load
+		return Screen::getScreens(); //Screen::setupScreens($this->data);
 	}
 
 	// get the cache
-	function getCache()
+	public function getCache()
 	{
 		return $this->cache;
 	}
 
 	// modify the cache at own risk
-	function setCache($cache)
+	public function setCache($cache)
 	{
 		$this->cache = $cache;
 	}
-
-
 
 	/* Parse CSS from the elements
 
 		@param string $mode [normal,preview,editor] - The view needed.
 		@param string $forceCompile Recompile the CSS in any case
 	*/
-	function parse_css(string $mode = "normal", bool $forceCompile = false )
+	public function parse_css(string $mode = "normal", bool $forceCompile = false )
 	{
 		$css = array(); //$this->button_css;
 
@@ -305,9 +308,7 @@ class maxButton
 
 			// Load responsive screens to pass. Only for normal mode. Withold in preview / editor.
 			$screens = array();
-
 			$screens = $this->getResponsiveScreens();
-
 
 			foreach($screens as $screen_name => $screenObj)
 			{
@@ -323,12 +324,13 @@ class maxButton
 				$css = $block->parse_css($css, $screens, $mode);
 			}
 
+
+
 			// Nasty fix for mixins needed in responsive screens
 			foreach($this->blocks as $block)
 			{
 				 $css = $block->parsefix_mixins($css, $screens);
 			}
-
 
 			/* Filter the raw CSS array before compile
 
@@ -365,7 +367,7 @@ class maxButton
 		@param string $mode [normal, preview, editor]
 
 	*/
-	function parse_js($mode = "normal")
+	protected function parse_js($mode = "normal")
 	{
 		maxUtils::addTime("Button :: parse JS");
 		$js = $this->button_js;
@@ -385,7 +387,7 @@ class maxButton
 		@param string $mode [normal, preview, editor]
 		@return Object DomObj presentation of the button
 	*/
-	function parse_button($mode = 'normal')
+	public function parse_button($mode = 'normal')
 	{
 		$name = $this->name;
 		// non-latin breaks CSS / ID's - so move to latin.
@@ -644,7 +646,7 @@ class maxButton
 
 	   The button to be copied -must- be loaded and set
 	*/
-	function copy()
+	public function copy()
 	{
 		$this->id = 0;
 		$data = $this->data;
@@ -655,7 +657,7 @@ class maxButton
 	/*  Change the publication status of the button.
 
 	*/
-	function setStatus($status = "publish")
+	public function setStatus($status = "publish")
 	{
 		$data = $this->data;
 		$data["status"] = sanitize_text_field($status);
@@ -869,7 +871,8 @@ class maxButton
 
 		if (! is_null($atts['url']) && $atts['url'] !== '')
 		{
-			$this->data["basic"]["url"]  = $atts['url'];
+			$protocols = maxUtils::getAllowedProcotols();
+			$this->data["basic"]["url"]  = esc_url($atts['url'], $protocols) ;
 		}
 
 		if (! is_null($atts['window']) )
@@ -890,13 +893,13 @@ class maxButton
 
 		if (! is_null($atts['linktitle']) )
 		{
-			$this->data['basic']['link_title'] = $atts['linktitle'];
+			$this->data['basic']['link_title'] = esc_attr($atts['linktitle']);
 		}
 
 		if (! is_null($atts['extraclass']))
 		{
 
-			$this->data['advanced']['extra_classes'] .= ' ' . $atts['extraclass'];
+			$this->data['advanced']['extra_classes'] .= ' ' . esc_attr($atts['extraclass']);
  		}
 
 		if (! is_null($atts['is_download']))
@@ -914,8 +917,12 @@ class maxButton
 			break;
 		}
 
+		// Button Atts ( unfiltered ) can be mistyped in a way that the key becomes an integer index and the whole value plus key moves to value ( like having in the shortcode "window"=new with wrong ""). This then causes issues when string comparing in strict.
+		$button_atts = array_filter($button_atts, 'is_string', ARRAY_FILTER_USE_KEY);
+
 		// allow for more flexible changes and data manipulation.
 		$this->data = $this->shortcode_overrides($this->data, $button_atts);
+		$this->data = $this->checkDataTags($this->data, $button_atts);
 		$this->data = apply_filters('mb/shortcode/data', $this->data, $atts);
 
 		// if there are no reasons not to display; display
@@ -931,9 +938,34 @@ class maxButton
 	}
 
 
-	public function shortcode_overrides($data, $atts)
+	protected function shortcode_overrides($data, $atts)
 	{
 		return $data;
+	}
+
+	/** Check if HTML5 data-tags passed by shortcode to allow dynamic information being added to the button
+	* @param $data Array Maxbutton data
+	* @param $atts Array Shortcode atts
+	* @return Array Amended Maxbutton Data
+	*/
+	protected function checkDataTags($data, $atts)
+	{
+
+ 		 foreach($atts as $key => $value)
+		 {
+			 		// Search for data-tags
+
+			  	if (strpos(strval($key),'data-') !== false)
+					{
+						 if (! isset($data['advanced']['dataTags']))
+						 {
+							  $data['advanced']['dataTags'] = array();
+						 }
+						 $data['advanced']['dataTags'][sanitize_text_field($key)] = $value;
+					}
+		 }
+		 return $data;
+
 	}
 
 } // class

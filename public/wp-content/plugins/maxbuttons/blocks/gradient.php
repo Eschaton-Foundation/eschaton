@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 $blockClass["gradient"] = "gradientBlock";
@@ -30,7 +31,7 @@ class gradientBlock extends maxBlock
 											    'css' => 'gradient-use-gradient',
 											    'csspseudo' => 'normal,hover',
 													'mixin' => 'gradient',
-													'unset_value' => 0,
+													'unset_value' => '0',
 							),
 
 						);

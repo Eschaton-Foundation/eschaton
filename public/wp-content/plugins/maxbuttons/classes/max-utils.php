@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -9,7 +10,6 @@ class maxUtils
 	protected static $timings = array();
 	protected static $time_operations = array();
 	protected static $timer = 0;
-
 
 	/** Callback for array filter to prepend namepaces. **/
 	public static function array_namespace($var)
@@ -74,9 +74,27 @@ class maxUtils
 
 	}
 
-	static function hex2rgba($color, $opacity) {
-		// Grab the hex color and remove #
+	public static function getAllowedProcotols()
+	{
+		// allowed url protocols for esc_url functions
+		$protocols = array("http","https",'ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', "javascript", 'file', 'ms-windows-store', 'steam', 'webcal');
 
+		$extra_protocols = get_option('maxbuttons_protocol');
+		if (! is_bool($extra_protocols)) // if option is set
+		{
+			$extra_protocols = array_map('trim', array_filter(explode(',', $extra_protocols)));
+		}
+
+		if (is_array($extra_protocols) && count($extra_protocols) > 0)
+		{
+			$protocols = array_merge($protocols, $extra_protocols);
+		}
+
+		return $protocols;
+	}
+
+	public static function hex2rgba($color, $opacity) {
+		// Grab the hex color and remove #
 
 		/* Check if color is already rgba. This can happen with transparency. */
 		if (strpos($color, 'rgba') !== false)
@@ -116,23 +134,36 @@ class maxUtils
 	}
 
 	// test if color value is in RGBA or not.
-	static function isrgba($value)
+	public static function isrgba($value)
 	{
-			if (strpos($value, 'rgb') >= 0 )
-				return true;
-			else {
-				return false;
+			// Can't have rgb is not string
+			if (! is_string($value))
+			{
+				 return false;
 			}
+			elseif (strpos($value, 'rgb') >= 0 )
+			{
+				return true;
+			}
+
+			return false;
 	}
 
-	static function strip_px($value) {
-		$value = rtrim( intval($value), 'px');
-		$value = rtrim( intval($value), '%');
+	public static function strip_px($value) {
+
+		// If not string, can't have this px / %  values.
+		if (false === is_string($value))
+		{
+			 return $value;
+		}
+
+		$value = rtrim( $value, 'px');
+		$value = rtrim( $value, '%');
 		return $value;
 	}
 
 	// This will be needed for converting from old formats to the new screens.
-	static function legacy_get_media_query($get_option = 1)
+	public static function legacy_get_media_query($get_option = 1)
 	{
 
 		$queries = array("phone" =>  "only screen and (max-width : 480px)",
@@ -190,13 +221,13 @@ class maxUtils
 
 	}
 
-	static function get_buttons_table_name($old = false)
+	public static function get_buttons_table_name($old = false)
 	{
 		self::addTime('Legacy Function call : get_buttons_table_name');
 		return self::get_table_name($old);
 	}
 
-	static function get_table_name($old = false) {
+	public static function get_table_name($old = false) {
 		global $wpdb;
 		if ($old)
 			return $wpdb->prefix . 'maxbuttons_buttons';
@@ -204,20 +235,20 @@ class maxUtils
 			return $wpdb->prefix . 'maxbuttonsv3';
 	}
 
-	static function get_collection_table_name() {
+	public static function get_collection_table_name() {
 		global $wpdb;
 		return $wpdb->prefix . 'maxbuttons_collections';
 
 	}
 
-	static function get_coltrans_table_name() {
+	public static function get_coltrans_table_name() {
 		global $wpdb;
 		return $wpdb->prefix . 'maxbuttons_collections_trans';
 
 	}
 
 	/* Replacement function for Wordpress' transients and problematic name length.  */
-	static function get_transient($name)
+	public static function get_transient($name)
 	{
 		global $wpdb;
 //		self::removeExpiredTrans();
@@ -240,7 +271,7 @@ class maxUtils
 	}
 
 
-	static function set_transient($name, $value , $expire = -1 )
+	public static function set_transient($name, $value , $expire = -1 )
 	{
 		global $wpdb;
 
@@ -264,21 +295,18 @@ class maxUtils
 				  "expire" => $expire_time
 		 	),
 		 	array("%s","%s","%d"));
-
-
 	}
 
-	static function delete_transient($name)
+	public static function delete_transient($name)
 	{
 		global $wpdb;
-
 
 		$table = self::get_coltrans_table_name();
 		$wpdb->delete($table, array("name" => $name), array('%s') );
 
 	}
 
-	static function removeExpiredTrans()
+	public static function removeExpiredTrans()
 	{
 		global $wpdb;
 
@@ -298,7 +326,7 @@ class maxUtils
 
 	/** Function will try to unload any FA scripts other than MB from WP. In case of conflict */
 	/* 7.0 note - this function is currently not in use due to dynamic font library loading */
-	static function fixFAConflict()
+	public static function fixFAConflict()
 	{
 
 		$forcefa = get_option('maxbuttons_forcefa');
@@ -354,7 +382,7 @@ class maxUtils
 
 	}
 
-	static function debugLog($string)
+	public static function debugLog($string)
 	{
 		$upload_dir = wp_upload_dir();
 		$path = $upload_dir['path'];
@@ -366,7 +394,7 @@ class maxUtils
 
 	}
 
-	static function timeInit()
+	public static function timeInit()
 	{
 		if ( ! defined('MAXBUTTONS_BENCHMARK') || MAXBUTTONS_BENCHMARK !== true)
 			return;
@@ -380,7 +408,7 @@ class maxUtils
 
 	}
 
-	static function addTime($msg)
+	public static function addTime($msg)
 	{
 		if ( ! defined('MAXBUTTONS_BENCHMARK') || MAXBUTTONS_BENCHMARK !== true)
 			return;
@@ -389,7 +417,7 @@ class maxUtils
 		self::$timings[] = array("msg" => $msg,"time" => microtime(true));
 	}
 
-	static function startTime($operation)
+	public static function startTime($operation)
 	{
 		if ( ! defined('MAXBUTTONS_BENCHMARK') || MAXBUTTONS_BENCHMARK !== true)
 			return;
@@ -398,10 +426,9 @@ class maxUtils
 												   "end" => 0,
 													 'memory_start' => memory_get_usage(),
 											);
-
 	}
 
-	static function endTime($operation)
+	public static function endTime($operation)
 	{
 		if ( ! defined('MAXBUTTONS_BENCHMARK') || MAXBUTTONS_BENCHMARK !== true)
 			return;

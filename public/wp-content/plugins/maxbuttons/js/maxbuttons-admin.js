@@ -136,13 +136,17 @@ maxAdmin.prototype.loadLivePreview = function()
   if (typeof window.location.hash !== 'undefined' && window.location.hash.length > 0 && window.location.hash !== '#default')
   {
     var screenid = window.location.hash.replace('#', '');
-    this.change_screen(screenid);
+    // check if target exists and not some other's hash tag, otherwise load default.
+    if (null !== this.getScreenTarget(screenid))
+    {
+      this.change_screen(screenid);
+      return true;
+    }
   }
-	else {
-		this.livePreview.screenInit('default'); // still needs to init one-time on default if so.
-		this.livePreview.setCurrentScreen('default');
 
-	}
+	this.livePreview.screenInit('default'); // still needs to init one-time on default if so.
+	this.livePreview.setCurrentScreen('default');
+
 }
 
 maxAdmin.prototype.change_screen_event = function(e)
@@ -157,18 +161,27 @@ maxAdmin.prototype.change_screen_event = function(e)
     this.change_screen(change_screen);
 }
 
+/* Get target of a screen, see if it exists. Can return object or null */
+maxAdmin.prototype.getScreenTarget = function(screenid)
+{
+  var target = document.querySelector('.screen-option[data-screenid="' + screenid + '"]');
+  return target;
+}
+
 maxAdmin.prototype.change_screen = function(change_screen)
 {
 
   var active_screen = $('.screen-option.option-active').data('screenid');
-	var target = document.querySelector('.screen-option[data-screenid="' + change_screen + '"]');
- // var $target = $('.screen-option[data-screenid="' + change_screen + '"]');
+	var target  = this.getScreenTarget(change_screen);
+  //= document.querySelector('.screen-option[data-screenid="' + change_screen + '"]');
+
   if (change_screen != 'new')
   {
     $('#current_screen').val(change_screen);
   }
-  // not the same.
-  if (active_screen !== change_screen)
+
+  // not the same. and check for now, random #page id's can appear
+  if (active_screen !== change_screen && target !== null)
   {
 			// Change hash in URL
       window.location.hash = change_screen;
@@ -845,7 +858,7 @@ maxAdmin.prototype.saveOnKey = function()
 		return false; // no form no save.
 
 	var self = this;
-	
+
 	window.addEventListener('keydown', function(event) {
 
     if (! (event.key == 's' || event.key == 'S')  || ! event.ctrlKey)

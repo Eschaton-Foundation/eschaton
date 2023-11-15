@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 use MaxButtons\ScssPhp\ScssPhp\Compiler as Compiler;
 
@@ -89,8 +90,12 @@ class maxCSSParser
 
 			$class = $domChild->class;
 
-			$class = str_replace(" ",".", $class); // combine seperate classes
-  			$struct[$class]["tag"] = $domChild->tag;
+			// Class doesn't have to be set / string
+			if (is_string($class))
+			{
+				$class = str_replace(" ",".", $class); // combine seperate classes
+			}
+  		$struct[$class]["tag"] = $domChild->tag;
 
 			$child_children = $domChild->children();
 
@@ -136,12 +141,6 @@ class maxCSSParser
 			$this->parse_part($el,$el_data);
 		}
 
-	/*	foreach($element as $el => $el_data)
-		{
-			$this->parse_responsive_new($el, $el_data);
-		} */
-
-
 		$this->parse_responsive($elements);
 
 		maxUtils::startTime('compile CSS');
@@ -149,9 +148,7 @@ class maxCSSParser
 
 		maxUtils::endTime('compile CSS');
 
-
 		return $css;
-
 	}
 
 	// reset output values.
@@ -184,7 +181,7 @@ class maxCSSParser
 		} catch (\Exception $e) {
 			$this->has_compile_error = true;
 			$this->compile_error = array('error' => $e,
-															//		 'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4),
+									//		 'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4),
 																	 'string' => $compile,
 																 );
 			$css = $this->output_css;
@@ -221,6 +218,12 @@ class maxCSSParser
 
 		$data = $this->data;
 		$tag = $el_data["tag"];
+
+		// Element can be unset / int if the tag doesn't have element / tag associated so needs no further parsing (html element)
+		if (! is_string($element))
+		{
+			return;
+		}
 
 		// returns all data from this element.
 		$element_data = $this->findData($data, $element);
@@ -298,7 +301,6 @@ class maxCSSParser
 			{
 				foreach($el_data["children"] as $child_id => $child_data)
 				{
-
 					$this->parse_part($child_id, $child_data, $el_add, $screenName);
 				}
 			}
@@ -418,53 +420,17 @@ class maxCSSParser
 	* @param $vdata Data. -probably not needed */
 	protected function parse_responsive_definition($elements, $qdef, $screenName)
 	{
-
 		if (! isset($qdef) || $qdef == '')  {
 
 				return; // no definition.
 			}
 
-
-		//$output .= "@media ". $qdef . " { ";
-		$this->output_css .= "@media ". $qdef . " { ";
-
-	//	foreach($vdata as $element => $data)
-	//	{
+			$this->output_css .= "@media ". $qdef . " { ";
 
 		  foreach($elements as $el => $el_data)
 				$this->parse_part($el, $el_data, '', $screenName);
 
-		/*	foreach($data as $pseudo => $values) {
-			 //foreach($vdat as $index => $values):
-			  if ($pseudo != 'normal')
-					$output .= $element . ':' . $pseudo . " { ";
-				else
-					$output .= $element . " { ";
-
-				$css_end = ';';
-
-				// same as parse part, maybe merge in future
-				foreach($values as $cssTag => $cssVal)
-				{
-					// unit check - two ways; either unitable items is first or unit declaration.
-					$statement =  $this->parse_cssline($values, $cssTag,$cssVal);
-					if($statement)
-						$output .= $statement;
-
-				}
-
-				$output .= " } ";
-			// endforeach;
-		} */
-
-
-	//	  }
-		  //$output .= " } ";
 			$this->output_css .= "}";
-
-		//endforeach;
-
-	//	return $output;
 	}
 
 	private function is_important()

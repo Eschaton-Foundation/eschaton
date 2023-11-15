@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -70,7 +72,7 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
 						&nbsp; [maxbutton id="<?php echo $button_id ?>" url="http://yoururl"]
 					</p>
 
-					<p class="example"><strong><?php _e("Same button with diffent text","maxbuttons"); ?> </strong>
+					<p class="example"><strong><?php _e("Same button with different text","maxbuttons"); ?> </strong>
 						&nbsp; [maxbutton id="<?php echo $button_id ?>" text="yourtext"]
 					</p>
 					<p class="example"><strong><?php _e("All possible shortcode options","maxbuttons"); ?></strong>
@@ -119,8 +121,26 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
             $height = $this->getCurrentScreen()->getValue('button_height');
             $h_unit = $this->getCurrentScreen()->getValue('button_size_unit_height');
 
+            $width_hover = $width;
+            $w_unit_hover = $w_unit;
+            $height_hover = $height;
+            $h_unit_hover = $h_unit;
+
+            // If hover button rules are enable ( effects ), show those for the hover preview section.
+            if ($this->getCurrentScreen()->getValue('button_hover_enable'))
+            {
+              $width_hover = $this->getCurrentScreen()->getValue('button_width_hover');
+              $w_unit_hover = $this->getCurrentScreen()->getValue('button_size_unit_width_hover');
+
+              $height_hover = $this->getCurrentScreen()->getValue('button_height_hover');
+              $h_unit_hover = $this->getCurrentScreen()->getValue('button_size_unit_height_hover');
+            }
+
             $w_unit = ($w_unit == 'pixel') ? __('px', 'maxbuttons') : '%';
             $h_unit = ($h_unit == 'pixel') ? __('px', 'maxbuttons') : '%';
+
+            $w_unit_hover = ($w_unit_hover == 'pixel') ? __('px', 'maxbuttons') : '%';
+            $h_unit_hover = ($h_unit_hover == 'pixel') ? __('px', 'maxbuttons') : '%';
 
             if ($height == 0)
             {
@@ -133,24 +153,36 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
                 $w_unit = '';
             }
 
+            if ($height_hover == 0)
+            {
+               $height_hover = __('auto', 'maxbuttons');
+               $h_unit_hover = '';
+            }
+            if ($width_hover == 0)
+            {
+                $width_hover = __('auto', 'maxbuttons');
+                $w_unit_hover = '';
+            }
+
 						$titleAr = $this->getCurrentScreen()->getScreenTitle();
+            
           ?>
 				<p id='live-preview-screentitle'><?php echo array_pop($titleAr); ?></p>
 				<p><?php _e('The top is the normal button, the bottom one is the hover.', 'maxbuttons') ?></p>
 
 				<div class="result ">
           <div class='border_wrapper'>
-            <div class='preview_border_height'><span style="width: <?php echo $height . $h_unit ?>"><?php echo $height  . $h_unit ?></span> </div>
+            <div class='preview_border_height normal'><span style="width: <?php echo $height . $h_unit ?>"><?php echo $height  . $h_unit ?></span> </div>
 					       <?php $button->display(array("mode" => 'editor', "load_css" => "inline", "preview_part" => "normal"));  ?>
-            <div class='preview_border_width'><span><?php echo $width  . $w_unit ?></span></div>
+            <div class='preview_border_width normal'><span><?php echo $width  . $w_unit ?></span></div>
           </div>
 
 					<p>&nbsp;</p>
 
           <div class='border_wrapper'>
-            <div class='preview_border_height'><span style="width: <?php echo $height . $h_unit ?>"><?php echo $height . $h_unit ?></span> </div>
+            <div class='preview_border_height hover'><span style="width: <?php echo $height_hover . $h_unit_hover ?>"><?php echo $height_hover . $h_unit_hover ?></span> </div>
 					       <?php $button->display(array("mode" => 'editor', "preview_part" => ":hover", "load_css" => "inline")); ?>
-             <div class='preview_border_width'><span><?php echo $width . $w_unit ?></span></div>
+             <div class='preview_border_width hover'><span><?php echo $width_hover . $w_unit_hover ?></span></div>
           </div>
 				</div>
 
@@ -185,7 +217,7 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
           $max_width = $this->getCurrentScreen()->getValue($screen->getFieldID('max_width'));
         }
 				*/
-				
+
         // default.
         //$title = ($screen->is_new()) ?  : $title;
 
@@ -240,4 +272,4 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
 		\_WP_Editors::wp_link_dialog() ?>
 
 	</div>
-<?php $admin->get_footer(); ?>
+<?php $admin->get_footer();

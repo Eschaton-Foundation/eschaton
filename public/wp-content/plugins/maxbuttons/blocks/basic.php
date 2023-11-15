@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -14,28 +16,23 @@ class basicBlock extends maxBlock
 							  "url" => array("default" => ''),
 							  'link_title' => array('default' => ''),
 							//  "text" => array("default" => ''),
-							  "new_window" => array("default" => 0),
-							  "nofollow" => array("default" => 0),
-								'is_download' => array('default'=> 0),
+							  "new_window" => array("default" => '0'),
+							  "nofollow" => array("default" => '0'),
+								'is_download' => array('default'=> '0'),
 							 );
-	protected $protocols = array("http","https",'ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', "javascript", 'file', 'ms-windows-store', 'steam', 'webcal'); 	 // allowed url protocols for esc_url functions
+	protected $protocols;
 
-
-	function __construct()
+	public function __construct()
 	{
 		parent::__construct();
-		$extra_protocols = get_option('maxbuttons_protocol');
-		$extra_protocols = array_map('trim', array_filter(explode(',', $extra_protocols)));
 
-		if (is_array($extra_protocols) && count($extra_protocols) > 0)
-		{
-			$this->protocols = array_merge($this->protocols, $extra_protocols);
-		}
+		$this->protocols = maxUtils::getAllowedProcotols();
 	}
 
 	public function parse_css($css, $screens, string $mode = 'normal')
 	{
 		// emtpy string init is not like by PHP 7.1
+
 		if (! is_array($css))
 			$css = array();
 
@@ -189,7 +186,7 @@ class basicBlock extends maxBlock
 			$url = $data["url"];
 
 			$parsed_url = parse_url($url);
-			
+
 			if (! $this->checkRelative($parsed_url))
 				$url = esc_url($url, $this->protocols);
 
@@ -232,7 +229,7 @@ class basicBlock extends maxBlock
 
 		$button_id = $this->data['id'];
 
-		if (strlen($name) == 0 || $name == '')
+		if ($name === false || strlen($name) == 0 || $name == '')
 			return false;
 
 		if ($button_id <= 0)
@@ -249,7 +246,7 @@ class basicBlock extends maxBlock
 			foreach($results as $id)
 			{
 				$url =  admin_url() . 'admin.php?page=maxbuttons-controller&action=edit&id=' . $id;
-				$message .= ' <a href="' . $url . '" target="_blank">' . $id . '</a> ';
+				$message .= ' <a href="' . esc_attr($url) . '" target="_blank">' . intval($id) . '</a> ';
 			}
 
 			return $message;
@@ -259,7 +256,7 @@ class basicBlock extends maxBlock
 	public function admin_fields($screen)
 	{
 
-		$icon_url = MB()->get_plugin_url() . 'images/icons/';
+			$icon_url = MB()->get_plugin_url() . 'images/icons/';
 
 					$start_block = new maxField('block_start');
 					$start_block->name = __('basic', 'maxbuttons');
@@ -294,7 +291,13 @@ class basicBlock extends maxBlock
 					$field_url->label = __('URL', 'maxbuttons');
 				//	$field_url->note = __('The link when the button is clicked.', 'maxbuttons');
 					$field_url->id = $screen->getFieldID('url');
-					$field_url->value = rawurldecode($screen->getValue($field_url->id) );
+
+					$the_url = $screen->getValue($field_url->id);
+					if (false !== $the_url)
+					{
+						 $the_url = rawurldecode($the_url);
+					}
+					$field_url->value = $the_url;
 					$field_url->placeholder = __("http://","maxbuttons");
 					$field_url->name = $field_url->id;
 					$field_url->is_responsive = false;
@@ -339,7 +342,7 @@ class basicBlock extends maxBlock
 
 					// New Window
 					$fwindow = new maxField('switch');
-					$fwindow->label_after = __('Open in New Window', 'maxbuttons');
+					$fwindow->label_after = __('Open in New Tab', 'maxbuttons');
 					$fwindow->id = $screen->getFieldID('new_window');
 					$fwindow->name = $fwindow->id;
 					$fwindow->value = 1;
@@ -511,6 +514,7 @@ class basicBlock extends maxBlock
 					$screen->addField($pleft,'', 'end');
 
  					// Text Color
+
  					$fcolor = new maxField('color');
  					$fcolor->id = $screen->getFieldID('text_color');
  					$fcolor->name = $fcolor->id;

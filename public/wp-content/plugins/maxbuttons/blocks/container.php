@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 $blockClass["container"] = "containerBlock";
@@ -45,7 +47,7 @@ class containerBlock extends maxBlock
  		if ($mode == 'editor')
  			return $domObj; // in previews no container object
 
-		if ($data["container_enabled"] == 1)
+		if (isset($data["container_enabled"]) && $data["container_enabled"] == 1)
 		{
 			$anchor = $domObj->find("a",0);
 			$anchor->outertext = "<span class='maxbutton-" . $id . "-container mb-container'>" . $anchor->outertext . "</span>";

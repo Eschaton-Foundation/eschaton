@@ -2,9 +2,9 @@
 Contributors: maxfoundry, basszje, arcware, johnbhartley
 Tags: wordpress button plugin, share button, wordpress buttons, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
-Tested up to: 6.2
+Tested up to: 6.3
 Requires PHP: 7.0
-Stable tag: 9.5.3
+Stable tag: 9.7.4
 WordPress button plugin so powerful and easy to use anyone can create beautiful buttons, share buttons and social icons.
 
 == Description ==
@@ -275,6 +275,35 @@ Secondly, please use latin only characters for button name ( Basic settings) and
 Upgrading to the PRO version is quite simple. Obtain a license key via our [site](https://maxbuttons.com). You can enter the license code within the free version on the 'Upgrade to PRO' page. After entering the license key, the PRO version will automatically download and install. You are good to go!
 
 == Changelog ==
+
+= 9.7.4 =
+
+* Fix - Issue when shortcode has invalid fields
+
+= 9.7.3 =
+
+* Fix - Issue with strict time conversion in button class
+
+= 9.7.2 =
+
+* Fix - Issue with responsive migration on sites that have null / faulty data in responsive field.
+
+= 9.7.1 =
+
+* Fix - Fatal error if certain maxbuttons option was not set
+
+= 9.7 =
+
+* Fix - SimpleHtmlDom library now checks for defined constants ( in case library is loaded already )
+* Fix - Prevent not-loading interface when screen query parameter is wrong
+* Fix - Type in documentation
+* Fix - Json_decode during installation process could be called with wrong arguments
+* Tweak - Fixes to make plugin strict
+
+= 9.6 =
+
+* Fix - Attribute escaping on shortcode fields
+* Fix - Shortcode could break html when adding certain characters
 
 = 9.5.3 =
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 
 class settingsController extends MaxController
@@ -59,7 +60,7 @@ class settingsController extends MaxController
     {
        $install = MB()->getClass("install");
        $install::migrateResponsive();
-       exit('check');
+    
     }
 
     if (isset($_POST["replace"]) && check_admin_referer('mb_bulk_edit', 'bulk_edit'))

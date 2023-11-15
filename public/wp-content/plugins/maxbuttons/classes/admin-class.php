@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -465,6 +466,8 @@ class maxButtonsAdmin
 	}
 
 	// unified (future way to end ajax requests + feedback
+	// @todo Doesn't seem to be in use
+	/*
 	function endAjaxRequest($args = array())
 	{
 		$defaults = array(
@@ -479,11 +482,10 @@ class maxButtonsAdmin
 
 		echo json_encode($args);
 		die();
-
-
 	}
+	*/
 
-	function log($action, $message)
+	public function log($action, $message)
 	{
 		if (! defined('MAXBUTTONS_DEBUG') || ! MAXBUTTONS_DEBUG)
 			return;
@@ -502,10 +504,12 @@ class maxButtonsAdmin
 		$now = new \DateTime();
 		$now_format = $now->format("d/M/Y H:i:s");
 
+		$action = sanitize_text_field($action);
+		$message = sanitize_text_field($message);
+
 		$write_string = "[" . $now_format . "] $action - $message ( $caller )";
 		fwrite($file, $write_string);
 		fclose($file);
-
 
 	}
 }

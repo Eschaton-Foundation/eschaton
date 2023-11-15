@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 $blockClass["text"] = "textBlock";
@@ -73,7 +74,7 @@ class textBlock extends maxBlock
 						);
 
 
-	function __construct()
+	public function __construct()
 	{
 		parent::__construct();
 		$this->fields["text"]["default"] = __("YOUR TEXT","maxbuttons");
@@ -82,7 +83,7 @@ class textBlock extends maxBlock
 	public function map_fields($map)
 	{
 		$map = parent::map_fields($map);
-		
+
 		$map["text"]["func"] = "updateAnchorText";
 		$map["text_shadow_offset_left"]["func"] = "updateTextShadow";
 		$map["text_shadow_offset_top"]["func"] = "updateTextShadow";

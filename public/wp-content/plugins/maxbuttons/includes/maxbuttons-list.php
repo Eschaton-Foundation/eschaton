@@ -165,9 +165,9 @@ $this->mbadmin->get_header(array("title" => $page_title, "title_action" => $acti
 						<span class="col col_name"><a class="button-name" href="<?php echo $this->getButtonLink($id); ?>"><?php echo $this->button->getName() ?></a>
 									<br />
 									<p><?php echo $this->button->getDescription() ?></p>
-									<p><?php echo $this->getButtonScreenInfo(); ?>
+									<p><?php echo $this->getButtonScreenInfo(); ?></p>
 						</span>
-						<span class="col col_shortcode">									[maxbutton id="<?php echo $id ?>"] <br /><strong><?php _e('or', 'maxbuttons'); ?></strong><br />
+						<span class="col col_shortcode">[maxbutton id="<?php echo $id ?>"] <br /><strong><?php _e('or', 'maxbuttons'); ?></strong><br />
 									[maxbutton name="<?php echo $this->button->getName() ?>"]
 
 									<?php

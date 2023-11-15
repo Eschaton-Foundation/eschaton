@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -7,7 +8,7 @@ class maxIntegrations
 {
 
 
-	static function init()
+	public static function init()
 	{
 		// check and init after plugin loaded.
 		add_action('plugins_loaded', array(maxUtils::namespaceit('maxIntegrations'), 'load_integrations'), 999);
@@ -19,12 +20,12 @@ class maxIntegrations
 		}
 
 
-	static function load_integrations()
+	public static function load_integrations()
 	{
 
 	}
 
-	static function doDirectInit()
+	protected static function doDirectInit()
 	{
 		$integration_path = MB()->get_plugin_path() . 'assets/integrations/';
 		require_once( $integration_path . "siteorigins_builder/sitebuilder.php");

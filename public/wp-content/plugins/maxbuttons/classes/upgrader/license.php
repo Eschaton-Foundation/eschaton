@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons\Upgrader;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -91,7 +92,8 @@ class upgradeLicense
 
 		if (isset($data->license) && $data->license == 'valid')
 		{
-			$expires = strtotime($data->expires);
+			$expires = strval($data->expires);
+			$expires = strtotime($expires);
 			$result  = array("status" => 'success'); // clean output
 			update_option('maxbuttons_pro_license_key', $license_key, true);
 			update_option('maxbuttons_pro_license_expires', $expires );
@@ -161,7 +163,7 @@ class upgradeLicense
 					case 'expired' :
 						$message = sprintf(
 							__( 'Your license key expired on %s.', 'maxbuttons-pro' ),
-							date_i18n( get_option( 'date_format' ), strtotime( $data->expires, current_time( 'timestamp' ) ) )
+							date_i18n( get_option( 'date_format' ), strtotime( strval($data->expires), current_time( 'timestamp' ) ) )
 						);
 						break;
 					case 'revoked' :

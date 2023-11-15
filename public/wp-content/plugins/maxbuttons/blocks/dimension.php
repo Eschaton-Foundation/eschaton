@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 $blockClass["dimension"] = "dimensionBlock";
@@ -18,9 +20,18 @@ class dimensionBlock extends maxBlock
 											'cssvalidate' => 'checkDimension',
 											'unitfield' => 'button_size_unit_height',
 								),
-								"button_size_unit_width" => array('default' => 'pixel'),
-								"button_size_unit_height" => array('default' => 'pixel'),
-							  );
+								"button_size_unit_width" => array(
+											'default' => 'pixel',
+											'is_sub_of' => 'button_width',
+
+								),
+								"button_size_unit_height" => array(
+											'default' => 'pixel',
+											'is_sub_of' => 'button_height',
+
+
+								),
+		);
 
 
 /*	public function parse_css($css, $mode = 'normal', $screens)
@@ -54,11 +65,8 @@ class dimensionBlock extends maxBlock
 
 	}
 
-
 	public function admin_fields($screen)
 	{
 	} // admin_fields
-
-
 
 } // class

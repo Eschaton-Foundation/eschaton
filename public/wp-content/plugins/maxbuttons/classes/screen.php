@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 // instance of screen, to keep all data from one screen together.
 
@@ -49,10 +51,10 @@ class Screen
 
   protected function setData($data)
 	{
+
 		$new_data = array(); //egalite
 		if (! is_array($data) || count($data) == 0) // no data
 			return false;
-
 
 		foreach($data as $block => $fields)
 		{
@@ -61,9 +63,8 @@ class Screen
 		}
 
     $this->data = $new_data;
-    //self::setupScreens($data);
-	//	self::$data = $new_data;
 	}
+
 
   public static function setupScreens($data)
   {
@@ -79,7 +80,6 @@ class Screen
 				$name = isset($responsive[$screen_id . '_screen_name']) ? $responsive[$screen_id . '_screen_name'] : false;
 				$screens[$screen_id] = array('name' => $name);
 			}
-
 		}
 
 		$screens['new'] = array('name' => __('Add', 'maxbuttons'));
@@ -99,7 +99,6 @@ class Screen
 
   public static function hasResponsive()
   {
-
      foreach(self::$screens as $screen)
      {
          if ($screen->is_responsive())
@@ -192,7 +191,6 @@ class Screen
 			 $insert_field_index = count($this->fields) -2;  // after the start block field, in the begin of block
 		//	 $op = 'after';
 		}
-
 
 		if ($op == 'after')
 		{
@@ -308,186 +306,191 @@ class Screen
         $map = $this->mapped_fields;
 
 // JS expects a fieldmap always.
-//      if (count($map) > 0)
-//      {
         echo "<span class='fieldmap'>";
           echo json_encode($map);
         echo "</span>";
-//      }
   }
 
   public function display_fields($clean = true, $return = false)
   {
-  $fields = apply_filters('mb/display_fields', $this->fields);
-  $output = '';
+    $fields = apply_filters('mb/display_fields', $this->fields);
+    $output = '';
 
-  if (! is_array($fields))
-    return;
+    if (! is_array($fields))
+      return;
 
-  foreach($fields as $id => $item)
-  {
-    $field = $item['field'];
+    foreach($fields as $id => $item)
+    {
+      $field = $item['field'];
 
-    if ($field->publish == false) // don't publish this via screen, this is something manual.
-      continue;
+      if ($field->publish == false) // don't publish this via screen, this is something manual.
+        continue;
 
-    $output .= $field->output($item['start'], $item['end']);
+      $output .= $field->output($item['start'], $item['end']);
+    }
+
+    if ($clean)
+    {
+      $this->fields = array();
+    }
+
+    if (! $return)
+      echo $output;
+    else
+      return $output;
+
   }
 
-  if ($clean)
+  protected function getParentFieldName($fieldname)
   {
-    $this->fields = array();
+  		return $prefixless = str_replace($this->prefix, '', $fieldname);
   }
 
-  if (! $return)
-    echo $output;
-  else
-    return $output;
-
-}
-
-protected function getParentFieldName($fieldname)
-{
-		return $prefixless = str_replace($this->prefix, '', $fieldname);
-}
-
-public function getValue($fieldname)
-{
-  if(isset($this->data[$fieldname]))
-	{
-    return $this->data[$fieldname];
-	}
-  elseif($this->is_responsive && strpos($fieldname, $this->prefix) >= 0) // try to retrieve original value of the responsive field.
+  public function getValue($fieldname)
   {
-    $prefixless = $this->getParentFieldName($fieldname); //str_replace($this->prefix, '', $fieldname);
+    $value = false;
 
-    if (isset($this->data[$prefixless]))
-      return $this->data[$prefixless];
+    if(isset($this->data[$fieldname]))
+  	{
+      $value = $this->data[$fieldname];
+  	}
+    elseif($this->is_responsive && strpos($fieldname, $this->prefix) >= 0) // try to retrieve original value of the responsive field.
+    {
+      $prefixless = $this->getParentFieldName($fieldname);
+
+      if (isset($this->data[$prefixless]))
+      {
+        $value = $this->data[$prefixless];
+      }
+    }
+    elseif ($this->getDefault($fieldname))
+    {
+      $value = $this->getDefault($fieldname);
+    }
+
+    return $value; // dunno.
   }
-  elseif ($this->getDefault($fieldname))
-    return $this->getDefault($fieldname);
 
-  return false; // dunno.
-}
+  public function getColorValue($fieldname)
+  {
+    $value = $this->getValue($fieldname);
+    if (maxUtils::isrgba($value))
+      return $value;
 
-public function getColorValue($fieldname)
-{
-  $value = $this->getValue($fieldname);
-  if (maxUtils::isrgba($value))
+    if (! $value )
+      return false;
+    if (substr($value,0,1) !== '#')
+    {
+      $value = '#' . $value;
+    }
     return $value;
-
-  if (! $value )
-    return false;
-  if (substr($value,0,1) !== '#')
-  {
-    $value = '#' . $value;
   }
-  return $value;
-}
 
-public function getScreenIcon()
-{
-	$screen_type = $this->getScreenType();
-	$min_width = $this->getValue($this->getFieldID('min_width'));
+  public function getScreenIcon()
+  {
+  	$screen_type = $this->getScreenType();
+  	$min_width = $this->getValue($this->getFieldID('min_width'));
 
-	switch ($screen_type)
-	{
-		case 'new':
-		 $icon = 'dashicons-plus';
-		break;
-		case 'responsive':
-		 if ($min_width >= 1024)
-			 $icon = 'dashicons-laptop';
-		 else
-			 $icon =  'dashicons-smartphone';
-		break;
-		case 'default':
-		default:
-		 $icon = 'dashicons-desktop';
-		break;
-	}
+  	switch ($screen_type)
+  	{
+  		case 'new':
+  		 $icon = 'dashicons-plus';
+  		break;
+  		case 'responsive':
+  		 if ($min_width >= 1024)
+  			 $icon = 'dashicons-laptop';
+  		 else
+  			 $icon =  'dashicons-smartphone';
+  		break;
+  		case 'default':
+  		default:
+  		 $icon = 'dashicons-desktop';
+  		break;
+  	}
 
-	return $icon;
-}
+  	return $icon;
+  }
 
-public function getScreenTitle()
-{
-	$min_width = $this->getValue($this->getFieldID('min_width'));
-	$max_width = $this->getValue($this->getFieldID('max_width'));
+  public function getScreenTitle()
+  {
+  	$min_width = $this->getValue($this->getFieldID('min_width'));
+  	$max_width = $this->getValue($this->getFieldID('max_width'));
 
-	$display = $title = '';
+  	$display = $title = '';
 
-	if ($this->is_default())
-	{
-		$title =  __('Your main button for all screens. ', 'maxbuttons');
+  	if ($this->is_default())
+  	{
+  		$title =  __('Your main button for all screens. ', 'maxbuttons');
 
-	}
-	elseif ($this->is_new())
-	{
-		 $title = __('Add a new responsive screen for mobile devices', 'maxbuttons');
-		 $display = __('for mobile', 'maxbuttons');
-	}
-	elseif ($min_width && $max_width)
-	{
-		 $display = $min_width . __('px', 'maxbuttons') . ' - ' . $max_width . __('px', 'maxbuttons');
-		 $title = sprintf(__('Shows at screen size from %s to %s', 'maxbuttons'), $min_width . __('px', 'maxbuttons'), $max_width . __('px', 'maxbuttons'));
-	}
-	elseif (! $min_width && $max_width)
-	{
-		 $display = '< ' . $max_width . __('px', 'maxbuttons');
-		 $title = sprintf(__('Shows at screen size smaller than %s', 'maxbuttons'), $max_width . __('px', 'maxbuttons'));
+  	}
+  	elseif ($this->is_new())
+  	{
+  		 $title = __('Add a new responsive screen for mobile devices', 'maxbuttons');
+  		 $display = __('for mobile', 'maxbuttons');
+  	}
+  	elseif ($min_width && $max_width)
+  	{
+  		 $display = $min_width . __('px', 'maxbuttons') . ' - ' . $max_width . __('px', 'maxbuttons');
+  		 $title = sprintf(__('Shows at screen size from %s to %s', 'maxbuttons'), $min_width . __('px', 'maxbuttons'), $max_width . __('px', 'maxbuttons'));
+  	}
+  	elseif (! $min_width && $max_width)
+  	{
+  		 $display = '< ' . $max_width . __('px', 'maxbuttons');
+  		 $title = sprintf(__('Shows at screen size smaller than %s', 'maxbuttons'), $max_width . __('px', 'maxbuttons'));
 
-	}
-	elseif (! $max_width && $min_width)
-	{
-		 $display = '> ' . $min_width . __('px', 'maxbuttons');
-		 $title = sprintf(__('Shows at screen size bigger than %s', 'maxbuttons'), $min_width . __('px', 'maxbuttons'));
-	}
-	elseif (! $min_width && ! $max_width) // if somebody does something like this :/
-	{
-		 $display = '';
-		 $title = sprintf(__('Set width and height to use this responsive screen', 'maxbuttons'));
-	}
+  	}
+  	elseif (! $max_width && $min_width)
+  	{
+  		 $display = '> ' . $min_width . __('px', 'maxbuttons');
+  		 $title = sprintf(__('Shows at screen size bigger than %s', 'maxbuttons'), $min_width . __('px', 'maxbuttons'));
+  	}
+  	elseif (! $min_width && ! $max_width) // if somebody does something like this :/
+  	{
+  		 $display = '';
+  		 $title = sprintf(__('Set width and height to use this responsive screen', 'maxbuttons'));
+  	}
 
-	return array($display, $title);
-}
+  	return array($display, $title);
+  }
 
-public function getScreenType()
-{
-	$screen_type = ($this->is_responsive()) ? 'responsive' : 'default';
-	$screen_type = ($this->is_new()) ? 'new' : $screen_type;
+  public function getScreenType()
+  {
+  	$screen_type = ($this->is_responsive()) ? 'responsive' : 'default';
+  	$screen_type = ($this->is_new()) ? 'new' : $screen_type;
 
-	return $screen_type;
-}
+  	return $screen_type;
+  }
 
-public function getDefault($fieldname)
-{
-  $fieldDef = maxBlocks::getFieldDefinition($fieldname) ;
+  public function getDefault($fieldname)
+  {
+    $fieldDef = maxBlocks::getFieldDefinition($fieldname) ;
 
-  if ($fieldDef && isset($fieldDef['default']) )
-    return $fieldDef['default'];
+    if ($fieldDef && isset($fieldDef['default']) )
+    {
+         return $fieldDef['default'];
+    }
 
-  return false; // dunno
 
-}
+    return false; // doesn't know
+  }
 
-public function removeScreen($data)
-{
-   foreach($data as $block_name => $blockdata)
-   {
-     if (is_array($blockdata)) // document_id block has a non-array blockdata
+  public function removeScreen($data)
+  {
+     foreach($data as $block_name => $blockdata)
      {
-       foreach($blockdata as $field_name => $field_data)
+       if (is_array($blockdata)) // document_id block has a non-array blockdata
        {
-          $has_id = strpos($field_name, $this->id);
-          if ($has_id !== false && $has_id === 0) // strict checks to fail-safe deletion.
-          {
-            unset($data[$block_name][$field_name]);
-          }
+         foreach($blockdata as $field_name => $field_data)
+         {
+            $has_id = strpos($field_name, $this->id);
+            if ($has_id !== false && $has_id === 0) // strict checks to fail-safe deletion.
+            {
+              unset($data[$block_name][$field_name]);
+            }
+         }
        }
      }
-   }
-   return $data;
-}
+     return $data;
+  }
 
 } // class

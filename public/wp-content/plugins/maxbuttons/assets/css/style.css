@@ -431,6 +431,7 @@
   border: 1px solid #ccc;
   line-height: 18px;
   box-shadow: 2px 2px 3px #ccc;
+  box-sizing: border-box;
 }
 #maxbuttons .option-container .help span .nowrap {
   white-space: nowrap;
@@ -670,7 +671,7 @@
   display: none;
   position: absolute;
   border: 1px solid #000;
-  background: white;
+  background: rgb(255, 255, 255);
   width: 45%;
   right: 25px;
   z-index: 199;

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -43,7 +44,7 @@ class maxField
 	public $max; // number
 	public $modal; // button
 	public $dataaction; // button
-	public $custom_icon; // radio 
+	public $custom_icon; // radio
 
 	// Colors
 	public $copycolor;
@@ -89,7 +90,7 @@ class maxField
 		}
 	}
 
-	static function setTemplates($templates)
+	public static function setTemplates($templates)
 	{
 		self::$templates = apply_filters('mb/editor/templates', $templates);
 

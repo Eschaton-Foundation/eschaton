@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -487,7 +488,7 @@ class maxButtonsPlugin
 	}
 
 	/** Load general styles when visiting pages set by the plugin */
-	function load_plugin_styles() {
+	public function load_plugin_styles() {
 		// only hook in maxbuttons realm.
 		/*if ( strpos($hook,'maxbuttons') === false && $hook != 'post.php' && $hook != 'post-new.php' )
 		{ */
@@ -704,7 +705,7 @@ class maxButtonsPlugin
 		*
 		* The 'add button' interface in WP post and page editor to simplify adding buttons. Loads button plus required Javascript.
 		*/
-		function media_button($editor_id) {
+		public function media_button($editor_id) {
 			$output = '';
 
 			$this->load_media_script();
@@ -755,15 +756,10 @@ class maxButtonsPlugin
 			$this->add_admin_scripts('beaverfront');
 		}
 
-		/*wp_enqueue_script('maxbuttons-front', $this->plugin_url . 'js/min/front.js', array('jquery'), $version);
-		$local = array();
-		$local["ajaxurl"] = admin_url( 'admin-ajax.php' ); */
-
-		//wp_localize_script('maxbuttons-front', 'mb_ajax', $local);
 	}
 
 	/** Extra text to display in admin footer */
-	function admin_footer_text($text)
+	public function admin_footer_text($text)
 	{
 		if (! isset($_GET["page"]))
 			return $text;
@@ -780,7 +776,7 @@ class maxButtonsPlugin
 	}
 
 	/** Function for maxbuttons shortcode */
-	function shortcode($atts)
+	public function shortcode($atts)
 	{
 		 $button = $this->getClass("button");
 
@@ -795,7 +791,7 @@ class maxButtonsPlugin
 	}
 
 
-	function plugin_action_links($links, $file) {
+	public function plugin_action_links($links, $file) {
 
 		if ($file == plugin_basename(dirname(MAXBUTTONS_ROOT_FILE) . '/maxbuttons.php')) {
 			$label = __('Buttons', 'maxbuttons');
@@ -807,7 +803,7 @@ class maxButtonsPlugin
 	}
 
 
-	function plugin_row_meta($links, $file) {
+	public function plugin_row_meta($links, $file) {
 		if ($file == plugin_basename(dirname(__FILE__) . '/maxbuttons.php')) {
 			$links[] = sprintf(__('%sUpgrade to Pro Version%s', 'maxbuttons'), '<a href="http://maxbuttons.com/?ref=mbfree" target="_blank">', '</a>');
 		}
@@ -816,7 +812,7 @@ class maxButtonsPlugin
 	}
 
 
-	function do_footer($id, $code, $type = "css")
+	public function do_footer($id, $code, $type = "css")
 	{
 		if ($type == 'preview')
 			$this->footer['preview'] = true;
@@ -830,7 +826,7 @@ class maxButtonsPlugin
 	*	Outputs loaded styles, and scripts to the footer for display. Email_off is to prevent cloudfare from 'obfuscating' the minified CSS
 	* No optimize prevent autoptimize from mutilating the already optimized CSS.
 	*/
-	function footer()
+	public function footer()
 	{
 		if(count($this->footer) == 0) return; // nothing
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -16,7 +17,7 @@ class maxBlocks
 	protected static $block_classes;
 
 	protected static $data; // full data array
-	protected static $fields = array(); // all fields
+	protected static $fields = array(); // all fields (@todo - Seems unused)
 
 	protected static $mixins;
 
@@ -28,10 +29,7 @@ class maxBlocks
 	/** Find the block classes */
 	public static function initBlocks()
 	{
-
 		$block_paths = apply_filters('mb-block-paths',  array(MB()->get_plugin_path() . "blocks/") );
-
-		//global $blockClass; // load requires only onc
 
 		$newBlocks = array();
 		$templates = array();
@@ -106,8 +104,8 @@ class maxBlocks
 	{
 		$name = $block->get_name();
 
-	//	static::$blocks[$name] = $block;
-	//	static::$fields = array_merge(self::$fields, $block->get_fields());
+		static::$blocks[$name] = $block;
+		static::$fields = array_merge(self::$fields, $block->get_fields());
 	}
 
 	public static function getFieldDefinition($field_name)
@@ -116,6 +114,7 @@ class maxBlocks
 		 {
 			  return self::$fields[$field_name];
 		 }
+
 		 return false;
 	}
 

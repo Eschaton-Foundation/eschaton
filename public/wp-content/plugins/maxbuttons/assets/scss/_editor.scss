@@ -73,6 +73,7 @@
 				border: 1px solid #ccc;
 				line-height: 18px;
 				box-shadow: 2px 2px 3px #ccc;
+				box-sizing: border-box; // prevent box from escaping the canvas
 				.nowrap {
 					white-space: nowrap;
 				}

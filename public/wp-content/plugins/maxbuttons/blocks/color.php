@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -98,23 +100,6 @@ class colorBlock extends maxBlock
 	public function parse_css($css, $screens, string $mode = 'normal') {
 
 		$data = $this->getBlockData();
- 	/*	foreach($this->fields as $field => $field_data) // ensure colors have the correct format
-		{
-			$value = isset($data[$field]) ? $data[$field] : false;
-			if (! $value)
-			{
-				$value = 'rgba(0,0,0,0)'; // if no color value, then transparent.
-			//	$this->data[$this->blockname][$field] = $value;
-				//continue; // no color, no check.
-			}
-
-			if (! maxUtils::isrgba($value) && substr($value,0,1) !== '#')
-			{
-				$value = '#' . $value;
-			}
-
-			$this->data[$this->blockname][$field] = $value;
-		} */
 
 		$css = parent::parse_css($css, $screens, $mode);
 

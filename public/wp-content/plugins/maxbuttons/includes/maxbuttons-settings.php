@@ -13,7 +13,6 @@ $admin->get_header(array("tabs_active" => true, "title" => $page_title) );
 $post_nonce_field = wp_nonce_field('action-settings-form', 'maxbuttons-settings-nonce', true, false);
 ?>
 
-<?php maxInstall::migrateResponsive(); ?>
 
 <div class="mb_tab"> <!-- first tab --->
         <div class="title">

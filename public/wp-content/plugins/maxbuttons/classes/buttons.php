@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 /**  Buttons class - handles paging issues and sanity check for individual buttons
 */
@@ -18,7 +19,6 @@ class maxButtons
 
 	protected static $instance = null;
 
-
 	public static function getInstance()
 	{
 		if (is_null(self::$instance))
@@ -27,24 +27,23 @@ class maxButtons
 		return self::$instance;
 	}
 
-	static function buttonLoad($args)
+	public static function buttonLoad($args)
 	{
-
 		$button_id = $args["button_id"];
 		self::$loadedButtons[] = $button_id;
 		$document_id = self::getDocumentID(array("button_id" => $button_id));
 		self::$documentArray[] = array($button_id => array('document_id' => $document_id , 'done' => false));
-
 	}
 
-	static function forceNextID()
+/* @todo Seems not in use
+	public static function forceNextID()
 	{
 		self::$doNext = true;
 		self::$current_doc_id = null;
 		self::$current_button_id = null;
 	}
-
-	static function getDocumentID($args)
+*/
+	public static function getDocumentID($args)
 	{
 		$button_id = $args["button_id"];
 
@@ -93,7 +92,7 @@ class maxButtons
 
 	}
 
-	static function buttonDone($args)
+	public static function buttonDone($args)
 	{
 		$button_id = $args["button_id"];
 		$document_id = $args["document_id"];
@@ -168,7 +167,7 @@ class maxButtons
 
 				foreach($buttons as $btnar)
 				{
-						$button_id = $btnar['id'];
+						$button_id = intval($btnar['id']);
 						$button->delete($button_id);
 				}
 				$redirect = add_query_arg(array('action' => 'list', 'message' => 'empty-trash'), $redirect);

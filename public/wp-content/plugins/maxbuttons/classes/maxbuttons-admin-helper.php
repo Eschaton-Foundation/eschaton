@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -30,7 +31,7 @@ class maxAdmin
 	<?php
 	}
 
-	static function tab_items_init()
+	public static function tab_items_init()
 	{
 			self::$tabs = array(
 						"list" => array("name" =>  __('Buttons', 'maxbuttons'),
@@ -154,14 +155,6 @@ class maxAdmin
 
 			update_user_meta($current_user_id, 'maxbuttons_review_notice', $later);
 		}
-		/* Seems not here anymore
-		if ($status == 'reviewoffer-dismiss') // different ad!
-		{
-			$updated = true;
-			update_user_meta($current_user_id, 'maxbuttons_review_offer', 'off');
-
-		}
-		*/
 
 		echo json_encode(array("updated" => $updated)) ;
 

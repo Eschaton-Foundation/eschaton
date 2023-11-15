@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace MaxButtons;
 defined('ABSPATH') or die('No direct access permitted');
 
@@ -85,7 +86,7 @@ class maxInstall
 				return;
 
 			$conversion_path = MB()->get_plugin_path() . '/assets/libraries/font-awesome-5/shims.json';
-			$conversion_array = json_decode(file_get_contents($conversion_path), ARRAY_A);
+			$conversion_array = json_decode(file_get_contents($conversion_path), true);
 
 
 			$sql = 'select id, icon from ' . maxUtils::get_table_name();
@@ -156,7 +157,7 @@ class maxInstall
 	*
 	*   Check if new database table is empty ( aka new ) to prevent migrating the same data multiple times then copy all rows from old table to the new one.
 	*/
-	static function migrate()
+	public static function migrate()
 	{
 		global $wpdb;
 
@@ -194,7 +195,7 @@ class maxInstall
 	}
 
 	/** Import fields from the old database format ( pre version 3.0 ) */
-	static function convertOldFields($row)
+	public static function convertOldFields($row)
 	{
 			$data = array();
 
@@ -302,7 +303,7 @@ class maxInstall
 	}
 
 	// Movements version < 8.0 to 8.0 >
-	static function migrateResponsive()
+	public static function migrateResponsive()
 	{
 		  global $wpdb;
 
@@ -340,6 +341,12 @@ class maxInstall
 			{
 
 					$id = $row['id'];
+					$responsive_data = $row['responsive'];
+					if (is_null($responsive_data))
+					{
+							continue;
+					}
+
 					$respdata = json_decode($row['responsive'], true);
 					if (isset($respdata['auto_responsive']))
 						unset($respdata['auto_responsive']);
@@ -411,7 +418,6 @@ class maxInstall
 										 	continue;
 
 									 	 $fname = str_replace('mq_', '', $fname);
-//										 echo " <!- DOING $fname -> <BR> ";
 										 if (isset($fieldMap[$fname]))
 										 {
 
@@ -446,8 +452,6 @@ class maxInstall
 
 								 }
 
-
-
 								 $screens[] = $screen;
 						 }
 
@@ -471,13 +475,13 @@ class maxInstall
 
 	}
 
-	static function deactivate_plugin()
+	public static function deactivate_plugin()
 	{
 			delete_option(MAXBUTTONS_VERSION_KEY);
 	}
 
 
-	static function maxbuttons_database_table_exists($table_name) {
+	public static function maxbuttons_database_table_exists($table_name) {
 		global $wpdb;
 		$dbaseTable = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
 		if (is_null($dbaseTable))
@@ -487,8 +491,7 @@ class maxInstall
 	}
 
 
-	 static function create_database_table() {
-	 //global $maxbuttons_installed_version;
+	 public static function create_database_table() {
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
