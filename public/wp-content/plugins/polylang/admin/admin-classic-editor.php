@@ -34,11 +34,11 @@ class PLL_Admin_Classic_Editor {
 	public $pref_lang;
 
 	/**
-	 * Constructor: setups filters and actions
+	 * Constructor: setups filters and actions.
 	 *
 	 * @since 2.4
 	 *
-	 * @param object $polylang
+	 * @param object $polylang The Polylang object.
 	 */
 	public function __construct( &$polylang ) {
 		$this->model = &$polylang->model;
@@ -332,9 +332,14 @@ class PLL_Admin_Classic_Editor {
 	 * @return array Modified arguments.
 	 */
 	public function page_attributes_dropdown_pages_args( $dropdown_args, $post ) {
-		$dropdown_args['lang'] = isset( $_POST['lang'] ) ? $this->model->get_language( sanitize_key( $_POST['lang'] ) ) : $this->model->post->get_language( $post->ID ); // phpcs:ignore WordPress.Security.NonceVerification
-		if ( ! $dropdown_args['lang'] ) {
-			$dropdown_args['lang'] = $this->pref_lang;
+		$language = isset( $_POST['lang'] ) ? $this->model->get_language( sanitize_key( $_POST['lang'] ) ) : $this->model->post->get_language( $post->ID ); // phpcs:ignore WordPress.Security.NonceVerification
+
+		if ( empty( $language ) ) {
+			$language = $this->pref_lang;
+		}
+
+		if ( ! empty( $language ) ) {
+			$dropdown_args['lang'] = $language->slug;
 		}
 
 		return $dropdown_args;

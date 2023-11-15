@@ -141,13 +141,13 @@ class PLL_Model {
 
 			$this->is_creating_language_objects = true;
 
-			if ( defined( 'PLL_CACHE_LANGUAGES' ) && ! PLL_CACHE_LANGUAGES ) {
+			if ( ! pll_get_constant( 'PLL_CACHE_LANGUAGES', true ) ) {
 				// Create the languages from taxonomies.
 				$languages = $this->get_languages_from_taxonomies();
 			} else {
 				$languages = get_transient( 'pll_languages_list' );
 
-				if ( empty( $languages ) || ! is_array( $languages ) ) {
+				if ( empty( $languages ) || ! is_array( $languages ) || empty( reset( $languages )['term_props'] ) ) { // Test `term_props` in case we got a transient older than 3.4.
 					// Create the languages from taxonomies.
 					$languages = $this->get_languages_from_taxonomies();
 				} else {
@@ -465,6 +465,8 @@ class PLL_Model {
 	 * @param int                 $parent    Parent term id.
 	 * @param string|PLL_Language $language  The language slug or object.
 	 * @return int The `term_id` of the found term. 0 otherwise.
+	 *
+	 * @phpstan-return int<0, max>
 	 */
 	public function term_exists( $term_name, $taxonomy, $parent, $language ) {
 		global $wpdb;
@@ -488,7 +490,8 @@ class PLL_Model {
 		}
 
 		// PHPCS:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return $wpdb->get_var( $select . $join . $where );
+		$term_id = $wpdb->get_var( $select . $join . $where );
+		return max( 0, (int) $term_id );
 	}
 
 	/**
@@ -861,7 +864,7 @@ class PLL_Model {
 			return $orderby;
 		}
 
-		return sprintf( 'tt.taxonomy = "language" DESC, %1$s.term_group, %1$s.term_id', $matches['alias'] );
+		return sprintf( 'tt.taxonomy = \'language\' DESC, %1$s.term_group, %1$s.term_id', $matches['alias'] );
 	}
 
 	/**
@@ -978,9 +981,11 @@ class PLL_Model {
 		 *     }
 		 * ) $terms_by_slug
 		 */
-		$languages = array_map(
-			array( new PLL_Language_Factory( $this->options ), 'get_from_terms' ),
-			array_values( $terms_by_slug )
+		$languages = array_filter(
+			array_map(
+				array( new PLL_Language_Factory( $this->options ), 'get_from_terms' ),
+				array_values( $terms_by_slug )
+			)
 		);
 
 		/**

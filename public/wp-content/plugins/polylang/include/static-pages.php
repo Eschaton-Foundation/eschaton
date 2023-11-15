@@ -40,7 +40,7 @@ class PLL_Static_Pages {
 	 *
 	 * @since 1.8
 	 *
-	 * @param object $polylang
+	 * @param object $polylang The Polylang object.
 	 */
 	public function __construct( &$polylang ) {
 		$this->model   = &$polylang->model;
@@ -105,6 +105,16 @@ class PLL_Static_Pages {
 	 */
 	protected function get_translation( $static_page, $language ) {
 		$translations = $this->model->post->get_raw_translations( $this->$static_page );
+
+		// When the current static page doesn't have any translation, we must return itself for its language.
+		if ( empty( $translations ) ) {
+			$page_lang = $this->model->post->get_object_term( $this->$static_page, $this->model->post->get_tax_language() );
+
+			if ( ! empty( $page_lang ) && $page_lang->slug === $language['slug'] ) {
+				return $this->$static_page;
+			}
+		}
+
 		if ( ! isset( $translations[ $language['slug'] ] ) ) {
 			return 0;
 		}
@@ -163,8 +173,19 @@ class PLL_Static_Pages {
 	 * @return int
 	 */
 	public function translate_page_on_front( $page_id ) {
-		// Don't attempt to translate in a 'switch_blog' action as there is a risk to call this function while initializing the languages cache.
-		return ! empty( $this->curlang->page_on_front ) && ! doing_action( 'switch_blog' ) ? $this->curlang->page_on_front : $page_id;
+		if ( empty( $this->curlang->page_on_front ) ) {
+			return $page_id;
+		}
+
+		if ( doing_action( 'switch_blog' ) || doing_action( 'before_delete_post' ) || doing_action( 'wp_trash_post' ) ) {
+			/*
+			 * Don't attempt to translate in a 'switch_blog' action as there is a risk to call this function while initializing the languages cache.
+			 * Don't translate while deleting a post or it will mess up `_reset_front_page_settings_for_post()`.
+			 */
+			return $page_id;
+		}
+
+		return $this->curlang->page_on_front;
 	}
 
 	/**
@@ -176,8 +197,19 @@ class PLL_Static_Pages {
 	 * @return int
 	 */
 	public function translate_page_for_posts( $page_id ) {
-		// Don't attempt to translate in a 'switch_blog' action as there is a risk to call this function while initializing the languages cache.
-		return ! empty( $this->curlang->page_for_posts ) && ! doing_action( 'switch_blog' ) ? $this->curlang->page_for_posts : $page_id;
+		if ( empty( $this->curlang->page_for_posts ) ) {
+			return $page_id;
+		}
+
+		if ( doing_action( 'switch_blog' ) || doing_action( 'before_delete_post' ) || doing_action( 'wp_trash_post' ) ) {
+			/*
+			 * Don't attempt to translate in a 'switch_blog' action as there is a risk to call this function while initializing the languages cache.
+			 * Don't translate while deleting a post or it will mess up `_reset_front_page_settings_for_post()`.
+			 */
+			return $page_id;
+		}
+
+		return $this->curlang->page_for_posts;
 	}
 
 	/**
