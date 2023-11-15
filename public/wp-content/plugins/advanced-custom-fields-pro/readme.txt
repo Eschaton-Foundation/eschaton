@@ -1,10 +1,10 @@
 === Advanced Custom Fields PRO ===
 Contributors: elliotcondon
 Tags: acf, fields, custom fields, meta, repeater
-Requires at least: 4.7
-Tested up to: 6.2
-Requires PHP: 5.6
-Stable tag: 6.1.6
+Requires at least: 5.8
+Tested up to: 6.4
+Requires PHP: 7.0
+Stable tag: 6.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -42,10 +42,10 @@ Over 10 plus years of vibrant community contribution alongside an ongoing commit
 * Millions of Users
 
 = Links =
-* [Website](https://advancedcustomfields.com/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
-* [Documentation](https://advancedcustomfields.com/resources/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
+* [Website](https://www.advancedcustomfields.com/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
+* [Documentation](https://www.advancedcustomfields.com/resources/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
 * [Support](https://support.advancedcustomfields.com)
-* [ACF PRO](https://advancedcustomfields.com/pro/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade)
+* [ACF PRO](https://www.advancedcustomfields.com/pro/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade)
 
 = PRO =
 The Advanced Custom Fields plugin is also available in a professional version which includes more fields, more functionality, and more flexibility. The ACF PRO plugin features:
@@ -57,7 +57,7 @@ The Advanced Custom Fields plugin is also available in a professional version wh
 * Build fully customisable image galleries with the [Gallery Field](https://www.advancedcustomfields.com/resources/gallery/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade).
 * Unlock a more efficient workflow for managing field settings by reusing existing fields and field groups on demand with the [Clone Field](https://www.advancedcustomfields.com/resources/clone/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade).
 
-[Upgrade to ACF PRO](https://advancedcustomfields.com/pro/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade)
+[Upgrade to ACF PRO](https://www.advancedcustomfields.com/pro/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Pro%20Upgrade)
 
 == Installation ==
 
@@ -67,7 +67,7 @@ From your WordPress dashboard
 2. **Search** for "Advanced Custom Fields" or “ACF”
 3. **Install and Activate** Advanced Custom Fields from your Plugins page
 4. **Click** on the new menu item "ACF" and create your first custom field group, or register a custom post type or taxonomy.
-5. **Read** the documentation to [get started](https://advancedcustomfields.com/resources/getting-started-with-acf/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
+5. **Read** the documentation to [get started](https://www.advancedcustomfields.com/resources/getting-started-with-acf/?utm_source=wordpress.org&utm_medium=free%20plugin%20listing&utm_campaign=ACF%20Website)
 
 
 == Frequently Asked Questions ==
@@ -92,10 +92,102 @@ From your WordPress dashboard
 
 == Changelog ==
 
+= 6.2.3 =
+*Release Date 15th November 2023*
+
+* [View Release Post](https://www.advancedcustomfields.com/blog/acf-6-2-3/)
+* New - An ACF Blocks specific JSON schema for block.json is now available on [GitHub](https://github.com/AdvancedCustomFields/schemas)
+* New - Flexible Content fields now show the layout name in the layout's header bar and supports click-to-copy
+* New - Duplicating Flexible Content layouts now appends "Copy" to their name and label, matching the behavior of field group duplication
+* Enhancement - ACF PRO will now automatically attempt license reactivation when the site URL changes, e.g. after a site migration. This resolves issues where updates may fail
+* Enhancement - Presentation setting for "High" placement of the Field Group made clear that it's not supported in the block editor
+* Fix - `acf_format_date` now ensures the date parameter is valid to prevent fatal errors if other data types are passed in
+* Fix - CPTs with a custom icon URL now display the posts icon in the location column of the field groups screen
+* Fix - The ACF JSON import form will now disable on first submit resolving an issue where you could submit the form twice
+* Fix - The "Add Row" button in the Flexible Content field now displays correctly when using nested layouts
+* Fix - Warning and Error notices no longer flicker on ACF admin pages load
+* i18n - ACF PRO license activation success and error messages are now translatable
+
+= 6.2.2 =
+*Release Date 25th October 2023*
+
+* Enhancement - ACF Blocks which have not been initialized by the editor will now render correctly
+* Enhancement - Added a new `acf/filesize` filter to allow third party media plugins to bypass ACF calling `filesize()` on attachments with uncached file sizes, which may result in a remote download if offloaded
+* Enhancement - ACF PRO license status and subscription expiry dates are now displayed on the “Updates” page
+* Fix - Product pages for WooCommerce version 8.2 or newer now correctly support field group location rules
+* Fix - Relationship field items can now be removed on mobile devices
+* Fix - Color picker fields no longer autocomplete immediately after typing 3 valid hex characters
+* Fix - Field settings no longer appear misaligned when the viewport is something other than 100%
+* Fix - Select fields without an aria-label no longer throw a warning
+* Fix - CPTs and Taxonomies with a custom text domain now export correctly when using PHP export
+
+= 6.2.1.1 =
+*Release Date 8th September 2023*
+
+* Fix - Editing a field group no longer generates an error when UI options pages are disabled
+
+= 6.2.1 =
+*Release Date 7th September 2023*
+
+* New - Options Pages created in the admin UI can now be assigned as child pages for any top-level menu item
+* New - Added a "Title Placeholder" setting to ACF Post Types which filters the "Add title" text when editing posts
+* Enhancement - ACF PRO will now warn when it can’t update due to PHP version incompatibilities
+* Enhancement - ACF PRO will now work correctly with WordPress automatic updates
+* Enhancement - The internal ACF Blocks template attribute parser function `parseNodeAttr` can now be shortcut with the new `acf_blocks_parse_node_attr` filter.
+* Enhancement - Removed legacy code for supporting WordPress versions under 5.8
+* Fix - The "Menu Position" setting is no longer hidden for child options pages
+* Fix - The tabs for the "Advanced" settings in Post Types and Taxonomies are now rendered inside a wrapper div
+* Fix - Options pages will no longer display as a child page in the list view when set to a top level page after previously being a child
+* Fix - Conflict with Elementor CSS breaking the ACF PRO banner
+* Fix - Errors generated during the block editor’s `savePost` function will no longer be caught and ignored by ACF
+
+= 6.2.0 =
+*Release Date 9th August 2023*
+
+* [View Release Post](https://www.advancedcustomfields.com/blog/acf-6-2-0-released/)
+* New - ACF now requires WordPress version 5.8 or newer, and PHP 7.0 or newer. View the [release post](https://www.advancedcustomfields.com/blog/acf-6-2-0-released/#version-requirements) for more information
+* New - Bidirectional Relationships now supported for Relationship, Post Object, User and Taxonomy fields. View the [release post](https://www.advancedcustomfields.com/blog/acf-6-2-0-released/#bidirectional-relationships) for more information
+* New - [Options Pages](https://www.advancedcustomfields.com/resources/options-page/) can now be registered and managed by the admin UI in ACF PRO
+* New - Link to the [product feedback board](https://www.advancedcustomfields.com/feedback/) added to the plugin footer
+* Enhancement - ACF JSON now supports multiple save locations (props Freddy Leitner)
+* Enhancement - ACF Post Types and Taxonomies can now be duplicated
+* Enhancement - The filename for JSON files can now be customized with the `acf/json/save_file_name` filter
+* Fix - REST updates of fields with choices containing integer or mixed keys now behave correctly
+* Fix - Using the `block_type_metadata_settings` PHP filter to add usesContext values no longer breaks ACF blocks
+* Fix - Notice to import post types/taxonomies from CPTUI no longer flashes on page load
+* Fix - Various buttons for fields in blocks now display correctly
+* Fix - The settings for the DateTime field are no longer cut off when nested in several fields in the field group editor
+* Fix - The newline added to the end of JSON files will now use `PHP_EOL` to detect the correct newline character with a filter `acf/json/eof_newline` to alter it.
+* i18n - Updated French and Portuguese translations (Thanks to pedro-mendonca and maximebj)
+
+= 6.1.8 =
+*Release Date 3rd August 2023*
+
+* Security Fix - This release resolves a stored XSS vulnerability in admin screens with ACF post type and taxonomy labels (Thanks to Satoo Nakano and Ryotaro Imamura)
+
+= 6.1.7 =
+*Release Date 27th June 2023*
+
+* New - Added new capability settings for ACF taxonomies
+* Enhancement - Added a new `acf/field_group/auto_add_first_field` filter which can be used to prevent new field groups from automatically adding a field
+* Enhancement - Field setting labels now have standard capitalization in the field group editor
+* Enhancement - Clone field now has a tutorial link
+* Enhancement - "Exclude From Search" CPT setting now has an improved description
+* Enhancement - The `acf_get_posts()` function now has `acf/acf_get_posts/args` and `acf/acf_get_posts/results` filters
+* Enhancement - Added a new `acf/options_page/save` action hook that gets fired during save of ACF Options Pages
+* Fix - Taxonomies are now initialized before post types, preventing some permalink issues
+* Fix - Increased the taxonomy slug maximum length to 32 characters
+* Fix - Extra tabs are no longer added to PHP exports with field settings containing multiple lines
+* Fix - ACF admin assets now load when editing profile and users for a multisite network
+* Fix - Blocks with recursive `render_callback` functions will no longer crash the editor
+* Fix - JSON files now end in a new line for better compatibility with code editors
+* i18n - `layout(s)` strings in Flexible Content fields are now translatable
+* i18n - Updated Polish translations
+
 = 6.1.6 =
 *Release Date 4th May 2023*
 
-* Security Fix - This release resolves an XSS vulnerability in ACF’s admin pages (Thanks to Rafie Muhammad for the responsible disclosure)
+* Security Fix - This release resolves an XSS vulnerability in ACF's admin pages (Thanks to Rafie Muhammad for the responsible disclosure)
 * Fix - Duplicating fields in a new field group with field setting tabs disabled now behaves correctly
 
 = 6.1.5 =
@@ -151,7 +243,7 @@ From your WordPress dashboard
 
 * [View Release Post](https://www.advancedcustomfields.com/blog/acf-6-1-0-released/)
 * New - Register Custom Post Types and Taxonomies using ACF. View the [release post](https://www.advancedcustomfields.com/blog/acf-6-1-0-released/#cpts-taxonomies) for full information
-* New - A new field type selection browser providing details on each type of field. View the [release post](https://www.advancedcustomfields.com/blog/acf-6-1-0-released/#field-type-modal) for full information.
+* New - A new field type selection browser providing details on each type of field. View the [release post](https://www.advancedcustomfields.com/blog/acf-6-1-0-released/#field-type-modal) for full information
 * New - PHP 8.1 and 8.2 support
 * Security Fix - ACF's data serialization system will now prevent classes being unserialized. This prevents a potential security issue should an attacker know a vulnerable class is available, and can write malicious data to the database.
 * Enhancement - Post Object, Page Link and Relationship fields now support filtering by post status

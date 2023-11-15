@@ -49,7 +49,7 @@ if ( ! class_exists( 'ACF_Admin_Updates' ) ) :
 			// Create new notice.
 			acf_new_admin_notice(
 				array(
-					'text' => __( '<b>Error</b>. Could not connect to update server', 'acf' ) . ' <span class="description">(' . esc_html( $wp_error->get_error_message() ) . ').</span>',
+					'text' => __( '<strong>Error</strong>. Could not connect to the update server', 'acf' ) . ' <span class="description">(' . esc_html( $wp_error->get_error_message() ) . ').</span>',
 					'type' => 'error',
 				)
 			);
@@ -153,6 +153,7 @@ if ( ! class_exists( 'ACF_Admin_Updates' ) ) :
 			$license    = acf_pro_get_license_key();
 			$this->view = array(
 				'license'            => $license,
+				'license_status'     => acf_pro_get_license_status( ! empty( $_GET['acf-recheck-license'] ) ),
 				'active'             => $license ? 1 : 0,
 				'current_version'    => acf_get_setting( 'version' ),
 				'remote_version'     => '',
@@ -161,6 +162,7 @@ if ( ! class_exists( 'ACF_Admin_Updates' ) ) :
 				'upgrade_notice'     => '',
 				'is_defined_license' => defined( 'ACF_PRO_LICENSE' ) && ! empty( ACF_PRO_LICENSE ) && is_string( ACF_PRO_LICENSE ),
 				'license_error'      => false,
+				'wp_not_compatible'  => false,
 			);
 
 			// get plugin updates
@@ -181,44 +183,52 @@ if ( ! class_exists( 'ACF_Admin_Updates' ) ) :
 			// check if remote version is higher than current version
 			if ( version_compare( $info['version'], $version, '>' ) ) {
 
-				// update view
+				// update view.
 				$this->view['update_available'] = true;
 				$this->view['changelog']        = $this->get_changelog_changes( $info['changelog'], $info['version'] );
 				$this->view['upgrade_notice']   = $this->get_changelog_changes( $info['upgrade_notice'], $info['version'] );
 
-				// perform update checks if license is active
-				$basename = acf_get_setting( 'basename' );
-				$update   = acf_updates()->get_plugin_update( $basename );
-				if ( $license ) {
+				// perform update checks if license is active.
+				$basename  = acf_get_setting( 'basename' );
+				$update    = acf_updates()->get_plugin_update( $basename );
+				$no_update = acf_updates()->get_no_update( $basename );
 
+				if ( $no_update && ! empty( $no_update['reason'] ) && $no_update['reason'] === 'wp_not_compatible' ) {
+					$this->view['wp_not_compatible'] = true;
+					acf_new_admin_notice(
+						array(
+							/* translators: %s the version of WordPress required for this ACF update */
+							'text' => sprintf( __( 'An update to ACF is available, but it is not compatible with your version of WordPress. Please upgrade to WordPress %s or newer to update ACF.', 'acf' ), $no_update['requires'] ),
+							'type' => 'error',
+						)
+					);
+				}
+
+				if ( $license ) {
 					if ( isset( $update['license_valid'] ) && ! $update['license_valid'] ) {
 
 						$this->view['license_error'] = true;
 						acf_new_admin_notice(
 							array(
-								'text' => __( '<b>Error</b>. Your license for this site has expired or been deactivated. Please reactivate your ACF PRO license.', 'acf' ),
+								'text' => __( '<strong>Error</strong>. Your license for this site has expired or been deactivated. Please reactivate your ACF PRO license.', 'acf' ),
 								'type' => 'error',
 							)
 						);
 
 					} else {
-
-						// display error if no package url
-						// - possible if license key has been modified
+						// display error if no package url - possible if license key or site URL has been modified.
 						if ( $update && ! $update['package'] ) {
 							$this->view['license_error'] = true;
 							acf_new_admin_notice(
 								array(
-									'text' => __( '<b>Error</b>. Could not authenticate update package. Please check again or deactivate and reactivate your ACF PRO license.', 'acf' ),
+									'text' => __( '<strong>Error</strong>. Could not authenticate update package. Please check again or deactivate and reactivate your ACF PRO license.', 'acf' ),
 									'type' => 'error',
 								)
 							);
 						}
 					}
 
-					// refresh transient
-					// - if no update exists in the transient
-					// - or if the transient 'new_version' is stale
+					// refresh transient - if no update exists in the transient or if the transient 'new_version' is stale.
 					if ( ! $update || $update['new_version'] !== $info['version'] ) {
 						acf_updates()->refresh_plugins_transient();
 					}
