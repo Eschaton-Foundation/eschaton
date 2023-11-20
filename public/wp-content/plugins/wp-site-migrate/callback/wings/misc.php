@@ -152,6 +152,9 @@ class BVMiscCallback extends BVCallbackBase {
 			phpinfo();
 			die();
 			break;
+		case "wpnonce":
+			$resp = array("wpnonce" => wp_create_nonce($params["wpnonce_action"]));
+			break;
 		case "dlttrsnt":
 			$resp = array("dlttrsnt" => $settings->deleteTransient($params['key']));
 			break;
@@ -204,6 +207,16 @@ class BVMiscCallback extends BVCallbackBase {
 				$resp['taxonomies'] = $taxonomy_result['taxonomies'];
 			}
 			break;
+
+		case "get_post_ids":
+			if (array_key_exists('urls', $params)) {
+				$resp = array();
+				foreach ( $params['urls'] as $url ) {
+					$resp[$url] = url_to_postid($url);
+				}
+			}
+			break;
+
 		case "permalink":
 			if (array_key_exists('post_ids', $params)) {
 				$resp = array();

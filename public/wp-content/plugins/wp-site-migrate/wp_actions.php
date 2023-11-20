@@ -27,7 +27,6 @@ if (!class_exists('WPEWPAction')) :
 			} else {
 				WPEAccount::setup($this->settings);
 			}
-			##ENABLECACHE##
 		}
 
 		public function deactivate() {

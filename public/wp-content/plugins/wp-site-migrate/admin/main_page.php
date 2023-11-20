@@ -8,7 +8,6 @@
 	<div class="card">
 		<form action="<?php echo esc_url($this->bvinfo->appUrl()); ?>/migration/migrate" method="post" name="signup">
 			<img class="wpe-logo-lg" src="<?php echo esc_url(plugins_url("/../assets/img/wpe-logo-lg.svg", __FILE__)); ?>">
-			<?php $this->showErrors(); ?>
 			<div class="form-content">
 				<label class="email-label" required>Email Address</label>
 				<input type="email" name="email" placeholder="Email address" class="email-input">

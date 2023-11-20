@@ -5,7 +5,7 @@ Plugin URI: https://wpengine.com
 Description: The easiest way to migrate your site to WP Engine
 Author: WPEngine
 Author URI: https://wpengine.com
-Version: 5.05
+Version: 5.25
 Network: True
  */
 
@@ -103,23 +103,17 @@ if ((array_key_exists('bvplugname', $_REQUEST)) && ($_REQUEST['bvplugname'] == "
 		$account = WPEAccount::find($bvsettings, $pubkey);
 	}
 
-	$request = new BVCallbackRequest($account, $_REQUEST);
+	$request = new BVCallbackRequest($account, $_REQUEST, $bvsettings);
 	$response = new BVCallbackResponse($request->bvb64cksize);
 
-	if ($account && (1 === $account->authenticate($request))) {
+	if ($request->authenticate() === 1) {
 		##BVBASEPATH##
 
 		require_once dirname( __FILE__ ) . '/callback/handler.php';
 
 		$params = $request->processParams($_REQUEST);
 		if ($params === false) {
-			$resp = array(
-				"account_info" => $account->info(),
-				"request_info" => $request->info(),
-				"bvinfo" => $bvinfo->info(),
-				"statusmsg" => "BVPRMS_CORRUPTED"
-			);
-			$response->terminate($resp);
+			$response->terminate($request->corruptedParamsResp());
 		}
 		$request->params = $params;
 		$callback_handler = new BVCallbackHandler($bvdb, $bvsettings, $bvsiteinfo, $request, $account, $response);
@@ -132,15 +126,7 @@ if ((array_key_exists('bvplugname', $_REQUEST)) && ($_REQUEST['bvplugname'] == "
 			$callback_handler->execute();
 		}
 	} else {
-		$resp = array(
-			"account_info" => $account ? $account->info() : array("error" => "ACCOUNT_NOT_FOUND"),
-			"request_info" => $request->info(),
-			"bvinfo" => $bvinfo->info(),
-			"statusmsg" => "FAILED_AUTH",
-			"api_pubkey" => substr(WPEAccount::getApiPublicKey($bvsettings), 0, 8),
-			"def_sigmatch" => substr(WPEAccount::getSigMatch($request, WPERecover::getDefaultSecret($bvsettings)), 0, 8)
-		);
-		$response->terminate($resp);
+		$response->terminate($request->authFailedResp());
 	}
 } else {
 	if ($bvinfo->hasValidDBVersion()) {

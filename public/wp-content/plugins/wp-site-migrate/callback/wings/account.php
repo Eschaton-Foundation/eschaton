@@ -6,7 +6,7 @@ class BVAccountCallback extends BVCallbackBase {
 	public $account;
 	public $settings;
 	
-	const ACCOUNT_WING_VERSION = 1.1;
+	const ACCOUNT_WING_VERSION = 1.2;
 
 	public function __construct($callback_handler) {
 		$this->account = $callback_handler->account;
@@ -74,7 +74,15 @@ class BVAccountCallback extends BVCallbackBase {
 			$resp = array("status" => $settings->deleteOption('bvAccounts'));
 			break;
 		case "fetch":
-			$resp = array("status" => WPEAccount::allAccounts($this->settings));
+			$accounts = WPEAccount::allAccounts($this->settings);
+			if (!isset($params['full'])) {
+				foreach ($accounts as &$account) {
+					if (isset($account['secret'])) {
+						unset($account['secret']);
+					}
+				}
+			}
+			$resp = array("status" => $accounts);
 			break;
 		case "updtinfo":
 			$resp = $this->updateInfo($params);

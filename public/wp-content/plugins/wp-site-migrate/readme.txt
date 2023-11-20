@@ -2,9 +2,9 @@
 Contributors: wpengine, blogvault, akshatc, taylor4484
 Tags: wpe, wpengine, migration
 Requires at least: 4.0
-Tested up to: 6.2
+Tested up to: 6.4
 Requires PHP: 5.4.0
-Stable tag: 5.05
+Stable tag: 5.25
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,23 @@ That's easy! [Signup here](http://wpengine.com/plans/).
 2. BlogVault dashboard showing live updates.
 
 == Changelog ==
+= 5.25 =
+* Bug fix get_admin_url
+
+= 5.24 =
+* SHA256 Support
+* Stream Improvements
+
+= 5.22 =
+* Code Improvements
+* Reduced Memory Footprint
+
+= 5.16 =
+* Bug Fixes
+
+= 5.15 =
+* Upgraded Authentication
+
 = 5.05 =
 * Code Improvements for PHP 8.2 compatibility
 * Site Health BugFix

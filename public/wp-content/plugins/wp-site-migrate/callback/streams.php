@@ -45,36 +45,42 @@ if (!class_exists('BVRespStream')) :
 			return array('stream' => $stream);
 		}
 
-		public function writeStream($_string) {
-			if (strlen($_string) > 0) {
-				$chunk = "";
+		public function writeStream($chunk) {
+			if (strlen($chunk) > 0) {
+				$bvb64_prefix = "";
 				if ($this->bvb64stream) {
 					$chunk_size = $this->bvb64cksize;
-					$_string = $this->base64Encode($_string, $chunk_size);
-					$chunk .= "BVB64" . ":";
+					$chunk = $this->base64Encode($chunk, $chunk_size);
+					$bvb64_prefix .= "BVB64" . ":";
 				}
-				$chunk .= (strlen($_string) . ":" . $_string);
+
+				$hash_prefix = "";
 				if ($this->checksum == 'crc32') {
-					$chunk = "CRC32" . ":" . crc32($_string) . ":" . $chunk;
+					$hash_prefix .= "CRC32" . ":" . crc32($chunk) . ":";
 				} else if ($this->checksum == 'md5') {
-					$chunk = "MD5" . ":" . md5($_string) . ":" . $chunk;
+					$hash_prefix .= "MD5" . ":" . md5($chunk) . ":";
 				}
+
+				$chunk = $hash_prefix . $bvb64_prefix . strlen($chunk) . ":" . $chunk;
+
 				$this->writeChunk($chunk);
 			}
 		}
 	}
 
 class BVRespStream extends BVStream {
+	public $bvboundry;
+
 	function __construct($request) {
 		parent::__construct($request);
+		$this->bvboundry = $request->bvboundry;
 	}
 
-	public function writeChunk($_string) {
-		echo "ckckckckck".$_string."ckckckckck";
+	public function writeChunk($chunk) {
+		echo $this->bvboundry . "ckckckckck" . $chunk . $this->bvboundry . "ckckckckck";
 	}
-
 	public function endStream() {
-		echo "rerererere";
+		echo $this->bvboundry . "rerererere";
 
 		return array();
 	}

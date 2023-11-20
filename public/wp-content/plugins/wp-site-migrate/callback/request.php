@@ -10,30 +10,41 @@ if (!class_exists('BVCallbackRequest')) :
 		public $is_admin_ajax;
 		public $is_debug;
 		public $account;
-		public $calculated_mac;
+		public $settings;
 		public $sig;
+		public $sighshalgo;
 		public $time;
 		public $version;
 		public $is_sha1;
 		public $bvb64stream;
 		public $bvb64cksize;
 		public $checksum;
+		public $error = array();
+		public $pubkey_name;
+		public $bvprmsmac;
+		public $bvboundry;
 
-		public function __construct($account, $in_params) {
+		public function __construct($account, $in_params, $settings) {
 			$this->params = array();
 			$this->account = $account;
+			$this->settings = $settings;
 			$this->wing = $in_params['wing'];
 			$this->method = $in_params['bvMethod'];
 			$this->is_afterload = array_key_exists('afterload', $in_params);
 			$this->is_admin_ajax = array_key_exists('adajx', $in_params);
 			$this->is_debug = array_key_exists('bvdbg', $in_params);
 			$this->sig = $in_params['sig'];
+			$this->sighshalgo = !empty($in_params['sighshalgo']) ? $in_params['sighshalgo'] : null;
 			$this->time = intval($in_params['bvTime']);
 			$this->version = $in_params['bvVersion'];
 			$this->is_sha1 = array_key_exists('sha1', $in_params);
 			$this->bvb64stream = isset($in_params['bvb64stream']);
 			$this->bvb64cksize = array_key_exists('bvb64cksize', $in_params) ? intval($in_params['bvb64cksize']) : false;
 			$this->checksum = array_key_exists('checksum', $in_params) ? $in_params['checksum'] : false;
+			$this->pubkey_name = !empty($in_params['pubkeyname']) ?
+					WPEAccount::sanitizeKey($in_params['pubkeyname']) : 'm_public';
+			$this->bvprmsmac = !empty($in_params['bvprmsmac']) ? WPEAccount::sanitizeKey($in_params['bvprmsmac']) : "";
+			$this->bvboundry = !empty($in_params['bvboundry']) ? $in_params['bvboundry'] : "";
 		}
 
 		public function isAPICall() {
@@ -84,7 +95,8 @@ if (!class_exists('BVCallbackRequest')) :
 			$info = array(
 				"requestedsig" => $this->sig,
 				"requestedtime" => $this->time,
-				"requestedversion" => $this->version
+				"requestedversion" => $this->version,
+				"error" => $this->error
 			);
 			if ($this->is_debug) {
 				$info["inreq"] = $this->params;
@@ -94,9 +106,6 @@ if (!class_exists('BVCallbackRequest')) :
 			}
 			if ($this->is_afterload) {
 				$info["afterload"] = true;
-			}
-			if ($this->calculated_mac) {
-				$info["calculated_mac"] = $this->calculated_mac;
 			}
 			return $info;
 		}
@@ -128,19 +137,14 @@ if (!class_exists('BVCallbackRequest')) :
 				}
 			}
 
-			if (array_key_exists('bvprms', $in_params) && isset($in_params['bvprms']) &&
-					array_key_exists('bvprmsmac', $in_params) && isset($in_params['bvprmsmac'])) {
-				$digest_algo = 'SHA1';
-				$sent_mac = WPEAccount::sanitizeKey($in_params['bvprmsmac']);
-
-				if (array_key_exists('bvprmshshalgo', $in_params) && isset($in_params['bvprmshshalgo'])) {
-					$digest_algo = $in_params['bvprmshshalgo'];
+			if (array_key_exists('bvprms', $in_params) && isset($in_params['bvprms'])) {
+				if (!empty($in_params['bvprmshshalgo']) && $in_params['bvprmshshalgo'] === 'sha256') {
+					$calculated_mac = hash_hmac('SHA256', $in_params['bvprms'], $this->account->secret);
+				} else {
+					$calculated_mac = hash_hmac('SHA1', $in_params['bvprms'], $this->account->secret);
 				}
 
-				$calculated_mac = hash_hmac($digest_algo, $in_params['bvprms'], $this->account->secret);
-				$this->calculated_mac = substr($calculated_mac, 0, 6);
-
-				if ($this->compare_mac($sent_mac, $calculated_mac) === true) {
+				if ($this->compare_mac($this->bvprmsmac, $calculated_mac) === true) {
 
 					if (array_key_exists('b64', $in_params)) {
 						foreach ($in_params['b64'] as $key) {
@@ -188,7 +192,6 @@ if (!class_exists('BVCallbackRequest')) :
 					return $params;
 				}
 			}
-
 			return false;
 		}
 
@@ -216,6 +219,93 @@ if (!class_exists('BVCallbackRequest')) :
 			}
 
 			return $data;
+		}
+
+		public function authenticate() {
+			if (!$this->account) {
+				$this->error["message"] = "ACCOUNT_NOT_FOUND";
+				return false;
+			}
+
+			$bv_last_recv_time = $this->settings->getOption('bvLastRecvTime');
+			if ($this->time < intval($bv_last_recv_time) - 300) {
+				return false;
+			}
+
+			$data = $this->method.$this->account->secret.$this->time.$this->version.$this->bvprmsmac;
+			if (!$this->verify($data, base64_decode($this->sig), $this->sighshalgo)) {
+				return false;
+			}
+			$this->settings->updateOption('bvLastRecvTime', $this->time);
+
+			return 1;
+		}
+
+		public function verify($data, $sig, $sighshalgo) {
+			if (!function_exists('openssl_verify') || !function_exists('openssl_pkey_get_public')) {
+				$this->error["message"] = "OPENSSL_FUNCS_NOT_FOUND";
+				return false;
+			}
+
+			$key_file = dirname( __FILE__ ) . '/../public_keys/' . $this->pubkey_name . '.pub';
+			if (!file_exists($key_file)) {
+				$this->error["message"] = "PUBLIC_KEY_NOT_FOUND";
+				return false;
+			}
+			$public_key_str = file_get_contents($key_file);
+			$public_key = openssl_pkey_get_public($public_key_str);
+			if (!$public_key) {
+				$this->error["message"] = "UNABLE_TO_LOAD_PUBLIC_KEY";
+				return false;
+			}
+
+			if ($sighshalgo === 'sha256') {
+				$verify = openssl_verify($data, $sig, $public_key, OPENSSL_ALGO_SHA256);
+			} else {
+				$verify = openssl_verify($data, $sig, $public_key);
+			}
+			if ($verify === 1) {
+				return true;
+			} elseif ($verify === 0) {
+				$this->error["message"] = "INCORRECT_SIGNATURE";
+				$this->error["pubkey_sig"] = substr(hash('md5', $public_key_str), 0, 8);
+			} else {
+				$this->error["message"] = "OPENSSL_VERIFY_FAILED";
+			}
+			return false;
+		}
+
+		public function corruptedParamsResp() {
+			$bvinfo = new WPEInfo($this->settings);
+
+			return array(
+				"account_info" => $this->account->info(),
+				"request_info" => $this->info(),
+				"bvinfo" => $bvinfo->info(),
+				"statusmsg" => "BVPRMS_CORRUPTED"
+			);
+		}
+
+		public function authFailedResp() {
+			$api_public_key = WPEAccount::getApiPublicKey($this->settings);
+			$default_secret = WPERecover::getDefaultSecret($this->settings);
+			$bvinfo = new WPEInfo($this->settings);
+			$resp = array(
+				"request_info" => $this->info(),
+				"bvinfo" => $bvinfo->info(),
+				"statusmsg" => "FAILED_AUTH",
+				"api_pubkey" => substr($api_public_key, 0, 8),
+				"def_sigmatch" => substr(hash('sha1', $this->method.$default_secret.$this->time.$this->version), 0, 8)
+			);
+
+			if ($this->account) {
+				$resp["account_info"] = $this->account->info();
+				$resp["sigmatch"] = substr(hash('sha1', $this->method.$this->account->secret.$this->time.$this->version), 0, 6);
+			} else {
+				$resp["account_info"] = array("error" => "ACCOUNT_NOT_FOUND");
+			}
+
+			return $resp;
 		}
 	}
 endif;

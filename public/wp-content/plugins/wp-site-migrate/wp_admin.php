@@ -35,20 +35,6 @@ class WPEWPAdmin {
 		if (!current_user_can('activate_plugins'))
 			return;
 
-		if (array_key_exists('bvnonce', $_REQUEST) &&
-				wp_verify_nonce($_REQUEST['bvnonce'], "bvnonce") &&
-				array_key_exists('blogvaultkey', $_REQUEST) &&
-				(strlen(WPEAccount::sanitizeKey($_REQUEST['blogvaultkey'])) == 64) &&
-				(array_key_exists('page', $_REQUEST) &&
-				$_REQUEST['page'] == $this->bvinfo->plugname)) {
-			$keys = str_split($_REQUEST['blogvaultkey'], 32);
-			WPEAccount::addAccount($this->settings, WPEAccount::sanitizeKey($keys[0]), WPEAccount::sanitizeKey($keys[1]));
-			if (array_key_exists('redirect', $_REQUEST)) {
-				$location = $_REQUEST['redirect'];
-				wp_redirect($this->bvinfo->appUrl().'/migration/'.$location);
-				exit();
-			}
-		}
 		if ($this->bvinfo->isActivateRedirectSet()) {
 			$this->settings->updateOption($this->bvinfo->plug_redirect, 'no');
 			wp_redirect($this->mainUrl());
@@ -94,19 +80,6 @@ class WPEWPAdmin {
 		}
 	}
 
-	public function showErrors() {
-		$error = NULL;
-		if (array_key_exists('error', $_REQUEST)) {
-			$error = $_REQUEST['error'];
-		}
-		if ($error == "email") {
-			echo '<div style="padding-bottom:0.5px; color:red;"><p>Incorrect Email.</p></div>';
-		}
-		else if (($error == "custom") && isset($_REQUEST['bvnonce']) && wp_verify_nonce($_REQUEST['bvnonce'], "bvnonce")) {
-			echo '<div style="padding-bottom:0.5px;color: red;"><p>'.esc_html(base64_decode($_REQUEST['message'])).'</p></div>';
-		}
-	}
-
 	public function getPluginLogo() {
 		$brand = $this->bvinfo->getBrandInfo();
 		if ($brand && array_key_exists('logo', $brand)) {
@@ -127,7 +100,6 @@ class WPEWPAdmin {
 		global $wp_version;
 		require_once dirname( __FILE__ ) . '/recover.php';
 		$is_wpmu = $this->siteinfo->isMultisite() ? 1 : 0;
-		$bvnonce = wp_create_nonce("bvnonce");
 		$secret = WPERecover::defaultSecret($this->settings);
 		$public = WPEAccount::getApiPublicKey($this->settings);
 		$tags = "<input type='hidden' name='url' value='".esc_attr($this->siteinfo->wpurl())."'/>\n".
@@ -143,8 +115,7 @@ class WPEWPAdmin {
 				"<input type='hidden' name='serverip' value='".esc_attr($_SERVER["SERVER_ADDR"])."'/>\n".
 				"<input type='hidden' name='abspath' value='".esc_attr(ABSPATH)."'/>\n".
 				"<input type='hidden' name='secret' value='".esc_attr($secret)."'/>\n".
-				"<input type='hidden' name='public' value='".esc_attr($public)."'/>\n".
-				"<input type='hidden' name='bvnonce' value='".esc_attr($bvnonce)."'/>\n";
+				"<input type='hidden' name='public' value='".esc_attr($public)."'/>\n";
 		return $tags;
 	}
 
