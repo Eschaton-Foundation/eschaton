@@ -162,13 +162,23 @@
 
 
 
-	<header>
+	<header class="<?php echo get_field('enable_banner', "options") ? 'banner-on' : ''?>">
 
 		<?php if( get_field('enable_banner', "options") ) : ?>
 			<div class="header_banner">
 				<div class="marquee">
 					<h3>
-						<?php the_field('banner_content', "options"); ?>
+						<?php
+							if( pll_current_language( ) === "en" ) {
+								the_field('banner_content', "options"); 
+							}
+							else if (pll_current_language( ) === "fr") {
+								the_field('banner_content_fr', "options"); 
+							}
+							else if (pll_current_language( ) === "de") {
+								the_field('banner_content_de', "options"); 
+							}
+							?>
 					</h3>
 				</div>
 			</div>

@@ -34,6 +34,11 @@ header {
             top: 0.75rem;
             left: auto;
             right: 0.25rem;
+            background: white;
+            border-radius: 50%;
+            height: 50px;
+            width: 50px;
+            border: 1px solid #ddd;
         }
     }
 }
@@ -59,6 +64,13 @@ nav.menu-primary-nav-container {
 
     transition-timing-function: ease-in-out;
 
+    .menu-on .banner-on:not(.scrolled) + & {
+        top: 70px;
+
+        @media (max-width: 768px) {
+            top: 140px;
+        }
+    }
     .menu-on-lock & {
         transform: translateY(0);
         transition-delay: 0s;
@@ -187,7 +199,7 @@ nav.menu-primary-nav-container {
     transition-property: opacity;
     opacity: 1;
     transition-delay: 0.25s;
-
+    
     span {
         display: none;
     }
