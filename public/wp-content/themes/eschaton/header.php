@@ -184,28 +184,26 @@
 			</div>
 
 			<script>
-				function Marquee(selector, speed) {
+				function Marquee(selector, speed = 0.4) {
 					const parentSelector = document.querySelector(selector);
 					const clone = parentSelector.innerHTML;
 					const firstElement = parentSelector.children[0];
+					const firstWidth = firstElement.clientWidth;
 					let i = 0;
-					console.log(firstElement);
 					parentSelector.insertAdjacentHTML('beforeend', clone);
 					parentSelector.insertAdjacentHTML('beforeend', clone);
 
 					setInterval(function () {
 						firstElement.style.marginLeft = `-${i}px`;
-						if (i > firstElement.clientWidth) {
-						i = 0;
+						if (i > firstWidth) {
+							i = 0;
 						}
 						i = i + speed;
 					}, 0);
-					}
+				}
 
-					//after window is completed load
-					//1 class selector for marquee
-					//2 marquee speed 0.2
-				window.addEventListener('load', Marquee('.marquee', 0.4))
+				//after window is completed load
+				window.addEventListener('load', Marquee('.marquee', <?php the_field('banner_speed', 'options'); ?> ))
 
 			</script>
 		<?php endif; ?>
