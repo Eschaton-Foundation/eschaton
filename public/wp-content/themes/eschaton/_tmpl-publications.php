@@ -20,8 +20,8 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
             <div class="page_filters">
                 <?php FILTERS('All', '')->displayOutput(); ?>
                 <?php FILTERS('', 'media_type', 'large', true )->displayOutput(); ?>
-                <?php FILTERS('Langue', 'publication_language')->displayOutput(); ?>
                 <?php FILTERS('Date de publication', 'publication_date', 'medium', true)->displayOutput(); ?>
+                <?php FILTERS('Langue', 'publication_language')->displayOutput(); ?>
             </div>
 
             <div class="outer_grid">
