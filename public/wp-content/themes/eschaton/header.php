@@ -159,21 +159,66 @@
 							$bodyClass .= ' lang-' . $current_language;
 							body_class($bodyClass);
 							?>>
+
+
+
 	<header>
-		<a class="site-name" href="<?php echo get_home_url(); ?>" rel="home" title="to homepage"><?php echo get_bloginfo('name'); ?></a>
-		<button class="menu-toggle" aria-label="Toggle the primary menu">
-			<span>Menu</span>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.17 13">
-				<line class="cls-1" y1="0.5" x2="22.17" y2="0.5" />
-				<line class="cls-1" y1="6.5" x2="22.17" y2="6.5" />
-				<line class="cls-1" y1="12.5" x2="22.17" y2="12.5" />
-			</svg>
-		</button>
-		
-		<div class="lang_switcher">
-			<ul id="lang_list" class="dropdown_panel">
-				<?php pll_the_languages();?>
-			</ul>
+
+		<?php if( get_field('enable_banner', "options") ) : ?>
+			<div class="header_banner">
+				<div class="marquee">
+					<h3>
+						<?php the_field('banner_content', "options"); ?>
+					</h3>
+				</div>
+			</div>
+
+			<script>
+				function Marquee(selector, speed) {
+					const parentSelector = document.querySelector(selector);
+					const clone = parentSelector.innerHTML;
+					const firstElement = parentSelector.children[0];
+					let i = 0;
+					console.log(firstElement);
+					parentSelector.insertAdjacentHTML('beforeend', clone);
+					parentSelector.insertAdjacentHTML('beforeend', clone);
+
+					setInterval(function () {
+						firstElement.style.marginLeft = `-${i}px`;
+						if (i > firstElement.clientWidth) {
+						i = 0;
+						}
+						i = i + speed;
+					}, 0);
+					}
+
+					//after window is completed load
+					//1 class selector for marquee
+					//2 marquee speed 0.2
+				window.addEventListener('load', Marquee('.marquee', 0.4))
+
+			</script>
+		<?php endif; ?>
+
+		<div class="header_nav">
+
+			<div>
+				<a class="site-name" href="<?php echo get_home_url(); ?>" rel="home" title="to homepage"><?php echo get_bloginfo('name'); ?></a>
+				<button class="menu-toggle" aria-label="Toggle the primary menu">
+					<span>Menu</span>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.17 13">
+						<line class="cls-1" y1="0.5" x2="22.17" y2="0.5" />
+						<line class="cls-1" y1="6.5" x2="22.17" y2="6.5" />
+						<line class="cls-1" y1="12.5" x2="22.17" y2="12.5" />
+					</svg>
+				</button>
+			</div>
+
+			<div class="lang_switcher">
+				<ul id="lang_list" class="dropdown_panel">
+					<?php pll_the_languages();?>
+				</ul>
+			</div>
 		</div>
 		
 	</header>
