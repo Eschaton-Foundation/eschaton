@@ -736,6 +736,9 @@ footer {
     .exhibitions-grid.gridCount-2 .exhibition_title {
       font-size: 1.8rem;
       line-height: 1.1; }
+      @media (max-width: 768px) {
+        .exhibitions-grid.gridCount-2 .exhibition_title {
+          font-size: 1.6rem; } }
   .exhibitions-grid.gridCount-3 {
     grid-template-columns: repeat(3, 1fr);
     display: grid;
@@ -834,6 +837,9 @@ footer {
       font-weight: 100;
       font-size: inherit;
       font-style: inherit; }
+    @media (max-width: 1000px) {
+      .exhibitions-grid .exhibition_title {
+        font-size: 2rem; } }
 
 .stage_title {
   font-variant: small-caps;
@@ -1543,7 +1549,7 @@ section:not(.bleed).section-w-filters {
     flex: 0 0 100%;
     z-index: 999;
     top: 38px;
-    box-shadow: 0 0 30px rgba(128, 128, 128, 0.2);
+    box-shadow: 0 0 20px rgba(128, 128, 128, 0.1);
     padding: 20px 10px;
     margin-left: -2.5vw; } }
 @media (min-width: 767px) {
@@ -2861,7 +2867,7 @@ nav + main:not([data-barba-namespace="home"]) .subnav + * {
       margin-top: 4rem; } }
 
 @media (max-width: 1250px) {
-  main[data-barba-namespace="exhibitions"] section,
+  .page-template-_tmpl-exhibitions section,
   main[data-barba-namespace="studios"] section,
   main[data-barba-namespace="publications"] section {
     width: 95%; } }

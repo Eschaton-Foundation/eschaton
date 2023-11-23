@@ -79,6 +79,9 @@
 		.exhibition_title {
 			font-size: 1.8rem;
 			line-height: 1.1;
+			@media (max-width: 768px) {
+				font-size: 1.6rem;
+			}
 		}
 	}
 
@@ -198,6 +201,10 @@
 			font-weight: 100;
 			font-size: inherit;
 			font-style: inherit;
+		}
+		@media (max-width: 1000px) {
+			font-size: 2rem;
+
 		}
 	}
 }
@@ -803,7 +810,7 @@ section:not(.bleed).section-w-filters {
 		flex: 0 0 100%;
 		z-index: 999;
 		top: 38px;
-		box-shadow: 0 0 30px rgba(128, 128, 128, 0.2);
+		box-shadow: 0 0 20px rgba(128, 128, 128, 0.1);
 		padding: 20px 10px;
 		margin-left: -2.5vw;
     }

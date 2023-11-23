@@ -13,8 +13,16 @@ if ( ! function_exists( 'get_event_dates' ) ) :
         $start_end_timestamp = strtotime( $end_date );
         $end_year = date('Y', $start_end_timestamp);
 
-        if( has_term( 'permanent', 'exhpermanent' )) {
-            $end_date = 'Ongoing';
+        if( has_term( 'permanent', 'exhpermanent' )  || has_term( 'permanent-fr', 'exhpermanent' ) || has_term( 'permanent-de', 'exhpermanent')  ) {
+            if( pll_current_language( ) === "en" ) {
+                $end_date = 'Ongoing';
+            }
+            else if (pll_current_language( ) === "fr") {
+                $end_date = 'Installation permanente';
+            }
+            else if (pll_current_language( ) === "de") {
+                $end_date = 'Permanent';
+            }
         }
 
         if( $start_year === $end_year ) {

@@ -74,6 +74,15 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                 );
 
 
+                if( pll_current_language( ) === "en" ) {
+                    $periodLabel = $period;
+                }
+                else if (pll_current_language( ) === "fr") {
+                    $periodLabel = 'En cours';
+                }
+                else if (pll_current_language( ) === "de") {
+                    $periodLabel = 'Aktuell';
+                }
 
             }
             else if( $period === 'Past' ) {
@@ -90,6 +99,15 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                     )
                 );
 
+                if( pll_current_language( ) === "en" ) {
+                    $periodLabel = $period;
+                }
+                else if (pll_current_language( ) === "fr") {
+                    $periodLabel = 'Passées';
+                }
+                else if (pll_current_language( ) === "de") {
+                    $periodLabel = 'Rückblick';
+                }
 
             }
             else if( $period === 'Forthcoming' ) {
@@ -105,8 +123,21 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
                         'value'   => $today,
                     )
                 );
+
+                if( pll_current_language( ) === "en" ) {
+                    $periodLabel = $period;
+                }
+                else if (pll_current_language( ) === "fr") {
+                    $periodLabel = 'À venir';
+                }
+                else if (pll_current_language( ) === "de") {
+                    $periodLabel = 'Vorschau';
+                }
             }
 	
+
+
+
 
 
 
@@ -118,7 +149,11 @@ if( !isset($_POST['loadmore']) && $_POST['loadmore'] !== NULL ) {
 
             <?php if( $fullgrid ) : ?>
                 <div class="exhibitions-stage">
-                    <h3 class="stage_title"><?php echo $period; ?></h3>
+
+                    <?php if( !str_contains($args['term'], 'permanent') ) : ?>
+                        <h3 class="stage_title"><?php echo $periodLabel; ?></h3>
+                    <?php endif; ?>
+
                 <?php endif; ?>
 
                 <?php 
