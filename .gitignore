@@ -1,6 +1,6 @@
 /wp-content/uploads
 /wp-content/upgrade
-/wp-config.php
+wp-config.php
 /wp-content/languages
 eschaton.code-workspace
 /wp-content/themes/eschaton/.sass-cache
@@ -10,3 +10,4 @@ debug.log
 .htaccess
 /.htaccess
 
+/wp-config.php
