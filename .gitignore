@@ -1,6 +1,5 @@
 /wp-content/uploads
 /wp-content/upgrade
-wp-config.php
 /wp-content/languages
 eschaton.code-workspace
 /wp-content/themes/eschaton/.sass-cache
