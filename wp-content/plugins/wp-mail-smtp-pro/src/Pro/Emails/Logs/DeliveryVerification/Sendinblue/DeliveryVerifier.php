@@ -66,6 +66,7 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 		$delivery_status    = new DeliveryStatus();
 		$failed_event_types = [
 			'hardBounces',
+			'softBounces',
 			'blocked',
 			'invalid',
 		];

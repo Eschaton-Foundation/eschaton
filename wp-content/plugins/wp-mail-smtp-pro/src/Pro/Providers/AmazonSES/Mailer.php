@@ -120,7 +120,11 @@ class Mailer extends MailerAbstract {
 
 		$is_sent = false;
 
-		if ( is_object( $this->response ) && ! empty( $this->response->get( 'MessageId' ) ) ) {
+		if (
+			! empty( $this->response ) &&
+			method_exists( $this->response, 'get' ) &&
+			! empty( $this->response->get( 'MessageId' ) )
+		) {
 			$is_sent = true;
 		}
 

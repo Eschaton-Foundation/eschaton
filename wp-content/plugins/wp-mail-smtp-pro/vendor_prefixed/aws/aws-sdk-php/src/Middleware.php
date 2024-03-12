@@ -7,6 +7,7 @@ use WPMailSMTP\Vendor\Aws\Api\Validator;
 use WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
 use WPMailSMTP\Vendor\Aws\Exception\AwsException;
+use WPMailSMTP\Vendor\Aws\Signature\S3ExpressSignature;
 use WPMailSMTP\Vendor\Aws\Token\TokenAuthorization;
 use WPMailSMTP\Vendor\Aws\Token\TokenInterface;
 use WPMailSMTP\Vendor\GuzzleHttp\Promise;
@@ -69,11 +70,11 @@ final class Middleware
      * @param array $providerArgs
      * @return callable
      */
-    public static function requestBuilder($serializer, $endpointProvider = null, array $providerArgs = null)
+    public static function requestBuilder($serializer)
     {
-        return function (callable $handler) use($serializer, $endpointProvider, $providerArgs) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command) use($serializer, $handler, $endpointProvider, $providerArgs) {
-                return $handler($command, $serializer($command, $endpointProvider, $providerArgs));
+        return function (callable $handler) use($serializer) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpoint = null) use($serializer, $handler) {
+                return $handler($command, $serializer($command, $endpoint));
             };
         };
     }
@@ -89,20 +90,24 @@ final class Middleware
      *
      * @return callable
      */
-    public static function signer(callable $credProvider, callable $signatureFunction, $tokenProvider = null)
+    public static function signer(callable $credProvider, callable $signatureFunction, $tokenProvider = null, $config = [])
     {
-        return function (callable $handler) use($signatureFunction, $credProvider, $tokenProvider) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request) use($handler, $signatureFunction, $credProvider, $tokenProvider) {
+        return function (callable $handler) use($signatureFunction, $credProvider, $tokenProvider, $config) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request) use($handler, $signatureFunction, $credProvider, $tokenProvider, $config) {
                 $signer = $signatureFunction($command);
                 if ($signer instanceof \WPMailSMTP\Vendor\Aws\Token\TokenAuthorization) {
                     return $tokenProvider()->then(function (\WPMailSMTP\Vendor\Aws\Token\TokenInterface $token) use($handler, $command, $signer, $request) {
                         return $handler($command, $signer->authorizeRequest($request, $token));
                     });
-                } else {
-                    return $credProvider()->then(function (\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $creds) use($handler, $command, $signer, $request) {
-                        return $handler($command, $signer->signRequest($request, $creds));
-                    });
                 }
+                if ($signer instanceof \WPMailSMTP\Vendor\Aws\Signature\S3ExpressSignature) {
+                    $credentialPromise = $config['s3_express_identity_provider']($command);
+                } else {
+                    $credentialPromise = $credProvider();
+                }
+                return $credentialPromise->then(function (\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $creds) use($handler, $command, $signer, $request) {
+                    return $handler($command, $signer->signRequest($request, $creds));
+                });
             };
         };
     }

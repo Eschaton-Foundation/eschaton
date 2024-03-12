@@ -54,6 +54,7 @@ class Multisite {
 
 		// Change Gmail auth redirect URL for network admin (WPMS).
 		add_filter( 'wp_mail_smtp_gmail_get_plugin_auth_url', [ $this, 'change_gmail_auth_redirect_url' ] );
+		add_filter( 'wp_mail_smtp_pro_providers_gmail_auth_get_plugin_auth_url', [ $this, 'change_gmail_auth_redirect_url' ] );
 
 		// Change Outlook auth redirect URL for network admin (WPMS).
 		add_filter( 'wp_mail_smtp_outlook_get_plugin_auth_url', [ $this, 'change_outlook_auth_redirect_url' ] );
@@ -169,8 +170,10 @@ class Multisite {
 			! wp_doing_cron() &&
 			! get_transient( 'wp_mail_smtp_ms_init_migrations_daily' )
 		) {
-			remove_action( 'admin_init', [ wp_mail_smtp(), 'init_migrations' ] );
-			add_action( 'init', [ wp_mail_smtp(), 'init_migrations' ] );
+			$migrations = wp_mail_smtp()->get_migrations();
+
+			remove_action( 'admin_init', [ $migrations, 'init_migrations_on_request' ] );
+			add_action( 'init', [ $migrations, 'init_migrations_on_request' ] );
 			set_transient( 'wp_mail_smtp_ms_init_migrations_daily', true, DAY_IN_SECONDS );
 		}
 	}
@@ -685,7 +688,7 @@ class Multisite {
 
 		check_ajax_referer( 'wp-mail-smtp-pro-admin' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
 			wp_send_json_error();
 		}
 

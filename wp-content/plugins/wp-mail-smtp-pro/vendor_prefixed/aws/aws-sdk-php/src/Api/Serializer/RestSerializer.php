@@ -11,6 +11,7 @@ use WPMailSMTP\Vendor\Aws\Api\TimestampShape;
 use WPMailSMTP\Vendor\Aws\CommandInterface;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2SerializerTrait;
+use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri;
@@ -43,15 +44,14 @@ abstract class RestSerializer
      *
      * @return RequestInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpointProvider = null, $clientArgs = null)
+    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpoint = null)
     {
         $operation = $this->api->getOperation($command->getName());
         $commandArgs = $command->toArray();
         $opts = $this->serialize($operation, $commandArgs);
         $headers = isset($opts['headers']) ? $opts['headers'] : [];
-        if ($endpointProvider instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2) {
-            $this->setRequestOptions($endpointProvider, $command, $operation, $commandArgs, $clientArgs, $headers);
-            $this->endpoint = new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($this->endpoint);
+        if ($endpoint instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint) {
+            $this->setEndpointV2RequestOptions($endpoint, $headers);
         }
         $uri = $this->buildEndpoint($operation, $commandArgs, $opts);
         return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request($operation['http']['method'], $uri, $headers, isset($opts['body']) ? $opts['body'] : null);
@@ -179,13 +179,19 @@ abstract class RestSerializer
                 $path = \rtrim($path, '/');
             }
             $relative = $path . $relative;
+            if (\strpos($relative, '../') !== \false || \substr($relative, -2) === '..') {
+                if ($relative[0] !== '/') {
+                    $relative = '/' . $relative;
+                }
+                return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($this->endpoint->withPath('') . $relative);
+            }
         }
         // If endpoint has path, remove leading '/' to preserve URI resolution.
         if ($path && $relative[0] === '/') {
             $relative = \substr($relative, 1);
         }
-        //Append path to endpoint when leading '//...' present
-        // as uri cannot be properly resolved
+        //Append path to endpoint when leading '//...'
+        // present as uri cannot be properly resolved
         if ($this->api->isModifiedModel() && \strpos($relative, '//') === 0) {
             return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($this->endpoint . $relative);
         }

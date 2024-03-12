@@ -153,16 +153,22 @@ class SMTP {
 	 */
 	public function failed( $email_id, $error ) {
 
-		if ( empty( $email_id ) || empty( $error ) ) {
+		if ( empty( $email_id ) ) {
 			return;
 		}
 
-		if ( is_wp_error( $error ) ) {
+		if ( empty( $error ) ) {
+			$error = esc_html__( 'Unknown error.', 'wp-mail-smtp-pro' );
+		} elseif ( is_wp_error( $error ) ) {
 			$error = $error->get_error_message();
 		}
 
 		try {
 			$email = new Email( $email_id );
+
+			if ( empty( $email->get_id() ) ) {
+				return;
+			}
 
 			$email
 				->set_error_text( $error )

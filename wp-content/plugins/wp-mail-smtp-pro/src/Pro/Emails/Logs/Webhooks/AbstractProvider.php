@@ -202,9 +202,13 @@ abstract class AbstractProvider implements ProviderInterface {
 
 		$is_subscribed = $this->is_subscribed();
 
+		if ( is_wp_error( $is_subscribed ) || $this->get_setup_status() === Webhooks::MANUAL_SETUP ) {
+			return;
+		}
+
 		if ( $this->get_setup_status() === Webhooks::SUCCESS_SETUP && ! $is_subscribed ) {
 			$this->set_setup_status( Webhooks::BROKEN_SETUP );
-		} else if ( $this->get_setup_status() !== Webhooks::SUCCESS_SETUP && $is_subscribed ) {
+		} elseif ( $this->get_setup_status() !== Webhooks::SUCCESS_SETUP && $is_subscribed ) {
 			$this->set_setup_status( Webhooks::SUCCESS_SETUP );
 		}
 	}

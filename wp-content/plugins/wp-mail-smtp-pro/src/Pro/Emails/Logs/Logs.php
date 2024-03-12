@@ -58,10 +58,7 @@ class Logs {
 	 *
 	 * @since 1.5.0
 	 */
-	public function __construct() {
-
-		$this->init();
-	}
+	public function __construct() {}
 
 	/**
 	 * Initialize the Logs functionality.
@@ -123,11 +120,13 @@ class Logs {
 			add_action( 'wp_mail_smtp_mailcatcher_smtp_pre_send_before', [ $this, 'process_smtp_pre_send_before' ] );
 			add_action( 'wp_mail_smtp_mailcatcher_smtp_send_before', [ $this, 'process_smtp_send_before' ] );
 			add_action( 'wp_mail_smtp_mailcatcher_smtp_send_after', [ $this, 'process_smtp_send_after' ], 10, 7 );
-			add_action( 'wp_mail_smtp_mailcatcher_send_failed', [ $this, 'process_smtp_fails' ] );
 
 			// Actually log emails - Catch All.
 			add_action( 'wp_mail_smtp_mailcatcher_pre_send_before', [ $this, 'process_pre_send_before' ] );
 			add_action( 'wp_mail_smtp_mailcatcher_send_after', [ $this, 'process_log_save' ], 10, 2 );
+
+			// Log email errors.
+			add_action( 'wp_mail_smtp_mailcatcher_send_failed', [ $this, 'process_smtp_fails' ] );
 
 			// Process AJAX request for deleting all logs.
 			add_action( 'wp_ajax_wp_mail_smtp_delete_all_log_entries', [ $this, 'process_ajax_delete_all_log_entries' ] );
@@ -457,7 +456,10 @@ class Logs {
 		 *
 		 * @param string  $capability Email logs page manage capability.
 		 */
-		return apply_filters( 'wp_mail_smtp_pro_emails_logs_logs_get_manage_capability', 'manage_options' );
+		return apply_filters(
+			'wp_mail_smtp_pro_emails_logs_logs_get_manage_capability',
+			wp_mail_smtp()->get_capability_manage_options()
+		);
 	}
 
 	/**
@@ -918,29 +920,6 @@ class Logs {
 	}
 
 	/**
-	 * Process the failed email sending with SMTP.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param WP_Error|string $error The WP Error or error message.
-	 */
-	public function process_smtp_fails( $error ) {
-
-		if ( ! $this->is_valid_db() || empty( $error ) ) {
-			return;
-		}
-
-		$mailer_slug = wp_mail_smtp()->get_connections_manager()->get_mail_connection()->get_mailer_slug();
-
-		// Process this error only for the Other SMTP, old pepipost SMTP and the default PHP mailer.
-		if ( ! in_array( $mailer_slug, [ 'smtp', 'pepipost', 'mail' ], true ) ) {
-			return;
-		}
-
-		( new SMTP() )->failed( $this->get_current_email_id(), $error );
-	}
-
-	/**
 	 * Save the actual email data before email send.
 	 *
 	 * @since 2.9.0
@@ -976,6 +955,29 @@ class Logs {
 		$email_id = ( new Common( $mailer ) )->set_source( $mailcatcher )->save( $this->get_current_email_id() );
 
 		$mailer->verify_sent_status( $email_id );
+	}
+
+	/**
+	 * Process the failed email sending.
+	 *
+	 * @since 2.1.0
+	 * @since 4.0.0 Added API based mailers error processing.
+	 *
+	 * @param WP_Error|string $error The WP Error or error message.
+	 */
+	public function process_smtp_fails( $error ) {
+
+		if ( ! $this->is_valid_db() ) {
+			return;
+		}
+
+		$mailer_slug = wp_mail_smtp()->get_connections_manager()->get_mail_connection()->get_mailer_slug();
+
+		if ( in_array( $mailer_slug, [ 'smtp', 'pepipost', 'mail' ], true ) ) {
+			( new SMTP() )->failed( $this->get_current_email_id(), $error );
+		} else {
+			( new Common() )->failed( $this->get_current_email_id(), $error );
+		}
 	}
 
 	/**

@@ -16,10 +16,7 @@ class Control {
 	 *
 	 * @since 1.5.0
 	 */
-	public function __construct() {
-
-		$this->init();
-	}
+	public function __construct() {}
 
 	/**
 	 * Initialize the Control functionality.

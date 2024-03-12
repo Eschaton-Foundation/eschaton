@@ -29,6 +29,8 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     {
         $args = \array_intersect_key(\WPMailSMTP\Vendor\Aws\ClientResolver::getDefaultArguments(), ['service' => \true, 'region' => \true]);
         $args['region']['required'] = \false;
+        unset($args['region']['fn']);
+        unset($args['region']['default']);
         return $args + ['client_factory' => ['type' => 'config', 'valid' => ['callable'], 'doc' => 'A callable that takes an array of client' . ' configuration arguments and returns a regionalized' . ' client.', 'required' => \true, 'internal' => \true, 'default' => function (array $args) {
             $namespace = manifest($args['service'])['namespace'];
             $klass = "WPMailSMTP\\Vendor\\Aws\\{$namespace}\\{$namespace}Client";

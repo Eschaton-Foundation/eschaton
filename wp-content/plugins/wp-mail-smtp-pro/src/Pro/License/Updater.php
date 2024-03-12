@@ -123,8 +123,10 @@ class Updater {
 			$this->remote_url = WPMS_UPDATER_API;
 		}
 
-		// If the user cannot update plugins, stop processing here.
-		if ( ! current_user_can( 'update_plugins' ) ) {
+		// If the user cannot update plugins,
+		// or it's not a WP CLI request,
+		// stop processing here.
+		if ( ! current_user_can( 'update_plugins' ) && ! Helpers::is_wp_cli() ) {
 			return;
 		}
 

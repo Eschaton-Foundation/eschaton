@@ -29,6 +29,15 @@ class Mailer extends MailerAbstract {
 	const REGULAR_MESSAGE_MAX_BODY_SIZE = 1048576 * 4; // 4 MB.
 
 	/**
+	 * Named property ID for List-Unsubscribe header.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @var string
+	 */
+	const LIST_UNSUBSCRIBE_HEADER_ID = 'String 0x1045';
+
+	/**
 	 * Email request body.
 	 *
 	 * @since 1.5.0
@@ -153,6 +162,23 @@ class Mailer extends MailerAbstract {
 			return;
 		}
 
+		// List-Unsubscribe header needs special handling.
+		// See https://learn.microsoft.com/en-us/answers/questions/1460824/sending-emails-using-ms-graph-with-list-unsubscrib.
+		if ( strtolower( $name ) === 'list-unsubscribe' ) {
+			$this->set_body_param(
+				[
+					'singleValueExtendedProperties' => [
+						[
+							'id'    => self::LIST_UNSUBSCRIBE_HEADER_ID,
+							'value' => $this->sanitize_header_value( $name, $value ),
+						],
+					],
+				]
+			);
+
+			return;
+		}
+
 		// Email will not be sent if the header's name is not prepended with 'X-'.
 		if ( ! in_array( substr( $name, 0, 2 ), [ 'x-', 'X-' ], true ) ) {
 			$name = 'X-' . $name;
@@ -177,7 +203,7 @@ class Mailer extends MailerAbstract {
 				'internetMessageHeaders' => [
 					[
 						'name'  => $name,
-						'value' => WP::sanitize_value( $value ),
+						'value' => $this->sanitize_header_value( $name, $value ),
 					],
 				],
 			)

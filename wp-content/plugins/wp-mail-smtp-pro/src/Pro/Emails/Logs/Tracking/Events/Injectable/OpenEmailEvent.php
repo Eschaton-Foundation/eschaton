@@ -44,7 +44,13 @@ class OpenEmailEvent extends AbstractInjectableEvent {
 	 */
 	public function inject( $email_content ) {
 
-		$email_content .= sprintf( '<img src="%s" alt=""/>', $this->get_tracking_url() );
+		$pixel_img = sprintf( '<img src="%s" alt=""/>', $this->get_tracking_url() );
+
+		if ( strpos( $email_content, '</body>' ) !== false ) {
+			$email_content = str_replace( '</body>', "\n" . $pixel_img . "\n</body>", $email_content );
+		} else {
+			$email_content .= $pixel_img;
+		}
 
 		return $email_content;
 	}

@@ -4,8 +4,8 @@ namespace WPMailSMTP\Vendor\Aws\Api\Serializer;
 
 use WPMailSMTP\Vendor\Aws\Api\Service;
 use WPMailSMTP\Vendor\Aws\CommandInterface;
-use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2SerializerTrait;
+use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request;
 use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
@@ -45,14 +45,14 @@ class JsonRpcSerializer
      *
      * @return RequestInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpointProvider = null, $clientArgs = null)
+    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpoint = null)
     {
         $operationName = $command->getName();
         $operation = $this->api->getOperation($operationName);
         $commandArgs = $command->toArray();
         $headers = ['X-Amz-Target' => $this->api->getMetadata('targetPrefix') . '.' . $operationName, 'Content-Type' => $this->contentType];
-        if ($endpointProvider instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2) {
-            $this->setRequestOptions($endpointProvider, $command, $operation, $commandArgs, $clientArgs, $headers);
+        if ($endpoint instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint) {
+            $this->setEndpointV2RequestOptions($endpoint, $headers);
         }
         return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request($operation['http']['method'], $this->endpoint, $headers, $this->jsonFormatter->build($operation->getInput(), $commandArgs));
     }

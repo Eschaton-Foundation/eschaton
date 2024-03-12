@@ -82,9 +82,11 @@ trait CanResendEmailTrait {
 		$connections_manager->set_mail_connection( $connection );
 		$connections_manager->set_mail_backup_connection( false );
 
+		add_filter( 'wp_mail_smtp_mail_catcher_send_enqueue_email', '__return_false', PHP_INT_MAX );
 		add_action( 'phpmailer_init', [ $this, 'set_attachments' ] );
 		$is_sent = wp_mail( $to, $email->get_subject(), $email->get_content(), $headers );
 		remove_action( 'phpmailer_init', [ $this, 'set_attachments' ] );
+		remove_filter( 'wp_mail_smtp_mail_catcher_send_enqueue_email', '__return_false', PHP_INT_MAX );
 
 		$this->processing_email = null;
 

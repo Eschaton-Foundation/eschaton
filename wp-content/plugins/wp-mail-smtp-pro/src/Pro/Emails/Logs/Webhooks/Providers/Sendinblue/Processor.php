@@ -42,7 +42,7 @@ class Processor extends AbstractProcessor {
 
 		if ( $event_data['event'] === 'delivered' ) {
 			$event = new Delivered();
-		} elseif ( in_array( $event_data['event'], [ 'hard_bounce', 'blocked', 'invalid_email' ], true ) ) {
+		} elseif ( in_array( $event_data['event'], [ 'hard_bounce', 'soft_bounce', 'blocked', 'invalid_email' ], true ) ) {
 			$event = new Failed();
 		}
 

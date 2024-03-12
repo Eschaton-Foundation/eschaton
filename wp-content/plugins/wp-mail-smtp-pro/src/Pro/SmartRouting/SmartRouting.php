@@ -27,21 +27,22 @@ class SmartRouting {
 		// Filter options save process.
 		add_filter( 'wp_mail_smtp_options_set', [ $this, 'filter_options_set' ] );
 
-		/*
-		 * Capture `wp_mail` function arguments and process smart routing.
-		 * The Highest hook priority number tries to ensure to capture already filtered arguments.
-		 */
-		add_filter(
-			'wp_mail',
-			function ( $args ) {
-				if ( $this->is_enabled() ) {
-					$this->process_smart_routing( $args );
-				}
+		// Capture `wp_mail` function call.
+		add_action( 'wp_mail_smtp_processor_capture_wp_mail_call', [ $this, 'capture_wp_mail_call' ] );
+	}
 
-				return $args;
-			},
-			PHP_INT_MAX
-		);
+	/**
+	 * Capture `wp_mail` function call.
+	 *
+	 * @since 4.0.0
+	 */
+	public function capture_wp_mail_call() {
+
+		$args = wp_mail_smtp()->get_processor()->get_filtered_wp_mail_args();
+
+		if ( ! empty( $args ) && $this->is_enabled() ) {
+			$this->process_smart_routing( $args );
+		}
 	}
 
 	/**

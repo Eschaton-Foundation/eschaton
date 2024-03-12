@@ -45,14 +45,25 @@ class BackupConnections {
 		// Filter options save process.
 		add_filter( 'wp_mail_smtp_options_set', [ $this, 'filter_options_set' ] );
 
+		// Capture `wp_mail` function call.
+		add_action( 'wp_mail_smtp_processor_capture_wp_mail_call', [ $this, 'capture_wp_mail_call' ] );
+	}
+
+	/**
+	 * Capture `wp_mail` function call.
+	 *
+	 * @since 4.0.0
+	 */
+	public function capture_wp_mail_call() {
 		/*
-		 * Set the backup connection that should be used for the current email if it was not set before and capture `wp_mail`
-		 * function arguments for sending email via backup connection with the exact same data.
-		 * Negative hook priority number tries to ensure to capture arguments as early as possible to make sure that we
-		 * are getting arguments that were passed to the `wp_mail` function without modifications, since `wp_mail`
-		 * filter will be applied again in the backup email.
+		 * We need to use original arguments that were passed to the `wp_mail` function without modifications,
+		 * since `wp_mail` filter will be applied again in the backup email.
 		 */
-		add_filter( 'wp_mail', [ $this, 'set_current_backup_connection' ], - PHP_INT_MAX );
+		$args = wp_mail_smtp()->get_processor()->get_original_wp_mail_args();
+
+		if ( ! empty( $args ) ) {
+			$this->set_current_backup_connection( $args );
+		}
 	}
 
 	/**

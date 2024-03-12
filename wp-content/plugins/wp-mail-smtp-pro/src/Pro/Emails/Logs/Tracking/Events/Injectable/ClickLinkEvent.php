@@ -49,52 +49,22 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 	 */
 	public function inject( $email_content ) { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
 
-		$html_dom                = new DOMDocument();
-		$old_libxml_errors_value = libxml_use_internal_errors( true );
-
-		$html = make_clickable( $email_content );
-
-		// Encode email content if charset is not included.
-		$should_encode = preg_match( '/<meta.*charset=.*>/i', $html ) === 0;
-
-		/**
-		 * Filters whether email content should be encoded.
-		 *
-		 * @since 3.0.0
-		 *
-		 * @param bool $should_encode Whether email content should be encoded.
-		 */
-		$should_encode = apply_filters(
-			'wp_mail_smtp_pro_emails_logs_tracking_events_injectable_click_link_event_inject_encode_content',
-			$should_encode
-		);
-
-		if ( $should_encode ) {
-			// Include polyfill if mbstring PHP extension is not enabled.
-			if ( ! function_exists( 'mb_convert_encoding' ) ) {
-				Helpers::include_mbstring_polyfill();
-			}
-
-			// Convert non-ascii code into html-readable stuff.
-			$encoded_html = mb_convert_encoding( $html, 'HTML-ENTITIES', 'auto' );
-
-			if ( ! empty( $encoded_html ) ) {
-				$html = $encoded_html;
-			}
-		}
-
-		if ( empty( $html ) ) {
+		// Skip if DOMDocument is not available.
+		if ( ! class_exists( 'DOMDocument' ) ) {
 			return $email_content;
 		}
 
-		$html_dom->loadHTML( $html );
+		$html  = make_clickable( $email_content );
+		$links = $this->get_all_links( $html );
 
-		$links = $html_dom->getElementsByTagName( 'a' );
+		if ( empty( $links ) ) {
+			return $email_content;
+		}
 
 		$created_links = [];
 
 		foreach ( $links as $link ) {
-			$url = $link->getAttribute( 'href' );
+			$url = $link['url'];
 
 			// Skip empty, anchor or mailto links.
 			if (
@@ -119,22 +89,18 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 				$url
 			);
 
-			if ( ! $is_trackable_url ) {
+			if ( ! $is_trackable_url || isset( $created_links[ $url ] ) ) {
 				continue;
 			}
 
-			if ( ! isset( $created_links[ $url ] ) ) {
-				$link_id = $this->add_link( $url );
+			$link_id = $this->add_link( $url );
 
-				// Skip if link was not created.
-				if ( $link_id === false ) {
-					continue;
-				}
-
-				$created_links[ $url ] = $link_id;
-			} else {
-				$link_id = $created_links[ $url ];
+			// Skip if link was not created.
+			if ( $link_id === false ) {
+				continue;
 			}
+
+			$created_links[ $url ] = $link_id;
 
 			$tracking_url = $this->get_tracking_url(
 				[
@@ -143,19 +109,10 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 				]
 			);
 
-			$link->setAttribute( 'href', $tracking_url );
+			$html = str_replace( $link['attr'], 'href="' . $tracking_url . '"', $html );
 		}
 
-		$modified_content = $html_dom->saveHTML();
-
-		libxml_clear_errors();
-		libxml_use_internal_errors( $old_libxml_errors_value );
-
-		if ( $modified_content !== false ) {
-			return $modified_content;
-		}
-
-		return $email_content;
+		return $html;
 	}
 
 	/**
@@ -193,7 +150,7 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 		$response->header( 'Cache-Control', 'must-revalidate, no-cache, no-store, max-age=0, no-transform' );
 		$response->header( 'Pragma', 'no-cache' );
 		$response->set_status( 301 );
-		$response->header( 'Location', urldecode( $event_data['url'] ) );
+		$response->header( 'Location', $this->normalize_url( urldecode( $event_data['url'] ) ) );
 
 		return $response;
 	}
@@ -236,5 +193,100 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->delete( Tracking::get_links_table_name(), [ 'email_log_id' => $email_log_id ], [ '%d' ] );
+	}
+
+	/**
+	 * Get all links from email content.
+	 *
+	 * @since 4.0.0
+	 *
+	 * @param string $email_content Email content.
+	 *
+	 * @return array
+	 */
+	private function get_all_links( $email_content ) {
+
+		// Insert each </a> into new line.
+		$email_content = str_replace( '</a>', "</a>\n", $email_content );
+
+		// Find all link tags.
+		preg_match_all( '/<a(.*)>.*<\/a>/isU', $email_content, $links, PREG_SET_ORDER );
+
+		if ( empty( $links ) ) {
+			return [];
+		}
+
+		$links  = array_column( $links, 1 );
+		$result = [];
+
+		foreach ( $links as $link_attrs ) {
+			// Find href attribute with double quotes.
+			preg_match_all( '/href=\"([^\r\n]*)\"/iU', $link_attrs, $href, PREG_SET_ORDER );
+
+			// If href attribute not found, try to find it with single quotes.
+			if ( empty( $href ) ) {
+				preg_match_all( '/href=\'([^\r\n]*)\'/iU', $link_attrs, $href, PREG_SET_ORDER );
+			}
+
+			if ( empty( $href ) ) {
+				continue;
+			}
+
+			$result[] = [
+				'url'  => $href[0][1],
+				'attr' => $href[0][0],
+			];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Normalize url.
+	 *
+	 * Mainly used to decode html entities like &amp; to &.
+	 * To make it as safe as possible the `DOMDocument` is used.
+	 *
+	 * @since 4.0.2
+	 *
+	 * @param string $url Url to normalize.
+	 *
+	 * @return string
+	 */
+	private function normalize_url( $url ) {
+
+		// Skip if DOMDocument is not available.
+		if ( ! class_exists( 'DOMDocument' ) ) {
+			return $url;
+		}
+
+		if ( ! function_exists( 'mb_encode_numericentity' ) ) {
+			Helpers::include_mbstring_polyfill();
+		}
+
+		$link_html         = '<a href="' . $url . '" id="link"></a>';
+		$encoded_link_html = mb_encode_numericentity( $link_html, [ 0x80, 0x10FFFF, 0, ~0 ], 'UTF-8' );
+
+		if ( ! empty( $encoded_link_html ) ) {
+			$link_html = $encoded_link_html;
+		}
+
+		$dom = new DOMDocument();
+
+		$dom->loadHTML( $link_html );
+
+		$link = $dom->getElementById( 'link' );
+
+		if ( empty( $link ) ) {
+			return $url;
+		}
+
+		$normalized_url = $link->getAttribute( 'href' );
+
+		if ( empty( $normalized_url ) ) {
+			return $url;
+		}
+
+		return $normalized_url;
 	}
 }

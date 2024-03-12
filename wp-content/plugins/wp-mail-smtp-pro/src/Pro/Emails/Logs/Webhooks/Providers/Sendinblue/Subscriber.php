@@ -24,6 +24,7 @@ class Subscriber extends AbstractSubscriber {
 	const EVENTS = [
 		'delivered',
 		'hardBounce',
+		'softBounce',
 		'blocked',
 		'invalid',
 	];
@@ -49,16 +50,22 @@ class Subscriber extends AbstractSubscriber {
 		}
 
 		$events = $subscription !== false ? $subscription['events'] : [];
-		$events = array_unique( array_merge( $events, self::EVENTS ) );
+		$events = array_values( array_unique( array_merge( $events, self::EVENTS ) ) );
 
 		$body = [
 			'url'         => $this->provider->get_url(),
 			'events'      => $events,
 			'description' => esc_html__( 'WP Mail SMTP', 'wp-mail-smtp-pro' ),
+			'type'        => 'transactional',
 		];
 
-		// Create subscription.
-		$response = $this->request( 'POST', $body );
+		if ( $subscription !== false && ! empty( $subscription['id'] ) ) {
+			// Update subscription.
+			$response = $this->request( 'PUT', $body, $subscription['id'] );
+		} else {
+			// Create subscription.
+			$response = $this->request( 'POST', $body );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -129,10 +136,14 @@ class Subscriber extends AbstractSubscriber {
 	 */
 	protected function get_subscription() {
 
-		$response = $this->request();
+		$params = [
+			'type' => 'transactional',
+		];
+
+		$response = $this->request( 'GET', $params );
 
 		// Not found any subscriptions.
-		if ( is_wp_error( $response ) && $response->get_error_code() === 404 ) {
+		if ( is_wp_error( $response ) && $response->get_error_code() === 'document_not_found' ) {
 			return false;
 		}
 
@@ -157,13 +168,13 @@ class Subscriber extends AbstractSubscriber {
 	 *
 	 * @param string $method     Request method.
 	 * @param array  $params     Request params.
-	 * @param array  $webhook_id Sendinblue webhooks ID.
+	 * @param string $webhook_id Sendinblue webhook ID.
 	 *
 	 * @return mixed|WP_Error
 	 */
 	protected function request( $method = 'GET', $params = [], $webhook_id = false ) {
 
-		$endpoint = 'https://api.sendinblue.com/v3/webhooks';
+		$endpoint = 'https://api.brevo.com/v3/webhooks';
 
 		$args = [
 			'method'  => $method,
@@ -207,17 +218,18 @@ class Subscriber extends AbstractSubscriber {
 	 */
 	protected function get_response_error( $response ) {
 
-		$body = json_decode( wp_remote_retrieve_body( $response ) );
+		$body       = json_decode( wp_remote_retrieve_body( $response ) );
+		$error_code = wp_remote_retrieve_response_code( $response );
 
 		if ( ! empty( $body->message ) ) {
-			$message = $body->message;
-			$code    = ! empty( $body->code ) ? $body->code : '';
+			$message    = $body->message;
+			$error_code = ! empty( $body->code ) ? $body->code : '';
 
-			$error_text = Helpers::format_error_message( $message, $code );
+			$error_text = Helpers::format_error_message( $message, $error_code );
 		} else {
 			$error_text = WP::wp_remote_get_response_error_message( $response );
 		}
 
-		return new WP_Error( wp_remote_retrieve_response_code( $response ), $error_text );
+		return new WP_Error( $error_code, $error_text );
 	}
 }

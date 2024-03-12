@@ -6,6 +6,7 @@ use WPMailSMTP\Vendor\Aws\Api\Service;
 use WPMailSMTP\Vendor\Aws\CommandInterface;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2SerializerTrait;
+use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request;
 use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
@@ -34,7 +35,7 @@ class QuerySerializer
      *
      * @return RequestInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpointProvider = null, $clientArgs = null)
+    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpoint = null)
     {
         $operation = $this->api->getOperation($command->getName());
         $body = ['Action' => $command->getName(), 'Version' => $this->api->getMetadata('apiVersion')];
@@ -45,8 +46,8 @@ class QuerySerializer
         }
         $body = \http_build_query($body, '', '&', \PHP_QUERY_RFC3986);
         $headers = ['Content-Length' => \strlen($body), 'Content-Type' => 'application/x-www-form-urlencoded'];
-        if ($endpointProvider instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2) {
-            $this->setRequestOptions($endpointProvider, $command, $operation, $commandArgs, $clientArgs, $headers);
+        if ($endpoint instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint) {
+            $this->setEndpointV2RequestOptions($endpoint, $headers);
         }
         return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request('POST', $this->endpoint, $headers, $body);
     }

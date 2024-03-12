@@ -5,6 +5,7 @@ namespace WPMailSMTP\Vendor\Aws\Signature;
 use WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface;
 use WPMailSMTP\Vendor\AWS\CRT\Auth\Signable;
 use WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType;
+use WPMailSMTP\Vendor\AWS\CRT\Auth\SignedBodyHeaderType;
 use WPMailSMTP\Vendor\AWS\CRT\Auth\Signing;
 use WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm;
 use WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS;
@@ -303,13 +304,13 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
         }
         return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request($req['method'], $req['uri'], $req['headers'], $req['body'], $req['version']);
     }
-    private function verifyCRTLoaded()
+    protected function verifyCRTLoaded()
     {
         if (!\extension_loaded('awscrt')) {
             throw new \WPMailSMTP\Vendor\Aws\Exception\CommonRuntimeException("AWS Common Runtime for PHP is required to use Signature V4A" . ".  Please install it using the instructions found at" . " https://github.com/aws/aws-sdk-php/blob/master/CRT_INSTRUCTIONS.md");
         }
     }
-    private function createCRTStaticCredentialsProvider($credentials)
+    protected function createCRTStaticCredentialsProvider($credentials)
     {
         return new \WPMailSMTP\Vendor\AWS\CRT\Auth\StaticCredentialsProvider(['access_key_id' => $credentials->getAccessKeyId(), 'secret_access_key' => $credentials->getSecretKey(), 'session_token' => $credentials->getSecurityToken()]);
     }
@@ -341,13 +342,13 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
      * @param CredentialsInterface $credentials
      * @param RequestInterface $request
      * @param $signingService
+     * @param SigningConfigAWS|null $signingConfig
      * @return RequestInterface
      */
-    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService)
+    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
     {
         $this->verifyCRTLoaded();
-        $credentials_provider = $this->createCRTStaticCredentialsProvider($credentials);
-        $signingConfig = new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPayload($request), 'region' => "*", 'service' => $signingService, 'date' => \time()]);
+        $signingConfig = $signingConfig ?? new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $this->createCRTStaticCredentialsProvider($credentials), 'signed_body_value' => $this->getPayload($request), 'should_normalize_uri_path' => \true, 'use_double_uri_encode' => \true, 'region' => "*", 'service' => $signingService, 'date' => \time()]);
         $removedIllegalHeaders = $this->removeIllegalV4aHeaders($request);
         $http_request = $this->CRTRequestFromGuzzleRequest($request);
         \WPMailSMTP\Vendor\AWS\CRT\Auth\Signing::signRequestAws(\WPMailSMTP\Vendor\AWS\CRT\Auth\Signable::fromHttpRequest($http_request), $signingConfig, function ($signing_result, $error_code) use(&$http_request) {

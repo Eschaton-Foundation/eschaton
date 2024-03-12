@@ -106,7 +106,7 @@ abstract class PageAbstract extends \WPMailSMTP\Admin\PageAbstract {
 				if ( ! empty( $error_message ) ) {
 					echo wp_kses(
 						sprintf( /* translators: %1$s - create missing tables link; %2$s - contact support link. */
-							__( 'WP Mail SMTP is using custom database tables for some of its features. In order to work properly, the custom tables should be created, and it seems they are missing. Please try to <a href="%1$s">create the missing DB tables by clicking on this link</a>. If this issue persists, please <a href="%2$s" target="_blank" rel="noopener noreferrer">contact our support</a> and provide the error message bellow:', 'wp-mail-smtp-pro' ),
+							__( 'WP Mail SMTP is using custom database tables for some of its features. In order to work properly, the custom tables should be created, and it seems they are missing. Please try to <a href="%1$s">create the missing DB tables by clicking on this link</a>. If this issue persists, please <a href="%2$s" target="_blank" rel="noopener noreferrer">contact our support</a> and provide the error message below:', 'wp-mail-smtp-pro' ),
 							esc_url( $create_missing_tables_url ),
 							esc_url( $contact_support_url )
 						),

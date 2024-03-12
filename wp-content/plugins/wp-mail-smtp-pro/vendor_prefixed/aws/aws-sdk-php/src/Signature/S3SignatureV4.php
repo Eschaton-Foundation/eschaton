@@ -3,6 +3,9 @@
 namespace WPMailSMTP\Vendor\Aws\Signature;
 
 use WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface;
+use WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType;
+use WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm;
+use WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS;
 use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
  * Amazon S3 signature version 4 support.
@@ -30,6 +33,23 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
         }
         $signingService = $signingService ?: 's3';
         return $this->signWithV4a($credentials, $request, $signingService);
+    }
+    /**
+     * @param CredentialsInterface $credentials
+     * @param RequestInterface $request
+     * @param $signingService
+     * @param SigningConfigAWS|null $signingConfig
+     * @return RequestInterface
+     *
+     * Instantiates a separate sigv4a signing config.  All services except S3
+     * use double encoding.  All services except S3 require path normalization.
+     */
+    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
+    {
+        $this->verifyCRTLoaded();
+        $credentials_provider = $this->createCRTStaticCredentialsProvider($credentials);
+        $signingConfig = new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPayload($request), 'region' => "*", 'should_normalize_uri_path' => \false, 'use_double_uri_encode' => \false, 'service' => $signingService, 'date' => \time()]);
+        return parent::signWithV4a($credentials, $request, $signingService, $signingConfig);
     }
     /**
      * Always add a x-amz-content-sha-256 for data integrity.

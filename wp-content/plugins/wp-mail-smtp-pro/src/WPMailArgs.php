@@ -1,6 +1,6 @@
 <?php
 
-namespace WPMailSMTP\Pro;
+namespace WPMailSMTP;
 
 /**
  * Class WPMailArgs. This class responsible for `wp_mail` function arguments parsing.
@@ -211,6 +211,7 @@ class WPMailArgs {
 		$from_email = '';
 		$from_name  = '';
 		$value      = $this->get_header( 'from' );
+		$value      = is_null( $value ) ? '' : $value;
 
 		$bracket_pos = strpos( $value, '<' );
 
@@ -235,5 +236,17 @@ class WPMailArgs {
 			'email' => $from_email,
 			'name'  => $from_name,
 		];
+	}
+
+	/**
+	 * Get attachments.
+	 *
+	 * @since 4.0.0
+	 *
+	 * @return array
+	 */
+	public function get_attachments() {
+
+		return $this->get_arg( 'attachments', [] );
 	}
 }

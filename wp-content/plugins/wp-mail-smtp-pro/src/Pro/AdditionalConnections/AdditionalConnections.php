@@ -240,7 +240,10 @@ class AdditionalConnections {
 		 *
 		 * @param string $capability Additional connections page manage capability.
 		 */
-		return apply_filters( 'wp_mail_smtp_pro_additional_connections_get_manage_capability', 'manage_options' );
+		return apply_filters(
+			'wp_mail_smtp_pro_additional_connections_get_manage_capability',
+			wp_mail_smtp()->get_capability_manage_options()
+		);
 	}
 
 	/**
@@ -253,9 +256,11 @@ class AdditionalConnections {
 	private function get_connections_raw() {
 
 		if ( WP::use_global_plugin_settings() ) {
-			return get_blog_option( get_main_site_id(), ConnectionOptions::META_KEY, [] );
+			$connections = get_blog_option( get_main_site_id(), ConnectionOptions::META_KEY, [] );
+		} else {
+			$connections = get_option( ConnectionOptions::META_KEY, [] );
 		}
 
-		return get_option( ConnectionOptions::META_KEY, [] );
+		return is_array( $connections ) ? $connections : [];
 	}
 }

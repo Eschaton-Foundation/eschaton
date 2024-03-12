@@ -7,6 +7,7 @@ use WPMailSMTP\Vendor\Aws\Api\DocModel;
 use WPMailSMTP\Vendor\Aws\Api\Service;
 use WPMailSMTP\Vendor\Aws\EndpointDiscovery\EndpointDiscoveryMiddleware;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
+use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2Middleware;
 use WPMailSMTP\Vendor\Aws\Exception\AwsException;
 use WPMailSMTP\Vendor\Aws\Signature\SignatureProvider;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri;
@@ -224,7 +225,12 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         $this->loadAliases();
         $this->addStreamRequestPayload();
         $this->addRecursionDetection();
-        $this->addRequestBuilder();
+        if ($this->isUseEndpointV2()) {
+            $this->addEndpointV2Middleware();
+        }
+        if (!\is_null($this->api->getMetadata('awsQueryCompatible'))) {
+            $this->addQueryCompatibleInputMiddleware($this->api);
+        }
         if (isset($args['with_resolved'])) {
             $args['with_resolved']($config);
         }
@@ -374,7 +380,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
             }
             return \WPMailSMTP\Vendor\Aws\Signature\SignatureProvider::resolve($provider, $version, $name, $region);
         };
-        $this->handlerList->appendSign(\WPMailSMTP\Vendor\Aws\Middleware::signer($this->credentialProvider, $resolver, $this->tokenProvider), 'signer');
+        $this->handlerList->appendSign(\WPMailSMTP\Vendor\Aws\Middleware::signer($this->credentialProvider, $resolver, $this->tokenProvider, $this->getConfig()), 'signer');
     }
     private function addRequestCompressionMiddleware($config)
     {
@@ -382,6 +388,11 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
             $list = $this->getHandlerList();
             $list->appendBuild(\WPMailSMTP\Vendor\Aws\RequestCompressionMiddleware::wrap($config), 'request-compression');
         }
+    }
+    private function addQueryCompatibleInputMiddleware(\WPMailSMTP\Vendor\Aws\Api\Service $api)
+    {
+        $list = $this->getHandlerList();
+        $list->appendValidate(\WPMailSMTP\Vendor\Aws\QueryCompatibleInputMiddleware::wrap($api), 'query-compatible-input');
     }
     private function addInvocationId()
     {
@@ -413,17 +424,11 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         // originating in supported Lambda runtimes
         $this->handlerList->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::recursionDetection(), 'recursion-detection');
     }
-    /**
-     * Adds the `builder` middleware such that a client's endpoint
-     * provider and endpoint resolution arguments can be passed.
-     */
-    private function addRequestBuilder()
+    private function addEndpointV2Middleware()
     {
-        $handlerList = $this->getHandlerList();
-        $serializer = $this->serializer;
-        $endpointProvider = $this->endpointProvider;
+        $list = $this->getHandlerList();
         $endpointArgs = $this->getEndpointProviderArgs();
-        $handlerList->prependBuild(\WPMailSMTP\Vendor\Aws\Middleware::requestBuilder($serializer, $endpointProvider, $endpointArgs), 'builderV2');
+        $list->prependBuild(\WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2Middleware::wrap($this->endpointProvider, $this->getApi(), $endpointArgs), 'endpoint-resolution');
     }
     /**
      * Retrieves client context param definition from service model,
@@ -453,7 +458,12 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         $builtIns = [];
         $config = $this->getConfig();
         $service = $args['service'];
-        $builtIns['SDK::Endpoint'] = isset($args['endpoint']) ? $args['endpoint'] : null;
+        $builtIns['SDK::Endpoint'] = null;
+        if (!empty($args['endpoint'])) {
+            $builtIns['SDK::Endpoint'] = $args['endpoint'];
+        } elseif (isset($config['configured_endpoint_url'])) {
+            $builtIns['SDK::Endpoint'] = (string) $this->getEndpoint();
+        }
         $builtIns['AWS::Region'] = $this->getRegion();
         $builtIns['AWS::UseFIPS'] = $config['use_fips_endpoint']->isUseFipsEndpoint();
         $builtIns['AWS::UseDualStack'] = $config['use_dual_stack_endpoint']->isUseDualstackEndpoint();
