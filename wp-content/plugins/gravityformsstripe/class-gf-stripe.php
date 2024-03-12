@@ -363,6 +363,7 @@ class GFStripe extends GFPaymentAddOn {
 					'requires_action'                 => wp_strip_all_tags( __( 'Please follow the instructions on the screen to validate your card.', 'gravityformsstripe' ) ),
 					'create_payment_intent_nonce'     => wp_create_nonce( 'gf_stripe_create_payment_intent' ),
 					'ajaxurl'                         => admin_url( 'admin-ajax.php' ),
+					'is_preview'                      => $this->is_preview(),
 					'payment_incomplete'              => wp_strip_all_tags( __( 'Please enter all required payment information.', 'gravityformsstripe' ) ),
 					'failed_to_create_draft'          => wp_strip_all_tags( __( 'We could not process your request at the moment.', 'gravityformsstripe' ) ),
 					'failed_to_create_initial_intent' => wp_strip_all_tags( __( 'Payment information field failed to be displayed, please contact support.', 'gravityformsstripe' ) ),
@@ -375,6 +376,7 @@ class GFStripe extends GFPaymentAddOn {
 					'rate_limiting_nonce'             => wp_create_nonce( 'gfstripe_payment_element_check_rate_limiting' ),
 					'get_stripe_coupon_nonce'         => wp_create_nonce( 'gfstripe_get_stripe_coupon' ),
 					'coupon_invalid'                  => esc_html__( 'You have entered an invalid coupon code.', 'gravityformsstripe' ),
+					'invalid_nonce'                   => wp_strip_all_tags( __( "Oops! It looks like we're having trouble processing your request. To resolve this issue, please try clearing your browser cache and then refreshing the page.", 'gravityformsstripe' ) ),
 				),
 			),
 			array(
@@ -549,49 +551,101 @@ class GFStripe extends GFPaymentAddOn {
 	 *
 	 * @since 5.0
 	 *
-	 * @return array Returns an array containg styles for the card element.
+	 * @return array Returns an array containing styles for the card element.
 	 */
 	private function get_stripe_card_styles() {
-		return array(
-			'base'    => array(
-				'backgroundColor' => 'transparent',
-				'color'           => '--gform-theme-control-color',
-				'fontFamily'      => '--gform-theme-control-font-family',
-				'fontSize'        => '--gform-theme-control-font-size',
-				'fontSmoothing'   => '--gform-theme-control-font-smoothing',
-				'fontStyle'       => '--gform-theme-control-font-style',
-				'fontWeight'      => '--gform-theme-control-font-weight',
-				'iconColor'       => '--gform-theme-control-color',
-				'letterSpacing'   => '--gform-theme-control-letter-spacing',
-				':hover'          => array(
-					'backgroundColor' => 'transparent',
-					'color'           => '--gform-theme-control-color-hover',
-					'iconColor'       => '--gform-theme-control-color-hover',
-				),
-				':focus'          => array(
-					'backgroundColor' => 'transparent',
-					'color'           => '--gform-theme-control-color-focus',
-					'iconColor'       => '--gform-theme-control-color-focus',
-				),
-				':disabled'       => array(
-					'backgroundColor' => 'transparent',
-					'color'           => '--gform-theme-control-color-disabled',
-					'iconColor'       => '--gform-theme-control-color-disabled',
-				),
-				'::placeholder'   => array(
-					'color'         => '--gform-theme-control-placeholder-color',
-					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
-					'fontSize'      => '--gform-theme-control-placeholder-font-size',
-					'fontStyle'     => '--gform-theme-control-placeholder-font-style',
-					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
-					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
-				),
-			),
-			'invalid' => array(
-				'color'     => '--gform-theme-control-color',
-				'iconColor' => '--gform-theme-color-danger',
-			),
-		);
+		/*
+        NOTE:
+        The Theme Framework CSS API properties with the "--gform-theme" prefix are deprecated, and
+        the CSS API properties with the "--gf" prefix are the updated properties.
+
+        Deprecated version (core): 2.8
+        End of support version (core): 2.9
+        Deprecated version (stripe): 5.2.2
+        */
+        if ( version_compare( GFForms::$version, '2.8.0-beta-1', '<' ) ) {
+	        return array(
+		        'base'    => array(
+			        'backgroundColor' => 'transparent',
+			        'color'           => '--gform-theme-control-color',
+			        'fontFamily'      => '--gform-theme-control-font-family',
+			        'fontSize'        => '--gform-theme-control-font-size',
+			        'fontSmoothing'   => '--gform-theme-control-font-smoothing',
+			        'fontStyle'       => '--gform-theme-control-font-style',
+			        'fontWeight'      => '--gform-theme-control-font-weight',
+			        'iconColor'       => '--gform-theme-control-color',
+			        'letterSpacing'   => '--gform-theme-control-letter-spacing',
+			        ':hover'          => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gform-theme-control-color-hover',
+				        'iconColor'       => '--gform-theme-control-color-hover',
+			        ),
+			        ':focus'          => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gform-theme-control-color-focus',
+				        'iconColor'       => '--gform-theme-control-color-focus',
+			        ),
+			        ':disabled'       => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gform-theme-control-color-disabled',
+				        'iconColor'       => '--gform-theme-control-color-disabled',
+			        ),
+			        '::placeholder'   => array(
+				        'color'         => '--gform-theme-control-placeholder-color',
+				        'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+				        'fontSize'      => '--gform-theme-control-placeholder-font-size',
+				        'fontStyle'     => '--gform-theme-control-placeholder-font-style',
+				        'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+				        'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+			        ),
+		        ),
+		        'invalid' => array(
+			        'color'     => '--gform-theme-control-color',
+			        'iconColor' => '--gform-theme-color-danger',
+		        ),
+	        );
+        } else {
+	        return array(
+		        'base'    => array(
+			        'backgroundColor' => 'transparent',
+			        'color'           => '--gf-ctrl-color',
+			        'fontFamily'      => '--gf-ctrl-font-family',
+			        'fontSize'        => '--gf-ctrl-font-size',
+			        'fontSmoothing'   => '--gf-ctrl-font-smoothing',
+			        'fontStyle'       => '--gf-ctrl-font-style',
+			        'fontWeight'      => '--gf-ctrl-font-weight',
+			        'iconColor'       => '--gf-ctrl-color',
+			        'letterSpacing'   => '--gf-ctrl-letter-spacing',
+			        ':hover'          => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gf-ctrl-color-hover',
+				        'iconColor'       => '--gf-ctrl-color-hover',
+			        ),
+			        ':focus'          => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gf-ctrl-color-focus',
+				        'iconColor'       => '--gf-ctrl-color-focus',
+			        ),
+			        ':disabled'       => array(
+				        'backgroundColor' => 'transparent',
+				        'color'           => '--gf-ctrl-color-disabled',
+				        'iconColor'       => '--gf-ctrl-color-disabled',
+			        ),
+			        '::placeholder'   => array(
+				        'color'         => '--gf-ctrl-placeholder-color',
+				        'fontFamily'    => '--gf-ctrl-placeholder-font-family',
+				        'fontSize'      => '--gf-ctrl-placeholder-font-size',
+				        'fontStyle'     => '--gf-ctrl-placeholder-font-style',
+				        'fontWeight'    => '--gf-ctrl-placeholder-font-weight',
+				        'letterSpacing' => '--gf-ctrl-placeholder-letter-spacing',
+			        ),
+		        ),
+		        'invalid' => array(
+			        'color'     => '--gf-ctrl-color',
+			        'iconColor' => '--gf-color-danger',
+		        ),
+	        );
+        }
 	}
 
 	/**
@@ -602,201 +656,408 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return array Returns an array containg styles for Stripe's payment element.
 	 */
 	private function get_stripe_payment_element_styles() {
-		return array(
-			'labels'    => 'floating',
-			'theme'     => 'stripe',
-			'variables' => array(
-				'borderRadius'          => '--gform-theme-control-border-radius',
-				'colorBackground'       => '--gform-theme-control-background-color',
-				'colorBackgroundText'   => '--gform-theme-control-color',
-				'colorIcon'             => '--gform-theme-control-color',
-				'colorIconCardCvc'      => '--gform-theme-control-color',
-				'colorIconCardCvcError' => '--gform-theme-color-danger',
-				'colorIconCardError'    => '--gform-theme-color-danger',
-				//'colorIconSelectArrow' => '--gform-theme-color-inside-control-dark-lighter', not currently supported
-				'colorIconTab'          => '--gform-theme-control-button-icon-color-secondary',
-				'colorIconTabHover'     => '--gform-theme-control-button-icon-color-hover-secondary',
-				'colorIconTabSelected'  => '--gform-theme-control-button-color-secondary',
-				'colorIconTabMore'      => '--gform-theme-control-button-icon-color-secondary',
-				'colorIconTabMoreHover' => '--gform-theme-control-button-icon-color-hover-secondary',
-				'colorIconMenu'         => '--gform-theme-control-color',
-				'colorPrimary'          => '--gform-theme-color-primary',
-				'colorPrimaryText'      => '--gform-theme-color-primary-contrast',
-				'colorDanger'           => '--gform-theme-color-danger',
-				'colorDangerText'       => '--gform-theme-color-danger-contrast',
-				'colorSuccess'          => '--gform-theme-color-success',
-				'colorSuccessText'      => '--gform-theme-color-success-contrast',
-				'colorText'             => '--gform-theme-control-color',
-				'colorTextPlaceholder'  => '--gform-theme-control-placeholder-color',
-				'colorTextSecondary'    => '--gform-theme-control-color',
-				'fontFamily'            => '--gform-theme-font-family',
-				'fontSizeBase'          => '16px',
-				'fontSmooth'            => '--gform-theme-control-font-smoothing',
-				'spacingGridRow'        => '--gform-theme-field-row-gap',
-				'spacingGridColumn'     => '--gform-theme-field-col-gap',
-			),
-			'rules'     => array(
-				'.Input'                        => array(
-					'borderColor'   => '--gform-theme-control-border-color',
-					'borderWidth'   => '--gform-theme-control-border-width',
-					'borderStyle'   => '--gform-theme-control-border-style',
-					'color'         => '--gform-theme-control-color',
-					'fontWeight'    => '--gform-theme-control-font-weight',
-					'fontSize'      => '--gform-theme-control-font-size',
-					'letterSpacing' => '--gform-theme-control-letter-spacing',
+		/*
+        NOTE:
+        The Theme Framework CSS API properties with the "--gform-theme" prefix are deprecated, and
+        the CSS API properties with the "--gf" prefix are the updated properties.
+
+        Deprecated version (core): 2.8
+        End of support version (core): 2.9
+        Deprecated version (stripe): 5.2.2
+        */
+		if ( version_compare( GFForms::$version, '2.8.0-beta-1', '<' ) ) {
+			return array(
+				'labels'    => 'floating',
+				'theme'     => 'stripe',
+				'variables' => array(
+					'borderRadius'          => '--gform-theme-control-border-radius',
+					'colorBackground'       => '--gform-theme-control-background-color',
+					'colorBackgroundText'   => '--gform-theme-control-color',
+					'colorIcon'             => '--gform-theme-control-color',
+					'colorIconCardCvc'      => '--gform-theme-control-color',
+					'colorIconCardCvcError' => '--gform-theme-color-danger',
+					'colorIconCardError'    => '--gform-theme-color-danger',
+					//'colorIconSelectArrow' => '--gform-theme-color-inside-control-dark-lighter', not currently supported
+					'colorIconTab'          => '--gform-theme-control-button-icon-color-secondary',
+					'colorIconTabHover'     => '--gform-theme-control-button-icon-color-hover-secondary',
+					'colorIconTabSelected'  => '--gform-theme-control-button-color-secondary',
+					'colorIconTabMore'      => '--gform-theme-control-button-icon-color-secondary',
+					'colorIconTabMoreHover' => '--gform-theme-control-button-icon-color-hover-secondary',
+					'colorIconMenu'         => '--gform-theme-control-color',
+					'colorPrimary'          => '--gform-theme-color-primary',
+					'colorPrimaryText'      => '--gform-theme-color-primary-contrast',
+					'colorDanger'           => '--gform-theme-color-danger',
+					'colorDangerText'       => '--gform-theme-color-danger-contrast',
+					'colorSuccess'          => '--gform-theme-color-success',
+					'colorSuccessText'      => '--gform-theme-color-success-contrast',
+					'colorText'             => '--gform-theme-control-color',
+					'colorTextPlaceholder'  => '--gform-theme-control-placeholder-color',
+					'colorTextSecondary'    => '--gform-theme-control-color',
+					'fontFamily'            => '--gform-theme-font-family',
+					'fontSizeBase'          => '16px',
+					'fontSmooth'            => '--gform-theme-control-font-smoothing',
+					'spacingGridRow'        => '--gform-theme-field-row-gap',
+					'spacingGridColumn'     => '--gform-theme-field-col-gap',
 				),
-				'.Input:hover'                  => array(
-					'backgroundColor' => '--gform-theme-control-background-color-hover',
-					'borderColor'     => '--gform-theme-control-border-color-hover',
-					'color'           => '--gform-theme-control-color-hover',
+				'rules'     => array(
+					'.Input'                        => array(
+						'borderColor'   => '--gform-theme-control-border-color',
+						'borderWidth'   => '--gform-theme-control-border-width',
+						'borderStyle'   => '--gform-theme-control-border-style',
+						'color'         => '--gform-theme-control-color',
+						'fontWeight'    => '--gform-theme-control-font-weight',
+						'fontSize'      => '--gform-theme-control-font-size',
+						'letterSpacing' => '--gform-theme-control-letter-spacing',
+					),
+					'.Input:hover'                  => array(
+						'backgroundColor' => '--gform-theme-control-background-color-hover',
+						'borderColor'     => '--gform-theme-control-border-color-hover',
+						'color'           => '--gform-theme-control-color-hover',
+					),
+					'.Input:hover:focus'            => array(
+						'backgroundColor' => '--gform-theme-control-background-color-focus',
+						'borderColor'     => '--gform-theme-control-border-color-focus',
+						'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+						'color'           => '--gform-theme-control-color-focus',
+					),
+					'.Input:focus'                  => array(
+						'backgroundColor' => '--gform-theme-control-background-color-focus',
+						'borderColor'     => '--gform-theme-control-border-color-focus',
+						'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+						'color'           => '--gform-theme-control-color-focus',
+					),
+					'.Input:disabled'               => array(
+						'backgroundColor' => '--gform-theme-control-background-color-disabled',
+						'borderColor'     => '--gform-theme-control-border-color-disabled',
+						'color'           => '--gform-theme-control-color-disabled',
+					),
+					'.Input:disabled:hover'         => array(
+						'backgroundColor' => '--gform-theme-control-background-color-disabled',
+						'borderColor'     => '--gform-theme-control-border-color-disabled',
+						'color'           => '--gform-theme-control-color-disabled',
+					),
+					'.Input--invalid'               => array(
+						'color'           => '--gform-theme-control-color-error',
+						'backgroundColor' => '--gform-theme-control-background-color-error',
+						'borderColor'     => '--gform-theme-control-border-color-error',
+						'boxShadow'       => '0',
+					),
+					'.Input--invalid:hover'         => array(
+						'borderColor' => '--gform-theme-control-border-color-error',
+					),
+					'.Input::placeholder'           => array(
+						'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+						'fontSize'      => '--gform-theme-control-placeholder-font-size',
+						'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+						'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+					),
+					'.CodeInput'                    => array(
+						'borderColor'   => '--gform-theme-control-border-color',
+						'borderWidth'   => '--gform-theme-control-border-width',
+						'borderStyle'   => '--gform-theme-control-border-style',
+						'color'         => '--gform-theme-control-color',
+						'fontWeight'    => '--gform-theme-control-font-weight',
+						'fontSize'      => '--gform-theme-control-font-size',
+						'letterSpacing' => '--gform-theme-control-letter-spacing',
+					),
+					'.CodeInput:focus'              => array(
+						'backgroundColor' => '--gform-theme-control-background-color-focus',
+						'borderColor'     => '--gform-theme-control-border-color-focus',
+						'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+						'color'           => '--gform-theme-control-color-focus',
+					),
+					'.CheckboxInput'                => array(
+						'borderColor'  => '--gform-theme-control-border-color',
+						'borderWidth'  => '--gform-theme-control-border-width',
+						'borderStyle'  => '--gform-theme-control-border-style',
+						'borderRadius' => '--gform-theme-control-checkbox-check-border-radius',
+					),
+					'.CheckboxInput:hover'          => array(
+						'backgroundColor' => '--gform-theme-control-background-color-hover',
+						'borderColor'     => '--gform-theme-control-border-color-hover',
+					),
+					'.CheckboxInput--checked:hover' => array(
+						'backgroundColor' => '--gform-theme-control-background-color',
+						'borderColor'     => '--gform-theme-control-border-color',
+					),
+					'.Error'                        => array(
+						'color'         => '--gform-theme-control-description-color-error',
+						'fontFamily'    => '--gform-theme-control-description-font-family-error',
+						'fontSize'      => '--gform-theme-control-description-font-size-error',
+						'fontWeight'    => '--gform-theme-control-description-font-weight-error',
+						'letterSpacing' => '--gform-theme-control-description-letter-spacing-error',
+						'lineHeight'    => '--gform-theme-control-description-line-height-error',
+						'marginTop'     => '--gform-theme-description-spacing',
+					),
+					'.Label--resting'               => array(
+						'color'         => '--gform-theme-control-placeholder-color',
+						'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+						'fontSize'      => '--gform-theme-control-placeholder-font-size',
+						'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
+						'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+						'opacity'       => '--gform-theme-control-placeholder-opacity',
+					),
+					'.Label--floating'              => array(
+						'color'         => '--gform-theme-control-color',
+						'fontFamily'    => '--gform-theme-control-placeholder-font-family',
+						'fontWeight'    => '--gform-theme-control-label-font-weight-primary',
+						'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
+					),
+					'.Tab'                          => array(
+						'backgroundColor' => '--gform-theme-control-button-background-color-secondary',
+						'borderColor'     => '--gform-theme-control-button-border-color-secondary',
+						'borderWidth'     => '--gform-theme-control-button-border-width-secondary',
+						'borderStyle'     => '--gform-theme-control-button-border-style-secondary',
+						'color'           => '--gform-theme-control-button-color-secondary',
+					),
+					'.Tab:hover'                    => array(
+						'backgroundColor' => '--gform-theme-control-button-background-color-hover-secondary',
+						'borderColor'     => '--gform-theme-control-button-border-color-hover-secondary',
+						'color'           => '--gform-theme-control-button-color-hover-secondary',
+					),
+					'.Tab:focus'                    => array(
+						'backgroundColor' => '--gform-theme-control-button-background-color-focus-secondary',
+						'borderColor'     => '--gform-theme-control-button-border-color-focus-secondary',
+						'boxShadow'       => '--gform-theme-control-box-shadow-focus',
+						'color'           => '--gform-theme-control-button-color-focus-secondary',
+					),
+					'.Tab:disabled'                 => array(
+						'backgroundColor' => '--gform-theme-control-button-background-color-disabled-secondary',
+						'borderColor'     => '--gform-theme-control-button-border-color-disabled-secondary',
+						'color'           => '--gform-theme-control-button-color-disabled-secondary',
+					),
+					'.Tab--selected'                => array(
+						'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+						'color'       => '--gform-theme-control-button-color-secondary',
+					),
+					'.Tab--selected:hover'          => array(
+						'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+						'color'       => '--gform-theme-control-button-color-secondary',
+					),
+					'.Tab--selected:focus'          => array(
+						'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
+						'boxShadow'   => '--gform-theme-control-box-shadow-focus',
+						'color'       => '--gform-theme-control-button-color-secondary',
+					),
+					'.RedirectText'                 => array(
+						'color'         => '--gform-theme-color-primary',
+						'fontFamily'    => '--gform-theme-control-description-font-family',
+						'fontSize'      => '--gform-theme-control-description-font-size',
+						'fontWeight'    => '--gform-theme-control-description-font-weight',
+						'letterSpacing' => '--gform-theme-control-description-letter-spacing',
+						'lineHeight'    => '--gform-theme-control-description-line-height',
+					),
+					'.PickerItem--new'              => array(
+						'color' => '--gform-theme-control-color',
+					),
+					'.TermsText'                    => array(
+						'color' => '--gform-theme-control-description-color',
+					),
+					'.TermsLink'                    => array(
+						'color' => '--gform-theme-control-description-color',
+					),
+					'.Block'                        => array(
+						'borderRadius' => '--gform-theme-control-border-radius-max-lg',
+					),
 				),
-				'.Input:hover:focus'            => array(
-					'backgroundColor' => '--gform-theme-control-background-color-focus',
-					'borderColor'     => '--gform-theme-control-border-color-focus',
-					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
-					'color'           => '--gform-theme-control-color-focus',
+			);
+		} else {
+			return array(
+				'labels'    => 'floating',
+				'theme'     => 'stripe',
+				'variables' => array(
+					'borderRadius'          => '--gf-ctrl-radius',
+					'colorBackground'       => '--gf-ctrl-bg-color',
+					'colorBackgroundText'   => '--gf-ctrl-color',
+					'colorIcon'             => '--gf-ctrl-color',
+					'colorIconCardCvc'      => '--gf-ctrl-color',
+					'colorIconCardCvcError' => '--gf-color-danger',
+					'colorIconCardError'    => '--gf-color-danger',
+					//'colorIconSelectArrow' => '--gf-color-in-ctrl-dark-lighter', not currently supported
+					'colorIconTab'          => '--gf-ctrl-btn-icon-color-secondary',
+					'colorIconTabHover'     => '--gf-ctrl-btn-icon-color-hover-secondary',
+					'colorIconTabSelected'  => '--gf-ctrl-btn-color-secondary',
+					'colorIconTabMore'      => '--gf-ctrl-btn-icon-color-secondary',
+					'colorIconTabMoreHover' => '--gf-ctrl-btn-icon-color-hover-secondary',
+					'colorIconMenu'         => '--gf-ctrl-color',
+					'colorPrimary'          => '--gf-color-primary',
+					'colorPrimaryText'      => '--gf-color-primary-contrast',
+					'colorDanger'           => '--gf-color-danger',
+					'colorDangerText'       => '--gf-color-danger-contrast',
+					'colorSuccess'          => '--gf-color-success',
+					'colorSuccessText'      => '--gf-color-success-contrast',
+					'colorText'             => '--gf-ctrl-color',
+					'colorTextPlaceholder'  => '--gf-ctrl-placeholder-color',
+					'colorTextSecondary'    => '--gf-ctrl-color',
+					'fontFamily'            => '--gf-font-family-base',
+					'fontSizeBase'          => '16px',
+					'fontSmooth'            => '--gf-ctrl-font-smoothing',
+					'spacingGridRow'        => '--gf-field-gap-y',
+					'spacingGridColumn'     => '--gf-field-gap-x',
 				),
-				'.Input:focus'                  => array(
-					'backgroundColor' => '--gform-theme-control-background-color-focus',
-					'borderColor'     => '--gform-theme-control-border-color-focus',
-					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
-					'color'           => '--gform-theme-control-color-focus',
+				'rules'     => array(
+					'.Input'                        => array(
+						'borderColor'   => '--gf-ctrl-border-color',
+						'borderWidth'   => '--gf-ctrl-border-width',
+						'borderStyle'   => '--gf-ctrl-border-style',
+						'color'         => '--gf-ctrl-color',
+						'fontWeight'    => '--gf-ctrl-font-weight',
+						'fontSize'      => '--gf-ctrl-font-size',
+						'letterSpacing' => '--gf-ctrl-letter-spacing',
+					),
+					'.Input:hover'                  => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-hover',
+						'borderColor'     => '--gf-ctrl-border-color-hover',
+						'color'           => '--gf-ctrl-color-hover',
+					),
+					'.Input:hover:focus'            => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-focus',
+						'borderColor'     => '--gf-ctrl-border-color-focus',
+						'boxShadow'       => '--gf-ctrl-shadow-focus',
+						'color'           => '--gf-ctrl-color-focus',
+					),
+					'.Input:focus'                  => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-focus',
+						'borderColor'     => '--gf-ctrl-border-color-focus',
+						'boxShadow'       => '--gf-ctrl-shadow-focus',
+						'color'           => '--gf-ctrl-color-focus',
+					),
+					'.Input:disabled'               => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-disabled',
+						'borderColor'     => '--gf-ctrl-border-color-disabled',
+						'color'           => '--gf-ctrl-color-disabled',
+					),
+					'.Input:disabled:hover'         => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-disabled',
+						'borderColor'     => '--gf-ctrl-border-color-disabled',
+						'color'           => '--gf-ctrl-color-disabled',
+					),
+					'.Input--invalid'               => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-error',
+						'borderColor'     => '--gf-ctrl-border-color-error',
+						'boxShadow'       => '0',
+                        'color'           => '--gf-ctrl-color-error',
+					),
+					'.Input--invalid:hover'         => array(
+						'borderColor' => '--gf-ctrl-border-color-error',
+					),
+					'.Input::placeholder'           => array(
+						'fontFamily'    => '--gf-ctrl-placeholder-font-family',
+						'fontSize'      => '--gf-ctrl-placeholder-font-size',
+						'fontWeight'    => '--gf-ctrl-placeholder-font-weight',
+						'letterSpacing' => '--gf-ctrl-placeholder-letter-spacing',
+					),
+					'.CodeInput'                    => array(
+						'borderColor'   => '--gf-ctrl-border-color',
+						'borderWidth'   => '--gf-ctrl-border-width',
+						'borderStyle'   => '--gf-ctrl-border-style',
+						'color'         => '--gf-ctrl-color',
+						'fontWeight'    => '--gf-ctrl-font-weight',
+						'fontSize'      => '--gf-ctrl-font-size',
+						'letterSpacing' => '--gf-ctrl-letter-spacing',
+					),
+					'.CodeInput:focus'              => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-focus',
+						'borderColor'     => '--gf-ctrl-border-color-focus',
+						'boxShadow'       => '--gf-ctrl-shadow-focus',
+						'color'           => '--gf-ctrl-color-focus',
+					),
+					'.CheckboxInput'                => array(
+						'borderColor'  => '--gf-ctrl-border-color',
+						'borderWidth'  => '--gf-ctrl-border-width',
+						'borderStyle'  => '--gf-ctrl-border-style',
+						'borderRadius' => '--gf-ctrl-checkbox-check-radius',
+					),
+					'.CheckboxInput:hover'          => array(
+						'backgroundColor' => '--gf-ctrl-bg-color-hover',
+						'borderColor'     => '--gf-ctrl-border-color-hover',
+					),
+					'.CheckboxInput--checked:hover' => array(
+						'backgroundColor' => '--gf-ctrl-bg-color',
+						'borderColor'     => '--gf-ctrl-border-color',
+					),
+					'.Error'                        => array(
+						'color'         => '--gf-ctrl-desc-color-error',
+						'fontFamily'    => '--gf-ctrl-desc-font-family-error',
+						'fontSize'      => '--gf-ctrl-desc-font-size-error',
+						'fontWeight'    => '--gf-ctrl-desc-font-weight-error',
+						'letterSpacing' => '--gf-ctrl-desc-letter-spacing-error',
+						'lineHeight'    => '--gf-ctrl-desc-line-height-error',
+						'marginTop'     => '--gf-desc-space',
+					),
+					'.Label--resting'               => array(
+						'color'         => '--gf-ctrl-placeholder-color',
+						'fontFamily'    => '--gf-ctrl-placeholder-font-family',
+						'fontSize'      => '--gf-ctrl-placeholder-font-size',
+						'fontWeight'    => '--gf-ctrl-placeholder-font-weight',
+						'letterSpacing' => '--gf-ctrl-placeholder-letter-spacing',
+						'opacity'       => '--gf-ctrl-placeholder-opacity',
+					),
+					'.Label--floating'              => array(
+						'color'         => '--gf-ctrl-color',
+						'fontFamily'    => '--gf-ctrl-placeholder-font-family',
+						'fontWeight'    => '--gf-ctrl-label-font-weight-primary',
+						'letterSpacing' => '--gf-ctrl-placeholder-letter-spacing',
+					),
+					'.Tab'                          => array(
+						'backgroundColor' => '--gf-ctrl-button-bg-color-secondary',
+						'borderColor'     => '--gf-ctrl-button-border-color-secondary',
+						'borderWidth'     => '--gf-ctrl-button-border-width-secondary',
+						'borderStyle'     => '--gf-ctrl-button-border-style-secondary',
+						'color'           => '--gf-ctrl-button-color-secondary',
+					),
+					'.Tab:hover'                    => array(
+						'backgroundColor' => '--gf-ctrl-btn-bg-color-hover-secondary',
+						'borderColor'     => '--gf-ctrl-btn-border-color-hover-secondary',
+						'color'           => '--gf-ctrl-btn-color-hover-secondary',
+					),
+					'.Tab:focus'                    => array(
+						'backgroundColor' => '--gf-ctrl-btn-bg-color-focus-secondary',
+						'borderColor'     => '--gf-ctrl-btn-border-color-focus-secondary',
+						'boxShadow'       => '--gf-ctrl-shadow-focus',
+						'color'           => '--gf-ctrl-btn-color-focus-secondary',
+					),
+					'.Tab:disabled'                 => array(
+						'backgroundColor' => '--gf-ctrl-btn-bg-color-disabled-secondary',
+						'borderColor'     => '--gf-ctrl-btn-border-color-disabled-secondary',
+						'color'           => '--gf-ctrl-btn-color-disabled-secondary',
+					),
+					'.Tab--selected'                => array(
+						'borderColor' => '--gf-ctrl-btn-border-color-focus-secondary',
+						'color'       => '--gf-ctrl-btn-color-secondary',
+					),
+					'.Tab--selected:hover'          => array(
+						'borderColor' => '--gf-ctrl-btn-border-color-focus-secondary',
+						'color'       => '--gf-ctrl-btn-color-secondary',
+					),
+					'.Tab--selected:focus'          => array(
+						'borderColor' => '--gf-ctrl-btn-border-color-focus-secondary',
+						'boxShadow'   => '--gf-ctrl-shadow-focus',
+						'color'       => '--gf-ctrl-btn-color-secondary',
+					),
+					'.RedirectText'                 => array(
+						'color'         => '--gf-color-primary',
+						'fontFamily'    => '--gf-ctrl-desc-font-family',
+						'fontSize'      => '--gf-ctrl-desc-font-size',
+						'fontWeight'    => '--gf-ctrl-desc-font-weight',
+						'letterSpacing' => '--gf-ctrl-desc-letter-spacing',
+						'lineHeight'    => '--gf-ctrl-desc-line-height',
+					),
+					'.PickerItem--new'              => array(
+						'color' => '--gf-ctrl-color',
+					),
+					'.TermsText'                    => array(
+						'color' => '--gf-ctrl-desc-color',
+					),
+					'.TermsLink'                    => array(
+						'color' => '--gf-ctrl-desc-color',
+					),
+					'.Block'                        => array(
+						'borderRadius' => '--gf-ctrl-radius-max-lg',
+					),
 				),
-				'.Input:disabled'               => array(
-					'backgroundColor' => '--gform-theme-control-background-color-disabled',
-					'borderColor'     => '--gform-theme-control-border-color-disabled',
-					'color'           => '--gform-theme-control-color-disabled',
-				),
-				'.Input:disabled:hover'         => array(
-					'backgroundColor' => '--gform-theme-control-background-color-disabled',
-					'borderColor'     => '--gform-theme-control-border-color-disabled',
-					'color'           => '--gform-theme-control-color-disabled',
-				),
-				'.Input--invalid'               => array(
-					'color'           => '--gform-theme-control-color-error',
-					'backgroundColor' => '--gform-theme-control-background-color-error',
-					'borderColor'     => '--gform-theme-control-border-color-error',
-					'boxShadow'       => '0',
-				),
-				'.Input--invalid:hover'         => array(
-					'borderColor' => '--gform-theme-control-border-color-error',
-				),
-				'.Input::placeholder'           => array(
-					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
-					'fontSize'      => '--gform-theme-control-placeholder-font-size',
-					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
-					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
-				),
-				'.CodeInput'                    => array(
-					'borderColor'   => '--gform-theme-control-border-color',
-					'borderWidth'   => '--gform-theme-control-border-width',
-					'borderStyle'   => '--gform-theme-control-border-style',
-					'color'         => '--gform-theme-control-color',
-					'fontWeight'    => '--gform-theme-control-font-weight',
-					'fontSize'      => '--gform-theme-control-font-size',
-					'letterSpacing' => '--gform-theme-control-letter-spacing',
-				),
-				'.CodeInput:focus'              => array(
-					'backgroundColor' => '--gform-theme-control-background-color-focus',
-					'borderColor'     => '--gform-theme-control-border-color-focus',
-					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
-					'color'           => '--gform-theme-control-color-focus',
-				),
-				'.CheckboxInput'                => array(
-					'borderColor'  => '--gform-theme-control-border-color',
-					'borderWidth'  => '--gform-theme-control-border-width',
-					'borderStyle'  => '--gform-theme-control-border-style',
-					'borderRadius' => '--gform-theme-control-checkbox-check-border-radius',
-				),
-				'.CheckboxInput:hover'          => array(
-					'backgroundColor' => '--gform-theme-control-background-color-hover',
-					'borderColor'     => '--gform-theme-control-border-color-hover',
-				),
-				'.CheckboxInput--checked:hover' => array(
-					'backgroundColor' => '--gform-theme-control-background-color',
-					'borderColor'     => '--gform-theme-control-border-color',
-				),
-				'.Error'                        => array(
-					'color'         => '--gform-theme-control-description-color-error',
-					'fontFamily'    => '--gform-theme-control-description-font-family-error',
-					'fontSize'      => '--gform-theme-control-description-font-size-error',
-					'fontWeight'    => '--gform-theme-control-description-font-weight-error',
-					'letterSpacing' => '--gform-theme-control-description-letter-spacing-error',
-					'lineHeight'    => '--gform-theme-control-description-line-height-error',
-					'marginTop'     => '--gform-theme-description-spacing',
-				),
-				'.Label--resting'               => array(
-					'color'         => '--gform-theme-control-placeholder-color',
-					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
-					'fontSize'      => '--gform-theme-control-placeholder-font-size',
-					'fontWeight'    => '--gform-theme-control-placeholder-font-weight',
-					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
-					'opacity'       => '--gform-theme-control-placeholder-opacity',
-				),
-				'.Label--floating'              => array(
-					'color'         => '--gform-theme-control-color',
-					'fontFamily'    => '--gform-theme-control-placeholder-font-family',
-					'fontWeight'    => '--gform-theme-control-label-font-weight-primary',
-					'letterSpacing' => '--gform-theme-control-placeholder-letter-spacing',
-				),
-				'.Tab'                          => array(
-					'backgroundColor' => '--gform-theme-control-button-background-color-secondary',
-					'borderColor'     => '--gform-theme-control-button-border-color-secondary',
-					'borderWidth'     => '--gform-theme-control-button-border-width-secondary',
-					'borderStyle'     => '--gform-theme-control-button-border-style-secondary',
-					'color'           => '--gform-theme-control-button-color-secondary',
-				),
-				'.Tab:hover'                    => array(
-					'backgroundColor' => '--gform-theme-control-button-background-color-hover-secondary',
-					'borderColor'     => '--gform-theme-control-button-border-color-hover-secondary',
-					'color'           => '--gform-theme-control-button-color-hover-secondary',
-				),
-				'.Tab:focus'                    => array(
-					'backgroundColor' => '--gform-theme-control-button-background-color-focus-secondary',
-					'borderColor'     => '--gform-theme-control-button-border-color-focus-secondary',
-					'boxShadow'       => '--gform-theme-control-box-shadow-focus',
-					'color'           => '--gform-theme-control-button-color-focus-secondary',
-				),
-				'.Tab:disabled'                 => array(
-					'backgroundColor' => '--gform-theme-control-button-background-color-disabled-secondary',
-					'borderColor'     => '--gform-theme-control-button-border-color-disabled-secondary',
-					'color'           => '--gform-theme-control-button-color-disabled-secondary',
-				),
-				'.Tab--selected'                => array(
-					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
-					'color'       => '--gform-theme-control-button-color-secondary',
-				),
-				'.Tab--selected:hover'          => array(
-					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
-					'color'       => '--gform-theme-control-button-color-secondary',
-				),
-				'.Tab--selected:focus'          => array(
-					'borderColor' => '--gform-theme-control-button-border-color-focus-secondary',
-					'boxShadow'   => '--gform-theme-control-box-shadow-focus',
-					'color'       => '--gform-theme-control-button-color-secondary',
-				),
-				'.RedirectText'                 => array(
-					'color'         => '--gform-theme-color-primary',
-					'fontFamily'    => '--gform-theme-control-description-font-family',
-					'fontSize'      => '--gform-theme-control-description-font-size',
-					'fontWeight'    => '--gform-theme-control-description-font-weight',
-					'letterSpacing' => '--gform-theme-control-description-letter-spacing',
-					'lineHeight'    => '--gform-theme-control-description-line-height',
-				),
-				'.PickerItem--new'              => array(
-					'color' => '--gform-theme-control-color',
-				),
-				'.TermsText'                    => array(
-					'color' => '--gform-theme-control-description-color',
-				),
-				'.TermsLink'                    => array(
-					'color' => '--gform-theme-control-description-color',
-				),
-                '.Block'                        => array(
-                    'borderRadius' => '--gform-theme-control-border-radius-max-lg',
-                ),
-			),
-		);
+			);
+        }
 	}
 
 	// # PLUGIN SETTINGS -----------------------------------------------------------------------------------------------
@@ -871,6 +1132,7 @@ class GFStripe extends GFPaymentAddOn {
 		add_action( 'gform_payment_details', array( $this, 'maybe_display_capture_button' ), 10, 2 );
 		add_action( 'gform_payment_details', array( $this, 'maybe_display_refund_button' ), 10, 2 );
 		add_action( 'gform_field_standard_settings', array( $this, 'add_payment_method_setting' ), 10, 2 );
+		add_action( 'admin_footer', array( $this, 'remove_cardholder_name_merge_tag' ), 10, 0 );
 	}
 
 	/**
@@ -1010,7 +1272,7 @@ class GFStripe extends GFPaymentAddOn {
 
 		// Load the Stripe API library.
 		if ( ! class_exists( 'GF_Stripe_API' ) ) {
-			require_once 'includes/class-gf-stripe-api.php';
+			require_once 'includes/api/class-gf-stripe-api.php';
 		}
 
 		$stripe = new GF_Stripe_API( rgpost( 'key' ) );
@@ -2101,7 +2363,7 @@ class GFStripe extends GFPaymentAddOn {
 					'name'       => 'coupon',
 					'label'      => esc_html__( 'Coupon', 'gravityformsstripe' ),
 					'required'   => false,
-					'field_type' => array( 'text' ),
+					'field_type' => array( 'text', 'coupon' ),
 					'tooltip'    => '<h6>' . esc_html__( 'Coupon', 'gravityformsstripe' ) . '</h6><p>' . esc_html__( 'Select which field contains the coupon code to be applied to the recurring charge(s). The coupon must also exist in your Stripe Dashboard.', 'gravityformsstripe' ) . '</p><p>' . esc_html__( 'If you use Stripe Checkout, the coupon won\'t be applied to your first invoice.', 'gravityformsstripe' ) . '</p>',
 				),
 			),
@@ -2768,6 +3030,8 @@ class GFStripe extends GFPaymentAddOn {
 
 		// Return Stripe notification events.
 		return array(
+			'add_pending_payment'       => esc_html__( 'Payment Pending', 'gravityformsstripe' ),
+			'authorized_payment'        => esc_html__( 'Payment Authorized', 'gravityformsstripe' ),
 			'complete_payment'          => esc_html__( 'Payment Completed', 'gravityformsstripe' ),
 			'refund_payment'            => esc_html__( 'Payment Refunded', 'gravityformsstripe' ),
 			'fail_payment'              => esc_html__( 'Payment Failed', 'gravityformsstripe' ),
@@ -2809,6 +3073,7 @@ class GFStripe extends GFPaymentAddOn {
 		add_filter( 'gform_field_css_class', array( $this, 'stripe_card_field_css_class' ), 10, 3 );
 		add_filter( 'gform_submission_values_pre_save', array( $this, 'stripe_card_submission_value_pre_save' ), 10, 3 );
 		add_filter( 'gform_shortcode_stripe_customer_portal_link', array( $this->get_billing_portal_handler(), 'stripe_customer_portal_link_shortcode' ), 10, 3 );
+
 		// Supports frontend feeds.
 		$this->_supports_frontend_feeds = true;
 
@@ -3181,7 +3446,7 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return array $result The results of the validation.
 	 */
 	public function pre_validation( $result, $value, $form, $field ) {
-
+		$stripe_response = $this->get_stripe_js_response();
 		// If this is a credit card field and the last four credit card digits are defined, validate.
 		if ( $field->type == 'creditcard' && rgpost( 'stripe_credit_card_last_four' ) ) {
 
@@ -3202,18 +3467,58 @@ class GFStripe extends GFPaymentAddOn {
 				$result['is_valid'] = true;
 				$result['message']  = '';
 			}
-		} elseif ( $field->type === 'stripe_creditcard' && ! $result['is_valid'] ) {
-			// When a Stripe card is not on the last page, and the form is submitted by the SCA handler,
-			// the field failed because the Card Holder name is wiped out. In this case we assume it's valid.
-			$stripe_response = $this->get_stripe_js_response();
-			if ( ! empty( $stripe_response ) && $this->is_payment_intent( $stripe_response->id ) && $stripe_response->scaSuccess ) {
-				$result['is_valid'] = true;
-				$result['message']  = '';
-			}
+		}
+
+		$is_sca_success_response = ! empty( $stripe_response ) && $this->is_payment_intent( $stripe_response->id ) && isset( $stripe_response->scaSuccess ) && $stripe_response->scaSuccess;
+
+		// Modify the validation result if the form was submitted by the SCA handler.
+		if ( $is_sca_success_response ) {
+			add_filter( 'gform_stripe_sca_success_pre_validation', array( $this, 'modify_sca_success_validation' ), 10, 4 );
+
+			/**
+			 * Filter the validation result if the form was submitted by the SCA handler. Can be used to bypass validation for fields that would fail the second validation.
+			 *
+			 * @since 5.4.0
+			 *
+			 * @param array $result The validation result.
+			 * @param array $value  The field value being validated.
+			 * @param array $form   The current form object.
+			 * @param array $field  The current field being validated.
+			 */
+			$result = apply_filters( 'gform_stripe_sca_success_pre_validation', $result, $value, $form, $field );
 		}
 
 		return $result;
 
+	}
+
+	/**
+	 * Modify the validation result if the form was submitted by the SCA handler.
+	 *
+	 * @since 5.4.0
+	 *
+	 * @param array $result The validation result.
+	 * @param array $value  The field value being validated.
+	 * @param array $form   The current form object.
+	 * @param array $field  The current field being validated.
+	 *
+	 * @return array $result The results of the validation.
+	 */
+	public function modify_sca_success_validation( $result, $value, $form, $field ) {
+		// Spam fields will fail a second validation, but have already been validated once, so we skip them here.
+		if ( $field->type === 'captcha' || $field->type === 'turnstile' ) {
+			$result['is_valid'] = true;
+			$result['message']  = '';
+		}
+
+		if ( $field->type === 'stripe_creditcard' && ! $result['is_valid'] ) {
+			// When a Stripe card is not on the last page, and the form is submitted by the SCA handler,
+			// the field failed because the Card Holder name is wiped out. In this case we assume it's valid.
+			$result['is_valid'] = true;
+			$result['message']  = '';
+		}
+
+		return $result;
 	}
 
 	/**
@@ -3278,6 +3583,9 @@ class GFStripe extends GFPaymentAddOn {
 				break;
 			case 'stripe_elements':
 				$callback = array( $this, 'stripe_elements_requires_action_message' );
+				break;
+			case 'stripe_missing_field':
+				$callback = array( $this, 'stripe_missing_field_error_message' );
 				break;
 			default:
 				$callback = array( $this, 'stripe_general_validation_error_message' );
@@ -3384,6 +3692,23 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	public function stripe_elements_requires_action_message( $validation_message = '', $form = array() ) {
 		return $this->get_validation_error_markup( $this->get_authorization_error_message(), $form );
+	}
+
+	/**
+	 * Display missing Stripe field error message.
+	 *
+	 * @since 5.4
+	 *
+	 * @param string $validation_message The original validation message from the gform_validation_message filter.
+	 * @param array  $form               The submitted form data.
+	 *
+	 * @return string
+	 */
+	public function stripe_missing_field_error_message( $validation_message = '', $form = array() ) {
+		return $this->get_validation_error_markup(
+			esc_html__( 'This form is not configured to collect payment.', 'gravityformsstripe' ),
+			$form
+		);
 	}
 
 	/**
@@ -3923,8 +4248,13 @@ class GFStripe extends GFPaymentAddOn {
 			gform_update_meta( $entry['id'], 'payment_element_subscription_id', $this->get_payment_element_handler()->get_subscription_id() );
 
 			$action['payment_status'] = 'Processing';
+			$action['type'] = 'add_pending_payment';
 			$this->post_payment_action( $entry, $action );
 			return true;
+		}
+
+		if ( empty( rgar( $action, 'captured_payment' ) ) && rgar( $action, 'is_authorized' ) ) {
+			$action['type'] = 'authorized_payment';
 		}
 
 		return parent::complete_authorization( $entry, $action );
@@ -4017,30 +4347,35 @@ class GFStripe extends GFPaymentAddOn {
 			return parent::get_validation_result( $validation_result, $authorization_result );
 		}
 
-		$credit_card_field = array_filter(
+		$field_lookup_result = array_filter(
 			rgars( $validation_result, 'form/fields' ),
 			function( $field ) {
 				return in_array( $field->type, array( 'creditcard', 'stripe_creditcard' ), true );
 			}
 		);
 
-		// If payment element is enabled, then the payment was validated in the front end.
-		if ( rgobj( $credit_card_field, 'enableMultiplePaymentMethods' ) ) {
-			return true;
-		}
-
-		if ( $this->is_stripe_checkout_enabled() && empty( $credit_card_field ) ) {
+		if ( $this->is_stripe_checkout_enabled() ) {
 			return $this->get_stripe_checkout_validation_result( $validation_result );
+		} elseif ( empty( $field_lookup_result ) ) {
+			return $this->get_stripe_missing_credit_card_field_validation_result( $validation_result );
+		} else {
+			$field_index       = $this->get_first_array_key( $field_lookup_result );
+			$credit_card_field = $field_lookup_result[ $field_index ];
+
+			// If payment element is enabled, then the payment was validated in the front end.
+			if ( rgobj( $credit_card_field, 'enableMultiplePaymentMethods' ) ) {
+				$validation_result['is_valid'] = true;
+				return $validation_result;
+			}
+
+			return $this->get_credit_card_field_validation_result(
+				$credit_card_field,
+				$field_index,
+				$validation_result
+			);
 		}
-
-		$field_index = $this->get_first_array_key( $credit_card_field );
-
-		return $this->get_credit_card_field_validation_result(
-			rgar( $credit_card_field, $field_index ),
-			$field_index,
-			$validation_result
-		);
 	}
+
 
 	/**
 	 * Gets the first key from an array.
@@ -4106,6 +4441,29 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	private function get_stripe_checkout_validation_result( $validation_result ) {
 		$this->filter_validation_message( 'stripe_checkout' );
+
+		return array_merge(
+			$validation_result,
+			array(
+				'is_valid'         => false,
+				'credit_card_page' => GFFormDisplay::get_max_page_number( $validation_result['form'] ),
+			)
+		);
+	}
+
+	/**
+	 * Get the validation result when the stripe field is missing from the form.
+	 *
+	 * @since 5.4
+	 *
+	 * @see   GFStripe::get_validation_result()
+	 *
+	 * @param array $validation_result The validation result data.
+	 *
+	 * @return array
+	 */
+	private function get_stripe_missing_credit_card_field_validation_result( $validation_result ) {
+		$this->filter_validation_message( 'stripe_missing_field' );
 
 		return array_merge(
 			$validation_result,
@@ -4616,6 +4974,9 @@ class GFStripe extends GFPaymentAddOn {
 
 						return $this->authorization_error( $result->get_error_message() );
 					} else {
+						// Clear out the Stripe response so we can trigger the SCA modal again.
+						$_POST['stripe_response'] = '';
+
 						return $this->authorization_error( esc_html__( 'Your payment attempt has failed. Please enter your card details and try again.', 'gravityformsstripe' ) );
 					}
 				}
@@ -4781,17 +5142,17 @@ class GFStripe extends GFPaymentAddOn {
 	 * @return bool Returns True if checkout session should be completed. False if not.
 	 */
 	private function should_complete_checkout_session( $session, $entry ) {
-		$subscription_id = rgar( $session, 'subscription' );
-		$is_session_paid = rgar( $session, 'payment_status' ) === 'paid';
-		if ( ! empty( $subscription_id ) ) {
-			$is_checkout_session_completed = $is_session_paid && $entry['payment_status'] === 'Active';
-		} else {
-			$is_checkout_session_completed = $is_session_paid && ( $entry['payment_status'] === 'Paid' || $entry['payment_status'] === 'Authorized' );
+
+		$is_payment_complete         = rgar( $session, 'payment_status' ) === 'paid';
+		$is_entry_marked_as_complete = in_array( $entry['payment_status'], array( 'Active', 'Paid' ) );
+
+		// Payment is complete in Stripe, but entry is not marked as complete.
+		if ( $is_payment_complete && ! $is_entry_marked_as_complete ) {
+			$this->log_debug( __METHOD__ . '(): Stripe checkout session should be completed.' );
+			return true;
 		}
 
-		$capture_method = 'automatic';
-		$intent_status  = '';
-		if ( ! $subscription_id ) {
+		if ( ! rgar( $session, 'subscription' ) ) {
 			$intent = $this->api->get_payment_intent( $session['payment_intent'] );
 
 			if ( is_wp_error( $intent ) ) {
@@ -4799,21 +5160,18 @@ class GFStripe extends GFPaymentAddOn {
 				return false;
 			}
 
-			$capture_method = $intent->capture_method;
-			$intent_status  = $intent->status;
+			$is_authorize_only = $intent->capture_method == 'manual' && $intent->status == 'requires_capture';
+			if ( $is_authorize_only && $entry['payment_status'] !== 'Authorized' ) {
+				$this->log_debug( __METHOD__ . '(): Stripe checkout session should be completed. Authorization only' );
+				return true;
+			}
 		}
 
-		$this->log_debug( __METHOD__ . '(): Stripe payment status: ' . $session['payment_status'] . '. Entry payment status: ' . $entry['payment_status'] );
-		if ( ! $is_checkout_session_completed || ( $capture_method === 'manual' && $intent_status === 'requires_capture' ) ) {
-			$this->log_debug( __METHOD__ . '(): Stripe checkout session should be completed.' );
+		$this->log_debug( __METHOD__ . '(): Stripe checkout session should NOT be completed.' );
 
-			return true;
-		} else {
-			$this->log_debug( __METHOD__ . '(): Stripe checkout session should NOT be completed.' );
-
-			return false;
-		}
+		return false;
 	}
+
 	/**
 	 * Complete payments or subscriptions when redirect back from Stripe Checkout or checkout.session.completed event
 	 * triggered.
@@ -4936,7 +5294,7 @@ class GFStripe extends GFPaymentAddOn {
 			if ( $payment_status !== 'Paid' ) {
 				$submission_data       = gform_get_meta( $entry['id'], 'submission_data' );
 				$payment_intent        = rgar( $session, 'payment_intent' );
-				$payment_intent_object = $this->api->get_payment_intent( $payment_intent );
+				$payment_intent_object = $this->api->get_payment_intent( $payment_intent, array( 'expand' => array( 'latest_charge' ) ) );
 
 				if ( is_wp_error( $payment_intent_object ) ) {
 					$this->log_error( __METHOD__ . '(): A Stripe API error occurs; ' . $payment_intent_object->get_error_message() );
@@ -4959,7 +5317,7 @@ class GFStripe extends GFPaymentAddOn {
 				// if authorization_only = true, status will be 'requires_capture',
 				// so if the payment intent status is succeeded, we can mark the entry as Paid.
 				if ( rgars( $payment_intent_object, 'status' ) === 'succeeded' ) {
-					$payment_method = rgars( $payment_intent_object, 'charges/data/0/payment_method_details/card/brand' );
+					$payment_method = rgars( $payment_intent_object, 'latest_charge/payment_method_details/card/brand' );
 
 					$authorization['captured_payment'] = array(
 						'is_success'     => true,
@@ -5695,7 +6053,7 @@ class GFStripe extends GFPaymentAddOn {
 
 		// Load the Stripe API library.
 		if ( ! class_exists( 'GF_Stripe_API' ) ) {
-			require_once 'includes/class-gf-stripe-api.php';
+			require_once 'includes/api/class-gf-stripe-api.php';
 		}
 
 		$this->log_debug( sprintf( '%s(): Initializing Stripe API for %s mode.', __METHOD__, $mode ) );
@@ -7642,12 +8000,13 @@ class GFStripe extends GFPaymentAddOn {
 		$payment_method = rgpost( 'payment_method' );
 
 		$data = array(
-			'payment_method'      => rgar( $payment_method, 'id' ),
-			'amount'              => intval( rgpost( 'amount' ) ),
-			'currency'            => sanitize_text_field( rgpost( 'currency' ) ),
-			'capture_method'      => 'manual', // Use manual capture by default, because we cannot update the capture_method after the payment intent crated.
-			'confirmation_method' => 'manual',
-			'confirm'             => false,
+			'payment_method'       => rgar( $payment_method, 'id' ),
+			'payment_method_types' => array( 'card' ),
+			'amount'               => intval( rgpost( 'amount' ) ),
+			'currency'             => sanitize_text_field( rgpost( 'currency' ) ),
+			'capture_method'       => 'manual', // Use manual capture by default, because we cannot update the capture_method after the payment intent crated.
+			'confirmation_method'  => 'manual',
+			'confirm'              => 'false',
 		);
 
 		/**
@@ -8214,6 +8573,45 @@ class GFStripe extends GFPaymentAddOn {
 	 */
 	private function is_payment_intent( $transaction_id ) {
 		return substr( $transaction_id, 0, 3 ) === 'pi_';
+	}
+
+	/**
+	 * Remove Cardholder Name as a merge tag option.
+	 *
+	 * @since 5.3.1
+	 *
+	 * @return void
+	 */
+	public function remove_cardholder_name_merge_tag() {
+		$search_string = esc_html__( 'Cardholder Name', 'gravityformsstripe' );
+		?>
+		<script type="application/javascript">
+			if ( gform.addFilter ) {
+				gform.addFilter('gform_merge_tags', function( mergeTags ) {
+					const optional = mergeTags.optional;
+					const required = mergeTags.required;
+
+					if ( ! optional.tags.length && ! required.tags.length ) {
+						return mergeTags;
+					}
+
+					optional.tags = optional.tags.filter( function( item ) {
+						return item.tag.indexOf( '<?php echo $search_string; ?>' ) === -1;
+					} );
+
+					mergeTags.optional = optional;
+
+					required.tags = required.tags.filter( function( reqItem ) {
+						return reqItem.tag.indexOf( '<?php echo $search_string; ?>' ) === -1;
+					} );
+
+					mergeTags.required = required;
+
+					return mergeTags;
+				});
+			}
+		</script>
+		<?php
 	}
 
 }
