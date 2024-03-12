@@ -101,6 +101,11 @@ class maxInstall
 				{ continue;  }
 				// procedure from setupdata by button class
 				$icondata = maybe_unserialize($item['icon']);
+        if ( false === $icondata) // unserialize failed?
+       	{
+            return;
+        }
+
 				if (! is_array($icondata) && ! is_null($icondata) )
 				{
 

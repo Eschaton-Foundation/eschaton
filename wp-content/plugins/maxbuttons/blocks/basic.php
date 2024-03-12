@@ -187,14 +187,17 @@ class basicBlock extends maxBlock
 
 			$parsed_url = parse_url($url);
 
-			if (! $this->checkRelative($parsed_url))
+			if (false === $this->checkRelative($parsed_url))
+			{
 				$url = esc_url($url, $this->protocols);
+			}
 
 		 	$url = rawurldecode($url);  // removes the + from a URL part.
 			$url = apply_filters('mb-url', $url, $data['url']);  // passes processed url / raw url.
 			$url = apply_filters('mb-url-' . $button_id, $url, $data['url']);
 
-			$anchor->href = $url;
+			// This esc_attr is security and can't be removed - even if some urls fail with it.
+			$anchor->href = esc_attr($url);
 
 		}
 		else  // fixing an iOS problem which renders anchors without URL wrongly.

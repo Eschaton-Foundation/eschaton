@@ -2,9 +2,9 @@
 Contributors: maxfoundry, basszje, arcware, johnbhartley
 Tags: wordpress button plugin, share button, wordpress buttons, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
-Tested up to: 6.3
+Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 9.7.4
+Stable tag: 9.7.7
 WordPress button plugin so powerful and easy to use anyone can create beautiful buttons, share buttons and social icons.
 
 == Description ==
@@ -21,7 +21,7 @@ MaxButtons easily solved my problem with lots of options when creating the butto
 
 > “Easy, clear, and robust. I'm a programmer and can write CSS till the cows come home, but why? Just get it, install it and use it. Then, when you're impressed, buy the pro version” - by jleahy
 
-Max Foundry also makes the WordPress Gallery plugin [MaxGal.0-leria](https://maxgalleria.com) and [WordPress Media Folders](https://maxgalleria.com/downloads/media-library-plus-pro/) plugin for real WordPress Media Library folders.
+Max Foundry also makes the WordPress Gallery plugin [MaxGalleria](https://maxgalleria.com) and [WordPress Media Folders](https://maxgalleria.com/downloads/media-library-plus-pro/) plugin for real WordPress Media Library folders.
 
 = Requirements =
 
@@ -275,6 +275,16 @@ Secondly, please use latin only characters for button name ( Basic settings) and
 Upgrading to the PRO version is quite simple. Obtain a license key via our [site](https://maxbuttons.com). You can enter the license code within the free version on the 'Upgrade to PRO' page. After entering the license key, the PRO version will automatically download and install. You are good to go!
 
 == Changelog ==
+
+= 9.7.7 =
+
+* Tweak/Fix - Security Don't allow javascript by default in the shortcode.
+
+= 9.7.6 =
+
+* Fix - Lack of escaping on URL could lead to issues.
+* Fix - Potential issue with converting icon data on activation if field contains malformed data.
+
 
 = 9.7.4 =
 

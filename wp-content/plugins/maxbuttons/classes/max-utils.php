@@ -74,10 +74,22 @@ class maxUtils
 
 	}
 
-	public static function getAllowedProcotols()
+	public static function getAllowedProcotols($args = array())
 	{
-		// allowed url protocols for esc_url functions
-		$protocols = array("http","https",'ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', "javascript", 'file', 'ms-windows-store', 'steam', 'webcal');
+		$defaults = array(
+			'is_shortcode' => false,
+		);
+
+		$args = wp_parse_args($args, $defaults);
+
+		if (false === $args['is_shortcode'])
+		{
+			// allowed url protocols for esc_url functions
+			$protocols = array('http','https','ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', 'javascript', 'file', 'ms-windows-store', 'steam', 'webcal');
+		}
+		else {
+			$protocols = array('http','https','ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', 'ms-windows-store', 'steam', 'webcal');
+		}
 
 		$extra_protocols = get_option('maxbuttons_protocol');
 		if (! is_bool($extra_protocols)) // if option is set

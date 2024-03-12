@@ -862,8 +862,6 @@ class maxButton
 		}
 
 		// Override shortcode options comparing to default button data.
-		//$overrides = false;
-
 		if (! is_null($atts['text']) && $atts['text'] !== '')
 		{
 			$this->data["text"]["text"] = $atts['text'];
@@ -871,8 +869,15 @@ class maxButton
 
 		if (! is_null($atts['url']) && $atts['url'] !== '')
 		{
-			$protocols = maxUtils::getAllowedProcotols();
-			$this->data["basic"]["url"]  = esc_url($atts['url'], $protocols) ;
+			//
+			$protocols = maxUtils::getAllowedProcotols(['is_shortcode' => true]);
+
+			// Test the esc_url, only replace if it's longer than nothing. Otherwise use the main button one.
+			$url = esc_url($atts['url'], $protocols);
+			if (strlen($url) > 0)
+			{
+				$this->data["basic"]["url"] = $url ;
+			}
 		}
 
 		if (! is_null($atts['window']) )
