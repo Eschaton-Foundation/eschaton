@@ -1746,6 +1746,7 @@ function gformAddRepeaterItem( addButton, max ) {
 		.not( ':checkbox, :radio' ).val( '' );
 	$clone.find( ':checkbox, :radio' ).prop( 'checked', false );
 	$clone.find('.validation_message').remove();
+	$clone.find('.gform-datepicker.initialized').removeClass('initialized');
 
 	$clone = gform.applyFilters( 'gform_repeater_item_pre_add', $clone, $item );
 
@@ -3467,15 +3468,6 @@ if ( ! String.prototype.gformFormat ) {
 		} );
 	};
 }
-
-// deprecated. remove in 2.8
-String.prototype.format = function() {
-	var args = arguments;
-	console.warn( 'String.format will be replaced with String.gformFormat in Gravity Forms version 2.8.' );
-	return this.replace( /{(\d+)}/g, function( match, number ) {
-		return typeof args[ number ] != 'undefined' ? args[ number ] : match;
-	} );
-};
 
 
 /**

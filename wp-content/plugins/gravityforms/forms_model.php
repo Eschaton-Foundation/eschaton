@@ -1606,6 +1606,7 @@ class GFFormsModel {
 				 * @since 2.3.3.9
 				 */
 				do_action( "gform_post_update_entry_property", $lead_id, $property_name, $property_value, $previous_value );
+				gf_feed_processor()->save()->dispatch();
 			}
 		}
 
@@ -3436,6 +3437,17 @@ class GFFormsModel {
 
 			case 'fileupload' :
 				if ( $field->multipleFiles ) {
+					if ( empty( $value ) ) {
+						$temp_files = rgars( GFFormsModel::$uploaded_files, $form['id'] . '/' . $input_name );
+						if ( ! empty( $temp_files ) ) {
+							$value = array();
+							foreach ( $temp_files as $temp_file ) {
+								$file_path = self::get_file_upload_path( $form['id'], $temp_file['uploaded_filename'] );
+								$value[]   = $file_path['url'];
+							}
+						}
+					}
+
 					if ( ! empty( $value ) ) {
 						$value = json_encode( $value );
 					}
@@ -6739,15 +6751,15 @@ class GFFormsModel {
 			return null;
 		}
 
-		if ( is_numeric( $field_id ) ) {
-			// Removing floating part of field (i.e 1.3 -> 1) to return field by input id.
+		if ( is_numeric( $field_id ) || preg_match( '/^\d+\.\w+$/', $field_id ) ) {
+			// Removing the input-specific segment from the field ID (i.e 1.3 or 1.something -> 1).
 			$field_id = intval( $field_id );
 		}
 
 		global $_fields;
 		$key = $form['id'] . '_' . $field_id;
 		$return = null;
-		if (isset( $_fields[ $key ] ) ) {
+		if ( isset( $_fields[ $key ] ) ) {
 			return $_fields[ $key ];
 		}
 
@@ -6796,8 +6808,12 @@ class GFFormsModel {
 		return null;
 	}
 
+	/**
+	 * @deprecated 2.8 HTML5 setting was removed, and HTML5 is now always enabled.
+	 * @return true
+	 */
 	public static function is_html5_enabled() {
-		return get_option( 'rg_gforms_enable_html5', false );
+		return true;
 	}
 
 	/**
