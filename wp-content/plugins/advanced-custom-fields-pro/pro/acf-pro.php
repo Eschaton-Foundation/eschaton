@@ -2,22 +2,17 @@
 
 if ( ! class_exists( 'acf_pro' ) ) :
 
+	/**
+	 * The main ACF PRO class.
+	 */
 	class acf_pro {
 
-		/*
-		*  __construct
-		*
-		*
-		*
-		*  @type    function
-		*  @date    23/06/12
-		*  @since   5.0.0
-		*
-		*  @param   N/A
-		*  @return  N/A
-		*/
-
-		function __construct() {
+		/**
+		 * Main ACF PRO constructor
+		 *
+		 * @since   5.0.0
+		 */
+		public function __construct() {
 
 			// constants
 			acf()->define( 'ACF_PRO', true );
@@ -30,6 +25,7 @@ if ( ! class_exists( 'acf_pro' ) ) :
 			acf_include( 'pro/blocks.php' );
 			acf_include( 'pro/options-page.php' );
 			acf_include( 'pro/acf-ui-options-page-functions.php' );
+			acf_include( 'pro/class-acf-updates.php' );
 			acf_include( 'pro/updates.php' );
 
 			if ( is_admin() ) {
@@ -55,8 +51,6 @@ if ( ! class_exists( 'acf_pro' ) ) :
 		 * Registers the `acf-ui-options-page` post type and initializes the UI.
 		 *
 		 * @since 6.2
-		 *
-		 * @return void
 		 */
 		public function register_ui_options_pages() {
 			if ( ! acf_get_setting( 'enable_options_pages_ui' ) ) {
@@ -96,32 +90,27 @@ if ( ! class_exists( 'acf_pro' ) ) :
 			acf_include( 'pro/fields/class-acf-field-clone.php' );
 		}
 
-		/*
-		*  include_location_rules
-		*
-		*  description
-		*
-		*  @type    function
-		*  @date    10/6/17
-		*  @since   5.6.0
-		*
-		*  @param   $post_id (int)
-		*  @return  $post_id (int)
-		*/
+		/**
+		 * description
+		 *
+		 * @type    function
+		 * @date    10/6/17
+		 * @since   5.6.0
+		 *
+		 * @param   $post_id (int)
+		 * @return  $post_id (int)
+		 */
 
 		function include_location_rules() {
 
 			acf_include( 'pro/locations/class-acf-location-block.php' );
 			acf_include( 'pro/locations/class-acf-location-options-page.php' );
-
 		}
 
 		/**
 		 * Registers styles and scripts used by ACF PRO.
 		 *
 		 * @since 5.0.0
-		 *
-		 * @return void
 		 */
 		public function register_assets() {
 			$version = acf_get_setting( 'version' );
@@ -137,54 +126,48 @@ if ( ! class_exists( 'acf_pro' ) ) :
 			wp_register_style( 'acf-pro-field-group', acf_get_url( 'assets/build/css/pro/acf-pro-field-group.css' ), array( 'acf-input' ), $version );
 		}
 
-		/*
-		*  input_admin_enqueue_scripts
-		*
-		*  description
-		*
-		*  @type    function
-		*  @date    4/11/2013
-		*  @since   5.0.0
-		*
-		*  @param   $post_id (int)
-		*  @return  $post_id (int)
-		*/
+		/**
+		 * input_admin_enqueue_scripts
+		 *
+		 * description
+		 *
+		 * @type    function
+		 * @date    4/11/2013
+		 * @since   5.0.0
+		 *
+		 * @param   $post_id (int)
+		 * @return  $post_id (int)
+		 */
 
 		function input_admin_enqueue_scripts() {
 
 			wp_enqueue_script( 'acf-pro-input' );
 			wp_enqueue_script( 'acf-pro-ui-options-page' );
 			wp_enqueue_style( 'acf-pro-input' );
-
 		}
 
 
-		/*
-		*  field_group_admin_enqueue_scripts
-		*
-		*  description
-		*
-		*  @type    function
-		*  @date    4/11/2013
-		*  @since   5.0.0
-		*
-		*  @param   $post_id (int)
-		*  @return  $post_id (int)
-		*/
+		/**
+		 * description
+		 *
+		 * @type    function
+		 * @date    4/11/2013
+		 * @since   5.0.0
+		 *
+		 * @param   $post_id (int)
+		 * @return  $post_id (int)
+		 */
 
 		function field_group_admin_enqueue_scripts() {
 
 			wp_enqueue_script( 'acf-pro-field-group' );
 			wp_enqueue_style( 'acf-pro-field-group' );
-
 		}
 
 		/**
 		 * Checks for a license status error and renders it if necessary.
 		 *
 		 * @since 6.2.1
-		 *
-		 * @return void
 		 */
 		public function maybe_show_license_status_error() {
 			$license_status         = acf_pro_get_license_status();
@@ -206,7 +189,7 @@ if ( ! class_exists( 'acf_pro' ) ) :
 				return;
 			}
 
-			if ( ! empty( $manage_url ) && 'acf-settings-updates' !== acf_request_arg( 'page' ) ) {
+			if ( acf_is_updates_page_visible() && ! empty( $manage_url ) && 'acf-settings-updates' !== acf_request_arg( 'page' ) ) {
 				$manage_link = sprintf(
 					'<a href="%1$s">%2$s</a>',
 					esc_url( $manage_url ),
@@ -240,7 +223,6 @@ if ( ! class_exists( 'acf_pro' ) ) :
 
 			return $where;
 		}
-
 	}
 
 
@@ -250,5 +232,3 @@ if ( ! class_exists( 'acf_pro' ) ) :
 
 	// end class
 endif;
-
-
