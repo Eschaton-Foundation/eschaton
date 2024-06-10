@@ -117,6 +117,8 @@ jQuery(document).ready(function(){
                 form.find('.sib_msg_disp').html('<p class="sib-alert-message sib-alert-message-warning ">' + sibErrMsg.invalidSMSFormat + '</p>').show();
                 return;
             }
+
+            jQuery(".sib-default-btn").attr("disabled", true);
             form.find('.sib_loader').show();
             jQuery('.sib_msg_disp').hide();
             var postData = form.serializeArray();
@@ -142,6 +144,7 @@ jQuery(document).ready(function(){
                 dataType: "json",
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
+                    jQuery(".sib-default-btn").attr("disabled", false);
                     jQuery('.sib_loader').hide();
                     if( jQuery('.sib-multi-lists').length )
                     {
@@ -211,6 +214,7 @@ jQuery(document).ready(function(){
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     form.find('.sib_msg_disp').html(jqXHR).show();
+                    jQuery(".sib-default-btn").attr("disabled", false);
                     if (typeof grecaptcha != 'undefined')
                     {
                         grecaptcha.reset(gCaptchaSibWidget);
