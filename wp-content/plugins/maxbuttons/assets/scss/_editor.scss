@@ -7,8 +7,8 @@
 }
 
  .option-container {
-	margin-bottom: 20px;
-	border: solid 1px #cccccc;
+	margin: 26px 0;
+//	border: solid 1px #cccccc;
 	@include border-radius(3px,3px,3px,3px);
 	background-color: #fff;
 	position: relative;
@@ -16,12 +16,14 @@
 
 	.title {
 
-		font-size: 18px;
-		padding: 9px 8px 9px 10px;
+		font-size: 22px;
+		padding: 16px 2px 16px 18px;
 		text-align: left;
-		text-shadow: 0px 1px 0px #ffffff;
 		position: relative;
 		z-index: 1;
+	//	background: #88c5c2;
+		background: linear-gradient(90deg, rgba(136,197,194,1) 16%, rgba(255,255,255,1) 99%);
+		color: #fff;
 	}
 	.section-title {
 		padding: 15px;
@@ -173,8 +175,8 @@
 
 
  .option-container > .inside, .block_sidebar > .inside {
-	padding: 10px 55px 10px 15px; // 55px is to make space for sidebars in PRO
-	border-top: solid 1px #cccccc;
+	padding: 38px 55px 10px 15px; // 55px is to make space for sidebars in PRO
+//	border-top: solid 1px #cccccc;
 	background-color: #ffffff;
 	[data-show]:not(.condshow), .option[data-show]:not(.condshow), [data-has]:not(.condshow), .option[data-has]:not(.condshow)
 	{
@@ -658,13 +660,16 @@
 					border-radius: 4px;
 					padding: 8px 26px;
 					text-transform: uppercase;
+					background: rgba(136,197,194,1);
+
 
 					a
 					{
 						margin: 0;
 						border: 0;
 						letter-spacing: 1.1px;
-						font-size: 14px;
+						font-size: 16px;
+						font-weight: 700;
 
 					}
 				}

@@ -374,20 +374,20 @@
   max-width: 1200px;
 }
 #maxbuttons .option-container {
-  margin-bottom: 20px;
-  border: solid 1px #cccccc;
+  margin: 26px 0;
   border-radius: 3px 3px 3px 3px;
   background-color: #fff;
   position: relative;
   z-index: 1;
 }
 #maxbuttons .option-container .title {
-  font-size: 18px;
-  padding: 9px 8px 9px 10px;
+  font-size: 22px;
+  padding: 16px 2px 16px 18px;
   text-align: left;
-  text-shadow: 0px 1px 0px #ffffff;
   position: relative;
   z-index: 1;
+  background: linear-gradient(90deg, rgb(136, 197, 194) 16%, rgb(255, 255, 255) 99%);
+  color: #fff;
 }
 #maxbuttons .option-container .section-title {
   padding: 15px;
@@ -506,8 +506,7 @@
   opacity: 0;
 }
 #maxbuttons .option-container > .inside, #maxbuttons .block_sidebar > .inside {
-  padding: 10px 55px 10px 15px;
-  border-top: solid 1px #cccccc;
+  padding: 38px 55px 10px 15px;
   background-color: #ffffff;
 }
 #maxbuttons .option-container > .inside [data-show]:not(.condshow), #maxbuttons .option-container > .inside .option[data-show]:not(.condshow), #maxbuttons .option-container > .inside [data-has]:not(.condshow), #maxbuttons .option-container > .inside .option[data-has]:not(.condshow), #maxbuttons .block_sidebar > .inside [data-show]:not(.condshow), #maxbuttons .block_sidebar > .inside .option[data-show]:not(.condshow), #maxbuttons .block_sidebar > .inside [data-has]:not(.condshow), #maxbuttons .block_sidebar > .inside .option[data-has]:not(.condshow) {
@@ -911,12 +910,14 @@
   border-radius: 4px;
   padding: 8px 26px;
   text-transform: uppercase;
+  background: rgb(136, 197, 194);
 }
 #maxbuttons .editor .screen-option-wrapper .screen-option.button-save a {
   margin: 0;
   border: 0;
   letter-spacing: 1.1px;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 700;
 }
 #maxbuttons .editor .screen-option-wrapper a.screen-option {
   margin-left: auto;

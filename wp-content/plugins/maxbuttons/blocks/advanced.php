@@ -71,7 +71,7 @@ class advancedBlock extends maxBlock
  				$anchor->rel .= ' ';
  			}
 
- 			$anchor->rel .= $custom_rel;
+ 			$anchor->rel .= esc_attr($custom_rel);
  		}
 
  		if (isset($data["external_css"]) && $data["external_css"] == 1)
