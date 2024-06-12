@@ -478,6 +478,18 @@
                 "operator": "==",
                 "value": "_tmpl-visit-booking.php"
             }
+        ],
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "page"
+            },
+            {
+                "param": "post_template",
+                "operator": "==",
+                "value": "page-faq.php"
+            }
         ]
     ],
     "menu_order": 0,
@@ -491,5 +503,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1675669848
+    "modified": 1718209446
 }
