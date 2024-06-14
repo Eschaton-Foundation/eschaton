@@ -29,10 +29,15 @@ if (have_posts()) while (have_posts()) : the_post();
 		<?php }
 	} ?>
 
+	<section class="section-text faq wyg">
+		<div class="inner">
+			<?php the_content(); ?>
+		</div>
+	</section>
 
     <div class="grid-faq">
 
-            <section class="section-text wyg">
+            <section class="section-text">
                 <?php if ( is_page() ) :
 
 					if( $post->post_parent ) :

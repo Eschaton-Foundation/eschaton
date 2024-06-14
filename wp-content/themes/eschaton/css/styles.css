@@ -2312,6 +2312,17 @@ h2.studio_dates {
   margin: 0;
 }
 
+.section-text.faq {
+  margin-bottom: 60px;
+  max-width: 55em;
+  display: flex;
+  justify-content: flex-end;
+  width: 95%;
+}
+.section-text.faq .inner {
+  width: calc(66% - 30px);
+}
+
 .grid-faq {
   display: flex;
   width: 95%;
@@ -2339,36 +2350,34 @@ h2.studio_dates {
   font-variant: none;
 }
 
-.wyg .faq-nav {
+.faq-nav {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.wyg .faq-nav .faq-nav-item {
-  text-indent: 0;
-  padding-left: 0;
+.faq-nav .faq-nav-item {
   margin-bottom: 5px;
 }
-.wyg .faq-nav .faq-nav-item a {
+.faq-nav .faq-nav-item a {
   display: flex;
   justify-content: space-between;
   align-items: center;
   text-decoration: none;
   padding: 15px 20px;
 }
-.wyg .faq-nav .faq-nav-item .active,
-.wyg .faq-nav .faq-nav-item a:hover {
+.faq-nav .faq-nav-item .active,
+.faq-nav .faq-nav-item a:hover {
   background-color: #f6f6f6;
   border-radius: 3px;
 }
-.wyg .faq-nav .faq-nav-item .active {
+.faq-nav .faq-nav-item .active {
   border-left: 3px solid;
 }
-.wyg .faq-nav .faq-nav-item a:hover {
+.faq-nav .faq-nav-item a:hover {
   text-decoration: underline;
   color: black;
 }
-.wyg .faq-nav .faq-nav-item:before {
+.faq-nav .faq-nav-item:before {
   content: none;
 }
 

@@ -1187,6 +1187,17 @@ h2.studio_dates {
 
 // FAQ
 
+.section-text.faq {
+	margin-bottom: 60px;
+	max-width: 55em;
+	display: flex;
+	justify-content: flex-end;
+	width: 95%;
+
+	.inner {
+		width: calc(66% - 30px);
+	}
+}
 .grid-faq {
 	display: flex;
 	width: 95%;
@@ -1215,7 +1226,6 @@ h2.studio_dates {
 	}
 }
 
-.wyg {
 	.faq-nav {
 		list-style: none;
 		padding: 0;
@@ -1223,8 +1233,6 @@ h2.studio_dates {
 
 		.faq-nav-item {
 
-			text-indent: 0;
-  			padding-left: 0;
 			margin-bottom: 5px;
 
 			a {
@@ -1253,6 +1261,6 @@ h2.studio_dates {
 			}
 		}
 
-	}
+
 
 }
