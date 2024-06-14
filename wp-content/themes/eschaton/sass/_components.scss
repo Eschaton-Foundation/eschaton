@@ -1193,7 +1193,7 @@ h2.studio_dates {
 	max-width: 55em;
 	margin-left: auto;
 	margin-right: auto;
-	gap: 50px;
+	gap: 85px;
 
 	@media (max-width: 767px) {
 		flex-direction: column;
@@ -1213,4 +1213,46 @@ h2.studio_dates {
 		text-transform: none;
 		font-variant: none;
 	}
+}
+
+.wyg {
+	.faq-nav {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+
+		.faq-nav-item {
+
+			text-indent: 0;
+  			padding-left: 0;
+			margin-bottom: 5px;
+
+			a {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				text-decoration: none;
+				padding: 15px 20px;
+			}
+
+			.active,
+			a:hover  {
+				background-color: #f6f6f6;
+				border-radius: 3px;
+			}
+			.active {
+				border-left: 3px solid;
+			}
+			a:hover {
+				text-decoration: underline;
+				color: black;
+			}
+
+			&:before {
+				content: none;
+			}
+		}
+
+	}
+
 }
