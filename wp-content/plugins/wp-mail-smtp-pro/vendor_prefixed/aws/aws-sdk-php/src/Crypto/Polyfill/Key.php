@@ -6,8 +6,6 @@ namespace WPMailSMTP\Vendor\Aws\Crypto\Polyfill;
  * Class Key
  *
  * Wraps a string to keep it hidden from stack traces.
- *
- * @package Aws\Crypto\Polyfill
  */
 class Key
 {

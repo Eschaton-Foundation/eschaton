@@ -156,7 +156,20 @@ class Handler implements HandlerInterface {
 				'type' => 'header',
 				'text' => [
 					'type' => 'plain_text',
-					'text' => "[$site_title] $alert_message",
+					'text' => $alert_message,
+				],
+			],
+			[
+				'type'   => 'section',
+				'fields' => [
+					[
+						'type' => 'mrkdwn',
+						'text' => sprintf(
+							"*%s*:\n %s",
+							esc_html__( 'Website', 'wp-mail-smtp-pro' ),
+							$site_title
+						),
+					],
 				],
 			],
 			[

@@ -248,6 +248,7 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 	 * To make it as safe as possible the `DOMDocument` is used.
 	 *
 	 * @since 4.0.2
+	 * @since 4.1.0 Disabled libxml warning and error reporting.
 	 *
 	 * @param string $url Url to normalize.
 	 *
@@ -271,21 +272,21 @@ class ClickLinkEvent extends AbstractInjectableEvent {
 			$link_html = $encoded_link_html;
 		}
 
-		$dom = new DOMDocument();
+		$dom                    = new DOMDocument();
+		$libxml_internal_errors = libxml_use_internal_errors( true );
+		$normalized_url         = $url;
 
 		$dom->loadHTML( $link_html );
 
 		$link = $dom->getElementById( 'link' );
 
-		if ( empty( $link ) ) {
-			return $url;
+		if ( ! empty( $link ) ) {
+			$href           = $link->getAttribute( 'href' );
+			$normalized_url = ! empty( $href ) ? $href : $normalized_url;
 		}
 
-		$normalized_url = $link->getAttribute( 'href' );
-
-		if ( empty( $normalized_url ) ) {
-			return $url;
-		}
+		libxml_clear_errors();
+		libxml_use_internal_errors( $libxml_internal_errors );
 
 		return $normalized_url;
 	}

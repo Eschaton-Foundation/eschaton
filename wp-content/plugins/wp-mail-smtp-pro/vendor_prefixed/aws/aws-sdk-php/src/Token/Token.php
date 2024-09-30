@@ -2,12 +2,13 @@
 
 namespace WPMailSMTP\Vendor\Aws\Token;
 
+use WPMailSMTP\Vendor\Aws\Identity\BearerTokenIdentity;
 use WPMailSMTP\Vendor\Aws\Token\TokenInterface;
 /**
  * Basic implementation of the AWS Token interface that allows callers to
  * pass in an AWS token in the constructor.
  */
-class Token implements \WPMailSMTP\Vendor\Aws\Token\TokenInterface, \Serializable
+class Token extends \WPMailSMTP\Vendor\Aws\Identity\BearerTokenIdentity implements \WPMailSMTP\Vendor\Aws\Token\TokenInterface, \Serializable
 {
     protected $token;
     protected $expires;

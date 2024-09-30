@@ -198,7 +198,7 @@ class Pro {
 		add_filter(
 			'wp_mail_smtp_options_set',
 			function ( $options ) {
-				foreach ( [ 'email', 'slack_webhook', 'twilio_sms', 'custom_webhook' ] as $alert ) {
+				foreach ( array_keys( ( new AlertsLoader() )->get_providers() ) as $alert ) {
 					if ( isset( $options[ "alert_$alert" ]['connections'] ) ) {
 						$options[ "alert_$alert" ]['connections'] = array_unique(
 							$options[ "alert_$alert" ]['connections'],
@@ -515,6 +515,11 @@ class Pro {
 			return $args;
 		}
 
+		// Bail if plugins list is missing.
+		if ( empty( $args['body']['plugins'] ) ) {
+			return $args;
+		}
+
 		/*
 		 * If WP Mail SMTP is already in the list, don't add it again.
 		 *
@@ -522,6 +527,12 @@ class Pro {
 		 * The capitalized json data defines the array keys, therefore we need to check and define these as such.
 		 */
 		$plugins = json_decode( $args['body']['plugins'], true );
+
+		// Bail if plugin list can't be decoded or plugins list is missing.
+		if ( $plugins === null || ! isset( $plugins['plugins'] ) ) {
+			return $args;
+		}
+
 		foreach ( $plugins['plugins'] as $slug => $data ) {
 			if ( isset( $data['Name'] ) && $data['Name'] === 'WP Mail SMTP' ) {
 				return $args;
@@ -677,6 +688,7 @@ class Pro {
 				\WPMailSMTP\Pro\Tasks\Logs\SMTPcom\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\SparkPost\VerifySentStatusTask::class,
+				\WPMailSMTP\Pro\Tasks\Logs\SMTP2GO\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ExportCleanupTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ResendTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\BulkVerifySentStatusTask::class,

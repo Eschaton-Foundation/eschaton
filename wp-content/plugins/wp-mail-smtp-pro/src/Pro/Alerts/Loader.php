@@ -23,6 +23,7 @@ class Loader {
 	protected $providers = [
 		'email'          => 'WPMailSMTP\Pro\Alerts\Providers\Email\\',
 		'slack_webhook'  => 'WPMailSMTP\Pro\Alerts\Providers\SlackWebhook\\',
+		'teams_webhook'  => 'WPMailSMTP\Pro\Alerts\Providers\TeamsWebhook\\',
 		'twilio_sms'     => 'WPMailSMTP\Pro\Alerts\Providers\TwilioSMS\\',
 		'custom_webhook' => 'WPMailSMTP\Pro\Alerts\Providers\CustomWebhook\\',
 	];

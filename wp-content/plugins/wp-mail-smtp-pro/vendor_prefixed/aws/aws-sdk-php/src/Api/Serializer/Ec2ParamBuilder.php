@@ -20,9 +20,7 @@ class Ec2ParamBuilder extends \WPMailSMTP\Vendor\Aws\Api\Serializer\QueryParamBu
     protected function format_list(\WPMailSMTP\Vendor\Aws\Api\ListShape $shape, array $value, $prefix, &$query)
     {
         // Handle empty list serialization
-        if (!$value) {
-            $query[$prefix] = \false;
-        } else {
+        if (!empty($value)) {
             $items = $shape->getMember();
             foreach ($value as $k => $v) {
                 $this->format($items, $v, $prefix . '.' . ($k + 1), $query);

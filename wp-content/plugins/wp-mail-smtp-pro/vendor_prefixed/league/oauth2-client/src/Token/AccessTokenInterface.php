@@ -15,7 +15,7 @@
 namespace WPMailSMTP\Vendor\League\OAuth2\Client\Token;
 
 use JsonSerializable;
-use WPMailSMTP\Vendor\ReturnTypeWillChange;
+use ReturnTypeWillChange;
 use RuntimeException;
 interface AccessTokenInterface extends \JsonSerializable
 {

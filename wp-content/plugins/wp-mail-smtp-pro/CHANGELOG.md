@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.1] - 2024-08-14
+### Changed:
+- Delete `wp-mail-smtp` uploads folder on plugin uninstall, if the "Misc > Uninstall" option is enabled.
+- Decreased `PHPMailer` timeout value to 30 seconds from 5 minutes.
+- Improved Weekly Summary Email sending.
+
+### Fixed:
+- Missing Reply-To support in SMTP2GO mailer.
+- Setup Wizard translations not working correctly.
+
+## [4.1.0] - 2024-07-16
+### Added:
+- New transactional mailer: SMTP2GO.
+- Microsoft Teams integration for the Alerts feature.
+
+### Changed:
+- Recurring email queue tasks are now removed after completion.
+
+### Fixed:
+- Gmail mailer compatibility with network-wide settings on multisite setups.
+- Wrong namespace in PHP 8.0x Symfony polyfills.
+- All pending background tasks are now canceled on plugin deactivation.
+- PHP warnings in Lite translations update checks.
+- Slack alerts not working on sites with long titles.
+- License key validation issues after license changes.
+- Click Link Tracking PHP warning with malformed HTML emails.
+- Long email headers incorrectly truncated.
+
 ## [4.0.2] - 2024-03-04
 ### Fixed:
 - Click link tracking for links with HTML entities.

@@ -827,6 +827,10 @@ class License {
 			]
 		);
 
+		if ( $this->is_validate_key_request( (string) $action ) === true ) {
+			$query_params['wpforms_refresh_key'] = 1;
+		}
+
 		$args = [
 			'headers' => $headers,
 			'user-agent' => Helpers::get_default_user_agent(),
@@ -1114,5 +1118,42 @@ class License {
 			 */
 			apply_filters( 'wp_mail_smtp_pro_license_get_remote_latest_version_interval', self::REMOTE_FETCH_LATEST_VERSION_INTERVAL_IN_DAYS )
 		);
+	}
+
+	/**
+	 * Check if this is an ajax request to validate the key.
+	 *
+	 * @since 4.1.0
+	 *
+	 * @param string $action Action.
+	 *
+	 * @return bool
+	 */
+	private function is_validate_key_request( string $action ): bool {
+
+		$allowed_tasks = [ 'license_verify', 'license_refresh' ];
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if (
+			! isset( $_REQUEST['action'] ) ||
+			$_REQUEST['action'] !== 'wp_mail_smtp_pro_license_ajax' ||
+			! isset( $_REQUEST['task'] ) ||
+			! in_array( $_REQUEST['task'], $allowed_tasks, true )
+		) {
+			return false;
+		}
+
+		$is_verify_key_request = (
+			$_REQUEST['task'] === 'license_verify' &&
+			$action === 'verify-key'
+		);
+
+		$is_refresh_key_request = (
+			$_REQUEST['task'] === 'license_refresh' &&
+			$action === 'validate-key'
+		);
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		return $is_verify_key_request || $is_refresh_key_request;
 	}
 }

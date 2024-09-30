@@ -2,6 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\Sts;
 
+use WPMailSMTP\Vendor\Aws\Arn\ArnParser;
 use WPMailSMTP\Vendor\Aws\AwsClient;
 use WPMailSMTP\Vendor\Aws\CacheInterface;
 use WPMailSMTP\Vendor\Aws\Credentials\Credentials;
@@ -69,8 +70,17 @@ class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
         if (!$result->hasKey('Credentials')) {
             throw new \InvalidArgumentException('Result contains no credentials');
         }
-        $c = $result['Credentials'];
-        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($c['AccessKeyId'], $c['SecretAccessKey'], isset($c['SessionToken']) ? $c['SessionToken'] : null, isset($c['Expiration']) && $c['Expiration'] instanceof \DateTimeInterface ? (int) $c['Expiration']->format('U') : null);
+        $accountId = null;
+        if ($result->hasKey('AssumedRoleUser')) {
+            $parsedArn = \WPMailSMTP\Vendor\Aws\Arn\ArnParser::parse($result->get('AssumedRoleUser')['Arn']);
+            $accountId = $parsedArn->getAccountId();
+        } elseif ($result->hasKey('FederatedUser')) {
+            $parsedArn = \WPMailSMTP\Vendor\Aws\Arn\ArnParser::parse($result->get('FederatedUser')['Arn']);
+            $accountId = $parsedArn->getAccountId();
+        }
+        $credentials = $result['Credentials'];
+        $expiration = isset($credentials['Expiration']) && $credentials['Expiration'] instanceof \DateTimeInterface ? (int) $credentials['Expiration']->format('U') : null;
+        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($credentials['AccessKeyId'], $credentials['SecretAccessKey'], isset($credentials['SessionToken']) ? $credentials['SessionToken'] : null, $expiration, $accountId);
     }
     /**
      * Adds service-specific client built-in value

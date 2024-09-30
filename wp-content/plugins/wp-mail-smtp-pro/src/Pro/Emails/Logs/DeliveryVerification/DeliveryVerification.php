@@ -1,19 +1,22 @@
 <?php
+
 namespace WPMailSMTP\Pro\Emails\Logs\DeliveryVerification;
 
 use Exception;
 use WP_Error;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailgun\DeliveryVerifier as MailgunDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Postmark\DeliveryVerifier as PostmarkDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendinblue\DeliveryVerifier as SendinblueDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendlayer\DeliveryVerifier as SendlayerDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTP2GO\DeliveryVerifier as SMTP2GODeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTPcom\DeliveryVerifier as SMTPcomDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SparkPost\DeliveryVerifier as SparkPostDeliveryVerifier;
-use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendinblue\DeliveryVerifier as SendinblueDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\Email;
 use WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask as MailgunVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask as PostmarkVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendinblue\VerifySentStatusTask as SendinblueVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendlayer\VerifySentStatusTask as SendlayerVerifySentStatusTask;
+use WPMailSMTP\Pro\Tasks\Logs\SMTP2GO\VerifySentStatusTask as SMTP2GOVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\SMTPcom\VerifySentStatusTask as SMTPcomVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\SparkPost\VerifySentStatusTask as SparkPostVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\VerifySentStatusTaskAbstract;
@@ -39,6 +42,7 @@ class DeliveryVerification {
 		'smtpcom'    => SMTPcomDeliveryVerifier::class,
 		'sparkpost'  => SparkPostDeliveryVerifier::class,
 		'sendinblue' => SendinblueDeliveryVerifier::class,
+		'smtp2go'    => SMTP2GODeliveryVerifier::class,
 	];
 
 	/**
@@ -55,6 +59,7 @@ class DeliveryVerification {
 		'smtpcom'    => SMTPcomVerifySentStatusTask::class,
 		'sparkpost'  => SparkPostVerifySentStatusTask::class,
 		'sendinblue' => SendinblueVerifySentStatusTask::class,
+		'smtp2go'    => SMTP2GOVerifySentStatusTask::class,
 	];
 
 	/**

@@ -5,7 +5,6 @@ namespace WPMailSMTP\Vendor\Aws\Crypto\Polyfill;
 use WPMailSMTP\Vendor\Aws\Exception\CryptoPolyfillException;
 /**
  * Trait NeedsTrait
- * @package Aws\Crypto\Polyfill
  */
 trait NeedsTrait
 {

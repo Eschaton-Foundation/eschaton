@@ -214,10 +214,8 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
                 throw new \InvalidArgumentException("Unknown operation: {$name}");
             }
             $this->operations[$name] = new \WPMailSMTP\Vendor\Aws\Api\Operation($this->definition['operations'][$name], $this->shapeMap);
-        } else {
-            if ($this->modifiedModel) {
-                $this->operations[$name] = new \WPMailSMTP\Vendor\Aws\Api\Operation($this->definition['operations'][$name], $this->shapeMap);
-            }
+        } elseif ($this->modifiedModel) {
+            $this->operations[$name] = new \WPMailSMTP\Vendor\Aws\Api\Operation($this->definition['operations'][$name], $this->shapeMap);
         }
         return $this->operations[$name];
     }
@@ -400,6 +398,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
     public function setDefinition($definition)
     {
         $this->definition = $definition;
+        $this->shapeMap = new \WPMailSMTP\Vendor\Aws\Api\ShapeMap($definition['shapes']);
         $this->modifiedModel = \true;
     }
     /**

@@ -88,4 +88,15 @@ class SsoToken extends \WPMailSMTP\Vendor\Aws\Token\Token
     {
         return $this->startUrl;
     }
+    /**
+     * Creates an instance of SsoToken from a token data.
+     *
+     * @param $tokenData
+     *
+     * @return SsoToken
+     */
+    public static function fromTokenData($tokenData) : \WPMailSMTP\Vendor\Aws\Token\SsoToken
+    {
+        return new \WPMailSMTP\Vendor\Aws\Token\SsoToken($tokenData['accessToken'], \strtotime($tokenData['expiresAt']), isset($tokenData['refreshToken']) ? $tokenData['refreshToken'] : null, isset($tokenData['clientId']) ? $tokenData['clientId'] : null, isset($tokenData['clientSecret']) ? $tokenData['clientSecret'] : null, isset($tokenData['registrationExpiresAt']) ? $tokenData['registrationExpiresAt'] : null, isset($tokenData['region']) ? $tokenData['region'] : null, isset($tokenData['startUrl']) ? $tokenData['startUrl'] : null);
+    }
 }

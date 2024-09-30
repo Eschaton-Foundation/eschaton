@@ -479,7 +479,7 @@ class Logs {
 			'ok'                                              => esc_html__( 'OK', 'wp-mail-smtp-pro' ),
 			'icon'                                            => esc_html__( 'Icon', 'wp-mail-smtp-pro' ),
 			'delete_all_email_logs_confirmation_text'         => esc_html__( 'Are you sure you want to permanently delete all email logs?', 'wp-mail-smtp-pro' ),
-			'recheck_all_email_logs_status_confirmation_text' => esc_html__( 'Are you sure you want to re-check the status of all pending email logs?', 'wp-mail-smtp-pro' ),
+			'recheck_all_email_logs_status_confirmation_text' => esc_html__( 'Are you sure you want to re-check the statuses of all pending email logs?', 'wp-mail-smtp-pro' ),
 			'heads_up_title'                                  => esc_html__( 'Heads up!', 'wp-mail-smtp-pro' ),
 			'yes_text'                                        => esc_html__( 'Yes', 'wp-mail-smtp-pro' ),
 			'cancel_text'                                     => esc_html__( 'Cancel', 'wp-mail-smtp-pro' ),

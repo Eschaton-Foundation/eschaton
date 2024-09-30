@@ -79,7 +79,7 @@ class Common {
 	public function save_before( $parent_email_id = 0 ) {
 
 		$mailer_slug = wp_mail_smtp()->get_connections_manager()->get_mail_connection()->get_mailer_slug();
-		$headers     = explode( $this->mailcatcher->get_line_ending(), $this->mailcatcher->createHeader() );
+		$headers     = $this->unfold_headers( $this->mailcatcher->createHeader() );
 		$attachments = count( $this->mailcatcher->getAttachments() );
 		$people      = $this->get_people();
 		$email_id    = 0;
@@ -124,7 +124,7 @@ class Common {
 	 */
 	public function save( $email_id = 0 ) {
 
-		$headers     = explode( $this->mailcatcher->get_line_ending(), $this->mailcatcher->createHeader() );
+		$headers     = $this->unfold_headers( $this->mailcatcher->createHeader() );
 		$attachments = count( $this->mailcatcher->getAttachments() );
 		$people      = $this->get_people();
 
@@ -242,7 +242,7 @@ class Common {
 
 		$message_id = '';
 
-		$custom_id_mailers = [ 'sendlayer', 'smtpcom', 'postmark', 'sparkpost', 'sendgrid' ];
+		$custom_id_mailers = [ 'sendlayer', 'smtpcom', 'postmark', 'sparkpost', 'sendgrid', 'smtp2go' ];
 
 		if ( in_array( $this->mailer->get_mailer_name(), $custom_id_mailers, true ) ) {
 			foreach ( $this->mailcatcher->getCustomHeaders() as $header ) {
@@ -258,5 +258,26 @@ class Common {
 		}
 
 		return $message_id;
+	}
+
+	/**
+	 * Unfold long email headers.
+	 *
+	 * @see   Section 2.2.3 of https://www.rfc-editor.org/rfc/rfc2822.txt
+	 *
+	 * @since 4.1.0
+	 *
+	 * @param string $headers Generated email headers.
+	 *
+	 * @return false|string[]
+	 */
+	private function unfold_headers( $headers ) {
+
+		$line_ending    = $this->mailcatcher->get_line_ending();
+		$wsp_characters = '[ \t]';
+		$headers        = preg_replace( "/{$line_ending}{$wsp_characters}/", '', $headers );
+		$headers        = explode( $line_ending, $headers );
+
+		return $headers;
 	}
 }

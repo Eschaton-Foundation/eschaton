@@ -9,6 +9,7 @@ use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Alerts\AbstractOptions;
 use WPMailSMTP\Pro\Alerts\Loader;
+use WPMailSMTP\Pro\Alerts\Loader as AlertsLoader;
 use WPMailSMTP\Pro\Alerts\Providers\Email\Handler as EmailAlertsHandler;
 use WPMailSMTP\Pro\Alerts\Providers\Email\Options as EmailAlertsOptions;
 use WPMailSMTP\Pro\Emails\Logs\Admin\PageAbstract;
@@ -154,7 +155,8 @@ class SettingsTab extends AlertsTab {
 			];
 		} elseif (
 			$key === 'connections' &&
-			in_array( $group, [ 'alert_slack_webhook', 'alert_twilio_sms', 'alert_custom_webhook' ], true )
+			substr( $group, 0, 6 ) === 'alert_' &&
+			in_array( str_replace( 'alert_', '', $group ), array_keys( ( new AlertsLoader() )->get_providers() ), true )
 		) {
 			$value = [];
 		}

@@ -456,6 +456,7 @@ class Webhooks {
 	 *
 	 * @since 3.3.0
 	 * @since 3.4.0 Added SendLayer.
+	 * @since 4.1.0 Added SMTP2GO.
 	 *
 	 * @param string $mailer_name Mailer name/slug.
 	 *
@@ -472,6 +473,7 @@ class Webhooks {
 			'sendinblue' => Providers\Sendinblue\Provider::class,
 			'postmark'   => Providers\Postmark\Provider::class,
 			'sparkpost'  => Providers\SparkPost\Provider::class,
+			'smtp2go'    => Providers\SMTP2GO\Provider::class,
 		];
 
 		if ( isset( $providers[ $mailer_name ] ) ) {
