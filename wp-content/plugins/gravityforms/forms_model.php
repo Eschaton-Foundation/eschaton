@@ -5788,14 +5788,12 @@ class GFFormsModel {
 
 	public static function drop_tables() {
 		global $wpdb;
-		remove_filter( 'query', array( 'GFForms', 'filter_query' ) );
 		foreach ( GF_Forms_Model_Legacy::get_legacy_tables() as $table ) {
 			$wpdb->query( "DROP TABLE IF EXISTS $table" );
 		}
 		foreach ( self::get_tables() as $table ) {
 			$wpdb->query( "DROP TABLE IF EXISTS $table" );
 		}
-		add_filter( 'query', array( 'GFForms', 'filter_query' ) );
 	}
 
 	/**
@@ -5824,9 +5822,6 @@ class GFFormsModel {
 		$legacy_tables = GF_Forms_Model_Legacy::get_legacy_tables();
 
 		$drop_tables = array_merge( $drop_tables, $legacy_tables );
-
-		// Prevent the legacy table query notice when they are dropped by wp_uninitialize_site().
-		remove_filter( 'query', array( 'GFForms', 'filter_query' ) );
 
 		return $drop_tables;
 	}
@@ -6284,7 +6279,7 @@ class GFFormsModel {
 
 		$new_key      = trim( $new_key );
 		$new_key_md5  = md5( $new_key );
-		$previous_key = get_option( 'rg_gforms_key' );
+		$previous_key = get_option( GFForms::LICENSE_KEY_OPT );
 
 		/**
 		 * @var License\GF_License_API_Connector $license_connector
@@ -6296,15 +6291,7 @@ class GFFormsModel {
 		delete_option( 'gform_version_info' );
 
 		if ( empty( $new_key ) ) {
-
-			if ( is_multisite() && is_main_site() ) {
-				$sites = get_sites();
-				foreach ( $sites as $site ) {
-					delete_blog_option( $site->blog_id, 'rg_gforms_key' );
-				}
-			}
-
-			delete_option( 'rg_gforms_key' );
+			self::update_license_key( '' );
 
 			// Unlink the site with the license key on Gravity API.
 			$license_connector->update_site_registration( '' );
@@ -7823,11 +7810,11 @@ class GFFormsModel {
 			$form['scheduleForm']           = (bool) $form['scheduleForm'];
 			$form['scheduleStart']          = $form['scheduleForm'] ? wp_strip_all_tags( $form['scheduleStart'] ) : '';
 			$form['scheduleStartHour']      = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleStartHour'], 1, 12 ) : '';
-			$form['scheduleStartMinute']    = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleStartMinute'], 1, 60 ) : '';
+			$form['scheduleStartMinute']    = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleStartMinute'], 0, 59 ) : '';
 			$form['scheduleStartAmpm']      = $form['scheduleForm'] ? GFCommon::whitelist( $form['scheduleStartAmpm'], array( 'am', 'pm' ) ) : '';
 			$form['scheduleEnd']            = $form['scheduleForm'] ? wp_strip_all_tags( $form['scheduleEnd'] ) : '';
 			$form['scheduleEndHour']        = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleEndHour'], 1, 12 ) : '';
-			$form['scheduleEndMinute']      = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleEndMinute'], 1, 60 ) : '';
+			$form['scheduleEndMinute']      = $form['scheduleForm'] ? GFCommon::int_range( $form['scheduleEndMinute'], 0, 59 ) : '';
 			$form['scheduleEndAmpm']        = $form['scheduleForm'] ? GFCommon::whitelist( $form['scheduleEndAmpm'], array( 'am', 'pm' ) ) : '';
 			$form['schedulePendingMessage'] = $form['scheduleForm'] ? self::maybe_wp_kses( $form['schedulePendingMessage'] ) : '';
 			$form['scheduleMessage']        = $form['scheduleForm'] ? self::maybe_wp_kses( $form['scheduleMessage'] ) : '';
@@ -8238,21 +8225,44 @@ class GFFormsModel {
 	 * Updates the license key, If multisite, it updates the license key for all sites in the network.
 	 *
 	 * @since 2.7
+	 * @since 2.8.17 Updated to also store the key as a network option.
 	 *
-	 * @param string $license The license key.
+	 * @param string $license The license key MD5.
 	 *
 	 * @return void
 	 */
 	public static function update_license_key( $license ) {
-		if ( is_multisite() && is_main_site() ) {
-			$sites = get_sites();
-			foreach ( $sites as $site ) {
-				update_blog_option( $site->blog_id, 'rg_gforms_key', $license );
-				update_blog_option( $site->blog_id, 'gform_pending_installation', false );
+		if ( is_main_site() && GFCommon::is_network_active() ) {
+			if ( $license ) {
+				update_network_option( null, GFForms::LICENSE_KEY_OPT, $license );
+			} else {
+				delete_network_option( null, GFForms::LICENSE_KEY_OPT );
+			}
+
+			$ids = get_sites( array(
+				'fields'       => 'ids',
+				'number'       => 0,
+				'site__not_in' => array( get_current_blog_id() ),
+			) );
+
+			foreach ( $ids as $id ) {
+				switch_to_blog( $id );
+				if ( $license ) {
+					update_option( GFForms::LICENSE_KEY_OPT, $license );
+					delete_option( 'gform_pending_installation' );
+					delete_option( 'rg_gforms_message' );
+				} else {
+					delete_option( GFForms::LICENSE_KEY_OPT );
+				}
+				restore_current_blog();
 			}
 		}
 
-		update_option( 'rg_gforms_key', $license );
+		if ( $license ) {
+			update_option( GFForms::LICENSE_KEY_OPT, $license );
+		} else {
+			delete_option( GFForms::LICENSE_KEY_OPT );
+		}
 	}
 
 }
