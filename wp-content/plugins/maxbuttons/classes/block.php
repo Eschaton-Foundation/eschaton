@@ -266,7 +266,6 @@ abstract class maxBlock
 		// get cssparts, can be comma-seperated value
 		$csspart = (isset($field_data["csspart"])) ? explode(",",$field_data["csspart"]) : array('maxbutton');
 		$csspseudo = (isset($field_data["csspseudo"])) ? explode(",", $field_data["csspseudo"]) : 'normal';
-
 		$is_responsive = ($screenObj->is_responsive() ) ? true : false;
 		$screen_id = $screenObj->id;
 
@@ -356,6 +355,15 @@ abstract class maxBlock
 	public function parse_js($js, $mode = 'normal')
 	{
 		return $js;
+	}
+
+	protected function validate_not_empty($value, $field_id, $field_data, $screenObj)
+	{
+		 if ($value == '' || is_null($value) || empty($value))
+		 {
+			 	return false;
+	 	 }
+		 return true;
 	}
 
 

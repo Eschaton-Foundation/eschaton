@@ -1,6 +1,11 @@
 <?php
+// prevent direct access, but for conversion might be uncommented temporarily.
+defined('ABSPATH') or die('No direct access permitted');
+exit();
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+
 
 $dir = '.';
 $icon_json = file_get_contents($dir . '/icons.json');

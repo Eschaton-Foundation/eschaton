@@ -2,9 +2,9 @@
 Contributors: maxfoundry, basszje, arcware, johnbhartley
 Tags: wordpress button plugin, share button, wordpress buttons, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
-Tested up to: 6.5
+Tested up to: 6.6
 Requires PHP: 7.0
-Stable tag: 9.7.8
+Stable tag: 9.8.0
 WordPress button plugin so powerful and easy to use anyone can create beautiful buttons, share buttons and social icons.
 
 == Description ==
@@ -276,12 +276,15 @@ Upgrading to the PRO version is quite simple. Obtain a license key via our [site
 
 == Changelog ==
 
+= 9.8.0 =
+
+* Fix - Additional settings in sidebar not fully show instead of hiding in certain cases.
+* Fix - Protected several files against direct inclusion
 
 = 9.7.8 =
 
 * Fix - XSS issue with rel tags.  Thanks for reporting Dmitrii Ignatyev of Cleantalk
 * Fix - Strict JS warning in font loader.
-
 
 = 9.7.7 =
 

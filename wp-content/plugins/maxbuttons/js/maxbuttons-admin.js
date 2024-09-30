@@ -840,14 +840,27 @@ maxAdmin.prototype.toggleSidebar = function(e)
 {
   var target = e.target;
   var $sidebar = $(target).parents('.block_sidebar');
+	var $tab = $sidebar.parents('.mb_tab');
+	var is_opening;
 
   if ($sidebar.hasClass('active'))
   {
     $sidebar.removeClass('active');
+		is_opening = false;
   }
   else {
-    $sidebar.addClass('active');
+		 is_opening = true;
+    	$sidebar.addClass('active');
   }
+
+	// The Transition timeout is 400ms, so after 500ms poll the real height and adapt the sidebar window.  This is needed when i.e. when responsive screen main options have less than the sidebar (basic pro)
+	window.setTimeout(function() {
+		  if (is_opening)
+				$tab.height($sidebar.prop('scrollHeight'));
+			else
+				$tab.height('auto');
+	}, 500);
+	var element = document.querySelector('.block_sidebar.active');
 
 }
 

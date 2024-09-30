@@ -199,12 +199,6 @@ class maxCSSParser
 		return false;
 	}
 
-	// Returns the CSS selector for the responsive screen.  Used for custom CSS.
-	public function getResponsiveScreenSelector($screen)
-	{
-		// $deef = $screen->;
-			$def = $this->renderResponsiveDefinition();
-	}
 
 	/** Element is the current element that being parsed. El_add is the parent element that should be put before the subpart
 	* @param $element CSS class Definition
@@ -474,7 +468,7 @@ class maxCSSParser
 
 	protected function doMixins($values)
 	{
-		$mixins = array("gradient", "box-shadow", "text-shadow", "keyframes");
+		$mixins = array("gradient", "box-shadow", "text-shadow", "keyframes", "transition");
 
 		foreach($mixins as $mixin)
 		{
@@ -504,6 +498,9 @@ class maxCSSParser
 					break;
 					case 'keyframes':
 						$values = $this->mixin_keyframes($mixin_array, $values);
+					break;
+					case 'transition' :
+						 $values = $this->mixin_transition($mixin_array, $values);
 					break;
 					default:
 						// Do Nothing, just for compat.
@@ -655,6 +652,13 @@ class maxCSSParser
 		$values = array_diff_key($values, $results);
 
 		return $values;
+	}
+
+// @Todo check if this would be better alternative for button hover, or remove mixin
+	protected function mixin_transition($results, $values)
+	{
+
+			return $values;
 	}
 
 	private function add_include($values, $include)

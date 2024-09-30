@@ -69,7 +69,6 @@ class maxButton
 			$block = new $class();
 			maxBlocks::add($block);
 			$this->blocks[] = $block;
-
 		}
 
 		$this->clear(); // init
@@ -821,6 +820,7 @@ class maxButton
 	*/
 	public function shortcode($button_atts)
 	{
+		
 		$atts = shortcode_atts(array(
 				'id' => null,
 				'name' => null,
@@ -835,7 +835,6 @@ class maxButton
 				'is_download' => null,
 
 			), $button_atts, 'maxbutton');
-
 		$button_id = $atts['id'];
 		$button_name = $atts['name'];
 
