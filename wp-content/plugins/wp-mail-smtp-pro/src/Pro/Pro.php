@@ -199,9 +199,9 @@ class Pro {
 			'wp_mail_smtp_options_set',
 			function ( $options ) {
 				foreach ( array_keys( ( new AlertsLoader() )->get_providers() ) as $alert ) {
-					if ( isset( $options[ "alert_$alert" ]['connections'] ) ) {
-						$options[ "alert_$alert" ]['connections'] = array_unique(
-							$options[ "alert_$alert" ]['connections'],
+					if ( isset( $options["alert_$alert"]['connections'] ) ) {
+						$options["alert_$alert"]['connections'] = array_unique(
+							$options["alert_$alert"]['connections'],
 							SORT_REGULAR
 						);
 					}
@@ -689,6 +689,8 @@ class Pro {
 				\WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\SparkPost\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\SMTP2GO\VerifySentStatusTask::class,
+				\WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask::class,
+				\WPMailSMTP\Pro\Tasks\Logs\ElasticEmail\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ExportCleanupTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ResendTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\BulkVerifySentStatusTask::class,
@@ -797,6 +799,7 @@ class Pro {
 				break;
 
 			case 'google_one_click_setup_unsuccessful_oauth':
+			case 'outlook_one_click_setup_unsuccessful_oauth':
 				WP::add_admin_notice(
 					esc_html__( 'There was an error while processing the authentication request.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
@@ -822,6 +825,13 @@ class Pro {
 			case 'google_one_click_setup_site_linked':
 				WP::add_admin_notice(
 					esc_html__( 'You have successfully connected your site with your Gmail account. This site will now send emails via your Gmail account.', 'wp-mail-smtp-pro' ),
+					WP::ADMIN_NOTICE_SUCCESS
+				);
+				break;
+
+			case 'outlook_one_click_setup_site_linked':
+				WP::add_admin_notice(
+					esc_html__( 'You have successfully connected your site with your Outlook account. This site will now send emails via your Outlook account.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_SUCCESS
 				);
 				break;
@@ -1171,7 +1181,7 @@ class Pro {
 
 		switch ( $mailer ) {
 			case 'outlook':
-				$auth = new \WPMailSMTP\Pro\Providers\Outlook\Auth();
+				$auth = wp_mail_smtp()->get_providers()->get_auth( 'outlook' );
 				break;
 
 			case 'zoho':

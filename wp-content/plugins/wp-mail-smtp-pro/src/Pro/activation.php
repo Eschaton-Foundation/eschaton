@@ -62,7 +62,10 @@ add_filter(
 		return array_merge(
 			$defaults,
 			[
-				'gmail' => [
+				'gmail'   => [
+					'one_click_setup_enabled' => true,
+				],
+				'outlook' => [
 					'one_click_setup_enabled' => true,
 				],
 			]

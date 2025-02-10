@@ -8,6 +8,7 @@ use WPMailSMTP\Vendor\Aws\Auth\Exception\UnresolvedAuthSchemeException;
 use WPMailSMTP\Vendor\Aws\CommandInterface;
 use Closure;
 use WPMailSMTP\Vendor\GuzzleHttp\Promise\Promise;
+use function WPMailSMTP\Vendor\JmesPath\search;
 /**
  * Handles endpoint rule evaluation and endpoint resolution.
  *
@@ -53,7 +54,7 @@ class EndpointV2Middleware
      * @param Service $api
      * @param array $args
      */
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2 $endpointProvider, \WPMailSMTP\Vendor\Aws\Api\Service $api, array $args, callable $credentialProvider = null)
+    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2 $endpointProvider, \WPMailSMTP\Vendor\Aws\Api\Service $api, array $args, ?callable $credentialProvider = null)
     {
         $this->nextHandler = $nextHandler;
         $this->endpointProvider = $endpointProvider;
@@ -96,7 +97,8 @@ class EndpointV2Middleware
         $endpointCommandArgs = $this->filterEndpointCommandArgs($rulesetParams, $commandArgs);
         $staticContextParams = $this->bindStaticContextParams($operation->getStaticContextParams());
         $contextParams = $this->bindContextParams($commandArgs, $operation->getContextParams());
-        return \array_merge($this->clientArgs, $contextParams, $staticContextParams, $endpointCommandArgs);
+        $operationContextParams = $this->bindOperationContextParams($commandArgs, $operation->getOperationContextParams());
+        return \array_merge($this->clientArgs, $operationContextParams, $contextParams, $staticContextParams, $endpointCommandArgs);
     }
     /**
      * Compares Ruleset parameters against Command arguments
@@ -158,6 +160,26 @@ class EndpointV2Middleware
         foreach ($contextParams as $name => $spec) {
             if (isset($commandArgs[$spec['shape']])) {
                 $scopedParams[$name] = $commandArgs[$spec['shape']];
+            }
+        }
+        return $scopedParams;
+    }
+    /**
+     * Binds context params to their corresponding values found in
+     * command arguments.
+     *
+     * @param array $commandArgs
+     * @param array $contextParams
+     *
+     * @return array
+     */
+    private function bindOperationContextParams(array $commandArgs, array $operationContextParams) : array
+    {
+        $scopedParams = [];
+        foreach ($operationContextParams as $name => $spec) {
+            $scopedValue = \WPMailSMTP\Vendor\JmesPath\search($spec['path'], $commandArgs);
+            if ($scopedValue) {
+                $scopedParams[$name] = $scopedValue;
             }
         }
         return $scopedParams;

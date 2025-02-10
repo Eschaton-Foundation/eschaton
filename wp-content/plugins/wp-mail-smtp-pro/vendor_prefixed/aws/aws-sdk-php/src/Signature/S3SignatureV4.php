@@ -44,7 +44,7 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
      * Instantiates a separate sigv4a signing config.  All services except S3
      * use double encoding.  All services except S3 require path normalization.
      */
-    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
+    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, ?\WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
     {
         $this->verifyCRTLoaded();
         $credentials_provider = $this->createCRTStaticCredentialsProvider($credentials);

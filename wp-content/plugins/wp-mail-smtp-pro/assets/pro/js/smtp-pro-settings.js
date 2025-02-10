@@ -89,6 +89,7 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 			app.amazonses.bindActions();
 			app.amazonses.loadIdentities();
 			app.gmail.bindActions();
+			app.outlook.bindActions();
 			app.multisite.bindActions();
 			app.webhooks.bindActions();
 			app.additionalConnections.bindActions();
@@ -932,6 +933,45 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 
 				var $oneClickSetup = $( '.wp-mail-smtp-mailer-option__group--gmail-one_click_setup' ),
 					$customSetup = $( '.wp-mail-smtp-mailer-option__group--gmail-custom' );
+
+				if ( $( this ).is( ':checked' ) ) {
+					$oneClickSetup.show();
+					$customSetup.hide();
+				} else {
+					$oneClickSetup.hide();
+					$customSetup.show();
+				}
+			},
+		},
+
+		/**
+		 * Outlook specific methods.
+		 *
+		 * @since 4.3.0
+		 *
+		 * @type {object}
+		 */
+		outlook: {
+
+			/**
+			 * Process all Outlook actions/events.
+			 *
+			 * @since 4.3.0
+			 */
+			bindActions: function() {
+
+				$( document ).on( 'change', '#wp-mail-smtp-setting-outlook-one_click_setup_enabled', this.processOneClickSetupToggling );
+			},
+
+			/**
+			 * Switch between one-click and custom app setup.
+			 *
+			 * @since 4.3.0
+			 */
+			processOneClickSetupToggling: function() {
+
+				var $oneClickSetup = $( '.wp-mail-smtp-mailer-option__group--outlook-one_click_setup' ),
+					$customSetup = $( '.wp-mail-smtp-mailer-option__group--outlook-custom' );
 
 				if ( $( this ).is( ':checked' ) ) {
 					$oneClickSetup.show();

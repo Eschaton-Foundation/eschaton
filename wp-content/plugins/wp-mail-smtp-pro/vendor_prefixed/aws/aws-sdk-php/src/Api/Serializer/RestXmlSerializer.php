@@ -16,7 +16,7 @@ class RestXmlSerializer extends \WPMailSMTP\Vendor\Aws\Api\Serializer\RestSerial
      * @param string  $endpoint Endpoint to connect to
      * @param XmlBody $xmlBody  Optional XML formatter to use
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, \WPMailSMTP\Vendor\Aws\Api\Serializer\XmlBody $xmlBody = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, ?\WPMailSMTP\Vendor\Aws\Api\Serializer\XmlBody $xmlBody = null)
     {
         parent::__construct($api, $endpoint);
         $this->xmlBody = $xmlBody ?: new \WPMailSMTP\Vendor\Aws\Api\Serializer\XmlBody($api);

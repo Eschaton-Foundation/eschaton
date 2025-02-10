@@ -25,7 +25,7 @@ class AuthSchemeResolver implements \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolv
     private $authSchemeMap;
     private $tokenProvider;
     private $credentialProvider;
-    public function __construct(callable $credentialProvider, callable $tokenProvider = null, array $authSchemeMap = [])
+    public function __construct(callable $credentialProvider, ?callable $tokenProvider = null, array $authSchemeMap = [])
     {
         $this->credentialProvider = $credentialProvider;
         $this->tokenProvider = $tokenProvider;

@@ -9,6 +9,7 @@ use WPMailSMTP\MailCatcher;
 use WPMailSMTP\Providers\MailerAbstract;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\WP;
+use WPMailSMTP\Pro\Providers\Zoho\Auth\Zoho as ZohoAuth;
 
 /**
  * Class Mailer implements Zoho Mail API functionality.
@@ -40,10 +41,11 @@ class Mailer extends MailerAbstract {
 	 * The actual endpoint eg. `messages` will be added when needed.
 	 *
 	 * @since 2.3.0
+	 * @since 4.2.0 Will be defined in the constructor based on the domain.
 	 *
 	 * @var string
 	 */
-	protected $root_url = 'https://mail.zoho.';
+	protected $root_url = '';
 
 	/**
 	 * Mailer constructor.
@@ -66,6 +68,8 @@ class Mailer extends MailerAbstract {
 		$user_details = $this->connection_options->get( $this->mailer, 'user_details' );
 		$account_id   = ! empty( $user_details['account_id'] ) ? $user_details['account_id'] : '';
 
+		// Define the root URL.
+		$this->root_url  = isset( ZohoAuth::$mail_endpoints[ $domain ] ) ? ZohoAuth::$mail_endpoints[ $domain ] : ZohoAuth::$mail_endpoints['com'];
 		$this->root_url .= $domain . '/api/accounts/' . $account_id . '/';
 
 		if ( ! empty( $token['access_token'] ) ) {

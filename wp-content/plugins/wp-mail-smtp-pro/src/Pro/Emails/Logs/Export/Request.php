@@ -273,6 +273,12 @@ class Request {
 			'type'              => $args['export_type'],
 		];
 
+		// Disable batching for XLSX.
+		if ( $args['export_type'] === 'xlsx' ) {
+			$request_data['db_args']['per_page'] = $count;
+			$request_data['total_steps']         = 1;
+		}
+
 		return $request_data;
 	}
 

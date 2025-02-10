@@ -14,12 +14,12 @@ class RestJsonErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\Abstrac
 {
     use JsonParserTrait;
     private $parser;
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api = null, \WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser $parser = null)
+    public function __construct(?\WPMailSMTP\Vendor\Aws\Api\Service $api = null, ?\WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser $parser = null)
     {
         parent::__construct($api);
         $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser();
     }
-    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
+    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, ?\WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
     {
         $data = $this->genericHandler($response);
         // Merge in error data from the JSON body

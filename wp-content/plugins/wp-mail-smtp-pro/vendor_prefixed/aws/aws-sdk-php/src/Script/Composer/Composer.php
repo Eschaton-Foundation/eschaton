@@ -7,15 +7,15 @@ use WPMailSMTP\Vendor\Symfony\Component\Filesystem\Exception\IOException;
 use WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem;
 class Composer
 {
-    public static function removeUnusedServicesInDev(\WPMailSMTP\Vendor\Composer\Script\Event $event, \WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
+    public static function removeUnusedServicesInDev(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
     {
         self::removeUnusedServicesWithConfig($event, $filesystem, \true);
     }
-    public static function removeUnusedServices(\WPMailSMTP\Vendor\Composer\Script\Event $event, \WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
+    public static function removeUnusedServices(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
     {
         self::removeUnusedServicesWithConfig($event, $filesystem, \false);
     }
-    private static function removeUnusedServicesWithConfig(\WPMailSMTP\Vendor\Composer\Script\Event $event, \WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null, $isDev = \false)
+    private static function removeUnusedServicesWithConfig(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null, $isDev = \false)
     {
         if ($isDev && !$event->isDevMode()) {
             return;

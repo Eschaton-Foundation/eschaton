@@ -147,11 +147,9 @@ class MiscTab extends MiscTabLite {
 			return;
 		}
 
-		$message = sprintf( /* translators: %1$s: Singular/Plural string; %2$d - enqueued email count; %3$s: Singular/Plural string. */
-			esc_html__( 'Currently there %1$s %2$d %3$s in the queue.', 'wp-mail-smtp-pro' ),
-			_n( 'is', 'are', $enqueued_emails_count, 'wp-mail-smtp-pro' ),
-			$enqueued_emails_count,
-			_n( 'email', 'emails', $enqueued_emails_count, 'wp-mail-smtp-pro' )
+		$message = sprintf( /* translators: %s: enqueued email count. */
+			_n( 'Currently there is %s email in the queue.', 'Currently there are %s emails in the queue.', $enqueued_emails_count, 'wp-mail-smtp-pro' ),
+			$enqueued_emails_count
 		);
 		?>
 		<div class="notice inline notice-inline wp-mail-smtp-notice notice-info" style="margin: 10px 0 0;">

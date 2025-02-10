@@ -3,8 +3,8 @@
 namespace WPMailSMTP\Pro\Emails\Logs\Webhooks;
 
 use WPMailSMTP\Helpers\Helpers;
-use WPMailSMTP\WP;
 use WPMailSMTP\Options;
+use WPMailSMTP\WP;
 
 /**
  * Class Webhooks. Emails related webhooks.
@@ -474,6 +474,7 @@ class Webhooks {
 			'postmark'   => Providers\Postmark\Provider::class,
 			'sparkpost'  => Providers\SparkPost\Provider::class,
 			'smtp2go'    => Providers\SMTP2GO\Provider::class,
+			'mailjet'    => Providers\Mailjet\Provider::class,
 		];
 
 		if ( isset( $providers[ $mailer_name ] ) ) {

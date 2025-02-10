@@ -19,7 +19,7 @@ class RestJsonSerializer extends \WPMailSMTP\Vendor\Aws\Api\Serializer\RestSeria
      * @param string   $endpoint      Endpoint to connect to
      * @param JsonBody $jsonFormatter Optional JSON formatter to use
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, \WPMailSMTP\Vendor\Aws\Api\Serializer\JsonBody $jsonFormatter = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, ?\WPMailSMTP\Vendor\Aws\Api\Serializer\JsonBody $jsonFormatter = null)
     {
         parent::__construct($api, $endpoint);
         $this->contentType = \WPMailSMTP\Vendor\Aws\Api\Serializer\JsonBody::getContentType($api);

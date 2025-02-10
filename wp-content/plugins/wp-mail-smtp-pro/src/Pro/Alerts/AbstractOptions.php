@@ -74,15 +74,13 @@ abstract class AbstractOptions implements OptionsInterface {
 	 */
 	public function __construct( $params ) {
 
-		if (
-			empty( $params['slug'] ) ||
-			empty( $params['title'] )
-		) {
-			return;
+		if ( ! empty( $params['slug'] ) ) {
+			$this->slug = sanitize_key( $params['slug'] );
 		}
 
-		$this->slug  = sanitize_key( $params['slug'] );
-		$this->title = $params['title'];
+		if ( ! empty( $params['title'] ) ) {
+			$this->title = $params['title'];
+		}
 
 		if ( ! empty( $params['description'] ) ) {
 			$this->description = $params['description'];

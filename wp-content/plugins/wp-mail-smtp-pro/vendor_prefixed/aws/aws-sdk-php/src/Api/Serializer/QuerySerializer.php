@@ -19,7 +19,7 @@ class QuerySerializer
     private $endpoint;
     private $api;
     private $paramBuilder;
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, callable $paramBuilder = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, ?callable $paramBuilder = null)
     {
         $this->api = $api;
         $this->endpoint = $endpoint;

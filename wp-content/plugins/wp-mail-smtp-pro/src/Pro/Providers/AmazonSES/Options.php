@@ -5,6 +5,7 @@ namespace WPMailSMTP\Pro\Providers\AmazonSES;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Debug;
 use WPMailSMTP\Geo;
+use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Providers\OptionsAbstract;
 
 /**
@@ -127,11 +128,19 @@ class Options extends OptionsAbstract {
 					/>
 					<?php $this->display_const_set_message( 'WPMS_AMAZONSES_CLIENT_SECRET' ); ?>
 				<?php else : ?>
-					<input type="password" spellcheck="false"
-						name="wp-mail-smtp[<?php echo esc_attr( $this->get_slug() ); ?>][client_secret]"
-						value="<?php echo esc_attr( $this->connection_options->get( $this->get_slug(), 'client_secret' ) ); ?>"
-						id="wp-mail-smtp-setting-<?php echo esc_attr( $this->get_slug() ); ?>-client_secret"
-					/>
+					<?php
+					$slug  = $this->get_slug();
+					$value = $this->connection_options->get( $this->get_slug(), 'client_secret' );
+
+					UI::hidden_password_field(
+						[
+							'name'       => "wp-mail-smtp[{$slug}][client_secret]",
+							'id'         => "wp-mail-smtp-setting-{$slug}-client_secret",
+							'value'      => $value,
+							'clear_text' => esc_html__( 'Remove Secret Access Key', 'wp-mail-smtp-pro' ),
+						]
+					);
+					?>
 				<?php endif; ?>
 			</div>
 		</div>

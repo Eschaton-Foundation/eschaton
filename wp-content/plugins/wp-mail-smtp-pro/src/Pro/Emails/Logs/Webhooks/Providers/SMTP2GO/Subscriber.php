@@ -36,6 +36,8 @@ class Subscriber extends AbstractSubscriber {
 	 */
 	public function subscribe() {
 
+		$events = [];
+
 		foreach ( self::EVENTS as $event ) {
 			$subscription = $this->get_subscription( $event );
 
@@ -48,17 +50,24 @@ class Subscriber extends AbstractSubscriber {
 				continue;
 			}
 
-			$body = [
-				'events' => [ $event ],
-				'url'    => $this->provider->get_url(),
-			];
+			$events[] = $event;
+		}
 
-			// Create subscription.
-			$response = $this->request( 'add', $body );
+		// No events left to subscribe for.
+		if ( empty( $events ) ) {
+			return true;
+		}
 
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
+		$body = [
+			'events' => $events,
+			'url'    => $this->provider->get_url(),
+		];
+
+		// Create subscription.
+		$response = $this->request( 'add', $body );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
 		}
 
 		return true;

@@ -82,7 +82,7 @@ class Credentials extends \WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity 
         $this->secret = $data['secret'];
         $this->token = $data['token'];
         $this->expires = $data['expires'];
-        $this->accountId = $data['accountId'];
+        $this->accountId = $data['accountId'] ?? null;
     }
     /**
      * Internal-only. Used when IMDS is unreachable

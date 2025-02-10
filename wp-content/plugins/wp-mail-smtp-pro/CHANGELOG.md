@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.3.1] - 2025-01-21
+### Fixed:
+- Email Log and Reports search if subject contains special characters like ampersand.
+- Undefined array key "wp_mail_smtp_reports_widget_pro" warning in the dashboard widget.
+
+## [4.3.0] - 2024-12-10
+### Added:
+- One-click setup for Outlook mailer (the easiest way to set up Outlook mailer).
+- New transactional mailer: Elastic Email integration.
+
+### Changed:
+- The "Tools -> Scheduled Actions" menu is now always visible when WooCommerce or the Action Scheduler plugin is active.
+
+### Fixed:
+- SMTP password and username fields ignored `WPMS_SMTP_AUTH` constant.
+
+## [4.2.0] - 2024-11-05
+### Added:
+- New transactional mailer: Mailjet integration.
+- Discord integration for the Alerts feature.
+- New Zoho region: Canada.
+
+### Changed:
+- Improved security for sensitive data (API keys).
+- Improved performance of Email Logs and Email Reports queries.
+
+### Fixed:
+- Fatal error on the Alerts screen when alert title translation are missing.
+- SMTP2GO mailer special characters handling in from name. 
+- Incomplete CSV and XLSX email log export.
+
 ## [4.1.1] - 2024-08-14
 ### Changed:
 - Delete `wp-mail-smtp` uploads folder on plugin uninstall, if the "Misc > Uninstall" option is enabled.

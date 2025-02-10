@@ -23,7 +23,7 @@ class CompilerRuntime
      * @param Parser|null $parser JMESPath parser to utilize
      * @throws \RuntimeException if the cache directory cannot be created
      */
-    public function __construct($dir = null, \WPMailSMTP\Vendor\JmesPath\Parser $parser = null)
+    public function __construct($dir = null, ?\WPMailSMTP\Vendor\JmesPath\Parser $parser = null)
     {
         $this->parser = $parser ?: new \WPMailSMTP\Vendor\JmesPath\Parser();
         $this->compiler = new \WPMailSMTP\Vendor\JmesPath\TreeCompiler();

@@ -23,7 +23,7 @@ class QueryParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
      *                                      back of result wrappers from the
      *                                      output structure.
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $xmlParser = null, $honorResultWrapper = \true)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, ?\WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $xmlParser = null, $honorResultWrapper = \true)
     {
         parent::__construct($api);
         $this->parser = $xmlParser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser();

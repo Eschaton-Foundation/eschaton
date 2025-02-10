@@ -15,12 +15,12 @@ class XmlErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\AbstractErro
 {
     use PayloadParserTrait;
     protected $parser;
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api = null, \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $parser = null)
+    public function __construct(?\WPMailSMTP\Vendor\Aws\Api\Service $api = null, ?\WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $parser = null)
     {
         parent::__construct($api);
         $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser();
     }
-    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
+    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, ?\WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
     {
         $code = (string) $response->getStatusCode();
         $data = ['type' => $code[0] == '4' ? 'client' : 'server', 'request_id' => null, 'code' => null, 'message' => null, 'parsed' => null];

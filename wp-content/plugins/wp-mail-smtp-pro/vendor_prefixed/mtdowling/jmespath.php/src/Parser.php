@@ -35,7 +35,7 @@ class Parser
     /**
      * @param Lexer|null $lexer Lexer used to tokenize expressions
      */
-    public function __construct(\WPMailSMTP\Vendor\JmesPath\Lexer $lexer = null)
+    public function __construct(?\WPMailSMTP\Vendor\JmesPath\Lexer $lexer = null)
     {
         $this->lexer = $lexer ?: new \WPMailSMTP\Vendor\JmesPath\Lexer();
     }
@@ -255,12 +255,12 @@ class Parser
         $this->next();
         return ['type' => 'key_val_pair', 'value' => $key, 'children' => [$this->expr()]];
     }
-    private function parseWildcardObject(array $left = null)
+    private function parseWildcardObject(?array $left = null)
     {
         $this->next();
         return ['type' => 'projection', 'from' => 'object', 'children' => [$left ?: self::$currentNode, $this->parseProjection(self::$bp[\WPMailSMTP\Vendor\JmesPath\Lexer::T_STAR])]];
     }
-    private function parseWildcardArray(array $left = null)
+    private function parseWildcardArray(?array $left = null)
     {
         static $getRbracket = [\WPMailSMTP\Vendor\JmesPath\Lexer::T_RBRACKET => \true];
         $this->next($getRbracket);
@@ -319,7 +319,7 @@ class Parser
     {
         return !isset($this->tokens[$this->tpos + 1]) ? \WPMailSMTP\Vendor\JmesPath\Lexer::T_EOF : $this->tokens[$this->tpos + 1]['type'];
     }
-    private function next(array $match = null)
+    private function next(?array $match = null)
     {
         if (!isset($this->tokens[$this->tpos + 1])) {
             $this->token = self::$nullToken;

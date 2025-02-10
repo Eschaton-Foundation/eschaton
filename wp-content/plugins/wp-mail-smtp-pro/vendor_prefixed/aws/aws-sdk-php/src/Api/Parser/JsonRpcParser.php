@@ -19,7 +19,7 @@ class JsonRpcParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
      * @param Service    $api    Service description
      * @param JsonParser $parser JSON body builder
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, \WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser $parser = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, ?\WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser $parser = null)
     {
         parent::__construct($api);
         $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser();

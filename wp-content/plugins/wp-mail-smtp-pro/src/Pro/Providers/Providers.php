@@ -10,7 +10,8 @@ use WPMailSMTP\MailCatcherInterface;
 use WPMailSMTP\Pro\Providers\AmazonSES\Auth as SESAuth;
 use WPMailSMTP\Pro\Providers\AmazonSES\Options as SESOptions;
 use WPMailSMTP\Pro\Providers\Gmail\Provider as GmailProvider;
-use WPMailSMTP\Pro\Providers\Outlook\Auth as MSAuth;
+use WPMailSMTP\Pro\Providers\Outlook\Auth as OutlookAuth;
+use WPMailSMTP\Pro\Providers\Outlook\Provider as OutlookProvider;
 use WPMailSMTP\WP;
 
 /**
@@ -46,8 +47,9 @@ class Providers {
 
 		add_action( 'admin_notices', [ $this, 'display_notices' ], 5 );
 
-		// Init Gmail provider.
+		// Init mailers providers.
 		( new GmailProvider() )->hooks();
+		( new OutlookProvider() )->hooks();
 	}
 
 	/**
@@ -104,7 +106,7 @@ class Providers {
 			exit;
 		}
 
-		$auth = new MSAuth( $connection );
+		$auth = new OutlookAuth( $connection );
 
 		$redirect_url         = ( new ConnectionSettings( $connection ) )->get_admin_page_url();
 		$outlook_options      = $connection->get_options()->get_group( 'outlook' );
@@ -142,6 +144,9 @@ class Providers {
 				$url = add_query_arg( 'error', 'microsoft_unsuccessful_oauth', $redirect_url );
 			} else {
 				$url = add_query_arg( 'success', 'microsoft_site_linked', $redirect_url );
+
+				// Switch off one-click setup.
+				$connection->get_options()->set( [ 'outlook' => [ 'one_click_setup_enabled' => false ] ], false, false );
 			}
 		}
 

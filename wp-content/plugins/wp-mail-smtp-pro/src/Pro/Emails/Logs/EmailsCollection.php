@@ -327,30 +327,30 @@ class EmailsCollection implements \Countable, \Iterator {
 
 				case 'headers':
 					$where[] = '(' .
-					           $wpdb->prepare(
-						           'subject LIKE %s',
-						           '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
-					           )
-					           . ' OR ' .
-					           $wpdb->prepare(
-						           'headers LIKE %s',
-						           '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
-					           )
-					           . ')';
+					        $wpdb->prepare(
+						        'subject LIKE %s',
+						        '%' . $wpdb->esc_like( wp_kses( $this->params['search']['term'], [] ) ) . '%'
+					        )
+					        . ' OR ' .
+					        $wpdb->prepare(
+						        'headers LIKE %s',
+						        '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
+					        )
+					        . ')';
 					break;
 
 				case 'content':
 					$where[] = '(' .
-					           $wpdb->prepare(
-						           'content_plain LIKE %s',
-						           '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
-					           )
-					           . ' OR ' .
-					           $wpdb->prepare(
-						           'content_html LIKE %s',
-						           '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
-					           )
-					           . ')';
+					        $wpdb->prepare(
+						        'content_plain LIKE %s',
+						        '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
+					        )
+					        . ' OR ' .
+					        $wpdb->prepare(
+						        'content_html LIKE %s',
+						        '%' . $wpdb->esc_like( $this->params['search']['term'] ) . '%'
+					        )
+					        . ')';
 					break;
 
 				case 'error_text':

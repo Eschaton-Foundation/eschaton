@@ -38,7 +38,7 @@ class AwsException extends \RuntimeException implements \WPMailSMTP\Vendor\Aws\M
      * @param array            $context Exception context
      * @param \Exception       $previous  Previous exception (if any)
      */
-    public function __construct($message, \WPMailSMTP\Vendor\Aws\CommandInterface $command, array $context = [], \Exception $previous = null)
+    public function __construct($message, \WPMailSMTP\Vendor\Aws\CommandInterface $command, array $context = [], ?\Exception $previous = null)
     {
         $this->data = isset($context['body']) ? $context['body'] : [];
         $this->command = $command;

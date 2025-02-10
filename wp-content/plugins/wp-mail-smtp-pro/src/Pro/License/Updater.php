@@ -287,8 +287,9 @@ class Updater {
 		);
 
 		$args = [
-			'headers' => $headers,
+			'headers'    => $headers,
 			'user-agent' => Helpers::get_default_user_agent(),
+			'timeout'    => 30,
 		];
 
 		// Perform the query and retrieve the response.

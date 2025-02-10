@@ -150,7 +150,7 @@ class Options extends AbstractOptions {
 				<div class="wp-mail-smtp-setting-field">
 					<?php
 					printf(
-						'<input name="wp-mail-smtp[alert_%1$s][connections][%2$s][auth_token]" type="text" value="%3$s" id="wp-mail-smtp-setting-alert-%1$s-auth-token-%2$s" spellcheck="false" %4$s %5$s/>',
+						'<input name="wp-mail-smtp[alert_%1$s][connections][%2$s][auth_token]" type="password" value="%3$s" id="wp-mail-smtp-setting-alert-%1$s-auth-token-%2$s" spellcheck="false" %4$s %5$s/>',
 						esc_attr( $slug ),
 						esc_attr( $i ),
 						esc_attr( $auth_token ),

@@ -50,6 +50,10 @@ class Auth extends AuthAbstract {
 
 		$this->options = $this->connection_options->get_group( $this->mailer_slug );
 
+		if ( ! empty( $this->options['one_click_setup_enabled'] ) ) {
+			return;
+		}
+
 		$this->get_client();
 	}
 
@@ -173,6 +177,16 @@ class Auth extends AuthAbstract {
 
 			// Reset Auth code. It's valid for 5 minutes anyway.
 			$this->update_auth_code( '' );
+
+			// Set from email address.
+			$all          = $this->connection_options->get_all();
+			$user_details = $all[ $this->mailer_slug ]['user_details'];
+
+			if ( ! empty( $user_details['email'] ) ) {
+				$all['mail']['from_email'] = $user_details['email'];
+			}
+
+			$this->connection_options->set( $all, false, true );
 
 			Debug::clear();
 		} catch ( IdentityProviderException $e ) {
@@ -386,5 +400,17 @@ class Auth extends AuthAbstract {
 		 * a regular auth route because of Microsoft API limitations.
 		 */
 		return 'wp-mail-smtp-' . parent::get_state();
+	}
+
+	/**
+	 * Get user information associated with the current OAuth connection.
+	 *
+	 * @since 4.3.0
+	 *
+	 * @return array
+	 */
+	public function get_user_info() {
+
+		return $this->connection_options->get( $this->mailer_slug, 'user_details' );
 	}
 }

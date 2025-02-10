@@ -22,7 +22,7 @@ class HashingStream implements \WPMailSMTP\Vendor\Psr\Http\Message\StreamInterfa
      * @param callable        $onComplete Optional function invoked when the
      *                                    hash calculation is completed.
      */
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream, \WPMailSMTP\Vendor\Aws\HashInterface $hash, callable $onComplete = null)
+    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream, \WPMailSMTP\Vendor\Aws\HashInterface $hash, ?callable $onComplete = null)
     {
         $this->stream = $stream;
         $this->hash = $hash;

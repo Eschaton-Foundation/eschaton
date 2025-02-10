@@ -17,13 +17,49 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 class Zoho extends AbstractProvider {
 
 	/**
+	 * Available account endpoints.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @var array
+	 */
+	protected $account_endpoints = [
+		'com'    => 'https://accounts.zoho.',
+		'eu'     => 'https://accounts.zoho.',
+		'in'     => 'https://accounts.zoho.',
+		'com.cn' => 'https://accounts.zoho.',
+		'com.au' => 'https://accounts.zoho.',
+		'jp'     => 'https://accounts.zoho.',
+		'ca'     => 'https://accounts.zohocloud.',
+	];
+
+	/**
+	 * Available Zoho Mail API endpoints.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @var array
+	 */
+	public static $mail_endpoints = [
+		'com'    => 'https://mail.zoho.',
+		'eu'     => 'https://mail.zoho.',
+		'in'     => 'https://mail.zoho.',
+		'com.cn' => 'https://mail.zoho.',
+		'com.au' => 'https://mail.zoho.',
+		'jp'     => 'https://mail.zoho.',
+		'ca'     => 'https://mail.zohocloud.',
+	];
+
+	/**
 	 * The root endpoint of the zoho authentication URL.
 	 *
 	 * The domain extension will be added later since the Zoho Mail API is divided by regions/domains.
 	 *
+	 * @since 4.2.0 Will be defined in the constructor based on the domain.
+	 *
 	 * @var string
 	 */
-	protected $endpoint = 'https://accounts.zoho.';
+	protected $endpoint = '';
 
 	/**
 	 * The access type attribute for the Zoho OAuth2 request.
@@ -37,7 +73,9 @@ class Zoho extends AbstractProvider {
 	/**
 	 * The Zoho API domain for particular Zoho user account.
 	 *
-	 * Currently available option: 'com', 'eu', 'in', 'com.cn', 'com.au'.
+	 * Currently available option: 'com', 'eu', 'in', 'com.cn', 'com.au', 'ca'.
+	 *
+	 * @since 4.2.0 Added the CA (Canada) domain.
 	 *
 	 * @var string
 	 */
@@ -76,6 +114,14 @@ class Zoho extends AbstractProvider {
 				throw new \InvalidArgumentException( $key . ' is missing' );
 			}
 		}
+
+		// Check if the domain is set. Default to 'com' if not set.
+		if ( ! array_key_exists( $options['domain'], $this->account_endpoints ) ) {
+			$options['domain'] = 'com';
+		}
+
+		// Set the endpoint based on the domain.
+		$this->endpoint = $this->account_endpoints[ $options['domain'] ];
 	}
 
 	/**
@@ -112,6 +158,7 @@ class Zoho extends AbstractProvider {
 	 * Returns the URL for requesting the resource owner's details.
 	 *
 	 * @since 2.3.0
+	 * @since 4.2.0 Added the region specific mail endpoint.
 	 *
 	 * @param AccessToken $token The access token.
 	 *
@@ -119,7 +166,15 @@ class Zoho extends AbstractProvider {
 	 */
 	public function getResourceOwnerDetailsUrl( AccessToken $token ) {
 
-		return 'https://mail.zoho.' . $this->domain . '/api/accounts';
+		// Use region specific mail API endpoint.
+		$api_root_url = self::$mail_endpoints[ $this->domain ];
+
+		// Set up the URL.
+		return sprintf(
+			'%s%s/api/accounts',
+			untrailingslashit( $api_root_url ), // Example: 'https://mail.zoho.'.
+			untrailingslashit( $this->domain )  // Example: 'eu'.
+		);
 	}
 
 	/**

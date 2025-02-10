@@ -28,7 +28,7 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
      * @param string|null $configFilePath Name of the config file to sso profile from
      * @param SSOOIDCClient|null $ssoOidcClient The sso client for generating a new token
      */
-    public function __construct($profileName, $configFilePath = null, \WPMailSMTP\Vendor\Aws\SSOOIDC\SSOOIDCClient $ssoOidcClient = null)
+    public function __construct($profileName, $configFilePath = null, ?\WPMailSMTP\Vendor\Aws\SSOOIDC\SSOOIDCClient $ssoOidcClient = null)
     {
         $this->profileName = $this->resolveProfileName($profileName);
         $this->configFilePath = $this->resolveConfigFile($configFilePath);

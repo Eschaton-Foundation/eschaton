@@ -21,7 +21,7 @@ class Migration extends MigrationAbstract {
 	 *
 	 * @since 1.5.0
 	 */
-	const DB_VERSION = 11;
+	const DB_VERSION = 12;
 
 	/**
 	 * Option key where we save the current DB version for Logs functionality.
@@ -363,6 +363,37 @@ class Migration extends MigrationAbstract {
 
 		// Save the current version to DB.
 		$this->update_db_ver( 11 );
+	}
+
+	/**
+	 * Add indices on message_id, date_sent and and date_sent + status columns.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return void
+	 */
+	protected function migrate_to_12() {
+
+		$this->maybe_required_older_migrations( 12 );
+
+		global $wpdb;
+
+		$table = Logs::get_table_name();
+
+		// Add an index on message_id,
+		// and an index on date_sent,
+		// and an index on date_sent + status.
+		$sql = "ALTER TABLE `$table`
+			ADD INDEX `message_id` (`message_id`) USING BTREE,
+			ADD INDEX `date_sent` (`date_sent`) USING BTREE,
+			ADD INDEX `date_sent_status` (`date_sent`, `status`) USING BTREE;";
+
+		$result = $wpdb->query( $sql ); // phpcs:ignore
+
+		// Save the current version to DB.
+		if ( $result !== false ) {
+			$this->update_db_ver( 12 );
+		}
 	}
 
 	/**

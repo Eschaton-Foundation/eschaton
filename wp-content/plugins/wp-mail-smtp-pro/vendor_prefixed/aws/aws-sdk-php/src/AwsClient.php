@@ -13,6 +13,7 @@ use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2Middleware;
 use WPMailSMTP\Vendor\Aws\Exception\AwsException;
 use WPMailSMTP\Vendor\Aws\Signature\SignatureProvider;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri;
+use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
  * Default AWS client implementation
  */
@@ -256,6 +257,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         $this->addAuthSelectionMiddleware();
         if (!\is_null($this->api->getMetadata('awsQueryCompatible'))) {
             $this->addQueryCompatibleInputMiddleware($this->api);
+            $this->addQueryModeHeader();
         }
         if (isset($args['with_resolved'])) {
             $args['with_resolved']($config);
@@ -425,6 +427,13 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         $list = $this->getHandlerList();
         $list->appendValidate(\WPMailSMTP\Vendor\Aws\QueryCompatibleInputMiddleware::wrap($api), 'query-compatible-input');
     }
+    private function addQueryModeHeader() : void
+    {
+        $list = $this->getHandlerList();
+        $list->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::mapRequest(function (\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $r) {
+            return $r->withHeader('x-amzn-query-mode', \true);
+        }), 'x-amzn-query-mode-header');
+    }
     private function addInvocationId()
     {
         // Add invocation id to each request
@@ -547,6 +556,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     }
     public static function emitDeprecationWarning()
     {
+        \trigger_error("This method is deprecated. It will be removed in an upcoming release.", \E_USER_DEPRECATED);
         $phpVersion = \PHP_VERSION_ID;
         if ($phpVersion < 70205) {
             $phpVersionString = \phpversion();

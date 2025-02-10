@@ -42,7 +42,7 @@ class PresignUrlMiddleware
             return $f;
         };
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null)
+    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null)
     {
         if (\in_array($cmd->getName(), $this->commandPool) && !isset($cmd['__skip' . $cmd->getName()])) {
             $cmd['DestinationRegion'] = $this->client->getRegion();

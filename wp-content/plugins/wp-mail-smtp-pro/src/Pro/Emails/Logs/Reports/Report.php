@@ -35,6 +35,15 @@ class Report {
 	private $raw_params;
 
 	/**
+	 * Base stats.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @var array
+	 */
+	private $stats = null;
+
+	/**
 	 * Stats totals count.
 	 *
 	 * @since 3.0.0
@@ -244,16 +253,16 @@ class Report {
 	}
 
 	/**
-	 * Get the totals count.
+	 * Get the base stats.
 	 *
-	 * @since 3.0.0
+	 * @since 4.2.0
 	 *
-	 * @return array|null
+	 * @return array
 	 */
-	public function get_stats_totals() {
+	private function get_stats() {
 
-		if ( ! is_null( $this->stats_totals ) ) {
-			return $this->stats_totals;
+		if ( ! is_null( $this->stats ) ) {
+			return $this->stats;
 		}
 
 		global $wpdb;
@@ -264,11 +273,63 @@ class Report {
 		$where      = $this->build_where();
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$this->stats_totals = $wpdb->get_row(
-			"SELECT {$select} FROM {$logs_table} as logs {$join} WHERE {$where}",
+		$this->stats = $wpdb->get_results(
+			"SELECT {$select} FROM {$logs_table} as logs {$join} WHERE {$where} GROUP BY day, subject",
 			\ARRAY_A
 		);
+
+		// Return empty array on database errors.
+		$this->stats = $this->stats === null ? [] : $this->stats;
+
 		// phpcs:enable
+
+		return $this->stats;
+	}
+
+	/**
+	 * Get the list of stats fields.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @return array|null
+	 */
+	private function get_stat_fields() {
+
+		$fields = [
+			'total',
+			'unsent',
+			'sent',
+			'delivered',
+		];
+
+		if ( wp_mail_smtp()->get_pro()->get_logs()->is_enabled_tracking() ) {
+			$fields[] = 'open_count';
+			$fields[] = 'click_count';
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Get the totals count.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @return array
+	 */
+	public function get_stats_totals() {
+
+		if ( ! is_null( $this->stats_totals ) ) {
+			return $this->stats_totals;
+		}
+
+		$stats = [];
+
+		foreach ( $this->get_stat_fields() as $key ) {
+			$stats[ $key ] = array_sum( array_column( $this->get_stats(), $key ) );
+		}
+
+		$this->stats_totals = $stats;
 
 		return $this->stats_totals;
 	}
@@ -278,7 +339,7 @@ class Report {
 	 *
 	 * @since 3.0.0
 	 *
-	 * @return array|null
+	 * @return array
 	 */
 	public function get_stats_by_date() {
 
@@ -286,19 +347,30 @@ class Report {
 			return $this->stats_by_date;
 		}
 
-		global $wpdb;
+		$date_groups = [];
 
-		$logs_table = Logs::get_table_name();
-		$select     = 'CAST(logs.date_sent AS DATE) as day, ' . $this->build_select();
-		$join       = $this->build_join();
-		$where      = $this->build_where();
+		foreach ( $this->get_stats() as $stat ) {
+			$date_groups[ $stat['day'] ][] = array_intersect_key(
+				$stat,
+				array_flip( $this->get_stat_fields() )
+			);
+		}
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$this->stats_by_date = $wpdb->get_results(
-			"SELECT {$select} FROM {$logs_table} as logs {$join} WHERE {$where} GROUP BY day",
-			\ARRAY_A
-		);
-		// phpcs:enable
+		$stats = [];
+
+		foreach ( $date_groups as $date => $group ) {
+			$stat = [
+				'day' => $date,
+			];
+
+			foreach ( $this->get_stat_fields() as $key ) {
+				$stat[ $key ] = array_sum( array_column( $group, $key ) );
+			}
+
+			$stats[] = $stat;
+		}
+
+		$this->stats_by_date = $stats;
 
 		return $this->stats_by_date;
 	}
@@ -308,7 +380,7 @@ class Report {
 	 *
 	 * @since 3.0.0
 	 *
-	 * @return array|null
+	 * @return array
 	 */
 	public function get_stats_by_subject() {
 
@@ -316,20 +388,36 @@ class Report {
 			return $this->stats_by_subject;
 		}
 
-		global $wpdb;
+		$subject_groups = [];
 
-		$logs_table = Logs::get_table_name();
-		$select     = 'logs.subject as subject, ' . $this->build_select();
-		$join       = $this->build_join();
-		$where      = $this->build_where();
-		$order      = $this->build_order();
+		foreach ( $this->get_stats() as $stat ) {
+			$subject_groups[ $stat['subject'] ][] = array_intersect_key(
+				$stat,
+				array_flip( $this->get_stat_fields() )
+			);
+		}
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$this->stats_by_subject = $wpdb->get_results(
-			"SELECT {$select} FROM {$logs_table} as logs {$join} WHERE {$where} GROUP BY subject {$order}",
-			\ARRAY_A
+		$stats = [];
+
+		foreach ( $subject_groups as $subject => $group ) {
+			$stat = [
+				'subject' => $subject,
+			];
+
+			foreach ( $this->get_stat_fields() as $key ) {
+				$stat[ $key ] = array_sum( array_column( $group, $key ) );
+			}
+
+			$stats[] = $stat;
+		}
+
+		array_multisort(
+			array_column( $stats, 'total' ),
+			SORT_DESC,
+			$stats
 		);
-		// phpcs:enable
+
+		$this->stats_by_subject = $stats;
 
 		return $this->stats_by_subject;
 	}
@@ -589,7 +677,9 @@ class Report {
 		global $wpdb;
 
 		$select = $wpdb->prepare(
-			'COUNT(DISTINCT logs.id) as total,
+			'CAST(logs.date_sent AS DATE) as day, 
+			logs.subject as subject,
+			COUNT(DISTINCT logs.id) as total,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as unsent,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as sent,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as delivered',
@@ -647,7 +737,7 @@ class Report {
 		if ( ! empty( $this->params['search'] ) ) {
 			$where[] = $wpdb->prepare(
 				'subject LIKE %s',
-				'%' . $wpdb->esc_like( $this->params['search'] ) . '%'
+				'%' . $wpdb->esc_like( wp_kses( $this->params['search'], [] ) ) . '%'
 			);
 		}
 

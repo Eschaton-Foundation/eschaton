@@ -4,7 +4,9 @@ namespace WPMailSMTP\Pro\Emails\Logs\DeliveryVerification;
 
 use Exception;
 use WP_Error;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\ElasticEmail\DeliveryVerifier as ElasticEmailDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailgun\DeliveryVerifier as MailgunDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailjet\DeliveryVerifier as MailjetDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Postmark\DeliveryVerifier as PostmarkDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendinblue\DeliveryVerifier as SendinblueDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendlayer\DeliveryVerifier as SendlayerDeliveryVerifier;
@@ -12,7 +14,9 @@ use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTP2GO\DeliveryVerifier as 
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTPcom\DeliveryVerifier as SMTPcomDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SparkPost\DeliveryVerifier as SparkPostDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\Email;
+use WPMailSMTP\Pro\Tasks\Logs\ElasticEmail\VerifySentStatusTask as ElasticEmailVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask as MailgunVerifySentStatusTask;
+use WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask as MailjetVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask as PostmarkVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendinblue\VerifySentStatusTask as SendinblueVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendlayer\VerifySentStatusTask as SendlayerVerifySentStatusTask;
@@ -36,13 +40,15 @@ class DeliveryVerification {
 	 * @var AbstractDeliveryVerifier[]
 	 */
 	const DELIVERY_VERIFIERS_PER_MAILER = [
-		'mailgun'    => MailgunDeliveryVerifier::class,
-		'postmark'   => PostmarkDeliveryVerifier::class,
-		'sendlayer'  => SendlayerDeliveryVerifier::class,
-		'smtpcom'    => SMTPcomDeliveryVerifier::class,
-		'sparkpost'  => SparkPostDeliveryVerifier::class,
-		'sendinblue' => SendinblueDeliveryVerifier::class,
-		'smtp2go'    => SMTP2GODeliveryVerifier::class,
+		'mailgun'      => MailgunDeliveryVerifier::class,
+		'postmark'     => PostmarkDeliveryVerifier::class,
+		'sendlayer'    => SendlayerDeliveryVerifier::class,
+		'smtpcom'      => SMTPcomDeliveryVerifier::class,
+		'sparkpost'    => SparkPostDeliveryVerifier::class,
+		'sendinblue'   => SendinblueDeliveryVerifier::class,
+		'smtp2go'      => SMTP2GODeliveryVerifier::class,
+		'mailjet'      => MailjetDeliveryVerifier::class,
+		'elasticemail' => ElasticEmailDeliveryVerifier::class,
 	];
 
 	/**
@@ -53,13 +59,15 @@ class DeliveryVerification {
 	 * @var VerifySentStatusTaskAbstract[]
 	 */
 	const VERIFY_TASKS_PER_MAILER = [
-		'mailgun'    => MailgunVerifySentStatusTask::class,
-		'postmark'   => PostmarkVerifySentStatusTask::class,
-		'sendlayer'  => SendlayerVerifySentStatusTask::class,
-		'smtpcom'    => SMTPcomVerifySentStatusTask::class,
-		'sparkpost'  => SparkPostVerifySentStatusTask::class,
-		'sendinblue' => SendinblueVerifySentStatusTask::class,
-		'smtp2go'    => SMTP2GOVerifySentStatusTask::class,
+		'mailgun'      => MailgunVerifySentStatusTask::class,
+		'postmark'     => PostmarkVerifySentStatusTask::class,
+		'sendlayer'    => SendlayerVerifySentStatusTask::class,
+		'smtpcom'      => SMTPcomVerifySentStatusTask::class,
+		'sparkpost'    => SparkPostVerifySentStatusTask::class,
+		'sendinblue'   => SendinblueVerifySentStatusTask::class,
+		'smtp2go'      => SMTP2GOVerifySentStatusTask::class,
+		'mailjet'      => MailjetVerifySentStatusTask::class,
+		'elasticemail' => ElasticEmailVerifySentStatusTask::class,
 	];
 
 	/**

@@ -225,7 +225,12 @@ class Email {
 	public static function get_by_message_id( $message_id ) {
 
 		// Get by message ID.
-		$collection = new EmailsCollection( [ 'message_id' => $message_id ] );
+		$collection = new EmailsCollection(
+			[
+				'message_id' => $message_id,
+				'per_page'   => 1,
+			]
+		);
 		$emails     = $collection->get();
 
 		return $emails->current();

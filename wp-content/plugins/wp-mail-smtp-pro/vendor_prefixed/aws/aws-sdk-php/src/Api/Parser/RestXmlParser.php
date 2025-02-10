@@ -16,7 +16,7 @@ class RestXmlParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractRestParser
      * @param Service   $api    Service description
      * @param XmlParser $parser XML body parser
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $parser = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, ?\WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $parser = null)
     {
         parent::__construct($api);
         $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser();

@@ -4,6 +4,7 @@ namespace WPMailSMTP\Pro\Providers\Outlook;
 
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\ConnectionInterface;
+use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Providers\OptionsAbstract;
 
 /**
@@ -35,7 +36,7 @@ class Options extends OptionsAbstract {
 				'title'       => esc_html__( '365 / Outlook', 'wp-mail-smtp-pro' ),
 				'description' => sprintf(
 					wp_kses( /* translators: %s - URL to Outlook doc. */
-						__( 'Our Microsoft 365 / Outlook.com mailer allows you to send emails from a Microsoft email account on Outlook.com or a Microsoft 365 email address. It\'s free, but you\'ll need to provide a credit card to get started. The setup steps are more technical than other options, so we created a detailed guide to walk you through the process.<br><br>To get started, read our <a href="%s" target="_blank" rel="noopener noreferrer">Microsoft 365 / Outlook documentation</a>.', 'wp-mail-smtp-pro' ),
+						__( 'The Microsoft 365 / Outlook mailer is a great choice if you already use Microsoft\'s email services (Outlook, Office 365, Microsoft 365, or Hotmail). Due to the fairly complex manual Microsoft App configuration, we recommend the One-Click Setup, which will get you up and running in just a few seconds.<br><br>To get started, read our <a href="%s" target="_blank" rel="noopener noreferrer">Microsoft 365 / Outlook documentation</a>.', 'wp-mail-smtp-pro' ),
 						[
 							'br' => [],
 							'a'  => [
@@ -47,14 +48,6 @@ class Options extends OptionsAbstract {
 					),
 					esc_url( wp_mail_smtp()->get_utm_url( 'https://wpmailsmtp.com/docs/how-to-set-up-the-outlook-mailer-in-wp-mail-smtp/', 'Microsoft 365 / Outlook documentation' ) )
 				),
-				'notices'     => [
-					'educational' => wp_kses(
-						__( 'The Microsoft 365 / Outlook mailer is a great choice if you\'re already using paid email services with Microsoft, as you\'ll have the benefit of high email sending limits without signing up for a separate service. Due to the fairly complex setup, however, this option is recommended for more technical users.<br><br>If you\'d prefer a more straightforward setup, then we\'d recommend considering one of the other mailer options.', 'wp-mail-smtp-pro' ),
-						[
-							'br' => [],
-						]
-					),
-				],
 				'php'         => '5.6',
 				'supports'    => [
 					'from_email'       => true,
@@ -118,11 +111,19 @@ class Options extends OptionsAbstract {
 					/>
 					<?php $this->display_const_set_message( 'WPMS_OUTLOOK_CLIENT_SECRET' ); ?>
 				<?php else : ?>
-					<input type="password" spellcheck="false"
-						name="wp-mail-smtp[<?php echo esc_attr( $this->get_slug() ); ?>][client_secret]"
-						value="<?php echo esc_attr( $this->connection_options->get( $this->get_slug(), 'client_secret' ) ); ?>"
-						id="wp-mail-smtp-setting-<?php echo esc_attr( $this->get_slug() ); ?>-client_secret"
-					/>
+					<?php
+					$slug  = $this->get_slug();
+					$value = $this->connection_options->get( $this->get_slug(), 'client_secret' );
+
+					UI::hidden_password_field(
+						[
+							'name'       => "wp-mail-smtp[{$slug}][client_secret]",
+							'id'         => "wp-mail-smtp-setting-{$slug}-client_secret",
+							'value'      => $value,
+							'clear_text' => esc_html__( 'Remove Application Password', 'wp-mail-smtp-pro' ),
+						]
+					);
+					?>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -208,6 +209,9 @@ class Options extends OptionsAbstract {
 					?>
 				</span>
 				<p class="desc">
+					<?php esc_html_e( 'You can also send emails with different From Email addresses, by disabling the Force From Email setting and using registered aliases throughout your WordPress site as the From Email addresses.', 'wp-mail-smtp-pro' ); ?>
+				</p>
+				<p class="desc">
 					<?php esc_html_e( 'Removing the OAuth connection will give you an ability to redo the OAuth connection or link to another Microsoft account.', 'wp-mail-smtp-pro' ); ?>
 				</p>
 
@@ -247,12 +251,11 @@ class Options extends OptionsAbstract {
 
 		$old_opt = $this->connection_options->get_all_raw();
 
-		foreach ( $old_opt[ $this->get_slug() ] as $key => $value ) {
-			// Unset everything except App ID and Password.
-			if ( ! in_array( $key, array( 'client_id', 'client_secret' ), true ) ) {
-				unset( $old_opt[ $this->get_slug() ][ $key ] );
-			}
-		}
+		unset( $old_opt[ $this->get_slug() ]['auth_code'] );
+		unset( $old_opt[ $this->get_slug() ]['access_token'] );
+		unset( $old_opt[ $this->get_slug() ]['refresh_token'] );
+		unset( $old_opt[ $this->get_slug() ]['user_details'] );
+		unset( $old_opt[ $this->get_slug() ]['scopes'] );
 
 		$this->connection_options->set( $old_opt );
 	}

@@ -78,7 +78,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
      * @return callable
      * @throws \UnexpectedValueException
      */
-    public static function createErrorParser($protocol, \WPMailSMTP\Vendor\Aws\Api\Service $api = null)
+    public static function createErrorParser($protocol, ?\WPMailSMTP\Vendor\Aws\Api\Service $api = null)
     {
         static $mapping = ['json' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\JsonRpcErrorParser::class, 'query' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class, 'rest-json' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\RestJsonErrorParser::class, 'rest-xml' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class, 'ec2' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class];
         if (isset($mapping[$protocol])) {
@@ -157,7 +157,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
      */
     public function getServiceName()
     {
-        return $this->definition['metadata']['serviceIdentifier'];
+        return $this->definition['metadata']['serviceIdentifier'] ?? null;
     }
     /**
      * Get the default signature version of the service.

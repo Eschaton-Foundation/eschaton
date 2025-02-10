@@ -31,7 +31,7 @@ class GuzzleHandler
     /**
      * @param ClientInterface $client
      */
-    public function __construct(\WPMailSMTP\Vendor\GuzzleHttp\ClientInterface $client = null)
+    public function __construct(?\WPMailSMTP\Vendor\GuzzleHttp\ClientInterface $client = null)
     {
         $this->client = $client ?: new \WPMailSMTP\Vendor\GuzzleHttp\Client();
     }

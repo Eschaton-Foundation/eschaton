@@ -19,7 +19,7 @@ abstract class AbstractErrorParser
     /**
      * @param Service $api
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api = null)
+    public function __construct(?\WPMailSMTP\Vendor\Aws\Api\Service $api = null)
     {
         $this->api = $api;
     }
@@ -34,7 +34,7 @@ abstract class AbstractErrorParser
             return $response->getBody();
         }
     }
-    protected function populateShape(array &$data, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
+    protected function populateShape(array &$data, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, ?\WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
     {
         $data['body'] = [];
         if (!empty($command) && !empty($this->api)) {

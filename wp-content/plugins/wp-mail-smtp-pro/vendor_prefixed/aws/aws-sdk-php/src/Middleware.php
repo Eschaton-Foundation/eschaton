@@ -29,7 +29,7 @@ final class Middleware
     public static function sourceFile(\WPMailSMTP\Vendor\Aws\Api\Service $api, $bodyParameter = 'Body', $sourceParameter = 'SourceFile')
     {
         return function (callable $handler) use($api, $bodyParameter, $sourceParameter) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $api, $bodyParameter, $sourceParameter) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $api, $bodyParameter, $sourceParameter) {
                 $operation = $api->getOperation($command->getName());
                 $source = $command[$sourceParameter];
                 if ($source !== null && $operation->getInput()->hasMember($bodyParameter)) {
@@ -47,11 +47,11 @@ final class Middleware
      *
      * @return callable
      */
-    public static function validation(\WPMailSMTP\Vendor\Aws\Api\Service $api, \WPMailSMTP\Vendor\Aws\Api\Validator $validator = null)
+    public static function validation(\WPMailSMTP\Vendor\Aws\Api\Service $api, ?\WPMailSMTP\Vendor\Aws\Api\Validator $validator = null)
     {
         $validator = $validator ?: new \WPMailSMTP\Vendor\Aws\Api\Validator();
         return function (callable $handler) use($api, $validator) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($api, $validator, $handler) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($api, $validator, $handler) {
                 if ($api->isModifiedModel()) {
                     $api = new \WPMailSMTP\Vendor\Aws\Api\Service($api->getDefinition(), $api->getProvider());
                 }
@@ -126,7 +126,7 @@ final class Middleware
     public static function tap(callable $fn)
     {
         return function (callable $handler) use($fn) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $fn) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $fn) {
                 $fn($command, $request);
                 return $handler($command, $request);
             };
@@ -149,7 +149,7 @@ final class Middleware
      *
      * @return callable
      */
-    public static function retry(callable $decider = null, callable $delay = null, $stats = \false)
+    public static function retry(?callable $decider = null, ?callable $delay = null, $stats = \false)
     {
         $decider = $decider ?: \WPMailSMTP\Vendor\Aws\RetryMiddleware::createDefaultDecider();
         $delay = $delay ?: [\WPMailSMTP\Vendor\Aws\RetryMiddleware::class, 'exponentialDelay'];
@@ -187,7 +187,7 @@ final class Middleware
     public static function contentType(array $operations)
     {
         return function (callable $handler) use($operations) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $operations) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $operations) {
                 if (!$request->hasHeader('Content-Type') && \in_array($command->getName(), $operations, \true) && ($uri = $request->getBody()->getMetadata('uri'))) {
                     $request = $request->withHeader('Content-Type', \WPMailSMTP\Vendor\GuzzleHttp\Psr7\MimeType::fromFilename($uri) ?: 'application/octet-stream');
                 }
@@ -237,7 +237,7 @@ final class Middleware
     public static function history(\WPMailSMTP\Vendor\Aws\History $history)
     {
         return function (callable $handler) use($history) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $history) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $history) {
                 $ticket = $history->start($command, $request);
                 return $handler($command, $request)->then(function ($result) use($history, $ticket) {
                     $history->finish($ticket, $result);
@@ -261,7 +261,7 @@ final class Middleware
     public static function mapRequest(callable $f)
     {
         return function (callable $handler) use($f) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
                 return $handler($command, $f($request));
             };
         };
@@ -278,7 +278,7 @@ final class Middleware
     public static function mapCommand(callable $f)
     {
         return function (callable $handler) use($f) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
                 return $handler($f($command), $request);
             };
         };
@@ -294,7 +294,7 @@ final class Middleware
     public static function mapResult(callable $f)
     {
         return function (callable $handler) use($f) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler, $f) {
                 return $handler($command, $request)->then($f);
             };
         };
@@ -302,7 +302,7 @@ final class Middleware
     public static function timer()
     {
         return function (callable $handler) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler) {
+            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null) use($handler) {
                 $start = \microtime(\true);
                 return $handler($command, $request)->then(function (\WPMailSMTP\Vendor\Aws\ResultInterface $res) use($start) {
                     if (!isset($res['@metadata'])) {

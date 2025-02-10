@@ -7,6 +7,7 @@ use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\MailCatcherInterface;
 use WPMailSMTP\Pro\Migration;
+use WPMailSMTP\Pro\Providers\Outlook\OneClick\Auth as OneClickAuth;
 use WPMailSMTP\Providers\MailerAbstract;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\WP;
@@ -77,6 +78,15 @@ class Mailer extends MailerAbstract {
 	private $attachments = [];
 
 	/**
+	 * Authentication instance.
+	 *
+	 * @since 4.3.0
+	 *
+	 * @var AuthAbstract Authentication instance.
+	 */
+	private $auth;
+
+	/**
 	 * Mailer constructor.
 	 *
 	 * @since 1.5.0
@@ -86,13 +96,20 @@ class Mailer extends MailerAbstract {
 	 */
 	public function __construct( $phpmailer, $connection = null ) {
 
-		// Init the client that checks tokens and re-saves them if needed.
-		new Auth( $connection );
-
 		// We want to prefill everything from MailCatcher class, which extends PHPMailer.
 		parent::__construct( $phpmailer, $connection );
 
-		$token = $this->connection_options->get( $this->mailer, 'access_token' );
+		if ( $this->connection_options->get( $this->mailer, 'one_click_setup_enabled' ) ) {
+			// Init the client that checks tokens and re-saves them if needed.
+			$this->auth = new OneClickAuth( $connection );
+
+			$token = $this->connection_options->get( $this->mailer, 'one_click_setup_credentials' );
+		} else {
+			// Init the client that checks tokens and re-saves them if needed.
+			$this->auth = new Auth( $connection );
+
+			$token = $this->connection_options->get( $this->mailer, 'access_token' );
+		}
 
 		if ( ! empty( $token['access_token'] ) ) {
 			$this->set_header( 'Authorization', 'Bearer ' . $token['access_token'] );
@@ -748,12 +765,13 @@ class Mailer extends MailerAbstract {
 	 */
 	public function get_debug_info() {
 
-		$mg_text = array();
+		$mg_text = [];
 
-		$auth = new Auth( $this->connection );
+		if ( ! $this->connection_options->get( $this->mailer, 'one_click_setup_enabled' ) ) {
+			$mg_text[] = '<strong>App ID/Pass:</strong> ' . ( $this->auth->is_clients_saved() ? 'Yes' : 'No' );
+		}
 
-		$mg_text[] = '<strong>App ID/Pass:</strong> ' . ( $auth->is_clients_saved() ? 'Yes' : 'No' );
-		$mg_text[] = '<strong>Tokens:</strong> ' . ( ! $auth->is_auth_required() ? 'Yes' : 'No' );
+		$mg_text[] = '<strong>Tokens:</strong> ' . ( ! $this->auth->is_auth_required() ? 'Yes' : 'No' );
 
 		return implode( '<br>', $mg_text );
 	}
@@ -771,11 +789,9 @@ class Mailer extends MailerAbstract {
 			return false;
 		}
 
-		$auth = new Auth( $this->connection );
-
 		if (
-			$auth->is_clients_saved() &&
-			! $auth->is_auth_required()
+			$this->auth->is_clients_saved() &&
+			! $this->auth->is_auth_required()
 		) {
 			return true;
 		}

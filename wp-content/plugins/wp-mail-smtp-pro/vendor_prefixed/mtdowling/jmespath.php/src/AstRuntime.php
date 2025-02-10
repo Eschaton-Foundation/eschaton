@@ -11,7 +11,7 @@ class AstRuntime
     private $interpreter;
     private $cache = [];
     private $cachedCount = 0;
-    public function __construct(\WPMailSMTP\Vendor\JmesPath\Parser $parser = null, callable $fnDispatcher = null)
+    public function __construct(?\WPMailSMTP\Vendor\JmesPath\Parser $parser = null, ?callable $fnDispatcher = null)
     {
         $fnDispatcher = $fnDispatcher ?: \WPMailSMTP\Vendor\JmesPath\FnDispatcher::getInstance();
         $this->interpreter = new \WPMailSMTP\Vendor\JmesPath\TreeInterpreter($fnDispatcher);

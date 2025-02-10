@@ -28,7 +28,7 @@ class JsonRpcSerializer
      * @param string   $endpoint      Endpoint to connect to
      * @param JsonBody $jsonFormatter Optional JSON formatter to use
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, \WPMailSMTP\Vendor\Aws\Api\Serializer\JsonBody $jsonFormatter = null)
+    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, ?\WPMailSMTP\Vendor\Aws\Api\Serializer\JsonBody $jsonFormatter = null)
     {
         $this->endpoint = $endpoint;
         $this->api = $api;

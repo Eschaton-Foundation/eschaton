@@ -371,10 +371,32 @@ class File {
 			WP_Filesystem( request_filesystem_credentials( site_url() ) );
 		}
 
-		$wp_filesystem->put_contents(
-			$export_file,
-			$file_contents
-		);
+		// Borrowed from `WP_Filesystem_Direct::put_contents()`.
+		$fp = @fopen( $export_file, 'ab' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_read_fopen
+
+		if ( ! $fp ) {
+			return new WP_Error(
+				'export-file-access-error',
+				esc_html__( 'Something went wrong while opening the export file for writing.', 'wp-mail-smtp-pro' )
+			);
+		}
+
+		mbstring_binary_safe_encoding();
+
+		$data_length   = strlen( $file_contents );
+		$bytes_written = fwrite( $fp, $file_contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fwrite
+
+		reset_mbstring_encoding();
+		fclose( $fp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fclose
+
+		if ( $data_length !== $bytes_written ) {
+			return new WP_Error(
+				'export-file-write-error',
+				esc_html__( 'Something went wrong while writing to the export file.', 'wp-mail-smtp-pro' )
+			);
+		}
+
+		$wp_filesystem->chmod( $export_file );
 
 		return true;
 	}

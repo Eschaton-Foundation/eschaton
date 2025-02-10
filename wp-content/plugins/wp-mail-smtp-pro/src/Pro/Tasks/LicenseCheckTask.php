@@ -2,7 +2,6 @@
 
 namespace WPMailSMTP\Pro\Tasks;
 
-use ActionScheduler;
 use Exception;
 use WPMailSMTP\Tasks\Task;
 use WPMailSMTP\Tasks\Tasks;
@@ -83,7 +82,7 @@ class LicenseCheckTask extends Task {
 
 		// Delete license check task duplicates.
 		try {
-			$this->delete_pending_tasks();
+			$this->remove_pending( 1000 );
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Do nothing.
 		}
@@ -95,43 +94,5 @@ class LicenseCheckTask extends Task {
 		}
 
 		wp_mail_smtp()->get_pro()->get_license()->validate_key( $license_key );
-	}
-
-	/**
-	 * Delete license check task duplicates.
-	 *
-	 * @since 3.10.1
-	 */
-	private function delete_pending_tasks() {
-
-		// Make sure that all used functions, classes, and methods exist.
-		if (
-			! function_exists( 'as_get_scheduled_actions' ) ||
-			! class_exists( 'ActionScheduler' ) ||
-			! method_exists( 'ActionScheduler', 'store' ) ||
-			! class_exists( 'ActionScheduler_Store' ) ||
-			! method_exists( 'ActionScheduler_Store', 'delete_action' )
-		) {
-			return;
-		}
-
-		// Get all pending license check actions.
-		$action_ids = as_get_scheduled_actions(
-			[
-				'hook'     => self::ACTION,
-				'status'   => 'pending',
-				'per_page' => 1000,
-			],
-			'ids'
-		);
-
-		if ( empty( $action_ids ) ) {
-			return;
-		}
-
-		// Delete all pending license check actions.
-		foreach ( $action_ids as $action_id ) {
-			ActionScheduler::store()->delete_action( $action_id );
-		}
 	}
 }

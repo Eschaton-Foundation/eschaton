@@ -21,11 +21,12 @@ class Loader {
 	 * @var array
 	 */
 	protected $providers = [
-		'email'          => 'WPMailSMTP\Pro\Alerts\Providers\Email\\',
-		'slack_webhook'  => 'WPMailSMTP\Pro\Alerts\Providers\SlackWebhook\\',
-		'teams_webhook'  => 'WPMailSMTP\Pro\Alerts\Providers\TeamsWebhook\\',
-		'twilio_sms'     => 'WPMailSMTP\Pro\Alerts\Providers\TwilioSMS\\',
-		'custom_webhook' => 'WPMailSMTP\Pro\Alerts\Providers\CustomWebhook\\',
+		'email'           => 'WPMailSMTP\Pro\Alerts\Providers\Email\\',
+		'slack_webhook'   => 'WPMailSMTP\Pro\Alerts\Providers\SlackWebhook\\',
+		'discord_webhook' => 'WPMailSMTP\Pro\Alerts\Providers\DiscordWebhook\\',
+		'teams_webhook'   => 'WPMailSMTP\Pro\Alerts\Providers\TeamsWebhook\\',
+		'twilio_sms'      => 'WPMailSMTP\Pro\Alerts\Providers\TwilioSMS\\',
+		'custom_webhook'  => 'WPMailSMTP\Pro\Alerts\Providers\CustomWebhook\\',
 	];
 
 	/**

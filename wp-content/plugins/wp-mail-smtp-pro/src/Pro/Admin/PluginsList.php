@@ -43,6 +43,15 @@ class PluginsList {
 	const LICENSE_STATUS_VALID = 3;
 
 	/**
+	 * License Status: Site activations limit reached.
+	 *
+	 * @since 4.3.1
+	 *
+	 * @var int
+	 */
+	const LICENSE_STATUS_LIMIT_REACHED = 4;
+
+	/**
 	 * The license status.
 	 *
 	 * @since 3.8.0
@@ -201,6 +210,13 @@ class PluginsList {
 			return $this->license_status;
 		}
 
+		// If there's a license, check if site activations limit reached.
+		if ( ! empty( $license_option['is_limit_reached'] ) && $license_option['is_limit_reached'] === true ) {
+			$this->license_status = self::LICENSE_STATUS_LIMIT_REACHED;
+
+			return $this->license_status;
+		}
+
 		if ( wp_mail_smtp()->get_pro()->get_license()->is_valid() ) {
 			$this->license_status = self::LICENSE_STATUS_VALID;
 		}
@@ -279,6 +295,10 @@ class PluginsList {
 				$message = $this->get_expired_license_notice();
 				break;
 
+			case self::LICENSE_STATUS_LIMIT_REACHED:
+				$message = $this->get_limit_reached_license_notice();
+				break;
+
 			default:
 				$message = '';
 				break;
@@ -348,6 +368,50 @@ class PluginsList {
 					[
 						'medium'  => 'all-plugins-license',
 						'content' => 'Renew now',
+					]
+				)
+			)
+		);
+	}
+
+	/**
+	 * Get the notice for users with site activations limit reached.
+	 *
+	 * @since 4.3.1
+	 *
+	 * @return string
+	 */
+	private function get_limit_reached_license_notice() {
+
+		return sprintf(
+			wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
+				__( '<strong style="color: #e72f0a">Your WP Mail SMTP Pro license has no site activations left.</strong> You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
+				[
+					'strong' => [
+						'style' => [],
+					],
+					'a'      => [
+						'href'   => [],
+						'target' => [],
+						'rel'    => [],
+					],
+				]
+			),
+			esc_url(
+				wp_mail_smtp()->get_utm_url(
+					'https://wpmailsmtp.com/account/licenses/',
+					[
+						'medium'  => 'all-plugins-license',
+						'content' => 'license site limit reached',
+					]
+				)
+			),
+			esc_url(
+				wp_mail_smtp()->get_utm_url(
+					'https://wpmailsmtp.com/pricing/',
+					[
+						'medium'  => 'all-plugins-license',
+						'content' => 'license site limit reached',
 					]
 				)
 			)

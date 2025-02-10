@@ -210,13 +210,14 @@ class License {
 	 */
 	public function display_settings_license_key_field_content( $options, $echo = true ) { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded
 
-		$key         = wp_mail_smtp()->get_license_key();
-		$type        = wp_mail_smtp()->get_license_type();
-		$license     = $options->get_group( 'license' );
-		$is_expired  = isset( $license['is_expired'] ) && $license['is_expired'] === true;
-		$is_disabled = isset( $license['is_disabled'] ) && $license['is_disabled'] === true;
-		$is_invalid  = isset( $license['is_invalid'] ) && $license['is_invalid'] === true;
-		$is_valid    = ! empty( $key ) && ! $is_expired && ! $is_disabled && ! $is_invalid;
+		$key              = wp_mail_smtp()->get_license_key();
+		$type             = wp_mail_smtp()->get_license_type();
+		$license          = $options->get_group( 'license' );
+		$is_expired       = isset( $license['is_expired'] ) && $license['is_expired'] === true;
+		$is_disabled      = isset( $license['is_disabled'] ) && $license['is_disabled'] === true;
+		$is_invalid       = isset( $license['is_invalid'] ) && $license['is_invalid'] === true;
+		$is_limit_reached = isset( $license['is_limit_reached'] ) && $license['is_limit_reached'] === true;
+		$is_valid         = ! empty( $key ) && ! $is_expired && ! $is_disabled && ! $is_invalid && ! $is_limit_reached;
 
 		$input_class = '';
 
@@ -322,6 +323,48 @@ class License {
 						'b' => [],
 					]
 				);
+			} elseif ( $is_limit_reached ) {
+				$type_message = sprintf(
+					wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
+						__( '<b>Sorry, but this license has no site activations left.</b> You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
+						[
+							'b' => [],
+							'a' => [
+								'href'   => [],
+								'target' => [],
+								'rel'    => [],
+							],
+						]
+					),
+					esc_url(
+						wp_mail_smtp()->get_utm_url(
+							'https://wpmailsmtp.com/account/licenses/',
+							[
+								'medium'  => 'license key field',
+								'content' => 'license site limit reached',
+							]
+						)
+					),
+					esc_url(
+						wp_mail_smtp()->get_utm_url(
+							'https://wpmailsmtp.com/pricing/',
+							[
+								'medium'  => 'license key field',
+								'content' => 'license site limit reached',
+							]
+						)
+					)
+				);
+
+				$desc_message = wp_kses(
+					__( 'If your license has been upgraded or is incorrect, then please <a href="#" id="wp-mail-smtp-setting-license-key-refresh">force a refresh</a>.', 'wp-mail-smtp-pro' ),
+					[
+						'a' => [
+							'href' => [],
+							'id'   => [],
+						],
+					]
+				);
 			}
 
 			if ( ! empty( $type_message ) ) {
@@ -372,15 +415,19 @@ class License {
 			if ( array_key_exists( 'is_invalid', $options['license'] ) ) {
 				$options['license']['is_invalid'] = (bool) $options['license']['is_invalid'];
 			}
+			if ( array_key_exists( 'is_limit_reached', $options['license'] ) ) {
+				$options['license']['is_limit_reached'] = (bool) $options['license']['is_limit_reached'];
+			}
 		} else {
 			// Lite values by default.
-			$options['license'] = array(
-				'key'         => '',
-				'type'        => 'lite',
-				'is_expired'  => false,
-				'is_disabled' => false,
-				'is_invalid'  => false,
-			);
+			$options['license'] = [
+				'key'              => '',
+				'type'             => 'lite',
+				'is_expired'       => false,
+				'is_disabled'      => false,
+				'is_invalid'       => false,
+				'is_limit_reached' => false,
+			];
 		}
 
 		return $options;
@@ -440,11 +487,12 @@ class License {
 		// Otherwise, our request has been done successfully. Update the option and set the success message.
 		$data = [
 			'license' => [
-				'key'         => $key,
-				'type'        => $license_type,
-				'is_expired'  => false,
-				'is_disabled' => false,
-				'is_invalid'  => false,
+				'key'              => $key,
+				'type'             => $license_type,
+				'is_expired'       => false,
+				'is_disabled'      => false,
+				'is_invalid'       => false,
+				'is_limit_reached' => false,
 			],
 		];
 
@@ -541,15 +589,18 @@ class License {
 			return false;
 		}
 
+		$data = [
+			'license' => [
+				'is_expired'       => false,
+				'is_disabled'      => false,
+				'is_invalid'       => false,
+				'is_limit_reached' => false,
+			],
+		];
+
 		// If a key or author error is returned, the license no longer exists or the user has been deleted, so reset license.
 		if ( isset( $validate->key ) || isset( $validate->author ) ) {
-			$data = [
-				'license' => [
-					'is_expired'  => false,
-					'is_disabled' => false,
-					'is_invalid'  => true,
-				],
-			];
+			$data['license']['is_invalid'] = true;
 
 			$options->set( $data, false, false );
 
@@ -562,13 +613,7 @@ class License {
 
 		// If the license has expired, set the transient and expired flag and return.
 		if ( isset( $validate->expired ) ) {
-			$data = [
-				'license' => [
-					'is_expired'  => true,
-					'is_disabled' => false,
-					'is_invalid'  => false,
-				],
-			];
+			$data['license']['is_expired'] = true;
 
 			$options->set( $data, false, false );
 
@@ -581,13 +626,7 @@ class License {
 
 		// If the license is disabled, set the transient and disabled flag and return.
 		if ( isset( $validate->disabled ) ) {
-			$data = [
-				'license' => [
-					'is_expired'  => false,
-					'is_disabled' => true,
-					'is_invalid'  => false,
-				],
-			];
+			$data['license']['is_disabled'] = true;
 
 			$options->set( $data, false, false );
 
@@ -598,17 +637,54 @@ class License {
 			return $return_status ? 'disabled' : false;
 		}
 
+		// If the license site activations limit reached, set limit reached flag and return.
+		if ( isset( $validate->limit_reached ) ) {
+			$data['license']['is_limit_reached'] = true;
+
+			$options->set( $data, false, false );
+
+			if ( $ajax ) {
+				wp_send_json_error(
+					sprintf(
+						wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
+							__( 'Sorry, but this license has no site activations left. You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
+							[
+								'a' => [
+									'href'   => [],
+									'target' => [],
+									'rel'    => [],
+								],
+							]
+						),
+						esc_url(
+							wp_mail_smtp()->get_utm_url(
+								'https://wpmailsmtp.com/account/licenses/',
+								[
+									'medium'  => 'license-alert-modal',
+									'content' => 'license site limit reached',
+								]
+							)
+						),
+						esc_url(
+							wp_mail_smtp()->get_utm_url(
+								'https://wpmailsmtp.com/pricing/',
+								[
+									'medium'  => 'license-alert-modal',
+									'content' => 'license site limit reached',
+								]
+							)
+						)
+					)
+				);
+			}
+
+			return $return_status ? 'limit_reached' : false;
+		}
+
 		$license_type = isset( $validate->type ) ? $validate->type : $all_opt['license']['type'];
 
 		// Otherwise, our check has returned successfully. Set the transient and update our license type and flags.
-		$data = [
-			'license' => [
-				'type'        => $license_type,
-				'is_expired'  => false,
-				'is_disabled' => false,
-				'is_invalid'  => false,
-			],
-		];
+		$data['license']['type'] = $license_type;
 
 		$options->set( $data, false, false );
 
@@ -781,6 +857,49 @@ class License {
 			<?php
 		endif;
 
+		// If a key site activations limit reached, output nag about increasing the limit.
+		if ( isset( $all_opt['license']['is_limit_reached'] ) && $all_opt['license']['is_limit_reached'] ) :
+			?>
+			<div class="notice notice-error <?php echo esc_attr( $below_h2 ); ?> wp-mail-smtp-license-notice">
+				<p>
+					<?php
+					printf(
+						wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
+							__( '<b>Your WP Mail SMTP Pro license has no site activations left.</b> You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
+							[
+								'b' => [],
+								'a' => [
+									'href'   => [],
+									'target' => [],
+									'rel'    => [],
+								],
+							]
+						),
+						esc_url(
+							wp_mail_smtp()->get_utm_url(
+								'https://wpmailsmtp.com/account/licenses/',
+								[
+									'medium'  => 'license-admin-notice',
+									'content' => 'license site limit reached',
+								]
+							)
+						),
+						esc_url(
+							wp_mail_smtp()->get_utm_url(
+								'https://wpmailsmtp.com/pricing/',
+								[
+									'medium'  => 'license-admin-notice',
+									'content' => 'license site limit reached',
+								]
+							)
+						)
+					);
+					?>
+				</p>
+			</div>
+		<?php
+		endif;
+
 		// If there are any license errors, output them now.
 		if ( ! empty( $this->errors ) ) :
 			?>
@@ -832,8 +951,9 @@ class License {
 		}
 
 		$args = [
-			'headers' => $headers,
+			'headers'    => $headers,
 			'user-agent' => Helpers::get_default_user_agent(),
+			'timeout'    => 30,
 		];
 
 		if ( defined( 'WPMS_UPDATER_API' ) ) {
@@ -861,7 +981,7 @@ class License {
 	 *
 	 * @return array The results array with 'valid' (bool) and 'message' (string) attributes.
 	 */
-	public function get_status() {
+	public function get_status() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
 
 		$license_key = wp_mail_smtp()->get_license_key();
 
@@ -943,6 +1063,39 @@ class License {
 			return $result;
 		}
 
+		if ( $license_status === 'limit_reached' ) {
+			$result['message'] = sprintf(
+				wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
+					__( 'Your WP Mail SMTP Pro license has no site activations left. You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
+					[
+						'a' => [
+							'href'   => [],
+							'target' => [],
+							'rel'    => [],
+						],
+					]
+				),
+				esc_url(
+					wp_mail_smtp()->get_utm_url(
+						'https://wpmailsmtp.com/account/licenses/',
+						[
+							'content' => 'license site limit reached',
+						]
+					)
+				),
+				esc_url(
+					wp_mail_smtp()->get_utm_url(
+						'https://wpmailsmtp.com/pricing/',
+						[
+							'content' => 'license site limit reached',
+						]
+					)
+				)
+			);
+
+			return $result;
+		}
+
 		return [
 			'valid'   => true,
 			'message' => esc_html__( 'Your WP Mail SMTP Pro license is active and valid.', 'wp-mail-smtp-pro' ),
@@ -969,7 +1122,8 @@ class License {
 		return ! empty( $saved_license['key'] ) &&
 			empty( $saved_license['is_expired'] ) &&
 			empty( $saved_license['is_disabled'] ) &&
-			empty( $saved_license['is_invalid'] );
+			empty( $saved_license['is_invalid'] ) &&
+			empty( $saved_license['is_limit_reached'] );
 	}
 
 	/**
