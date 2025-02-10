@@ -178,13 +178,15 @@ class maxCSSParser
 		try
 		{
 				$css = $scss->compileString($compile)->getCss();
+
 		} catch (\Exception $e) {
 			$this->has_compile_error = true;
 			$this->compile_error = array('error' => $e,
 									//		 'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4),
 																	 'string' => $compile,
 																 );
-			$css = $this->output_css;
+											 
+				$css = $this->output_css;
 		}
 
 		return $css;
@@ -688,34 +690,30 @@ class maxCSSParser
 		{
 			$styles = isset($inline[$pseudo][$element]) ? $inline[$pseudo][$element] : array();
 
+
 			if ($pseudo != 'normal')
 			{
 				$styles =  array_merge($inline['normal'][$element],$styles);
 			}
 			$normstyle = '';
-	/*		if ($pseudo != 'normal') // parse all possible missing styles from pseudo el
-			{
 
-				$tocompile = $this->dummify($inline['normal'][$element]);
-				$normstyle = $this->compile($tocompile);
-				$normstyle = $this->undummify($normstyle);
-			} */
+
 			maxUtils::addTime("CSSParser: Parse inline done");
 			foreach($styles as $cssTag => $cssVal)
 			{
+
 				$normstyle .=  $this->parse_cssline($styles, $cssTag,$cssVal);
 			}
 			// add dummy {} here because new scssphp parse doesn't like styles without it. Remove it after compile, since this is inline.
 			$style_output = $this->compile($this->dummify($normstyle));
 			$style_output = $this->undummify($style_output);
 
-			//$styles = $normstyle . $styles;
 
 			$element = trim(str_replace("."," ", $element)); // molten css class, seperator.
 
 			$el = $domObj->find('[class*="' . $element . '"]', 0);
 
-			$el->style = $style_output;
+			$el->style = \esc_attr($style_output);
 
 		}
 

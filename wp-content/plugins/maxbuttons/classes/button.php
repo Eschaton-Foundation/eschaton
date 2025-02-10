@@ -699,6 +699,7 @@ class maxButton
 				}
 		}
 
+
  		foreach($this->blocks as $block)
  		{
  			$data = $block->save_fields($data, $post, $screens);
@@ -820,7 +821,7 @@ class maxButton
 	*/
 	public function shortcode($button_atts)
 	{
-		
+
 		$atts = shortcode_atts(array(
 				'id' => null,
 				'name' => null,

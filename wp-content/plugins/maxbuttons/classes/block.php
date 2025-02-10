@@ -90,6 +90,7 @@ abstract class maxBlock
 
 		$value = $default;
 
+
 		if (is_string($default) && strpos($default,"px") !== false)
 			$value  = (isset($post[$field]) ) ? intval($post[$field]) : $default;
 		elseif( isset($post[$field]) && is_array($post[$field]))
@@ -104,6 +105,8 @@ abstract class maxBlock
 		{
 			$value = $options['unset_value'];
 		}
+
+
 
 		return $value;
 	}
@@ -315,7 +318,6 @@ abstract class maxBlock
 				$value .= "%";
 			}
 
-//echo "VALUE AFTER $field_id - $value <BR>";
 			/** CSSvalidate is a function reference for further shaping the value based on specific wishes.
 			* Can return a new value, or false which indicates removal. This aims to replace block specific parse_css functions.
 			*/
@@ -325,6 +327,8 @@ abstract class maxBlock
 					if ($value == false) // don't add this field anywhere.
 						return $css;
 			}
+
+			$value = $this->sanitizeCSS($value);
 
 			 foreach($csspart as $part)
 			 {
@@ -349,6 +353,28 @@ abstract class maxBlock
 		}
 
 		return $css;
+	}
+
+	// Sanitize to prevent any wrong characters in general CSS.
+
+	protected function sanitizeCSS($value)
+	{
+			if (! is_string($value) && ! is_array($value))
+			{
+					return $value;
+			}
+
+			$replace = [
+					'"',
+					'\\',
+					'/',
+					'+',
+			];
+
+
+			$value = str_replace($replace, '', $value);
+
+			return $value;
 	}
 
 	/* Ability to output custom JS for each button */

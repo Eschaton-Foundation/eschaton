@@ -9,13 +9,13 @@ $blockOrder[20][] = "dimension";
 class dimensionBlock extends maxBlock
 {
 	protected $blockname = "dimension";
-	protected $fields = array("button_width" => array("default" => '160',
+	protected $fields = array("button_width" => array("default" => '160px',
 										"css" => "width",
 										'cssvalidate' => 'checkDimension',  // function reference to validator.
 										'unitfield' => 'button_size_unit_width',
 
 										),
-							  "button_height" => array("default" => '50',
+								"button_height" => array("default" => '50px',
 							  			"css" => "height",
 											'cssvalidate' => 'checkDimension',
 											'unitfield' => 'button_size_unit_height',
@@ -28,8 +28,6 @@ class dimensionBlock extends maxBlock
 								"button_size_unit_height" => array(
 											'default' => 'pixel',
 											'is_sub_of' => 'button_height',
-
-
 								),
 		);
 
