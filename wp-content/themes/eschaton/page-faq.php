@@ -41,9 +41,9 @@ if (have_posts()) while (have_posts()) : the_post();
                 <?php if ( is_page() ) :
 
 					if( $post->post_parent ) :
-						$children = get_pages( 'title_li=&child_of='.$post->post_parent.'&echo=0' );
+						$children = get_pages( 'title_li=&child_of='.$post->post_parent.'&echo=0&sort_column=post_date&sort_order=desc' );
 					else:
-						$children = get_pages( 'title_li=&child_of='.$post->ID.'&echo=0' );
+						$children = get_pages( 'title_li=&child_of='.$post->ID.'&echo=0&sort_column=post_date&sort_order=desc' );
 					endif;
 
 					if ($children) : ?>
