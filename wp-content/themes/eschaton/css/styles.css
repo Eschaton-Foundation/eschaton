@@ -2341,6 +2341,10 @@ h2.studio_dates {
     width: 33%;
   }
 }
+.grid-faq .accordion-toggle {
+  font-size: 25px;
+  font-variant: none;
+}
 .grid-faq .section-accordion {
   margin-top: 0;
 }
