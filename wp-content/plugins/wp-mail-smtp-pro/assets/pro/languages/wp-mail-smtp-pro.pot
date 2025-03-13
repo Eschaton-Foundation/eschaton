@@ -1,13 +1,13 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Mail SMTP 4.3.1\n"
+"Project-Id-Version: WP Mail SMTP 4.4.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-mail-smtp-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-01-20T14:52:28+00:00\n"
+"POT-Creation-Date: 2025-03-03T21:31:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-mail-smtp-pro\n"
@@ -55,7 +55,7 @@ msgstr ""
 #: src/Pro/Emails/Logs/Resend.php:101
 #: src/Pro/Emails/Logs/Webhooks/Webhooks.php:363
 #: src/Pro/Emails/Logs/Webhooks/Webhooks.php:410
-#: src/Pro/Multisite.php:883
+#: src/Pro/Multisite.php:888
 msgid "You don't have the capability to perform this action."
 msgstr ""
 
@@ -79,7 +79,7 @@ msgstr ""
 
 #: src/Pro/AdditionalConnections/Admin/SettingsTab.php:228
 #: src/Pro/AdditionalConnections/Admin/SettingsTab.php:530
-#: src/Pro/Alerts/Admin/SettingsTab.php:467
+#: src/Pro/Alerts/Admin/SettingsTab.php:508
 #: src/Pro/Emails/Control/Admin/SettingsTab.php:137
 #: src/Pro/Emails/Logs/Admin/SettingsTab.php:457
 #: src/Pro/SmartRouting/Admin/SettingsTab.php:415
@@ -403,94 +403,99 @@ msgstr ""
 msgid "There is a new version of WP Mail SMTP Pro available. <a target=\"_blank\" href=\"%1$s\" rel=\"noopener noreferrer\">View version %2$s details</a>."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:129
+#: src/Pro/Alerts/Admin/SettingsTab.php:131
 #: src/Pro/Emails/Logs/Logs.php:479
 #: src/Pro/Providers/Providers.php:237
 msgid "OK"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:130
+#: src/Pro/Alerts/Admin/SettingsTab.php:132
 #: src/Pro/Emails/Logs/Logs.php:483
 #: src/Pro/Providers/Providers.php:253
 msgid "Heads up!"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:131
+#: src/Pro/Alerts/Admin/SettingsTab.php:133
 msgid "Alerts settings have changed. Please save the settings before you can perform a test."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:182
+#: src/Pro/Alerts/Admin/SettingsTab.php:184
 msgid "Alerts"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:184
+#: src/Pro/Alerts/Admin/SettingsTab.php:186
 msgid "Configure at least one of these integrations to receive notifications when email fails to send from your site. Alert notifications will contain the following important data: email subject, email Send To address, the error message, and helpful links to help you fix the issue."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:193
+#: src/Pro/Alerts/Admin/SettingsTab.php:195
 msgid "Notify when"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:203
+#: src/Pro/Alerts/Admin/SettingsTab.php:205
 msgid "The initial email sending request fails"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:211
+#: src/Pro/Alerts/Admin/SettingsTab.php:213
 msgid "This option is always enabled and will notify you about instant email sending failures."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:228
+#: src/Pro/Alerts/Admin/SettingsTab.php:230
 msgid "The deliverability verification process detects a hard bounce"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:235
+#: src/Pro/Alerts/Admin/SettingsTab.php:237
 msgid "Get notified about emails that were successfully sent, but have hard bounced on delivery attempt. A hard bounce is an email that has failed to deliver for permanent reasons, such as the recipient's email address being invalid."
 msgstr ""
 
 #. translators: %s - Alert title.
-#: src/Pro/Alerts/Admin/SettingsTab.php:265
+#: src/Pro/Alerts/Admin/SettingsTab.php:269
 msgid "%s Alerts"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:317
+#: src/Pro/Alerts/Admin/SettingsTab.php:323
 msgid "Alert Tests sent successfully."
 msgstr ""
 
 #. translators: %1$s - Default success notice; %2$d. number of minutes until new email alerts can be sent.
-#: src/Pro/Alerts/Admin/SettingsTab.php:330
+#: src/Pro/Alerts/Admin/SettingsTab.php:336
 msgid "%1$s Any additional email alerts from this site are paused for %2$d minutes."
 msgstr ""
 
 #. translators: %d - number of minutes until new email alerts can be sent.
-#: src/Pro/Alerts/Admin/SettingsTab.php:363
+#: src/Pro/Alerts/Admin/SettingsTab.php:369
 msgid "Any additional email alerts from this site are paused for %d minutes. You can still test other types of alerts."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:392
+#. translators: %d - number of minutes until new email alerts can be sent.
+#: src/Pro/Alerts/Admin/SettingsTab.php:398
+msgid "Any additional push notifications alerts from this site are paused for %d minutes. You can still test other types of alerts."
+msgstr ""
+
+#: src/Pro/Alerts/Admin/SettingsTab.php:433
 msgid "Email Log has to be enabled for hard bounce detection to work."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:400
+#: src/Pro/Alerts/Admin/SettingsTab.php:441
 msgid "Please enable Email Log"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:403
+#: src/Pro/Alerts/Admin/SettingsTab.php:444
 msgid "Your Primary Connection mailer doesn't support delivery verification. If you want to enable this option, please switch to a transactional mailer like SendLayer."
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:424
+#: src/Pro/Alerts/Admin/SettingsTab.php:465
 msgid "Save Settings"
 msgstr ""
 
-#: src/Pro/Alerts/Admin/SettingsTab.php:427
+#: src/Pro/Alerts/Admin/SettingsTab.php:468
 msgid "Test Alerts"
 msgstr ""
 
-#: src/Pro/Alerts/Alerts.php:285
+#: src/Pro/Alerts/Alerts.php:288
 msgid "WP Mail SMTP Alerts Test"
 msgstr ""
 
-#: src/Pro/Alerts/Alerts.php:286
+#: src/Pro/Alerts/Alerts.php:289
 msgid "This is a test error message triggered from the WP Mail SMTP Alerts settings"
 msgstr ""
 
@@ -500,6 +505,7 @@ msgstr ""
 
 #: src/Pro/Alerts/Providers/CustomWebhook/Handler.php:117
 #: src/Pro/Alerts/Providers/DiscordWebhook/Handler.php:138
+#: src/Pro/Alerts/Providers/Push/Handler.php:132
 #: src/Pro/Alerts/Providers/SlackWebhook/Handler.php:138
 #: src/Pro/Alerts/Providers/TeamsWebhook/Handler.php:150
 msgid "Your Site Failed to Send an Email"
@@ -507,6 +513,7 @@ msgstr ""
 
 #: src/Pro/Alerts/Providers/CustomWebhook/Handler.php:121
 #: src/Pro/Alerts/Providers/DiscordWebhook/Handler.php:142
+#: src/Pro/Alerts/Providers/Push/Handler.php:136
 #: src/Pro/Alerts/Providers/SlackWebhook/Handler.php:142
 #: src/Pro/Alerts/Providers/TeamsWebhook/Handler.php:154
 msgid "Your Site failed to send an email via the Primary connection, but the email was sent successfully via the Backup connection"
@@ -514,6 +521,7 @@ msgstr ""
 
 #: src/Pro/Alerts/Providers/CustomWebhook/Handler.php:125
 #: src/Pro/Alerts/Providers/DiscordWebhook/Handler.php:146
+#: src/Pro/Alerts/Providers/Push/Handler.php:140
 #: src/Pro/Alerts/Providers/SlackWebhook/Handler.php:146
 #: src/Pro/Alerts/Providers/TeamsWebhook/Handler.php:158
 msgid "Your Site failed to send an email via Primary and Backup connection"
@@ -521,6 +529,7 @@ msgstr ""
 
 #: src/Pro/Alerts/Providers/CustomWebhook/Handler.php:129
 #: src/Pro/Alerts/Providers/DiscordWebhook/Handler.php:150
+#: src/Pro/Alerts/Providers/Push/Handler.php:144
 #: src/Pro/Alerts/Providers/SlackWebhook/Handler.php:150
 #: src/Pro/Alerts/Providers/TeamsWebhook/Handler.php:162
 #: src/Pro/Alerts/Providers/TwilioSMS/Handler.php:176
@@ -615,7 +624,7 @@ msgstr ""
 msgid "Add Another Webhook"
 msgstr ""
 
-#: src/Pro/Alerts/Providers/Email/Handler.php:130
+#: src/Pro/Alerts/Providers/Email/Handler.php:131
 msgid "An Email alert request was sent."
 msgstr ""
 
@@ -626,6 +635,7 @@ msgstr ""
 
 #. translators: %s - Plugin general settings page link.
 #: src/Pro/Alerts/Providers/Email/Options.php:62
+#: src/Pro/Alerts/Providers/Push/Options.php:62
 msgid "This integration will not work without a valid WP Mail SMTP license key. <a href=\"%s\">Please verify your license key</a>."
 msgstr ""
 
@@ -640,6 +650,72 @@ msgstr ""
 
 #: src/Pro/Alerts/Providers/Email/Options.php:135
 msgid "Send To"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Handler.php:101
+msgid "Push notifications alert request was sent."
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Handler.php:104
+msgid "Alert: Push notifications."
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Handler.php:127
+msgid "Email sending failed"
+msgstr ""
+
+#. translators: %s - Documentation link.
+#: src/Pro/Alerts/Providers/Push/Options.php:33
+msgid "To receive push notifications on this device, you'll need to allow our plugin to send notifications via this browser. <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">Read our documentation on setting up Push Notification alerts</a>."
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Options.php:81
+msgid "Push Notifications"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Options.php:83
+msgid "Enable push notifications on this device"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Options.php:151
+msgid "current"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Options.php:152
+msgid "Connection Name"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:451
+msgid "This browser doesn't support push notifications"
+msgstr ""
+
+#. translators: %s - Plugin general settings page link.
+#: src/Pro/Alerts/Providers/Push/Provider.php:455
+msgid "Push notifications are disabled on this browser, <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">please follow this guide to enable them</a>"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:474
+msgid "Error loading service worker"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:475
+msgid "Error fetching push notification subscription"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:476
+msgid "Error subscribing to push notifications"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:477
+msgid "Error unsubscribing from push notifications"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:478
+msgid "API request error"
+msgstr ""
+
+#: src/Pro/Alerts/Providers/Push/Provider.php:622
+msgid "WP Mail SMTP Alerts"
 msgstr ""
 
 #: src/Pro/Alerts/Providers/SlackWebhook/Handler.php:109
@@ -2081,7 +2157,7 @@ msgstr ""
 
 #: src/Pro/License/License.php:580
 #: src/Pro/License/License.php:731
-#: src/Pro/License/License.php:1011
+#: src/Pro/License/License.php:1013
 msgid "There was an error connecting to the remote server. Please try again later."
 msgstr ""
 
@@ -2114,13 +2190,13 @@ msgstr ""
 
 #. translators: %s - plugin settings page URL.
 #: src/Pro/License/License.php:802
-#: src/Pro/License/License.php:995
+#: src/Pro/License/License.php:997
 msgid "Please <a href=\"%s\">enter and activate</a> your license key for WP Mail SMTP Pro to enable automatic updates."
 msgstr ""
 
 #. translators: %s - WPMailSMTP.com login page URL.
 #: src/Pro/License/License.php:825
-#: src/Pro/License/License.php:1019
+#: src/Pro/License/License.php:1021
 msgid "Your license key for WP Mail SMTP Pro has expired. <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">Please click here to renew your license key and continue receiving automatic updates.</a>"
 msgstr ""
 
@@ -2130,21 +2206,21 @@ msgid "<b>Your WP Mail SMTP Pro license has no site activations left.</b> You ca
 msgstr ""
 
 #. translators: %s - plugin settings page URL.
-#: src/Pro/License/License.php:1037
+#: src/Pro/License/License.php:1039
 msgid "Your license key for WP Mail SMTP Pro has been disabled. Please <a href=\"%s\">enter and activate</a> a different key for WP Mail SMTP Pro to continue receiving automatic updates."
 msgstr ""
 
 #. translators: %s - plugin settings page URL.
-#: src/Pro/License/License.php:1053
+#: src/Pro/License/License.php:1055
 msgid "Your license key for WP Mail SMTP Pro is invalid. Please <a href=\"%s\">enter and activate</a> a different key for WP Mail SMTP Pro to continue receiving automatic updates."
 msgstr ""
 
 #. translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL.
-#: src/Pro/License/License.php:1069
+#: src/Pro/License/License.php:1071
 msgid "Your WP Mail SMTP Pro license has no site activations left. You can update the list of your sites or upgrade the license in the <a href=\"%1$s\" target=\"_blank\" rel=\"noopener noreferrer\">Account area</a>. Or you can <a href=\"%2$s\" target=\"_blank\" rel=\"noopener noreferrer\">purchase a new license key</a>."
 msgstr ""
 
-#: src/Pro/License/License.php:1101
+#: src/Pro/License/License.php:1103
 msgid "Your WP Mail SMTP Pro license is active and valid."
 msgstr ""
 
@@ -2156,152 +2232,168 @@ msgstr ""
 msgid "Backup connection"
 msgstr ""
 
-#: src/Pro/Multisite.php:236
+#: src/Pro/Multisite.php:241
 msgid "The results could not be loaded."
 msgstr ""
 
-#: src/Pro/Multisite.php:237
+#: src/Pro/Multisite.php:242
 msgid "Loading more results..."
 msgstr ""
 
-#: src/Pro/Multisite.php:238
+#: src/Pro/Multisite.php:243
 msgid "No results found."
 msgstr ""
 
-#: src/Pro/Multisite.php:239
+#: src/Pro/Multisite.php:244
 msgid "Searching..."
 msgstr ""
 
-#: src/Pro/Multisite.php:274
+#: src/Pro/Multisite.php:279
 msgid "Multisite"
 msgstr ""
 
-#: src/Pro/Multisite.php:281
+#: src/Pro/Multisite.php:286
 msgid "Settings control"
 msgstr ""
 
-#: src/Pro/Multisite.php:289
+#: src/Pro/Multisite.php:294
 msgid "Make the plugin settings global network-wide"
 msgstr ""
 
-#: src/Pro/Multisite.php:293
+#: src/Pro/Multisite.php:298
 msgid "If disabled, each subsite of this multisite will have its own WP Mail SMTP settings page that has to be configured separately."
 msgstr ""
 
-#: src/Pro/Multisite.php:295
+#: src/Pro/Multisite.php:300
 msgid "If enabled, these global settings will manage email sending for all subsites of this multisite."
 msgstr ""
 
 #. Translators: %s - Network admin email address.
-#: src/Pro/Multisite.php:413
+#: src/Pro/Multisite.php:418
 msgid "Sorry, you are not allowed to access the WP Mail SMTP settings for individual network subsite. The network-wide setting is enabled, so the plugin settings are only accessible in the network admin dashboard. Please contact your network admin: %s."
 msgstr ""
 
-#: src/Pro/Multisite.php:680
+#: src/Pro/Multisite.php:685
 msgid "Clear these errors"
 msgstr ""
 
-#: src/Pro/Multisite.php:754
+#: src/Pro/Multisite.php:759
 msgid "Site"
 msgstr ""
 
-#: src/Pro/Pro.php:639
+#: src/Pro/Pro.php:646
 msgid "Go to WP Mail SMTP Settings page"
 msgstr ""
 
-#: src/Pro/Pro.php:640
+#: src/Pro/Pro.php:647
 msgid "Settings"
 msgstr ""
 
-#: src/Pro/Pro.php:648
+#: src/Pro/Pro.php:655
 msgid "Go to WPMailSMTP.com support page"
 msgstr ""
 
-#: src/Pro/Pro.php:649
+#: src/Pro/Pro.php:656
 msgid "Support"
 msgstr ""
 
-#: src/Pro/Pro.php:656
+#: src/Pro/Pro.php:663
 msgid "Go to WPMailSMTP.com documentation page"
 msgstr ""
 
-#: src/Pro/Pro.php:657
+#: src/Pro/Pro.php:664
 msgid "Docs"
 msgstr ""
 
-#: src/Pro/Pro.php:751
+#: src/Pro/Pro.php:758
 msgid "There was an error while processing the authentication request. The connection was not found. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:759
+#: src/Pro/Pro.php:766
 msgid "There was an error while processing the authentication request. The authorization code is missing. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:767
+#: src/Pro/Pro.php:774
 msgid "There was an error while processing the authentication request. The nonce is invalid. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:774
+#: src/Pro/Pro.php:781
 msgid "There was an error while processing the authentication request. Please recheck your Client ID and Client Secret and try again."
 msgstr ""
 
-#: src/Pro/Pro.php:781
+#: src/Pro/Pro.php:788
 msgid "There was an error while processing the authentication request. Please make sure that you have Client ID and Client Secret both valid and saved."
 msgstr ""
 
 #. translators: %s - error code, returned by Zoho API.
-#: src/Pro/Pro.php:789
+#: src/Pro/Pro.php:796
 msgid "There was an error while processing the authentication request: %s. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:796
+#: src/Pro/Pro.php:803
 msgid "There was an error while processing the authentication request. Please recheck your Region, Client ID and Client Secret and try again."
 msgstr ""
 
-#: src/Pro/Pro.php:804
+#: src/Pro/Pro.php:811
 msgid "There was an error while processing the authentication request."
 msgstr ""
 
-#: src/Pro/Pro.php:813
+#: src/Pro/Pro.php:820
 msgid "You have successfully linked the current site with your Microsoft API project. Now you can start sending emails through Outlook."
 msgstr ""
 
-#: src/Pro/Pro.php:820
+#: src/Pro/Pro.php:827
 msgid "You have successfully linked the current site with your Zoho Mail API project. Now you can start sending emails through Zoho Mail."
 msgstr ""
 
-#: src/Pro/Pro.php:827
+#: src/Pro/Pro.php:834
 msgid "You have successfully connected your site with your Gmail account. This site will now send emails via your Gmail account."
 msgstr ""
 
-#: src/Pro/Pro.php:834
+#: src/Pro/Pro.php:841
 msgid "You have successfully connected your site with your Outlook account. This site will now send emails via your Outlook account."
 msgstr ""
 
-#: src/Pro/Pro.php:864
+#: src/Pro/Pro.php:871
 msgid "Auto-updates are not available."
 msgstr ""
 
-#: src/Pro/Pro.php:1127
+#: src/Pro/Pro.php:1134
 #: src/Pro/Providers/Providers.php:319
 #: src/Pro/Providers/Providers.php:363
 msgid "Please provide a valid email address."
 msgstr ""
 
-#: src/Pro/Pro.php:1129
+#: src/Pro/Pro.php:1136
 msgid "Please provide a domain."
 msgstr ""
 
-#: src/Pro/Pro.php:1209
+#: src/Pro/Pro.php:1216
 msgid "You don't have the permission to perform this action."
 msgstr ""
 
-#: src/Pro/Pro.php:1215
+#: src/Pro/Pro.php:1222
 msgid "Please enter a valid license key!"
 msgstr ""
 
-#: src/Pro/Pro.php:1225
+#: src/Pro/Pro.php:1232
 msgid "License functionality missing!"
+msgstr ""
+
+#: src/Pro/Pro.php:1295
+msgid "Inactive &mdash; You are already using WP Mail SMTP Pro"
+msgstr ""
+
+#: src/Pro/ProductApi/CredentialsGenerator.php:74
+msgid "Max number of attempts to generate credentials has been reached."
+msgstr ""
+
+#: src/Pro/ProductApi/CredentialsGenerator.php:78
+msgid "Credentials generation already started by another request."
+msgstr ""
+
+#: src/Pro/ProductApi/CredentialsGenerator.php:111
+msgid "Invalid response for credentials generation."
 msgstr ""
 
 #: src/Pro/Providers/AmazonSES/Auth.php:134
@@ -2389,7 +2481,7 @@ msgid "GovCloud (US-West)"
 msgstr ""
 
 #. translators: %s - domain name.
-#: src/Pro/Providers/AmazonSES/Auth.php:468
+#: src/Pro/Providers/AmazonSES/Auth.php:471
 msgid "It looks like DKIM is not enabled for this domain. Please visit AWS SES console and enable DKIM for %s."
 msgstr ""
 
@@ -2585,12 +2677,12 @@ msgstr ""
 msgid "For information on how to add TXT DNS records, please <br><a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">refer to the Amazon SES documentation</a>."
 msgstr ""
 
-#: src/Pro/Providers/Gmail/Auth.php:164
+#: src/Pro/Providers/Gmail/Auth.php:145
 msgid "Google authorization error. Missing required arguments."
 msgstr ""
 
 #. Translators: %1$s the error code passed from Google.
-#: src/Pro/Providers/Gmail/Auth.php:203
+#: src/Pro/Providers/Gmail/Auth.php:184
 msgid "Google authorization error. %1$s"
 msgstr ""
 
@@ -2798,12 +2890,12 @@ msgstr ""
 msgid "Failed to refresh access token. %1$s"
 msgstr ""
 
-#: src/Pro/Providers/Outlook/OneClick/Auth.php:272
+#: src/Pro/Providers/Outlook/OneClick/Auth.php:253
 msgid "Microsoft authorization error. Authorization code is empty."
 msgstr ""
 
 #. translators: %1$s - exception message.
-#: src/Pro/Providers/Outlook/OneClick/Auth.php:304
+#: src/Pro/Providers/Outlook/OneClick/Auth.php:285
 msgid "Failed to obtain access token. %1$s"
 msgstr ""
 

@@ -106,6 +106,8 @@ final class Middleware
                     $credentialPromise = $credProvider();
                 }
                 return $credentialPromise->then(function (\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $creds) use($handler, $command, $signer, $request) {
+                    // Capture credentials metric
+                    $command->getMetricsBuilder()->identifyMetricByValueAndAppend('credentials', $creds);
                     return $handler($command, $signer->signRequest($request, $creds));
                 });
             };

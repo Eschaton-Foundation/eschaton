@@ -6,6 +6,9 @@ use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Debug;
 use WPMailSMTP\Options;
+use WPMailSMTP\Pro\Tasks\LicenseCheckTask;
+use WPMailSMTP\Tasks\NotificationsUpdateTask;
+use WPMailSMTP\UsageTracking\SendUsageTask;
 use WPMailSMTP\WP;
 use WPMailSMTP\Pro\Emails\Logs\Email;
 
@@ -177,6 +180,8 @@ class Multisite {
 			add_action( 'init', [ $migrations, 'init_migrations_on_request' ] );
 			set_transient( 'wp_mail_smtp_ms_init_migrations_daily', true, DAY_IN_SECONDS );
 		}
+
+		add_filter( 'wp_mail_smtp_tasks_get_tasks', [ $this, 'unset_global_tasks_on_subsites' ] );
 	}
 
 	/**
@@ -917,5 +922,35 @@ class Multisite {
 				],
 			]
 		);
+	}
+
+	/**
+	 * Unset global tasks that are not needed for subsites
+	 * if the network-wide option is enabled.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param array $tasks Tasks.
+	 *
+	 * @return array
+	 */
+	public function unset_global_tasks_on_subsites( $tasks ) {
+
+		if ( WP::use_global_plugin_settings() && ! is_main_site() ) {
+			$tasks_to_remove = [
+				NotificationsUpdateTask::class,
+				LicenseCheckTask::class,
+				SendUsageTask::class,
+			];
+
+			$tasks = array_filter(
+				$tasks,
+				function ( $task ) use ( $tasks_to_remove ) {
+					return ! in_array( $task, $tasks_to_remove, true );
+				}
+			);
+		}
+
+		return $tasks;
 	}
 }

@@ -2,6 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\Credentials;
 
+use WPMailSMTP\Vendor\Aws\Arn\Arn;
 use WPMailSMTP\Vendor\Aws\Exception\CredentialsException;
 use WPMailSMTP\Vendor\GuzzleHttp\Exception\ConnectException;
 use WPMailSMTP\Vendor\GuzzleHttp\Exception\GuzzleException;
@@ -67,7 +68,15 @@ class EcsCredentialProvider
                 while ($credentials === null) {
                     $credentials = (yield $client($request, ['timeout' => $this->timeout, 'proxy' => '', 'headers' => $headers])->then(function (\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response) {
                         $result = $this->decodeResult((string) $response->getBody());
-                        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null);
+                        if (!isset($result['AccountId']) && isset($result['RoleArn'])) {
+                            try {
+                                $parsedArn = new \WPMailSMTP\Vendor\Aws\Arn\Arn($result['RoleArn']);
+                                $result['AccountId'] = $parsedArn->getAccountId();
+                            } catch (\Exception $e) {
+                                // AccountId will be null
+                            }
+                        }
+                        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ECS);
                     })->otherwise(function ($reason) {
                         $reason = \is_array($reason) ? $reason['exception'] : $reason;
                         $isRetryable = $reason instanceof \WPMailSMTP\Vendor\GuzzleHttp\Exception\ConnectException;

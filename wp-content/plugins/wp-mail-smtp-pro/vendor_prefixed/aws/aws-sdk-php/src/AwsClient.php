@@ -262,6 +262,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         if (isset($args['with_resolved'])) {
             $args['with_resolved']($config);
         }
+        $this->addUserAgentMiddleware($config);
     }
     public function getHandlerList()
     {
@@ -383,18 +384,18 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         } else {
             $configuredSignatureVersion = \false;
         }
-        $resolver = static function (\WPMailSMTP\Vendor\Aws\CommandInterface $c) use($api, $provider, $name, $region, $signatureVersion, $configuredSignatureVersion, $signingRegionSet) {
+        $resolver = static function (\WPMailSMTP\Vendor\Aws\CommandInterface $command) use($api, $provider, $name, $region, $signatureVersion, $configuredSignatureVersion, $signingRegionSet) {
             if (!$configuredSignatureVersion) {
-                if (!empty($c['@context']['signing_region'])) {
-                    $region = $c['@context']['signing_region'];
+                if (!empty($command['@context']['signing_region'])) {
+                    $region = $command['@context']['signing_region'];
                 }
-                if (!empty($c['@context']['signing_service'])) {
-                    $name = $c['@context']['signing_service'];
+                if (!empty($command['@context']['signing_service'])) {
+                    $name = $command['@context']['signing_service'];
                 }
-                if (!empty($c['@context']['signature_version'])) {
-                    $signatureVersion = $c['@context']['signature_version'];
+                if (!empty($command['@context']['signature_version'])) {
+                    $signatureVersion = $command['@context']['signature_version'];
                 }
-                $authType = $api->getOperation($c->getName())['authtype'];
+                $authType = $api->getOperation($command->getName())['authtype'];
                 switch ($authType) {
                     case 'none':
                         $signatureVersion = 'anonymous';
@@ -408,9 +409,11 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
                 }
             }
             if ($signatureVersion === 'v4a') {
-                $commandSigningRegionSet = !empty($c['@context']['signing_region_set']) ? \implode(', ', $c['@context']['signing_region_set']) : null;
+                $commandSigningRegionSet = !empty($command['@context']['signing_region_set']) ? \implode(', ', $command['@context']['signing_region_set']) : null;
                 $region = $signingRegionSet ?? $commandSigningRegionSet ?? $region;
             }
+            // Capture signature metric
+            $command->getMetricsBuilder()->identifyMetricByValueAndAppend('signature', $signatureVersion);
             return \WPMailSMTP\Vendor\Aws\Signature\SignatureProvider::resolve($provider, $signatureVersion, $name, $region);
         };
         $this->handlerList->appendSign(\WPMailSMTP\Vendor\Aws\Middleware::signer($this->credentialProvider, $resolver, $this->tokenProvider, $this->getConfig()), 'signer');
@@ -474,6 +477,20 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         $list = $this->getHandlerList();
         $endpointArgs = $this->getEndpointProviderArgs();
         $list->prependBuild(\WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2Middleware::wrap($this->endpointProvider, $this->getApi(), $endpointArgs, $this->credentialProvider), 'endpoint-resolution');
+    }
+    /**
+     * Appends the user agent middleware.
+     * This middleware MUST be appended after the
+     * signature middleware `addSignatureMiddleware`,
+     * so that metrics around signatures are properly
+     * captured.
+     *
+     * @param $args
+     * @return void
+     */
+    private function addUserAgentMiddleware($args)
+    {
+        $this->getHandlerList()->appendSign(\WPMailSMTP\Vendor\Aws\UserAgentMiddleware::wrap($args), 'user-agent');
     }
     /**
      * Retrieves client context param definition from service model,

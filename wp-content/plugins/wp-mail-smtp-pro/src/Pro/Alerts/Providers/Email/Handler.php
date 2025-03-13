@@ -8,6 +8,7 @@ use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Alerts\Alert;
 use WPMailSMTP\Pro\Alerts\Alerts;
 use WPMailSMTP\Pro\Alerts\Handlers\HandlerInterface;
+use WPMailSMTP\WP;
 
 /**
  * Class Handler. Email API alerts.
@@ -99,7 +100,7 @@ class Handler implements HandlerInterface {
 			'headers' => [
 				'Content-Type'  => 'application/json',
 				'X-Licence-Key' => wp_mail_smtp()->get_license_key(),
-				'X-Site-Domain' => wp_parse_url( home_url(), PHP_URL_HOST ),
+				'X-Site-Domain' => wp_parse_url( WP::get_site_url(), PHP_URL_HOST ),
 			],
 			'user-agent' => Helpers::get_default_user_agent(),
 			'body'    => wp_json_encode(

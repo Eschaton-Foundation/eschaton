@@ -87,25 +87,6 @@ class Auth extends AuthAbstract {
 	}
 
 	/**
-	 * Get the current site URL,
-	 * or the network URL if using network-wide settings.
-	 *
-	 * @since 4.1.0
-	 *
-	 * @return string
-	 */
-	private function get_site_url() {
-
-		$site_id = null;
-
-		if ( WP::use_global_plugin_settings() ) {
-			$site_id = get_main_site_id();
-		}
-
-		return get_site_url( $site_id );
-	}
-
-	/**
 	 * Init and get the Client object.
 	 *
 	 * @since 3.11.0
@@ -120,7 +101,7 @@ class Auth extends AuthAbstract {
 		}
 
 		$credentials = $this->options['one_click_setup_credentials'] ?? [];
-		$site_url    = $this->get_site_url();
+		$site_url    = WP::get_site_url();
 
 		if ( $this->connection->get_id() !== 'primary' ) {
 			$site_url = add_query_arg( 'connection_id', $this->connection->get_id(), $site_url );
@@ -184,7 +165,7 @@ class Auth extends AuthAbstract {
 			],
 		];
 
-		$site_url = $this->get_site_url();
+		$site_url = WP::get_site_url();
 
 		if ( $this->connection->get_id() !== 'primary' ) {
 			$site_url = add_query_arg( 'connection_id', $this->connection->get_id(), $site_url );

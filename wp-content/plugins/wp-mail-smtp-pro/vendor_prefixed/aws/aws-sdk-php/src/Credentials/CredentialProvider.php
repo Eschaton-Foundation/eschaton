@@ -226,7 +226,7 @@ class CredentialProvider
             $accountId = \getenv(self::ENV_ACCOUNT_ID) ?: null;
             $token = \getenv(self::ENV_SESSION) ?: null;
             if ($key && $secret) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($key, $secret, $token, null, $accountId));
+                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($key, $secret, $token, null, $accountId, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ENVIRONMENT));
             }
             return self::reject('Could not find environment variable ' . 'credentials in ' . self::ENV_KEY . '/' . self::ENV_SECRET);
         };
@@ -315,7 +315,7 @@ class CredentialProvider
             $region = isset($config['region']) ? $config['region'] : null;
             if ($tokenFromEnv && $arnFromEnv) {
                 $sessionName = \getenv(self::ENV_ROLE_SESSION_NAME) ? \getenv(self::ENV_ROLE_SESSION_NAME) : null;
-                $provider = new \WPMailSMTP\Vendor\Aws\Credentials\AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $arnFromEnv, 'WebIdentityTokenFile' => $tokenFromEnv, 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region]);
+                $provider = new \WPMailSMTP\Vendor\Aws\Credentials\AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $arnFromEnv, 'WebIdentityTokenFile' => $tokenFromEnv, 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region, 'source' => \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ENVIRONMENT_STS_WEB_ID_TOKEN]);
                 return $provider();
             }
             $profileName = \getenv(self::ENV_PROFILE) ?: 'default';
@@ -331,7 +331,7 @@ class CredentialProvider
                 }
                 if (isset($profile['web_identity_token_file']) && isset($profile['role_arn'])) {
                     $sessionName = isset($profile['role_session_name']) ? $profile['role_session_name'] : null;
-                    $provider = new \WPMailSMTP\Vendor\Aws\Credentials\AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $profile['role_arn'], 'WebIdentityTokenFile' => $profile['web_identity_token_file'], 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region]);
+                    $provider = new \WPMailSMTP\Vendor\Aws\Credentials\AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $profile['role_arn'], 'WebIdentityTokenFile' => $profile['web_identity_token_file'], 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region, 'source' => \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_STS_WEB_ID_TOKEN]);
                     return $provider();
                 }
             } else {
@@ -400,7 +400,7 @@ class CredentialProvider
             if (empty($data[$profile]['aws_session_token'])) {
                 $data[$profile]['aws_session_token'] = isset($data[$profile]['aws_security_token']) ? $data[$profile]['aws_security_token'] : null;
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($data[$profile]['aws_access_key_id'], $data[$profile]['aws_secret_access_key'], $data[$profile]['aws_session_token'], null, !empty($data[$profile]['aws_account_id']) ? $data[$profile]['aws_account_id'] : null));
+            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($data[$profile]['aws_access_key_id'], $data[$profile]['aws_secret_access_key'], $data[$profile]['aws_session_token'], null, $data[$profile]['aws_account_id'] ?? null, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE));
         };
     }
     /**
@@ -467,7 +467,7 @@ class CredentialProvider
             } elseif (!empty($data[$profile]['aws_account_id'])) {
                 $accountId = $data[$profile]['aws_account_id'];
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($processData['AccessKeyId'], $processData['SecretAccessKey'], $processData['SessionToken'], $expires, $accountId));
+            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($processData['AccessKeyId'], $processData['SecretAccessKey'], $processData['SessionToken'], $expires, $accountId, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_PROCESS));
         };
     }
     /**
@@ -510,7 +510,7 @@ class CredentialProvider
             $stsClient = new \WPMailSMTP\Vendor\Aws\Sts\StsClient(['credentials' => $sourceCredentials, 'region' => $sourceRegion, 'version' => '2011-06-15']);
         }
         $result = $stsClient->assumeRole(['RoleArn' => $roleArn, 'RoleSessionName' => $roleSessionName]);
-        $credentials = $stsClient->createCredentials($result);
+        $credentials = $stsClient->createCredentials($result, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STS_ASSUME_ROLE);
         return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($credentials);
     }
     /**
@@ -648,7 +648,7 @@ class CredentialProvider
         $token = $tokenPromise()->wait();
         $ssoCredentials = \WPMailSMTP\Vendor\Aws\Credentials\CredentialProvider::getCredentialsFromSsoService($ssoProfile, $ssoSession['sso_region'], $token->getToken(), $config);
         $expiration = $ssoCredentials['expiration'];
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id']));
+        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id'], \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_SSO));
     }
     /**
      * @param $profiles
@@ -681,7 +681,7 @@ class CredentialProvider
             return self::reject("Cached SSO credentials returned expired credentials");
         }
         $ssoCredentials = \WPMailSMTP\Vendor\Aws\Credentials\CredentialProvider::getCredentialsFromSsoService($ssoProfile, $ssoProfile['sso_region'], $tokenData['accessToken'], $config);
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id']));
+        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id'], \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_SSO_LEGACY));
     }
     /**
      * @param array $ssoProfile

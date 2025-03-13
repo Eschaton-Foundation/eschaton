@@ -12,6 +12,8 @@ use WPMailSMTP\Pro\Alerts\Loader;
 use WPMailSMTP\Pro\Alerts\Loader as AlertsLoader;
 use WPMailSMTP\Pro\Alerts\Providers\Email\Handler as EmailAlertsHandler;
 use WPMailSMTP\Pro\Alerts\Providers\Email\Options as EmailAlertsOptions;
+use WPMailSMTP\Pro\Alerts\Providers\Push\Handler as PushAlertsHandler;
+use WPMailSMTP\Pro\Alerts\Providers\Push\Options as PushAlertsOptions;
 use WPMailSMTP\Pro\Emails\Logs\Admin\PageAbstract;
 use WPMailSMTP\WP;
 
@@ -252,12 +254,14 @@ class SettingsTab extends AlertsTab {
 							<?php
 							if ( $option->get_slug() === EmailAlertsOptions::SLUG ) {
 								$this->display_email_alert_rate_limit_notice();
+							} elseif ( $option->get_slug() === PushAlertsOptions::SLUG ) {
+								$this->display_push_notifications_site_notice();
 							}
 							?>
 						</div>
 					</div>
 
-                    <div class="wp-mail-smtp-setting-row wp-mail-smtp-setting-row-checkbox-toggle">
+					<div class="wp-mail-smtp-setting-row wp-mail-smtp-setting-row-checkbox-toggle">
 						<div class="wp-mail-smtp-setting-label">
 							<label for="wp-mail-smtp-setting-alert-<?php echo esc_attr( $option->get_slug() ); ?>-enabled">
 								<?php
@@ -284,13 +288,15 @@ class SettingsTab extends AlertsTab {
 
 						<?php $option->display_options(); ?>
 
-						<div class="wp-mail-smtp-setting-row">
-							<div class="wp-mail-smtp-setting-field">
-								<button class="wp-mail-smtp-btn wp-mail-smtp-btn-md wp-mail-smtp-btn-blueish js-wp-mail-smtp-setting-alert-add-connection" data-provider="<?php echo esc_attr( $option->get_slug() ); ?>" <?php disabled( $option->get_max_connections_count() > 0 && count( $connections ) >= $option->get_max_connections_count() ); ?>>
-									<?php echo esc_html( $option->get_add_connection_text() ); ?>
-								</button>
+						<?php if ( $option->get_slug() !== PushAlertsOptions::SLUG ) : ?>
+							<div class="wp-mail-smtp-setting-row">
+								<div class="wp-mail-smtp-setting-field">
+									<button class="wp-mail-smtp-btn wp-mail-smtp-btn-md wp-mail-smtp-btn-blueish js-wp-mail-smtp-setting-alert-add-connection" data-provider="<?php echo esc_attr( $option->get_slug() ); ?>" <?php disabled( $option->get_max_connections_count() > 0 && count( $connections ) >= $option->get_max_connections_count() ); ?>>
+										<?php echo esc_html( $option->get_add_connection_text() ); ?>
+									</button>
+								</div>
 							</div>
-						</div>
+						<?php endif; ?>
 					</div>
 				</div>
 			<?php endforeach; ?>
@@ -365,6 +371,41 @@ class SettingsTab extends AlertsTab {
 				);
 				?>
 			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Output the notice container for push notification alerts.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @return void
+	 */
+	private function display_push_notifications_site_notice() {
+
+		$remaining_seconds = PushAlertsHandler::get_remaining_rate_limit_seconds();
+
+		// Bail early if rate limit expired.
+		if ( $remaining_seconds > 0 ) {
+			$remaining_minutes = round( $remaining_seconds / MINUTE_IN_SECONDS );
+			?>
+			<div class="notice inline notice-inline wp-mail-smtp-notice notice-warning">
+				<p>
+					<?php
+					printf(
+					/* translators: %d - number of minutes until new email alerts can be sent. */
+						esc_html__( 'Any additional push notifications alerts from this site are paused for %d minutes. You can still test other types of alerts.', 'wp-mail-smtp-pro' ),
+						absint( $remaining_minutes )
+					);
+					?>
+				</p>
+			</div>
+			<?php
+		}
+		?>
+		<div class="notice inline notice-inline wp-mail-smtp-notice notice-warning wp-mail-smtp-push-notifications-notice" id="wp-mail-smtp-push-notifications-site-notice" style="display: none;">
+			<p></p>
 		</div>
 		<?php
 	}

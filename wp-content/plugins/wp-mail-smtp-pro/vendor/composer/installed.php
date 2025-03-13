@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'awesomemotive/wp-mail-smtp',
-        'pretty_version' => 'dev-4.3.1-release',
-        'version' => 'dev-4.3.1-release',
+        'pretty_version' => 'dev-4.4.0-release',
+        'version' => 'dev-4.4.0-release',
         'reference' => '767b1cb94cf3266be176484806a978ae7e4e69ae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'awesomemotive/wp-mail-smtp' => array(
-            'pretty_version' => 'dev-4.3.1-release',
-            'version' => 'dev-4.3.1-release',
+            'pretty_version' => 'dev-4.4.0-release',
+            'version' => 'dev-4.4.0-release',
             'reference' => '767b1cb94cf3266be176484806a978ae7e4e69ae',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -29,9 +29,9 @@
             'dev_requirement' => false,
         ),
         'aws/aws-sdk-php' => array(
-            'pretty_version' => '3.334.1',
-            'version' => '3.334.1.0',
-            'reference' => '3938b3467f64a30fed7ee1762a6785f808a5ae4d',
+            'pretty_version' => '3.337.3',
+            'version' => '3.337.3.0',
+            'reference' => '06dfc8f76423b49aaa181debd25bbdc724c346d6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../aws/aws-sdk-php',
             'aliases' => array(),

@@ -57,7 +57,7 @@ class License {
 	 *
 	 * @var string
 	 */
-	public $remote_url = 'https://wpmailsmtp.com/license-api';
+	public $remote_url = 'https://wpmailsmtpapi.com/license/v1';
 
 	/**
 	 * Remote URL for getting the latest version information.
@@ -66,7 +66,7 @@ class License {
 	 *
 	 * @var string
 	 */
-	private $latest_version_remote_url = 'https://wpmailsmtp.com/wp-content/core.json';
+	private $latest_version_remote_url = 'https://wpmailsmtpapi.com/feeds/v1/core-plugin-info';
 
 	/**
 	 * Primary class constructor.
@@ -942,7 +942,7 @@ class License {
 				'tgm-updater-key'         => $body['tgm-updater-key'],
 				'tgm-updater-wp-version'  => get_bloginfo( 'version' ),
 				'tgm-updater-php-version' => phpversion(),
-				'tgm-updater-referer'     => site_url(),
+				'tgm-updater-referer'     => WP::get_site_url(),
 			]
 		);
 
@@ -960,8 +960,10 @@ class License {
 			$this->remote_url = WPMS_UPDATER_API;
 		}
 
+		$remote_url = $this->remote_url . '/' . $action;
+
 		// Perform the query and retrieve the response.
-		$response      = wp_remote_get( add_query_arg( $query_params, $this->remote_url ), $args );
+		$response      = wp_remote_get( add_query_arg( $query_params, $remote_url ), $args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
 

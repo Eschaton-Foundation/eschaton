@@ -12,8 +12,10 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
     private $name;
     /** @var HandlerList */
     private $handlerList;
-    /** @var Array */
+    /** @var array */
     private $authSchemes;
+    /** @var MetricsBuilder */
+    private $metricsBuilder;
     /**
      * Accepts an associative array of command options, including:
      *
@@ -23,7 +25,7 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
      * @param array       $args           Arguments to pass to the command
      * @param HandlerList $list           Handler list
      */
-    public function __construct($name, array $args = [], ?\WPMailSMTP\Vendor\Aws\HandlerList $list = null)
+    public function __construct($name, array $args = [], ?\WPMailSMTP\Vendor\Aws\HandlerList $list = null, ?\WPMailSMTP\Vendor\Aws\MetricsBuilder $metricsBuilder = null)
     {
         $this->name = $name;
         $this->data = $args;
@@ -34,6 +36,7 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
         if (!isset($this->data['@context'])) {
             $this->data['@context'] = [];
         }
+        $this->metricsBuilder = $metricsBuilder ?: new \WPMailSMTP\Vendor\Aws\MetricsBuilder();
     }
     public function __clone()
     {
@@ -88,5 +91,16 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
     public function get($name)
     {
         return $this[$name];
+    }
+    /**
+     * Returns the metrics builder instance tied up to this command.
+     *
+     * @internal
+     *
+     * @return MetricsBuilder
+     */
+    public function getMetricsBuilder() : \WPMailSMTP\Vendor\Aws\MetricsBuilder
+    {
+        return $this->metricsBuilder;
     }
 }

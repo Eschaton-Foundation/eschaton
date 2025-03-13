@@ -5,8 +5,8 @@ namespace WPMailSMTP\Pro\Emails\Logs;
 use WP_Error;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Debug;
-use WPMailSMTP\Pro\Tasks\Logs\ResendTask;
 use WPMailSMTP\Pro\Emails\Logs\Attachments\Attachments;
+use WPMailSMTP\Pro\Tasks\Logs\ResendTask;
 
 /**
  * Resend email trait.
@@ -82,11 +82,10 @@ trait CanResendEmailTrait {
 		$connections_manager->set_mail_connection( $connection );
 		$connections_manager->set_mail_backup_connection( false );
 
-		add_filter( 'wp_mail_smtp_mail_catcher_send_enqueue_email', '__return_false', PHP_INT_MAX );
 		add_action( 'phpmailer_init', [ $this, 'set_attachments' ] );
 		$is_sent = wp_mail( $to, $email->get_subject(), $email->get_content(), $headers );
+
 		remove_action( 'phpmailer_init', [ $this, 'set_attachments' ] );
-		remove_filter( 'wp_mail_smtp_mail_catcher_send_enqueue_email', '__return_false', PHP_INT_MAX );
 
 		$this->processing_email = null;
 
@@ -135,11 +134,28 @@ trait CanResendEmailTrait {
 	 */
 	public function schedule_emails_send( $email_ids, $connection_id = 'primary' ) {
 
-		$resend_task = new ResendTask();
+		if ( wp_mail_smtp()->get_queue()->is_enabled() ) {
+			$connection = wp_mail_smtp()->get_connections_manager()->get_connection( $connection_id );
 
-		// Batch emails sending because it can take some time on slower web hostings or slow SMTP servers. Especially emails with attachments.
-		foreach ( array_chunk( $email_ids, ResendTask::EMAILS_PER_BATCH ) as $chunk ) {
-			$resend_task->schedule( $chunk, $connection_id );
+			foreach ( array_chunk( $email_ids, 30 ) as $chunk ) {
+				$emails_collection = new EmailsCollection(
+					[
+						'ids'      => $chunk,
+						'per_page' => count( $chunk ),
+					]
+				);
+
+				foreach ( $emails_collection->get() as $email ) {
+					$this->send_email( $email, null, $connection );
+				}
+			}
+		} else {
+			$resend_task = new ResendTask();
+
+			// Batch emails sending because it can take some time on slower web hostings or slow SMTP servers. Especially emails with attachments.
+			foreach ( array_chunk( $email_ids, ResendTask::EMAILS_PER_BATCH ) as $chunk ) {
+				$resend_task->schedule( $chunk, $connection_id );
+			}
 		}
 	}
 }

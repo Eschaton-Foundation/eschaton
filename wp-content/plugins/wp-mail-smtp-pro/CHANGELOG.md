@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.4.0] - 2025-03-04
+### Added:
+- Push notifications channel for the Alerts feature.
+
+### Fixed:
+- SMTP.com emails delivery status verification via webhooks.
+- Emails queue runner Action Scheduler task deadlock issue.
+- Rate limiting for the emails resend feature.
+
 ## [4.3.1] - 2025-01-21
 ### Fixed:
 - Email Log and Reports search if subject contains special characters like ampersand.

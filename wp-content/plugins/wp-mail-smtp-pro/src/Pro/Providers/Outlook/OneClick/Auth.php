@@ -61,7 +61,7 @@ class Auth extends AuthAbstract {
 			return $this->client;
 		}
 
-		$this->client = new Client( $this->get_site_url() );
+		$this->client = new Client( WP::get_site_url() );
 
 		if ( ! $this->is_auth_required() && ! $this->is_reauth_required() ) {
 			$credentials   = $this->options['one_click_setup_credentials'] ?? [];
@@ -152,25 +152,6 @@ class Auth extends AuthAbstract {
 				$this->set_auth_status( 'reauth' );
 			}
 		}
-	}
-
-	/**
-	 * Get the current site URL,
-	 * or the network URL if using network-wide settings.
-	 *
-	 * @since 4.3.0
-	 *
-	 * @return string
-	 */
-	private function get_site_url() {
-
-		$site_id = null;
-
-		if ( WP::use_global_plugin_settings() ) {
-			$site_id = get_main_site_id();
-		}
-
-		return get_site_url( $site_id );
 	}
 
 	/**

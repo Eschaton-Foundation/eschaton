@@ -67,7 +67,7 @@ class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
      * @return Credentials
      * @throws \InvalidArgumentException if the result contains no credentials
      */
-    public function createCredentials(\WPMailSMTP\Vendor\Aws\Result $result)
+    public function createCredentials(\WPMailSMTP\Vendor\Aws\Result $result, $source = null)
     {
         if (!$result->hasKey('Credentials')) {
             throw new \InvalidArgumentException('Result contains no credentials');
@@ -82,7 +82,7 @@ class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
         }
         $credentials = $result['Credentials'];
         $expiration = isset($credentials['Expiration']) && $credentials['Expiration'] instanceof \DateTimeInterface ? (int) $credentials['Expiration']->format('U') : null;
-        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($credentials['AccessKeyId'], $credentials['SecretAccessKey'], isset($credentials['SessionToken']) ? $credentials['SessionToken'] : null, $expiration, $accountId);
+        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($credentials['AccessKeyId'], $credentials['SecretAccessKey'], isset($credentials['SessionToken']) ? $credentials['SessionToken'] : null, $expiration, $accountId, $source);
     }
     /**
      * Adds service-specific client built-in value

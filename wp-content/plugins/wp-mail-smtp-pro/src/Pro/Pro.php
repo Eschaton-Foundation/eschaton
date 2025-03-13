@@ -19,6 +19,7 @@ use WPMailSMTP\Pro\Emails\Logs\Reports\Reports;
 use WPMailSMTP\Pro\Emails\Logs\Tracking\Tracking;
 use WPMailSMTP\Pro\Emails\RateLimiting\RateLimiting;
 use WPMailSMTP\Pro\Emails\TestEmail;
+use WPMailSMTP\Pro\ProductApi\ProductApi;
 use WPMailSMTP\Pro\Providers\AmazonSES\Options as SESOptions;
 use WPMailSMTP\Pro\SmartRouting\SmartRouting;
 use WPMailSMTP\WP;
@@ -101,6 +102,8 @@ class Pro {
 		// Disable the admin education notice-bar.
 		add_filter( 'wp_mail_smtp_admin_education_notice_bar', '__return_false' );
 
+		add_filter( 'plugin_action_links_wp-mail-smtp/wp_mail_smtp.php', [ $this, 'replace_action_links' ] );
+
 		// Alias WPMailArgs class.
 		class_alias( 'WPMailSMTP\WPMailArgs', 'WPMailSMTP\Pro\WPMailArgs' );
 
@@ -114,6 +117,7 @@ class Pro {
 		$this->get_importers();
 		$this->get_translations();
 		$this->get_rate_limiting();
+		$this->get_product_api();
 
 		if ( is_admin() ) {
 			$this->get_site_health()->init();
@@ -137,6 +141,9 @@ class Pro {
 
 		// Initialize admin area.
 		( new Area() )->hooks();
+
+		// Initialize upgrades.
+		( new Upgrade() )->hooks();
 
 		// Usage tracking hooks.
 		add_filter( 'wp_mail_smtp_usage_tracking_get_data', [ $this, 'usage_tracking_get_data' ] );
@@ -1271,5 +1278,50 @@ class Pro {
 		}
 
 		return $rate_limiting;
+	}
+
+	/**
+	 * Replace the activation link for the Lite version of WP Mail SMTP.
+	 * Activating the Lite version of WP Mail SMTP is not allowed when the Pro version is active.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param array $links Plugin row links.
+	 *
+	 * @return array
+	 */
+	public function replace_action_links( array $links ): array {
+
+		$links['activate'] = __( 'Inactive &mdash; You are already using WP Mail SMTP Pro', 'wp-mail-smtp-pro' );
+
+		return $links;
+	}
+
+	/**
+	 * Load the product API functionality.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @return ProductApi
+	 */
+	public function get_product_api() {
+
+		static $product_api;
+
+		if ( ! isset( $product_api ) ) {
+
+			/**
+			 * Filter the ProductApi object.
+			 *
+			 * @since 4.4.0
+			 *
+			 * @param ProductApi $product_api The ProductApi object.
+			 */
+			$product_api = apply_filters( 'wp_mail_smtp_pro_product_api', new ProductApi() );
+
+			$product_api->hooks();
+		}
+
+		return $product_api;
 	}
 }

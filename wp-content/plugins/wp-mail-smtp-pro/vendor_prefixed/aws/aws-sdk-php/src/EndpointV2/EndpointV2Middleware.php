@@ -6,6 +6,7 @@ use WPMailSMTP\Vendor\Aws\Api\Operation;
 use WPMailSMTP\Vendor\Aws\Api\Service;
 use WPMailSMTP\Vendor\Aws\Auth\Exception\UnresolvedAuthSchemeException;
 use WPMailSMTP\Vendor\Aws\CommandInterface;
+use WPMailSMTP\Vendor\Aws\MetricsBuilder;
 use Closure;
 use WPMailSMTP\Vendor\GuzzleHttp\Promise\Promise;
 use function WPMailSMTP\Vendor\JmesPath\search;
@@ -73,6 +74,9 @@ class EndpointV2Middleware
         $operation = $this->api->getOperation($command->getName());
         $commandArgs = $command->toArray();
         $providerArgs = $this->resolveArgs($commandArgs, $operation);
+        if (!empty($providerArgs[self::ACCOUNT_ID_PARAM])) {
+            $command->getMetricsBuilder()->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::RESOLVED_ACCOUNT_ID);
+        }
         $endpoint = $this->endpointProvider->resolveEndpoint($providerArgs);
         if (!empty($authSchemes = $endpoint->getProperty('authSchemes'))) {
             $this->applyAuthScheme($authSchemes, $command);

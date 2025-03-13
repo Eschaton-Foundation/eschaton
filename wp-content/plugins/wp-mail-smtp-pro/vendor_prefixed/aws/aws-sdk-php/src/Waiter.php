@@ -63,6 +63,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
         if ($this->config['before'] && !\is_callable($this->config['before'])) {
             throw new \InvalidArgumentException('The provided "before" callback is not callable.');
         }
+        \WPMailSMTP\Vendor\Aws\MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), \WPMailSMTP\Vendor\Aws\MetricsBuilder::WAITER);
     }
     /**
      * @return Coroutine

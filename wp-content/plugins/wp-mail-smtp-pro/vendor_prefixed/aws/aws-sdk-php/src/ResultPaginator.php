@@ -34,6 +34,7 @@ class ResultPaginator implements \Iterator
         $this->operation = $operation;
         $this->args = $args;
         $this->config = $config;
+        \WPMailSMTP\Vendor\Aws\MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), \WPMailSMTP\Vendor\Aws\MetricsBuilder::PAGINATOR);
     }
     /**
      * Runs a paginator asynchronously and uses a callback to handle results.

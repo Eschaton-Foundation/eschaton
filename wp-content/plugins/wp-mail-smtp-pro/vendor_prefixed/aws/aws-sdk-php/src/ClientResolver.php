@@ -491,50 +491,10 @@ class ClientResolver
     {
         return \WPMailSMTP\Vendor\Aws\Configuration\ConfigurationResolver::resolve('sdk_ua_app_id', '', 'string', $args);
     }
-    public static function _apply_user_agent($inputUserAgent, array &$args, \WPMailSMTP\Vendor\Aws\HandlerList $list)
+    public static function _apply_user_agent($inputUserAgent, array &$args, \WPMailSMTP\Vendor\Aws\HandlerList $list) : void
     {
-        // Add SDK version
-        $userAgent = ['aws-sdk-php/' . \WPMailSMTP\Vendor\Aws\Sdk::VERSION];
-        // User Agent Metadata
-        $userAgent[] = 'ua/2.0';
-        // If on HHVM add the HHVM version
-        if (\defined('WPMailSMTP\\Vendor\\HHVM_VERSION')) {
-            $userAgent[] = 'HHVM/' . HHVM_VERSION;
-        }
-        // Add OS version
-        $disabledFunctions = \explode(',', \ini_get('disable_functions'));
-        if (\function_exists('php_uname') && !\in_array('php_uname', $disabledFunctions, \true)) {
-            $osName = "OS/" . \php_uname('s') . '#' . \php_uname('r');
-            if (!empty($osName)) {
-                $userAgent[] = $osName;
-            }
-        }
-        // Add the language version
-        $userAgent[] = 'lang/php#' . \phpversion();
-        // Add exec environment if present
-        if ($executionEnvironment = \getenv('AWS_EXECUTION_ENV')) {
-            $userAgent[] = $executionEnvironment;
-        }
         // Add endpoint discovery if set
-        if (isset($args['endpoint_discovery'])) {
-            if ($args['endpoint_discovery'] instanceof \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration && $args['endpoint_discovery']->isEnabled()) {
-                $userAgent[] = 'cfg/endpoint-discovery';
-            } elseif (\is_array($args['endpoint_discovery']) && isset($args['endpoint_discovery']['enabled']) && $args['endpoint_discovery']['enabled']) {
-                $userAgent[] = 'cfg/endpoint-discovery';
-            }
-        }
-        // Add retry mode if set
-        if (isset($args['retries'])) {
-            if ($args['retries'] instanceof \WPMailSMTP\Vendor\Aws\Retry\Configuration) {
-                $userAgent[] = 'cfg/retry-mode#' . $args["retries"]->getMode();
-            } elseif (\is_array($args['retries']) && isset($args["retries"]["mode"])) {
-                $userAgent[] = 'cfg/retry-mode#' . $args["retries"]["mode"];
-            }
-        }
-        // AppID Metadata
-        if (!empty($args['app_id'])) {
-            $userAgent[] = 'app/' . $args['app_id'];
-        }
+        $userAgent = [];
         // Add the input to the end
         if ($inputUserAgent) {
             if (!\is_array($inputUserAgent)) {
@@ -544,11 +504,9 @@ class ClientResolver
             $userAgent = \array_merge($userAgent, $inputUserAgent);
         }
         $args['ua_append'] = $userAgent;
-        $list->appendBuild(static function (callable $handler) use($userAgent) {
-            return function (\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request) use($handler, $userAgent) {
-                return $handler($command, $request->withHeader('X-Amz-User-Agent', \implode(' ', \array_merge($userAgent, $request->getHeader('X-Amz-User-Agent'))))->withHeader('User-Agent', \implode(' ', \array_merge($userAgent, $request->getHeader('User-Agent')))));
-            };
-        });
+        $list->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::mapRequest(function (\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request) use($userAgent) {
+            return $request->withHeader('X-Amz-User-Agent', \implode(' ', \array_merge($userAgent, $request->getHeader('X-Amz-User-Agent'))));
+        }));
     }
     public static function _apply_endpoint($value, array &$args, \WPMailSMTP\Vendor\Aws\HandlerList $list)
     {
@@ -556,6 +514,7 @@ class ClientResolver
             unset($args['endpoint']);
             return;
         }
+        $args['endpoint_override'] = \true;
         $args['endpoint'] = $value;
     }
     public static function _apply_idempotency_auto_fill($value, array &$args, \WPMailSMTP\Vendor\Aws\HandlerList $list)

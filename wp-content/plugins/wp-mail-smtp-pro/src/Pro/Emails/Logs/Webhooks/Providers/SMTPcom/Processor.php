@@ -44,7 +44,7 @@ class Processor extends AbstractProcessor {
 
 			$event = false;
 
-			if ( $event_data['event_label'] === 'delivery' ) {
+			if ( $event_data['event_label'] === 'delivered' ) {
 				$event = new Delivered();
 			} elseif ( $event_data['event_label'] === 'bounce' ) {
 				$event = new Failed();

@@ -7,6 +7,7 @@ use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\MailCatcherInterface;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Alerts\Admin\SettingsTab;
+use WPMailSMTP\Pro\Alerts\Providers\Push\Provider as PushProvider;
 use WPMailSMTP\Pro\Emails\Logs\Email;
 use WPMailSMTP\Pro\Tasks\NotifierTask;
 use WPMailSMTP\WP;
@@ -69,6 +70,8 @@ class Alerts {
 		add_filter( 'wp_mail_smtp_admin_process_ajax_test_alerts_data', [ $this, 'process_ajax_test_alerts_data' ] );
 
 		add_action( 'wp_mail_smtp_options_set', [ $this, 'remove_empty_send_to_for_alert_email' ] );
+
+		( new PushProvider() )->hooks();
 	}
 
 	/**

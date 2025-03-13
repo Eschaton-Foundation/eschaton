@@ -296,6 +296,9 @@ class Auth extends AuthAbstract {
 		$args['disable_request_compression']        = true;
 		$args['request_min_compression_size_bytes'] = 10240;
 
+		// Suppress PHP deprecation warnings.
+		$args['suppress_php_deprecation_warning'] = true;
+
 		$this->client[ $version ] = $version === 'v1' ? new SesClient( $args ) : new SesV2Client( $args );
 
 		return $this->client[ $version ];

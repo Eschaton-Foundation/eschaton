@@ -4,6 +4,7 @@ namespace WPMailSMTP\Pro\License;
 
 use stdClass;
 use WPMailSMTP\Helpers\Helpers;
+use WPMailSMTP\WP;
 
 /**
  * Updater class.
@@ -55,7 +56,7 @@ class Updater {
 	 *
 	 * @var string
 	 */
-	public $remote_url = 'https://wpmailsmtp.com/license-api';
+	public $remote_url = 'https://wpmailsmtpapi.com/license/v1';
 
 	/**
 	 * Version number of the plugin.
@@ -282,7 +283,7 @@ class Updater {
 				'tgm-updater-key'         => $this->key,
 				'tgm-updater-wp-version'  => get_bloginfo( 'version' ),
 				'tgm-updater-php-version' => phpversion(),
-				'tgm-updater-referer'     => site_url(),
+				'tgm-updater-referer'     => WP::get_site_url(),
 			]
 		);
 
@@ -292,8 +293,10 @@ class Updater {
 			'timeout'    => 30,
 		];
 
+		$remote_url = $this->remote_url . '/' . $action;
+
 		// Perform the query and retrieve the response.
-		$response      = wp_remote_get( add_query_arg( $query_params, $this->remote_url ), $args );
+		$response      = wp_remote_get( add_query_arg( $query_params, $remote_url ), $args );
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
 
