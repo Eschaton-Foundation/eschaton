@@ -378,6 +378,9 @@ main {
 		textarea {
 			border: solid 1px $borderColor;
 			border-color: var(--colorFG);
+			font-size: 22px;
+			font-family: "Romaine";
+
 			&:focus {
 				outline: none;
 			}
@@ -396,6 +399,7 @@ main {
 		}
 		input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]) {
 			padding: 0.5rem 0;
+			font-size: 22px;
 			&:focus-visible {
 				outline: solid 1px transparent;
 			}
@@ -409,7 +413,7 @@ main {
 		.gfield {
 			margin-bottom: 2rem;
 		}
-		li.hidden_label input {
+		.hidden_label input {
 			margin-top: 0;
 		}
 		.gfield_required_asterisk {
@@ -465,53 +469,19 @@ main {
 					}
 				}
 			}
-			ul.gfield_radio {
+			.gfield_radio {
 				@media (max-width: 767px) {
 					padding-left: 1.75rem;
 				}
-				li {
-					overflow: visible;
-					label {
-						@include textInput;
-					}
+
+				label {
+					@include textInput;
 				}
 			}
 		}
 		label.gfield_label {
-			margin: 4.625rem 0 2.75rem;
+			//margin: 4.625rem 0 2.75rem;
 		}
-		// .ginput_container_radio {
-		// 	label {
-		// 		padding-left: 25px;
-		// 		position: relative;
-		// 		display: block;
-		// 		@media (min-width: 768px) {
-		// 			margin-left: -25px;
-		// 		}
-		// 		&:before {
-		// 			content: "";
-		// 			position: absolute;
-		// 			top: 4px;
-		// 			left: 0;
-		// 			width: 16px;
-		// 			height: 16px;
-		// 			border: solid 1px var(--colorSubdue);
-		// 			border-radius: 50%;
-		// 		}
-		// 	}
-		// 	input[type="checkbox"]:checked + label {
-		// 		&:after {
-		// 			content: "";
-		// 			position: absolute;
-		// 			top: 7px;
-		// 			left: 3px;
-		// 			width: 10px;
-		// 			height: 10px;
-		// 			background: black;
-		// 			border-radius: 50%;
-		// 		}
-		// 	}
-		// }
 	}
 	.gform_contact_wrapper .gform_footer {
 		padding: 1.5rem 0 0;

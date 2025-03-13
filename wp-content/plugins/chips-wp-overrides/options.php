@@ -241,11 +241,13 @@ if( is_admin() )
 	if (is_array($removeItems) && !empty($removeItems)) {
 		if (!empty($removeItems['scriptsFooter']) && isset($removeItems['scriptsFooter'])) {
 			remove_action('wp_head', 'wp_print_scripts');
-			remove_action('wp_head', 'wp_print_head_scripts', 9);
-			remove_action('wp_head', 'wp_enqueue_scripts', 1);
 			add_action('wp_footer', 'wp_print_scripts', 5);
-			add_action('wp_footer', 'wp_enqueue_scripts', 5);
+
+			remove_action('wp_head', 'wp_print_head_scripts', 9);
 			add_action('wp_footer', 'wp_print_head_scripts', 5);
+
+			remove_action('wp_head', 'wp_enqueue_scripts', 1);
+			add_action('wp_footer', 'wp_enqueue_scripts', 5);
 		}
 		if (!empty($removeItems['removeRSS']) && isset($removeItems['removeRSS'])) {
 			remove_action( 'wp_head', 'feed_links_extra', 3);
