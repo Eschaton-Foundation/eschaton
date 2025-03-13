@@ -192,6 +192,14 @@ class basicBlock extends maxBlock
 				$url = esc_url($url, $this->protocols);
 			}
 
+			if (false === apply_filters('mb/use_unsafe_js/', false))
+			{
+					$url = wp_strip_all_tags($url);
+					$url = str_replace('javascript:', '', $url);
+			}
+
+
+
 		 	$url = rawurldecode($url);  // removes the + from a URL part.
 			$url = apply_filters('mb-url', $url, $data['url']);  // passes processed url / raw url.
 			$url = apply_filters('mb-url-' . $button_id, $url, $data['url']);
