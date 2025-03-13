@@ -1421,11 +1421,6 @@ main .section-text .gform_contact_wrapper .hidden_label input,
 main .pre-form .hidden_label input {
   margin-top: 0;
 }
-main .gform_contact_wrapper .gfield_required_asterisk,
-main .section-text .gform_contact_wrapper .gfield_required_asterisk,
-main .pre-form .gfield_required_asterisk {
-  display: none;
-}
 main .gform_contact_wrapper div.ginput_container_radio,
 main .section-text .gform_contact_wrapper div.ginput_container_radio,
 main .pre-form div.ginput_container_radio {
