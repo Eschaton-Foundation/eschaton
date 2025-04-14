@@ -5,9 +5,9 @@ namespace Yoast\WP\SEO\Dashboard\Domain\Search_Rankings;
 use Yoast\WP\SEO\Dashboard\Domain\Data_Provider\Data_Interface;
 
 /**
- * Domain object that represents a single Search Data record.
+ * Domain object that represents a single Search Ranking Data record.
  */
-class Search_Data implements Data_Interface {
+class Search_Ranking_Data implements Data_Interface {
 
 	/**
 	 * The amount of clicks a `subject` gets.
@@ -74,6 +74,42 @@ class Search_Data implements Data_Interface {
 			'position'    => $this->position,
 			'subject'     => $this->subject,
 		];
+	}
+
+	/**
+	 * Gets the clicks.
+	 *
+	 * @return string The clicks.
+	 */
+	public function get_clicks(): string {
+		return $this->clicks;
+	}
+
+	/**
+	 * Gets the click-through rate.
+	 *
+	 * @return string The click-through rate.
+	 */
+	public function get_ctr(): string {
+		return $this->ctr;
+	}
+
+	/**
+	 * Gets the impressions.
+	 *
+	 * @return string The impressions.
+	 */
+	public function get_impressions(): string {
+		return $this->impressions;
+	}
+
+	/**
+	 * Gets the position.
+	 *
+	 * @return string The position.
+	 */
+	public function get_position(): string {
+		return $this->position;
 	}
 
 	/**

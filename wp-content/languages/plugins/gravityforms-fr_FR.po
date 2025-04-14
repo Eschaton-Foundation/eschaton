@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the RocketGenius - Gravity Forms package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-05 14:29:46+0000\n"
+"PO-Revision-Date: 2025-03-19 07:52:30+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -11,9 +11,35 @@ msgstr ""
 "Language: fr\n"
 "Project-Id-Version: RocketGenius - Gravity Forms\n"
 
+#: settings.php:779
+msgid "License details are not available at this time."
+msgstr "Les détails de la licence ne sont pas disponibles pour l‘instant."
+
+#. translators: %1s and %2s are link tag markup
+#: includes/license/class-gf-license-statuses.php:84
+msgid "Your IP has been blocked by Gravity for exceeding our API rate limits. If you think this is a mistake, please %1$scontact support%2$s. "
+msgstr "Votre adresse IP a été bloquée par Gravity Forms pour avoir dépassé nos limites de taux d’API. Si vous pensez qu’il s’agit d’une erreur, veuillez %1$scontacter le support%2$s."
+
+#. translators: %1s and %2s are link tag markup
+#: includes/license/class-gf-license-statuses.php:78
+msgid "There was an error while validating your license key; please try again later. If the problem persists, please %1$scontact support%2$s. "
+msgstr "Une erreur s‘est produite lors de la validation de votre clé de licence ; veuillez réessayer ultérieurement. Si le problème persiste, veuillez %1$scontacter le support%2$s."
+
+#: includes/fields/class-gf-field-list.php:468
+msgid ", Row {0}"
+msgstr ", Ligne {0}"
+
+#: includes/fields/class-gf-field-fileupload.php:239
+msgid "Maximum number of files (%d) exceeded."
+msgstr "Le nombre maximal de fichiers (%d) a été dépassé."
+
 #: includes/blocks/config/class-gf-blocks-config.php:160
 msgid "Theme Colors"
 msgstr "Couleurs du thème"
+
+#: includes/blocks/config/class-gf-blocks-config.php:116
+msgid "Default Colors"
+msgstr "Couleurs par défaut"
 
 #: includes/blocks/config/class-gf-blocks-config.php:115
 msgid "Custom Colors"
@@ -26,6 +52,22 @@ msgstr "Décroissant"
 #: form_list.php:450
 msgid "Ascending"
 msgstr "Croissant"
+
+#: form_list.php:448
+msgid "Default Sort Order"
+msgstr "Ordre de tri par défaut"
+
+#: form_list.php:437
+msgid "Default Sort Column"
+msgstr "Colonne de tri par défaut"
+
+#: form_list.php:403
+msgid "Sorting Options"
+msgstr "Options de tri"
+
+#: common.php:5692
+msgid " field added to form"
+msgstr " champ ajouté au formulaire"
 
 #: includes/blocks/config/class-gf-blocks-config.php:157
 msgid "Square"
@@ -249,7 +291,7 @@ msgstr "Ce champ nécessite une configuration supplémentaire"
 #. reCAPTCHA page. 2. closing <a> tag.
 #: includes/fields/class-gf-field-captcha.php:162
 msgid "To use the reCAPTCHA field, please configure your %1$sreCAPTCHA settings%2$s."
-msgstr "Pour utiliser le champ reCAPTCHA, veuillez définir vos %1$sréglages reCAPTCHA%2$s."
+msgstr "Pour utiliser le champ reCAPTCHA, veuillez configurer vos %1$sréglages reCAPTCHA%2$s."
 
 #: includes/fields/class-gf-field-captcha.php:160
 #: includes/fields/class-gf-field-captcha.php:473
@@ -4589,6 +4631,10 @@ msgstr "Tous les champs de prix"
 #: common.php:754 js.php:1632
 msgid "All Submitted Fields"
 msgstr "Tous les champs envoyés"
+
+#: form_list.php:402
+msgid "Forms per page:"
+msgstr "Formulaires par page :"
 
 #: gravityforms.php:6419
 msgid "Select an action for this shortcode. Actions are added by some add-ons."
@@ -14317,6 +14363,11 @@ msgstr "Classement de base de données"
 msgid "Database Character Set"
 msgstr "Jeu de caractère de base de données défini"
 
+#. translators: %s is the database type (MySQL, MariaDB or SQLite).
+#: includes/system-status/class-gf-system-report.php:628
+msgid "Gravity Forms requires %s or above."
+msgstr "Gravity Forms nécessite %s ou supérieure."
+
 #: includes/system-status/class-gf-system-report.php:604
 msgid "Loaded Extensions"
 msgstr "Extensions chargées"
@@ -14365,6 +14416,10 @@ msgstr "Temps maximum d’exécution"
 #: includes/system-status/class-gf-system-report.php:550
 msgid "Memory Limit"
 msgstr "Limite de mémoire"
+
+#: includes/system-status/class-gf-system-report.php:547
+msgid "Recommended: PHP %s or higher."
+msgstr "Recommandé : PHP %s ou supérieure."
 
 #: includes/system-status/class-gf-system-report.php:541
 #: includes/system-status/class-gf-system-report.php:621

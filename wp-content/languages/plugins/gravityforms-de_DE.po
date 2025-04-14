@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the RocketGenius - Gravity Forms package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-05 10:50:51+0000\n"
+"PO-Revision-Date: 2025-03-24 08:40:41+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -11,9 +11,35 @@ msgstr ""
 "Language: de\n"
 "Project-Id-Version: RocketGenius - Gravity Forms\n"
 
+#: settings.php:779
+msgid "License details are not available at this time."
+msgstr "Details zu den Lizenzen sind zur Zeit nicht verfügbar."
+
+#. translators: %1s and %2s are link tag markup
+#: includes/license/class-gf-license-statuses.php:84
+msgid "Your IP has been blocked by Gravity for exceeding our API rate limits. If you think this is a mistake, please %1$scontact support%2$s. "
+msgstr "Deine IP-Adresse wurde von Gravity wegen Überschreitung unserer API-Ratenlimits gesperrt. Wenn du glaubst, dass dies ein Fehler ist, %1$swende dich bitte an den Support%2$s."
+
+#. translators: %1s and %2s are link tag markup
+#: includes/license/class-gf-license-statuses.php:78
+msgid "There was an error while validating your license key; please try again later. If the problem persists, please %1$scontact support%2$s. "
+msgstr "Bei der Überprüfung deines Lizenzschlüssels ist ein Fehler aufgetreten; bitte versuche es später erneut. Wenn das Problem weiterhin besteht, %1$swende dich bitte an den Support%2$s."
+
+#: includes/fields/class-gf-field-list.php:468
+msgid ", Row {0}"
+msgstr ", Zeile {0}"
+
+#: includes/fields/class-gf-field-fileupload.php:239
+msgid "Maximum number of files (%d) exceeded."
+msgstr "Die maximale Anzahl von Dateien (%d) wurde überschritten."
+
 #: includes/blocks/config/class-gf-blocks-config.php:160
 msgid "Theme Colors"
 msgstr "Farben des Themes"
+
+#: includes/blocks/config/class-gf-blocks-config.php:116
+msgid "Default Colors"
+msgstr "Standardfarben"
 
 #: includes/blocks/config/class-gf-blocks-config.php:115
 msgid "Custom Colors"
@@ -26,6 +52,22 @@ msgstr "Absteigend"
 #: form_list.php:450
 msgid "Ascending"
 msgstr "Aufsteigend"
+
+#: form_list.php:448
+msgid "Default Sort Order"
+msgstr "Standard-Sortierreihenfolge"
+
+#: form_list.php:437
+msgid "Default Sort Column"
+msgstr "Standard-Sortierspalte"
+
+#: form_list.php:403
+msgid "Sorting Options"
+msgstr "Sortieroptionen"
+
+#: common.php:5692
+msgid " field added to form"
+msgstr "Feld zum Formular hinzugefügt"
 
 #: includes/blocks/config/class-gf-blocks-config.php:157
 msgid "Square"
@@ -4589,6 +4631,10 @@ msgstr "Alle Preis-Felder"
 #: common.php:754 js.php:1632
 msgid "All Submitted Fields"
 msgstr "Alle abgesendeten Felder"
+
+#: form_list.php:402
+msgid "Forms per page:"
+msgstr "Formulare pro Seite:"
 
 #: gravityforms.php:6419
 msgid "Select an action for this shortcode. Actions are added by some add-ons."
@@ -9645,7 +9691,7 @@ msgstr "Zugriff auf die API aktivieren"
 
 #: includes/webapi/webapi.php:535
 msgid "Requirements check"
-msgstr "Anforderungen Check"
+msgstr "Prüfung der Anforderungen"
 
 #: includes/webapi/webapi.php:531 includes/webapi/webapi.php:552
 msgid "The Gravity Forms API allows developers to interact with this install via a JSON REST API."
@@ -14319,6 +14365,11 @@ msgstr "Datenbank-Kollation"
 msgid "Database Character Set"
 msgstr "Datenbank-Zeichensatz"
 
+#. translators: %s is the database type (MySQL, MariaDB or SQLite).
+#: includes/system-status/class-gf-system-report.php:628
+msgid "Gravity Forms requires %s or above."
+msgstr "Gravity Forms erfordert %s oder höher."
+
 #: includes/system-status/class-gf-system-report.php:604
 msgid "Loaded Extensions"
 msgstr "Geladene Erweiterungen"
@@ -14367,6 +14418,10 @@ msgstr "Maximale Ausführungszeit"
 #: includes/system-status/class-gf-system-report.php:550
 msgid "Memory Limit"
 msgstr "Verfügbarer Speicher"
+
+#: includes/system-status/class-gf-system-report.php:547
+msgid "Recommended: PHP %s or higher."
+msgstr "Empfohlen: PHP %s oder höher."
 
 #: includes/system-status/class-gf-system-report.php:541
 #: includes/system-status/class-gf-system-report.php:621
