@@ -18,7 +18,7 @@ if (have_posts()) while (have_posts()) : the_post(); ?>
 
 		<div class="listing_w_filters">
 			<div class="page_filters">
-				<?php FILTERS('All', '', 'all')->displayOutput(); ?>
+				<?php FILTERS(pll__( 'All' ), '', 'all')->displayOutput(); ?>
 				<?php FILTERS('', 'exhyear', 'medium', true)->displayOutput(); ?>
 				<?php FILTERS('', 'exhpermanent')->displayOutput(); ?>
 				<?php FILTERS('', 'exhcontinent', 'large', true )->displayOutput(); ?>
