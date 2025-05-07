@@ -24,6 +24,12 @@ class GFFormDisplay {
 	const SUBMISSION_METHOD_AJAX     = 'ajax';
 	const SUBMISSION_METHOD_IFRAME   = 'iframe';
 
+	const SUBMISSION_TYPE_SAVE_AND_CONTINUE = 'save-continue';
+	const SUBMISSION_TYPE_SEND_LINK         = 'send-link';
+	const SUBMISSION_TYPE_SUBMIT            = 'submit';
+	const SUBMISSION_TYPE_NEXT              = 'next';
+	const SUBMISSION_TYPE_PREVIOUS          = 'previous';
+
 	/**
 	 * Starting point for the form submission process. Handles the following tasks: Form validation, save for later logic, entry creation, notification and confirmation.
 	 *
@@ -163,6 +169,7 @@ class GFFormDisplay {
 				// Display confirmation but doesn't process the form. Useful for spam filters.
 				$confirmation = self::handle_confirmation( $form, $lead, $ajax );
 				$is_valid     = false;
+				self::set_submission_if_null( $form_id, 'abort_with_confirmation', true );
 			} elseif ( ! $saving_for_later ) {
 
 				GFCommon::log_debug( 'GFFormDisplay::process_form(): Submission is valid. Moving forward.' );
