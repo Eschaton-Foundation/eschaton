@@ -2,9 +2,12 @@
 Contributors: maxfoundry, basszje, arcware, johnbhartley
 Tags: wordpress button plugin, share button, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 6.8
+License: GPL v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 7.0
-Stable tag: 9.8.2
+Stable tag: 9.8.4
+
 WordPress button plugin so powerful and easy to use anyone can create beautiful buttons, share buttons and social icons.
 
 == Description ==
@@ -275,6 +278,14 @@ Secondly, please use latin only characters for button name ( Basic settings) and
 Upgrading to the PRO version is quite simple. Obtain a license key via our [site](https://maxbuttons.com). You can enter the license code within the free version on the 'Upgrade to PRO' page. After entering the license key, the PRO version will automatically download and install. You are good to go!
 
 == Changelog ==
+
+= 9.8.4 = 
+
+* Another fix preventing javascript in URL . 
+
+= 9.8.3 = 
+
+* Regular fix preventing javascript in URL, not also via esc_url . 
 
 = 9.8.2 =
 

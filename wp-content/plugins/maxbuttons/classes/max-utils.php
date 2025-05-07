@@ -85,7 +85,11 @@ class maxUtils
 		if (false === $args['is_shortcode'])
 		{
 			// allowed url protocols for esc_url functions
-			$protocols = array('http','https','ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', 'javascript', 'file', 'ms-windows-store', 'steam', 'webcal');
+			$protocols = array('http','https','ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', 'file', 'ms-windows-store', 'steam', 'webcal');
+			if (true === apply_filters('mb/use_unsafe_js/', false))
+			{
+				$protocols[] = 'javascript';
+			}
 		}
 		else {
 			$protocols = array('http','https','ftp', 'ftps', 'mailto', 'news', 'irc', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'sms', 'callto',  'fax', 'xmpp', 'ms-windows-store', 'steam', 'webcal');

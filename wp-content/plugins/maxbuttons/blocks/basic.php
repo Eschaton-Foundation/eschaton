@@ -185,20 +185,9 @@ class basicBlock extends maxBlock
 		{
 			$url = $data["url"];
 
-			$parsed_url = parse_url($url);
+			//$parsed_url = parse_url($url);
 
-			if (false === $this->checkRelative($parsed_url))
-			{
-				$url = esc_url($url, $this->protocols);
-			}
-
-			if (false === apply_filters('mb/use_unsafe_js/', false))
-			{
-					$url = wp_strip_all_tags($url);
-					$url = str_replace('javascript:', '', $url);
-			}
-
-
+			$url = esc_url($url, $this->protocols);
 
 		 	$url = rawurldecode($url);  // removes the + from a URL part.
 			$url = apply_filters('mb-url', $url, $data['url']);  // passes processed url / raw url.
