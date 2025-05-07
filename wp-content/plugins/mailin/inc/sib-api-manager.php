@@ -40,6 +40,7 @@ if ( ! class_exists( 'SIB_API_Manager' ) ) {
 						'account_email' => $account_email,
 						'account_user_name' => $account['firstName'] . ' ' . $account['lastName'],
 						'account_data' => $account['plan'],
+						'enterprise' => isset($account['enterprise']) ? $account['enterprise'] : false,
 					);
                     set_transient( 'sib_credit_' . md5( SIB_Manager::$access_key ), $account_info, self::DELAYTIME );
 				} elseif ($client->getLastResponseCode() === SendinblueApiClient::RESPONSE_CODE_UNAUTHORIZED) {
@@ -172,6 +173,32 @@ if ( ! class_exists( 'SIB_API_Manager' ) ) {
 				}
 			}
 			return $lists;
+		}
+
+		/** Get all segments */
+		public static function get_segments() {
+			// get lists.
+			$segments = get_transient( 'sib_segment_' . md5( SIB_Manager::$access_key ) );
+			if ( false === $segments || false == $segments ) {
+
+				$mailin = new SendinblueApiClient();
+				$segments = array();
+				$segment_data = $mailin->getAllSegments();
+
+				if (!empty($segment_data['segments'])) {
+					foreach ( $segment_data['segments'] as $value ) {
+						$segments[] = array(
+							'id' => $value['id'],
+							'segmentName' => $value['segmentName'],
+						);
+					}
+				}
+
+				if ( count( $segments ) > 0 ) {
+					set_transient( 'sib_segment_' . md5( SIB_Manager::$access_key ), $segments, 10 );
+				}
+			}
+			return $segments;
 		}
 
 		/** Get all sender of sendinblue */
