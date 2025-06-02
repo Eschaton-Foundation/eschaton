@@ -41,6 +41,9 @@ if ( ! class_exists( 'SIB_Push_Admin' ) ) {
 			$settings = SIB_Push_Settings::getSettings();
 			if (!$settings->getShowPush()) return;
 			if (SIB_Push_Utils::is_push_active()) return;
+			if (!SIB_Push_Utils::is_admin_user()) {
+				return; // Only for admins
+			}
 			wp_add_dashboard_widget(
 				'sib_push_dashboard_widget',
 				__('Web Push Notifications', 'mailin'),
@@ -64,7 +67,7 @@ if ( ! class_exists( 'SIB_Push_Admin' ) ) {
 <!--				<li style="list-style: inside disc">--><?php //echo __( 'Set up automated e-commerce notifications for your WooCommerce business.', 'mailin' ) ?>
 			</ul>
 			<p><a class="button button-primary"
-				  href="<?php echo admin_url( 'admin.php?page=sib_page_push' ) ?>"><?php echo __( 'Activate web push' ) ?></a>
+				  href="<?php echo admin_url( 'admin.php?page=sib_page_push' ) ?>"><?php echo __( 'Activate web push', 'mailin' ) ?></a>
 			</p>
 			<?php
 		}

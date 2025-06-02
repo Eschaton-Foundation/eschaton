@@ -77,6 +77,7 @@ if ( ! class_exists( 'SIB_Page_Push' ) ) {
 			wp_enqueue_style( 'sib-chosen-css' );
 			wp_enqueue_style( 'sib-fontawesome-css' );
 			wp_enqueue_style( 'thickbox' );
+			wp_enqueue_style( 'sib-font-face' );
 		}
 
 		/** Generate page script */

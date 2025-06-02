@@ -198,6 +198,7 @@ if ( ! class_exists( 'SIB_Push_Utils' ) ) {
 			$webSdkInitOptions = $app->getWebSdkInitOptions() ?: new \WonderPush\Obj\WebSdkInitOptions();
 			$webSdkInitOptions->setResubscribe(false);
 			$payload = array(
+				'wordPressSnippetDeactivated' => true,
 				'webSdkInitOptions' => $webSdkInitOptions,
 				'pushDisabledPlatforms' => array(
 					'Web' => true,
@@ -222,7 +223,8 @@ if ( ! class_exists( 'SIB_Push_Utils' ) ) {
 			// Check push application
 			try {
 				$app = self::get_push_application();
-				return !!$app;
+				if (!$app) return false;
+				return !$app->getWordPressSnippetDeactivated();
 			} catch (Exception $e) {
 				SIB_Push_Utils::log_error('Could not get application', $e);
 				return false;
@@ -249,6 +251,7 @@ if ( ! class_exists( 'SIB_Push_Utils' ) ) {
 			$webSdkInitOptions = $app->getWebSdkInitOptions() ?: new \WonderPush\Obj\WebSdkInitOptions();
 			$webSdkInitOptions->setResubscribe(true);
 			$payload = array(
+				'wordPressSnippetDeactivated' => false,
 				'webSdkInitOptions' => $webSdkInitOptions,
 				'pushDisabledPlatforms' => array(
 					'Web' => false,
@@ -265,6 +268,8 @@ if ( ! class_exists( 'SIB_Push_Utils' ) ) {
 		 * @return bool
 		 */
 		public static function application_is_active($app) {
+			$wordPressSnippetDeactivated = $app->getWordPressSnippetDeactivated();
+			if ($wordPressSnippetDeactivated) return false;
 			$webSdkInitOptions = $app->getWebSdkInitOptions() ?: new \WonderPush\Obj\WebSdkInitOptions();
 			$pushDisabledPlatforms = $app->getPushDisabledPlatforms() ?: array();
 			$pushDisabled = isset($pushDisabledPlatforms['Web']) && $pushDisabledPlatforms['Web'];

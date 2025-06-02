@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05T06:36:52+00:00\n"
-"PO-Revision-Date: 2025-05-05 08:38+0200\n"
+"POT-Creation-Date: 2025-05-12T09:54:59+00:00\n"
+"PO-Revision-Date: 2025-05-12 11:59+0200\n"
 "Last-Translator: Stéphane Jaïs <stephane.jais@brevo.com>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -2457,38 +2457,46 @@ msgstr "Campagnes"
 msgid "Settings"
 msgstr "Réglages"
 
-#: push/MainLayout.js:124 push/pages/Activation.js:28
+#: push/MainLayout.js:124 push/pages/Activation.js:29
 #: push/stats/StatsComponent/platform-selector.js:39
 msgid "Web push"
 msgstr "Push web"
 
-#: push/pages/Activation.js:28
+#: push/pages/Activation.js:29
 msgid "Grow your audience with push notifications"
 msgstr "Elargissez votre audience avec les notifications push"
 
-#: push/pages/Activation.js:28
+#: push/pages/Activation.js:29
 msgid "Notify your readers whenever a new post is published."
 msgstr "Notifiez vos lecteurs dès qu’un nouveau billet est publié."
 
-#: push/pages/Activation.js:28
+#: push/pages/Activation.js:29
 msgid "Let your users subscribe to their favorite topics."
 msgstr "Permettre aux utilisateurs de s’abonner à leurs sujets préférés."
 
-#: push/pages/Activation.js:28
+#: push/pages/Activation.js:29
 msgid "Activate web push"
 msgstr "Activer web push"
 
-#: push/pages/Activation.js:28
+#: push/pages/Activation.js:29
 msgid "Please wait, activation might take up to a minute."
 msgstr "Activation en cours, elle peut prendre jusqu’à une minute."
 
-#: push/pages/Activation.js:28 push/pages/settings/AdvancedSettings.js:31
+#: push/pages/Activation.js:29
+msgid "Manage shortcuts"
+msgstr "Gérer les raccourcis"
+
+#: push/pages/Activation.js:29
+msgid "Hide shortcut management"
+msgstr "Masquer la gestion des raccourcis"
+
+#: push/pages/Activation.js:29 push/pages/settings/AdvancedSettings.js:31
 msgid "Show admin bar shortcut"
 msgstr "Montrer le raccourci dans la barre d’admin"
 
-#: push/pages/Activation.js:28
-msgid "Hide admin bar shortcut"
-msgstr "Cacher le raccourci barre d’admin"
+#: push/pages/Activation.js:31
+msgid "Show post editor widget"
+msgstr "Afficher le widget dans l’éditeur de billets"
 
 #: push/pages/CampaignDetail.js:142
 msgid "Notified subscribers"
@@ -3428,6 +3436,9 @@ msgstr "URL invalide"
 #: push/validator.js:83
 msgid "Forbidden URL"
 msgstr "URL interdite"
+
+#~ msgid "Hide admin bar shortcut"
+#~ msgstr "Cacher le raccourci barre d’admin"
 
 #~ msgid "Activate push notifications"
 #~ msgstr "Activer les notifications push"
