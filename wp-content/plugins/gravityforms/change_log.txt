@@ -1,3 +1,21 @@
+### 2.9.11 | 2025-06-26
+- Added a h1 to all admin pages to improve accessibility.
+- Fixed undefined variable error when the filter [gform_toolbar_menu](https://docs.gravityforms.com/gform_toolbar_menu/) returns an empty array.
+- Fixed handling of notification addressing where comma-separation of merge tags includes spaces.
+- Updated links in the admin to indicate when they open in a new window for improved accessibility.
+- Updated messages around deprecated Ready Classes in the form editor.
+- API: Fixed a bug in the Settings API that prevents custom settings fields from being rendered in a tabbed interface.
+- API: Fixed a bug in the Settings API that prevents the description from being rendered in the Post Select field.
+- API: Fixed a bug in the Settings API that prevents the `after_input` parameter from being rendered in the Conditional Logic field.
+
+### 2.9.10 | 2025-06-12
+- Fixed an issue where the background processing queue can become indefinitely paused if the theme or another plugin is using a WP option filter or action hook incorrectly.
+- Fixed an issue with the background processor AJAX request arguments, improving form submission performance for add-ons where feed processing takes a while.
+- Fixed an issue where the form title and description can be removed when the form fails validation using the new AJAX submission method.
+- Fixed an issue with new AJAX where form submissions can break if the form action attribute changes to the admin-ajax.php URL when form markup is updated.
+- AF: Improved support for WordPress plugin checks in `GFAddOn::minimum_requirements()`. Credit: The Gravity Wiz Team.
+- AF: Fixed a fatal error that occurs when validating a select type setting when the option to select multiple choices is enabled.
+
 ### 2.9.9 | 2025-05-29
 - Fixed a JavaScript error that occurs when a submit button located outside the form is clicked. Includes a browser console error statement that recommends checking the settings of fields in the form editor for invalid HTML.
 - Fixed an inconsistency in the Rich Text Editor content when using the new AJAX submission method.

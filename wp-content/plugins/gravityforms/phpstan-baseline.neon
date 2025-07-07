@@ -186,11 +186,6 @@ parameters:
 			path: form_detail.php
 
 		-
-			message: "#^Variable \\$fixed_menu_items might not be defined\\.$#"
-			count: 1
-			path: form_detail.php
-
-		-
 			message: "#^Variable \\$my_parent might not be defined\\.$#"
 			count: 1
 			path: form_detail.php
@@ -402,11 +397,6 @@ parameters:
 
 		-
 			message: "#^Static method GFFormSettings\\:\\:form_settings_page\\(\\) invoked with 1 parameter, 0 required\\.$#"
-			count: 1
-			path: gravityforms.php
-
-		-
-			message: "#^Variable \\$fixed_menu_items might not be defined\\.$#"
 			count: 1
 			path: gravityforms.php
 
@@ -1246,7 +1236,7 @@ parameters:
 			path: includes/webapi/v2/includes/controllers/class-controller-entry-notes.php
 
 		-
-			message: "#^is_wp_error\\(bool\\) will always evaluate to false\\.$#"
+			message: "#^is_wp_error\\(int\\|false\\) will always evaluate to false\\.$#"
 			count: 2
 			path: includes/webapi/v2/includes/controllers/class-controller-entry-properties.php
 
@@ -1291,7 +1281,7 @@ parameters:
 			path: includes/webapi/webapi.php
 
 		-
-			message: "#^is_wp_error\\(bool\\) will always evaluate to false\\.$#"
+			message: "#^is_wp_error\\(int\\|false\\) will always evaluate to false\\.$#"
 			count: 2
 			path: includes/webapi/webapi.php
 
