@@ -133,29 +133,25 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 			options: {
 				maintainAspectRatio: false,
 				scales: {
-					xAxes: [ {
-						type: 'time',
+					x: {
+						type: 'timeseries',
 						time: {
-							unit: 'day',
-							tooltipFormat: 'MMM D',
+							tooltipFormat: 'MMM D'
 						},
-						distribution: 'series',
 						ticks: {
 							beginAtZero: true,
 							source: 'labels',
-							padding: 10,
+							padding: 0,
 							minRotation: 25,
 							maxRotation: 25,
 							callback: function( value, index, values ) {
-
-								// Distribute the ticks equally starting from a right side of xAxis.
-								var gap = Math.floor( values.length / 7 );
+								const gap = Math.floor( values.length / 7 );
 
 								if ( gap < 1 ) {
-									return value;
+									return moment( value ).format( 'MMM D' );
 								}
 								if ( ( values.length - index - 1 ) % gap === 0 ) {
-									return value;
+									return moment( value ).format( 'MMM D' );
 								}
 							},
 						},
@@ -163,12 +159,12 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 						gridLines: {
 							offsetGridLines: false,
 						},
-					} ],
-					yAxes: [ {
+					},
+					y: {
 						ticks: {
 							beginAtZero: true,
 							maxTicksLimit: 6,
-							padding: 20,
+							padding: 0,
 							callback: function( value ) {
 
 								// Make sure the tick value has no decimals.
@@ -177,26 +173,23 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 								}
 							},
 						},
-					} ],
+					},
 				},
 				elements: {
 					line: {
 						tension: 0,
+						fill: true,
 					},
 				},
-				animation: {
-					duration: 0,
+				animation: false,
+				plugins: {
+					legend: {
+						display: false,
+					},
+					tooltip: {
+						displayColors: false,
+					},
 				},
-				hover: {
-					animationDuration: 0,
-				},
-				legend: {
-					display: false,
-				},
-				tooltips: {
-					displayColors: false,
-				},
-				responsiveAnimationDuration: 0,
 			},
 		},
 
@@ -297,19 +290,19 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 				chart.settings.data.labels.push( date );
 
 				chart.cachedData.confirmed.push( {
-					t: date,
+					x: date,
 					y: value.delivered,
 				} );
 				chart.cachedData.unconfirmed.push( {
-					t: date,
+					x: date,
 					y: value.sent,
 				} );
 				chart.cachedData.sent.push( {
-					t: date,
+					x: date,
 					y: value.sent + value.delivered,
 				} );
 				chart.cachedData.failed.push( {
-					t: date,
+					x: date,
 					y: value.unsent,
 				} );
 
@@ -391,7 +384,7 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 
 				chart.settings.data.labels.push( date );
 				chart.settings.data.datasets[ 0 ].data.push( {
-					t: date,
+					x: date,
 					y: Math.floor( Math.random() * ( maxY - minY + 1 ) ) + minY,
 				} );
 			}
@@ -580,11 +573,9 @@ var WPMailSMTPDashboardWidget = window.WPMailSMTPDashboardWidget || ( function( 
 			chart.settings.type = style;
 
 			if ( style === 'line' ) {
-				chart.settings.options.scales.xAxes[0].offset = false;
-				chart.settings.options.scales.xAxes[0].gridLines.offsetGridLines = false;
+				chart.settings.options.scales.x.gridLines.offsetGridLines = false;
 			} else if ( style === 'bar' ) {
-				chart.settings.options.scales.xAxes[0].offset = true;
-				chart.settings.options.scales.xAxes[0].gridLines.offsetGridLines = true;
+				chart.settings.options.scales.x.gridLines.offsetGridLines = true;
 			}
 		},
 

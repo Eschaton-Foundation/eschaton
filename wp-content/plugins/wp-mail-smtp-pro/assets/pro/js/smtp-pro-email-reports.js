@@ -151,29 +151,25 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 			options: {
 				maintainAspectRatio: false,
 				scales: {
-					xAxes: [ {
-						type: 'time',
+					x: {
+						type: 'timeseries',
 						time: {
-							unit: 'day',
 							tooltipFormat: 'MMM D',
 						},
-						distribution: 'series',
 						ticks: {
 							beginAtZero: true,
 							source: 'labels',
-							padding: 10,
+							padding: 0,
 							minRotation: 25,
 							maxRotation: 25,
 							callback: function( value, index, values ) {
-
-								// Distribute the ticks equally starting from a right side of xAxis.
-								var gap = Math.floor( values.length / 7 );
+								const gap = Math.floor( values.length / 7 );
 
 								if ( gap < 1 ) {
-									return value;
+									return moment( value ).format( 'MMM D' );
 								}
 								if ( ( values.length - index - 1 ) % gap === 0 ) {
-									return value;
+									return moment( value ).format( 'MMM D' );
 								}
 							},
 						},
@@ -181,12 +177,12 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 						gridLines: {
 							offsetGridLines: false,
 						},
-					} ],
-					yAxes: [ {
+					},
+					y: {
 						ticks: {
 							beginAtZero: true,
 							maxTicksLimit: 6,
-							padding: 20,
+							padding: 0,
 							callback: function( value ) {
 
 								// Make sure the tick value has no decimals.
@@ -195,26 +191,23 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 								}
 							},
 						},
-					} ],
+					},
 				},
 				elements: {
 					line: {
 						tension: 0,
+						fill: true,
 					},
 				},
-				animation: {
-					duration: 0,
+				animation: false,
+				plugins: {
+					legend: {
+						display: false,
+					},
+					tooltip: {
+						displayColors: false,
+					},
 				},
-				hover: {
-					animationDuration: 0,
-				},
-				legend: {
-					display: false,
-				},
-				tooltips: {
-					displayColors: false,
-				},
-				responsiveAnimationDuration: 0,
 			},
 		},
 
@@ -279,27 +272,27 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 				chart.settings.data.labels.push( date );
 
 				chartData.confirmed.push( {
-					t: date,
+					x: date,
 					y: value.delivered,
 				} );
 				chartData.unconfirmed.push( {
-					t: date,
+					x: date,
 					y: value.sent,
 				} );
 				chartData.sent.push( {
-					t: date,
+					x: date,
 					y: Number( value.sent ) + Number( value.delivered ),
 				} );
 				chartData.failed.push( {
-					t: date,
+					x: date,
 					y: value.unsent,
 				} );
 				chartData.openCount.push( {
-					t: date,
+					x: date,
 					y: value.open_count,
 				} );
 				chartData.clickCount.push( {
-					t: date,
+					x: date,
 					y: value.click_count,
 				} );
 			} );

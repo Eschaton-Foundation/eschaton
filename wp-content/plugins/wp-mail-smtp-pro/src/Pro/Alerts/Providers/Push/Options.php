@@ -78,9 +78,9 @@ class Options extends AbstractOptions {
 		parent::__construct(
 			[
 				'slug'                => self::SLUG,
-				'title'               => esc_html__( 'Push Notifications', 'wp-mail-smtp-pro' ),
+				'title'               => esc_html__( 'Push Notification', 'wp-mail-smtp-pro' ),
 				'description'         => $description,
-				'add_connection_text' => esc_html__( 'Enable push notifications on this device', 'wp-mail-smtp-pro' ),
+				'add_connection_text' => esc_html__( 'Enable Push Notifications on This Device', 'wp-mail-smtp-pro' ),
 			]
 		);
 	}

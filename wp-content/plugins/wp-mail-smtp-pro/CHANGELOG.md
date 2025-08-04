@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.5.0] - 2025-06-04
+### IMPORTANT
+- Support for PHP 7.2 has been discontinued. If you are running this version, you MUST upgrade PHP before installing or upgrading to WP Mail SMTP v4.5. Failure to do that will disable WP Mail SMTP functionality.
+
+### Added:
+- New transactional mailer: MailerSend integration.
+- WhatsApp integration for the Alerts feature.
+- Filter that allows to change Amazon SES mailer email sending request arguments.
+- Ability to store email logs if "Do Not Send" option is enabled.
+
+### Fixed:
+- Microsoft Outlook basic auth deprecation notice dismissal.
+
+### Changed:
+- Updated the list of conflicting plugins (added Site Mailer, SureMail, Gravity SMTP).
+
 ## [4.4.0] - 2025-03-04
 ### Added:
 - Push notifications channel for the Alerts feature.

@@ -93,6 +93,8 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 			app.multisite.bindActions();
 			app.webhooks.bindActions();
 			app.additionalConnections.bindActions();
+			app.miscSettings.bindActions();
+			app.whatsappAlerts.bindActions();
 
 			// Email Log Importer dismiss admin notice.
 			$( document ).on( 'click', '.notice-wp_mail_logging_importer .notice-dismiss', function( e ) {
@@ -1267,6 +1269,119 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 							btnClass: 'btn-cancel',
 						}
 					}
+				} );
+			}
+		},
+
+		/**
+		 * Misc Settings specific methods.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @type {object}
+		 */
+		miscSettings: {
+
+			/**
+			 * Process all Misc Settings actions/events.
+			 *
+			 * @since 4.5.0
+			 */
+			bindActions: function() {
+
+				var $doNotSendToggle = $( '#wp-mail-smtp-setting-do_not_send' );
+				var $logBlockedEmailsContainer = $( '#wp-mail-smtp-setting-log_blocked_emails' ).closest( 'div' );
+
+				// Initial visibility
+				if ( ! $doNotSendToggle.is( ':checked' ) ) {
+					$logBlockedEmailsContainer.hide();
+				}
+
+				// Toggle visibility on change
+				$doNotSendToggle.on( 'change', function() {
+					if ( $( this ).is( ':checked' ) ) {
+						$logBlockedEmailsContainer.show();
+					} else {
+						$logBlockedEmailsContainer.hide();
+					}
+				} );
+			}
+		},
+
+		/**
+		 * WhatsApp Alerts specific methods.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @type {object}
+		 */
+		whatsappAlerts: {
+
+			/**
+			 * Register all WhatsApp alerts events.
+			 *
+			 * @since 4.5.0
+			 */
+			bindActions: function() {
+
+				$( '.wp-mail-smtp-tab-alerts' ).on( 'click', '.wp-mail-smtp-whatsapp-recheck-status', this.recheckStatus );
+			},
+
+			/**
+			 * Recheck template status.
+			 *
+			 * @since 4.5.0
+			 *
+			 * @param {Event} e Event object.
+			 */
+			recheckStatus: function( e ) {
+				e.preventDefault();
+
+				var $button = $( this ),
+					connectionId = $button.data( 'connection-id' ),
+					$statusField = $button.closest( '.wp-mail-smtp-setting-field' );
+
+				// Prevent multiple clicks.
+				if ( $button.prop( 'disabled' ) ) {
+					return;
+				}
+
+				// Disable button, add loading class, and show loading text.
+				$button.prop( 'disabled', true ).addClass( 'loading' );
+				$button.find( 'span' ).text( wp_mail_smtp_pro.whatsapp_text_checking );
+
+				// Send AJAX request.
+				$.post(
+					ajaxurl,
+					{
+						action: 'wp_mail_smtp_whatsapp_recheck_status',
+						nonce: wp_mail_smtp_pro.nonce,
+						connection_id: connectionId // eslint-disable-line camelcase
+					}
+				).done( function( response ) {
+					if ( response.success ) {
+						$statusField.html( response.data.html );
+					} else {
+						app.displayModal(
+							response.data.message || wp_mail_smtp_pro.whatsapp_text_check_error,
+							'exclamation-circle-regular-red',
+							'red'
+						);
+
+						// Reset button.
+						$button.prop( 'disabled', false ).removeClass( 'loading' );
+						$button.find( 'span' ).text( wp_mail_smtp_pro.whatsapp_text_recheck );
+					}
+				} ).fail( function() {
+					app.displayModal(
+						wp_mail_smtp_pro.whatsapp_text_check_error,
+						'exclamation-circle-regular-red',
+						'red'
+					);
+
+					// Reset button.
+					$button.prop( 'disabled', false ).removeClass( 'loading' );
+					$button.find( 'span' ).text( wp_mail_smtp_pro.whatsapp_text_recheck );
 				} );
 			}
 		},

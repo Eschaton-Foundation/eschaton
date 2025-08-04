@@ -30,6 +30,7 @@ class EmailsCollection implements \Countable, \Iterator {
 		Email::STATUS_WAITING,
 		Email::STATUS_SENT,
 		Email::STATUS_UNSENT,
+		Email::STATUS_BLOCKED,
 	];
 
 	/**

@@ -43,6 +43,13 @@ class Email {
 	const STATUS_DELIVERED = 3;
 
 	/**
+	 * This email was blocked by "Do Not Send" option.
+	 *
+	 * @since 4.5.0
+	 */
+	const STATUS_BLOCKED = 4;
+
+	/**
 	 * @since 1.5.0
 	 *
 	 * @var int
@@ -441,6 +448,7 @@ class Email {
 			self::STATUS_SENT      => __( 'Sent', 'wp-mail-smtp-pro' ),
 			self::STATUS_WAITING   => __( 'Waiting for confirmation', 'wp-mail-smtp-pro' ),
 			self::STATUS_DELIVERED => __( 'Delivered', 'wp-mail-smtp-pro' ),
+			self::STATUS_BLOCKED   => __( 'Blocked', 'wp-mail-smtp-pro' ),
 		];
 
 		return isset( $statuses[ $this->status ] ) ? $statuses[ $this->status ] : '';

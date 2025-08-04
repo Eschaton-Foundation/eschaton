@@ -501,6 +501,15 @@ class SettingsTab extends AlertsTab {
 		// Prevent connections array recursive merge.
 		$all = array_merge( $all, $data );
 
+		/**
+		 * Fires before saving alerts settings.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @param array $all Options to save.
+		 */
+		do_action( 'wp_mail_smtp_pro_alerts_admin_settings_tab_before_save', $all );
+
 		// All the sanitization is done there.
 		$options->set( $all, false, true );
 

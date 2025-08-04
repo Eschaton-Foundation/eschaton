@@ -146,7 +146,15 @@ class Admin extends EmailReportsTab {
 			'wp-mail-smtp-chart',
 			wp_mail_smtp()->assets_url . '/js/vendor/chart.min.js',
 			[ 'moment' ],
-			'2.9.4.1',
+			'4.4.9',
+			true
+		);
+
+		wp_enqueue_script(
+			'wp-mail-smtp-chart-adapter',
+			wp_mail_smtp()->assets_url . '/js/vendor/chartjs-adapter-moment.min.js',
+			[ 'moment', 'wp-mail-smtp-chart' ],
+			'1.0.1',
 			true
 		);
 
@@ -167,7 +175,7 @@ class Admin extends EmailReportsTab {
 		wp_enqueue_script(
 			'wp-mail-smtp-email-reports',
 			wp_mail_smtp()->pro->assets_url . "/js/smtp-pro-email-reports{$min}.js",
-			[ 'jquery', 'wp-mail-smtp-chart' ],
+			[ 'jquery', 'wp-mail-smtp-chart', 'wp-mail-smtp-chart-adapter' ],
 			WPMS_PLUGIN_VER,
 			true
 		);

@@ -5,6 +5,7 @@ namespace WPMailSMTP\Pro\Emails\Logs\DeliveryVerification;
 use Exception;
 use WP_Error;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\ElasticEmail\DeliveryVerifier as ElasticEmailDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\MailerSend\DeliveryVerifier as MailerSendDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailgun\DeliveryVerifier as MailgunDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailjet\DeliveryVerifier as MailjetDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Postmark\DeliveryVerifier as PostmarkDeliveryVerifier;
@@ -15,6 +16,7 @@ use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTPcom\DeliveryVerifier as 
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SparkPost\DeliveryVerifier as SparkPostDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\Email;
 use WPMailSMTP\Pro\Tasks\Logs\ElasticEmail\VerifySentStatusTask as ElasticEmailVerifySentStatusTask;
+use WPMailSMTP\Pro\Tasks\Logs\MailerSend\VerifySentStatusTask as MailerSendVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask as MailgunVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask as MailjetVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask as PostmarkVerifySentStatusTask;
@@ -49,6 +51,7 @@ class DeliveryVerification {
 		'smtp2go'      => SMTP2GODeliveryVerifier::class,
 		'mailjet'      => MailjetDeliveryVerifier::class,
 		'elasticemail' => ElasticEmailDeliveryVerifier::class,
+		'mailersend'   => MailerSendDeliveryVerifier::class,
 	];
 
 	/**
@@ -68,6 +71,7 @@ class DeliveryVerification {
 		'smtp2go'      => SMTP2GOVerifySentStatusTask::class,
 		'mailjet'      => MailjetVerifySentStatusTask::class,
 		'elasticemail' => ElasticEmailVerifySentStatusTask::class,
+		'mailersend'   => MailerSendVerifySentStatusTask::class,
 	];
 
 	/**

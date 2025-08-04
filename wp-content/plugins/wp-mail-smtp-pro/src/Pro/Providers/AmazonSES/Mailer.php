@@ -69,6 +69,16 @@ class Mailer extends MailerAbstract {
 			],
 		];
 
+		/**
+		 * Filters Amazon SES email sending arguments.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @param array  $data   The email sending arguments.
+		 * @param Mailer $mailer The Amazon SES mailer instance.
+		 */
+		$data = apply_filters( 'wp_mail_smtp_pro_providers_amazon_ses_mailer_send_args', $data, $this );
+
 		try {
 			$response = $auth->get_client( 'v2' )->sendEmail( $data );
 

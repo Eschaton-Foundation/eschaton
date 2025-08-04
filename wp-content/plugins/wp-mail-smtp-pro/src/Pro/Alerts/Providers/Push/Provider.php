@@ -452,7 +452,7 @@ class Provider {
 			'permission_denied' => wp_kses(
 				sprintf(
 				/* translators: %s - Plugin general settings page link. */
-					__( 'Push notifications are disabled on this browser, <a href="%s" target="_blank" rel="noopener noreferrer">please follow this guide to enable them</a>', 'wp-mail-smtp-pro' ),
+					__( 'Push notifications are disabled on this browser. <a href="%s" target="_blank" rel="noopener noreferrer">Follow this guide</a> to enable them', 'wp-mail-smtp-pro' ),
 					esc_url(
 						wp_mail_smtp()->get_utm_url(
 							'https://wpmailsmtp.com/docs/setting-up-email-alerts/#resetting-push-notifications-permissions',

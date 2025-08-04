@@ -259,6 +259,10 @@ class Providers {
 				'text_delete_smart_routing_connection' => esc_html__( 'You\'re about to delete a connection that is used in Smart Routing. Are you sure you want to proceed? You will need to reconfigure your Smart Routing rules.', 'wp-mail-smtp-pro' ),
 				'text_switch_witch_primary_connection' => esc_html__( 'Are you sure you want to use this additional connection as your new primary connection? Your existing primary connection will be moved to the additional connections list.', 'wp-mail-smtp-pro' ),
 				'connection_id'                        => $connection_id,
+				// WhatsApp alerts data.
+				'whatsapp_text_checking'               => esc_html__( 'Rechecking...', 'wp-mail-smtp-pro' ),
+				'whatsapp_text_check_error'            => esc_html__( 'Error rechecking status', 'wp-mail-smtp-pro' ),
+				'whatsapp_text_recheck'                => esc_html__( 'Recheck Status', 'wp-mail-smtp-pro' ),
 			]
 		);
 	}

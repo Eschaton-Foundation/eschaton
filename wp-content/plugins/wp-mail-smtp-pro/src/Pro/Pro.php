@@ -690,6 +690,7 @@ class Pro {
 				\WPMailSMTP\Pro\Tasks\Migrations\EmailLogMigration5::class,
 				\WPMailSMTP\Pro\Tasks\Migrations\EmailLogMigration11::class,
 				\WPMailSMTP\Pro\Tasks\Logs\Sendlayer\VerifySentStatusTask::class,
+				\WPMailSMTP\Pro\Tasks\Logs\MailerSend\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\Sendinblue\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\SMTPcom\VerifySentStatusTask::class,

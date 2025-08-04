@@ -274,6 +274,12 @@ class Webhooks {
 						( // If mailer was changed.
 							! empty( $data['mail']['mailer'] ) &&
 							$data['mail']['mailer'] !== $options->get( 'mail', 'mailer' )
+						) ||
+						(
+							// If mailsersend from email was changed.
+							! empty( $data['mail']['from_email'] ) &&
+							$data['mail']['from_email'] !== $options->get( 'mail', 'from_email' ) &&
+							$data['mail']['mailer'] === 'mailersend'
 						)
 					)
 				) ||
@@ -475,6 +481,7 @@ class Webhooks {
 			'sparkpost'  => Providers\SparkPost\Provider::class,
 			'smtp2go'    => Providers\SMTP2GO\Provider::class,
 			'mailjet'    => Providers\Mailjet\Provider::class,
+			'mailersend' => Providers\MailerSend\Provider::class,
 		];
 
 		if ( isset( $providers[ $mailer_name ] ) ) {

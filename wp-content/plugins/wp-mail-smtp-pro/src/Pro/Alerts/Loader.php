@@ -28,6 +28,7 @@ class Loader {
 		'twilio_sms'         => 'WPMailSMTP\Pro\Alerts\Providers\TwilioSMS\\',
 		'custom_webhook'     => 'WPMailSMTP\Pro\Alerts\Providers\CustomWebhook\\',
 		'push_notifications' => 'WPMailSMTP\Pro\Alerts\Providers\Push\\',
+		'whatsapp'           => 'WPMailSMTP\Pro\Alerts\Providers\WhatsApp\\',
 	];
 
 	/**

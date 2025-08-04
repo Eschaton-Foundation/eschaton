@@ -46,7 +46,7 @@ class Common {
 	 *
 	 * @param MailerAbstract $mailer The Mailer object.
 	 */
-	public function __construct( MailerAbstract $mailer = null ) {
+	public function __construct( ?MailerAbstract $mailer = null ) {
 
 		$this->mailer = $mailer;
 	}
@@ -242,7 +242,7 @@ class Common {
 
 		$message_id = '';
 
-		$custom_id_mailers = [ 'sendlayer', 'smtpcom', 'postmark', 'sparkpost', 'sendgrid', 'smtp2go', 'mailjet', 'elasticemail' ];
+		$custom_id_mailers = [ 'sendlayer', 'smtpcom', 'postmark', 'sparkpost', 'sendgrid', 'smtp2go', 'mailjet', 'elasticemail', 'mailersend' ];
 
 		if ( in_array( $this->mailer->get_mailer_name(), $custom_id_mailers, true ) ) {
 			foreach ( $this->mailcatcher->getCustomHeaders() as $header ) {

@@ -88,6 +88,11 @@ class Table extends \WP_List_Table {
 			Email::STATUS_UNSENT    => __( 'Failed', 'wp-mail-smtp-pro' ),
 		];
 
+		// Add the Blocked status only if the "Log Blocked Emails" option is enabled.
+		if ( Options::init()->get( 'logs', 'log_blocked_emails' ) ) {
+			$statuses[ Email::STATUS_BLOCKED ] = __( 'Blocked', 'wp-mail-smtp-pro' );
+		}
+
 		// Exclude Delivered and Pending statuses for mailers without verification API.
 		if ( Helpers::mailer_without_send_confirmation() ) {
 			unset( $statuses[ Email::STATUS_DELIVERED ] );
@@ -258,13 +263,19 @@ class Table extends \WP_List_Table {
 
 		switch ( $item->get_status() ) {
 			case Email::STATUS_DELIVERED:
-				return '<span title="' . esc_attr__( 'Delivered', 'wp-mail-smtp-pro' ) . '" class="wp-mail-smtp-dashicons-yes-alt-green delivered"></span>';
+				return '<span title="' . esc_attr__( 'Delivered', 'wp-mail-smtp-pro' ) . '" class="wp-mail-smtp-dashicons-yes-alt-green delivered"></span>'; // phpcs:ignore WPForms.Formatting.EmptyLineBeforeReturn.AddEmptyLineBeforeReturnStatement
+
 			case Email::STATUS_SENT:
-				return '<span title="' . esc_attr__( 'Sent', 'wp-mail-smtp-pro' ) . '" class="dot sent"></span>';
+				return '<span title="' . esc_attr__( 'Sent', 'wp-mail-smtp-pro' ) . '" class="dot sent"></span>'; // phpcs:ignore WPForms.Formatting.EmptyLineBeforeReturn.AddEmptyLineBeforeReturnStatement
+
 			case Email::STATUS_WAITING:
-				return '<span title="' . esc_attr__( 'Waiting for confirmation', 'wp-mail-smtp-pro' ) . '" class="circle waiting"></span>';
+				return '<span title="' . esc_attr__( 'Waiting for confirmation', 'wp-mail-smtp-pro' ) . '" class="circle waiting"></span>'; // phpcs:ignore WPForms.Formatting.EmptyLineBeforeReturn.AddEmptyLineBeforeReturnStatement
+
+			case Email::STATUS_BLOCKED:
+				return '<span title="' . esc_attr__( 'Blocked by Do Not Send', 'wp-mail-smtp-pro' ) . '" class="dot blocked"></span>'; // phpcs:ignore WPForms.Formatting.EmptyLineBeforeReturn.AddEmptyLineBeforeReturnStatement
+
 			default:
-				return '<span title="' . esc_attr__( 'Not Sent', 'wp-mail-smtp-pro' ) . '" class="dot notsent"></span>';
+				return '<span title="' . esc_attr__( 'Not Sent', 'wp-mail-smtp-pro' ) . '" class="dot notsent"></span>'; // phpcs:ignore WPForms.Formatting.EmptyLineBeforeReturn.AddEmptyLineBeforeReturnStatement
 		}
 	}
 

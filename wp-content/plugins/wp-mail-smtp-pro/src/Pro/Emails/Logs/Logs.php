@@ -140,6 +140,8 @@ class Logs {
 			);
 			add_action( 'wp_mail_smtp_pro_backup_connections_send_email_after', [ $this, 'reset_current_email_parent_id' ] );
 
+			add_action( 'wp_mail_smtp_mail_catcher_send_blocked', [ $this, 'maybe_log_blocked_email' ] );
+
 			// Initialize email print preview.
 			( new PrintPreview() )->hooks();
 
@@ -281,6 +283,7 @@ class Logs {
 			// All options are off by default.
 			$options['logs'] = [
 				'enabled'              => false,
+				'log_blocked_emails'   => false,
 				'log_email_content'    => false,
 				'log_retention_period' => 0,
 				'save_attachments'     => false,
@@ -328,6 +331,11 @@ class Logs {
 				case 'enabled':
 					$return = $options->is_const_defined( $group, $key ) ?
 						$options->parse_boolean( WPMS_LOGS_ENABLED ) :
+						$value;
+					break;
+				case 'log_blocked_emails': // phpcs:ignore WPForms.Formatting.Switch.AddEmptyLineBefore
+					$return = $options->is_const_defined( $group, $key ) ?
+						$options->parse_boolean( WPMS_LOG_BLOCKED_EMAILS ) :
 						$value;
 					break;
 				case 'log_email_content':
@@ -1138,5 +1146,58 @@ class Logs {
 		}
 
 		return $webhooks;
+	}
+
+	/**
+	 * Log blocked emails when "Do Not Send" and "Log Blocked Emails" options are enabled.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param MailCatcherInterface $mailcatcher The MailCatcher object.
+	 *
+	 * @return void
+	 */
+	public function maybe_log_blocked_email( MailCatcherInterface $mailcatcher ) { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
+
+		// Check if "Log Blocked Emails" option is enabled.
+		$options            = Options::init();
+		$log_blocked_emails = $options->get( 'logs', 'log_blocked_emails' );
+
+		// Only proceed if the option is enabled and the Logs class exists.
+		if ( ! $log_blocked_emails ) {
+			return;
+		}
+
+		$connection  = wp_mail_smtp()->get_connections_manager()->get_mail_connection();
+		$mailer_slug = $connection->get_mailer_slug();
+
+		// Define a custom header, that will be used to identify the plugin and the mailer.
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$mailcatcher->XMailer = 'WPMailSMTP/Mailer/' . $mailer_slug . ' ' . WPMS_PLUGIN_VER;
+
+		// Only proceed if email logging is enabled.
+		if ( ! $this->is_enabled() || ! $this->is_valid_db() ) {
+			return;
+		}
+
+		// Create a log entry for this blocked email.
+		if ( $mailer_slug === 'mail' || $mailer_slug === 'smtp' || $mailer_slug === 'pepipost' ) {
+			$email_id = ( new SMTP() )->set_source( $mailcatcher )->save_before();
+		} else {
+			$mailer   = $connection->get_mailer();
+			$email_id = ( new Common( $mailer ) )->set_source( $mailcatcher )->save_before();
+		}
+
+		// Add custom notes about this being blocked.
+		if ( $email_id > 0 ) {
+			$email = new Email( $email_id );
+
+			// Save attachments to the email log.
+			( new Attachments() )->process_attachments( $email_id, $mailcatcher->getAttachments() );
+
+			$email->set_error_text( esc_html__( 'Email was blocked by the "Do Not Send" option.', 'wp-mail-smtp-pro' ) );
+			$email->set_status( Email::STATUS_BLOCKED );
+			$email->save();
+		}
 	}
 }
