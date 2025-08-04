@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Newsletter, SMTP, Email marketing and Subscribe forms by "
 "Brevo 3.1.85\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05T06:30:35+00:00\n"
+"POT-Creation-Date: 2025-05-27T08:57:41+00:00\n"
 "PO-Revision-Date: 2025-04-17 12:30+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -14,10 +14,10 @@ msgstr ""
 "X-Generator: Poedit 3.5\n"
 "X-Domain: post-editor\n"
 
-#: post-editor/index.js:281
+#: post-editor/index.js:284
 msgid "No utm parameter configured"
 msgstr "Pas de paramètre utm configuré"
 
-#: post-editor/index.js:293
+#: post-editor/index.js:296
 msgid "Configure"
 msgstr "Configurer"

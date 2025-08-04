@@ -18,7 +18,7 @@ if ( ! class_exists( 'SIB_Push_Public' ) ) {
 			} catch ( SIB_Push_MissingCredentialsException $e ) {
 				// Ignore
 			} catch ( Exception $e ) {
-				SIB_Push_Utils::log_error($e);
+				SIB_Push_Utils::log_warn($e);
 			}
 
 

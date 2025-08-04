@@ -41,7 +41,7 @@ if ( ! class_exists( 'SIB_Push_API' ) ) {
 			} catch ( \WonderPush\Errors\Server $e ) {
 				$code = $e->getResponse() ? $e->getResponse()->getStatusCode() : null;
 				if ( $code !== 429 ) {
-					SIB_Push_Utils::log_error( 'Error creating application', $e );
+					SIB_Push_Utils::log_warn( 'Error creating application', $e );
 				} else {
 //					SIB_Push_Utils::log_debug( 'Refusing to create application', $e );
 				}
@@ -106,7 +106,7 @@ if ( ! class_exists( 'SIB_Push_API' ) ) {
 			try {
 				$app = SIB_Push_Utils::get_push_application(SIB_Push_Utils::DEFAULT_CACHE_TTL);
 			} catch (Exception $e) {
-				SIB_Push_Utils::log_error('Could not get application', $e);
+				SIB_Push_Utils::log_warn('Could not get application', $e);
 				self::returnError('Could not get application', 500);
 			}
 			$wp = SIB_Push_Utils::management_api_client($credentials);
@@ -180,7 +180,7 @@ if ( ! class_exists( 'SIB_Push_API' ) ) {
 //						SIB_Push_Utils::log_debug('Clearing cart reminder cache');
 						SIB_Push_WooCommerce::clear_cart_reminder_campaign_cache();
 					} catch ( Exception $e ) {
-						SIB_Push_Utils::log_error('Could not clear cart reminder cache', $e);
+						SIB_Push_Utils::log_warn('Could not clear cart reminder cache', $e);
 					}
 				}
 
@@ -192,7 +192,7 @@ if ( ! class_exists( 'SIB_Push_API' ) ) {
 //							SIB_Push_Utils::log_debug('Clearing application cache');
 							SIB_Push_Utils::clear_push_application_cache();
 						} catch ( Exception $e ) {
-							SIB_Push_Utils::log_error('Could not clear application cache', $e);
+							SIB_Push_Utils::log_warn('Could not clear application cache', $e);
 						}
 					}
 				}

@@ -11,7 +11,7 @@ if ( ! class_exists( 'SIB_Push_Amp' ) ) {
 			try {
 				$app = SIB_Push_Utils::get_push_application();
 			} catch ( Exception $e ) {
-				SIB_Push_Utils::log_error('Could not get application', $e);
+				SIB_Push_Utils::log_warn('Could not get application', $e);
 				return '';
 			}
 			$web_key = $app ? $app->getWebKey() : null;

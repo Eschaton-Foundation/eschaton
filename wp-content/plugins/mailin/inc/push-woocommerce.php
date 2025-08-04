@@ -82,7 +82,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 			try {
 				SIB_Push_Utils::track_event($credentials, $event_type, $payload);
 			} catch (Exception $e) {
-				SIB_Push_Utils::log_error("Could not track event", $e);
+				SIB_Push_Utils::log_warn("Could not track event", $e);
 			}
 		}
 
@@ -104,7 +104,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 				} else {
 					$msg = '';
 				}
-				SIB_Push_Utils::log_error("Could not json_encode product array. code:" . $json_last_error . " msg:" . $msg, $product_array);
+				SIB_Push_Utils::log_warn("Could not json_encode product array. code:" . $json_last_error . " msg:" . $msg, $product_array);
 			}
 			if ($product_json === false) return;
 			?>
@@ -144,7 +144,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 					'float_totalAmount' => (float)$order->get_total(),
 				));
 			} catch (Exception $e) {
-				SIB_Push_Utils::log_error("Could not track event: ", $e);
+				SIB_Push_Utils::log_warn("Could not track event: ", $e);
 			}
 		}
 
@@ -161,7 +161,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 			try {
 				if (!SIB_Push_Utils::get_push_application()) return;
 			} catch (Exception $t) {
-				SIB_Push_Utils::log_error('Could not get application', $t);
+				SIB_Push_Utils::log_warn('Could not get application', $t);
 				return;
 			}
 			$settings = SIB_Push_Settings::getSettings();
@@ -189,7 +189,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 						update_user_meta($customer_id, $meta_name, true);
 					}
 				} catch (Exception $e) {
-					SIB_Push_Utils::log_error('Caught Exception', $e);
+					SIB_Push_Utils::log_warn('Caught Exception', $e);
 				}
 			}
 
@@ -217,7 +217,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 						update_user_meta($customer_id, $meta_name, true);
 					}
 				} catch (Exception $e) {
-					SIB_Push_Utils::log_error('Caught Exception', $e);
+					SIB_Push_Utils::log_warn('Caught Exception', $e);
 				}
 			}
 		}
@@ -247,7 +247,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 				try {
 					$app = SIB_Push_Utils::get_push_application();
 				} catch (Exception $t) {
-					SIB_Push_Utils::log_error('Could not get application', $t);
+					SIB_Push_Utils::log_warn('Could not get application', $t);
 					$app = null;
 				}
 				$url_params = $app ? $app->getUrlParameters() : (object)array();
@@ -283,11 +283,11 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 				if ($response->isSuccess()) {
 					return true;
 				} else {
-					SIB_Push_Utils::log_error('Could not send WonderPush order confirmation notification.');
+					SIB_Push_Utils::log_warn('Could not send WonderPush order confirmation notification.');
 					return false;
 				}
 			} catch (Exception $e) {
-				SIB_Push_Utils::log_error('Caught Exception', $e);
+				SIB_Push_Utils::log_warn('Caught Exception', $e);
 				return false;
 			}
 		}
@@ -513,7 +513,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 				return $campaign;
 
 			} catch (\WonderPush\Errors\Server $e) {
-				SIB_Push_Utils::log_error('Could not create cart reminder campaign', $e);
+				SIB_Push_Utils::log_warn('Could not create cart reminder campaign', $e);
 				throw $e;
 			}
 		}
@@ -533,6 +533,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
 			$notificationText = json_encode(__('Your cart is about to expire! Don\'t miss out the brand you love! 😍', 'mailin'));
 			$notificationTitle = json_encode('🛒 {{event.custom.object_product.string_name}}');
 			$startDate = json_encode(time() * 1000);
+			$campaignBuilder = json_encode(\WonderPush\Obj\Campaign::CAMPAIGN_BUILDER_BREVO_WORDPRESS_PLUGIN);
 			return <<<JSON
 {
   "name": {$campaignTitle},
@@ -541,6 +542,7 @@ if ( ! class_exists('SIB_Push_WooCommerce')) {
     "alert"
   ],
   "segmentId": "@ALL",
+  "campaignBuilder": {$campaignBuilder},
   "scheduling": {
     "eventType": "AddToCart",
     "cancelEventTypes": [

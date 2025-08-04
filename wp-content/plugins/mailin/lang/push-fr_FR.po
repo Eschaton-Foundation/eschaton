@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-12T09:54:59+00:00\n"
-"PO-Revision-Date: 2025-05-12 11:59+0200\n"
+"POT-Creation-Date: 2025-05-27T08:57:37+00:00\n"
+"PO-Revision-Date: 2025-05-27 11:01+0200\n"
 "Last-Translator: Stéphane Jaïs <stephane.jais@brevo.com>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -1653,44 +1653,44 @@ msgstr "Modifications enregistrées"
 msgid "There was an error saving your changes:"
 msgstr "Une erreur est survenue lors de la sauvegarde de vos changements :"
 
-#: push/components/settings/PressureCategories.js:109
+#: push/components/settings/PressureCategories.js:113
 msgid "per hour"
 msgstr "par heure"
 
-#: push/components/settings/PressureCategories.js:114
+#: push/components/settings/PressureCategories.js:118
 msgid "per day"
 msgstr "par jour"
 
-#: push/components/settings/PressureCategories.js:119
+#: push/components/settings/PressureCategories.js:123
 msgid "per week"
 msgstr "par semaine"
 
-#: push/components/settings/PressureCategories.js:126
+#: push/components/settings/PressureCategories.js:130
 msgid "Minutes"
 msgstr "Minutes"
 
-#: push/components/settings/PressureCategories.js:131
+#: push/components/settings/PressureCategories.js:135
 msgid "Hours"
 msgstr "Heures"
 
-#: push/components/settings/PressureCategories.js:136
+#: push/components/settings/PressureCategories.js:140
 msgid "Days"
 msgstr "Jours"
 
-#: push/components/settings/PressureCategories.js:155
+#: push/components/settings/PressureCategories.js:167
 msgid "Max number of pushes"
 msgstr "Nombre max de push"
 
-#: push/components/settings/PressureCategories.js:165
-#: push/components/settings/PressureCategories.js:181
+#: push/components/settings/PressureCategories.js:177
+#: push/components/settings/PressureCategories.js:193
 msgid "Select a duration"
 msgstr "Choisir une durée"
 
-#: push/components/settings/PressureCategories.js:171
+#: push/components/settings/PressureCategories.js:183
 msgid "TTL"
 msgstr "TTL"
 
-#: push/components/settings/PressureCategories.js:189
+#: push/components/settings/PressureCategories.js:201
 msgid "Show more categories"
 msgstr "Afficher plus de catégories"
 
@@ -2071,6 +2071,10 @@ msgstr "mon-element"
 msgid "Insert link before, or after other children in the container?"
 msgstr ""
 "Insérez le lient avant, ou après les autres enfants dans le conteneur ?"
+
+#: push/components/subscription/SubscriptionBlurbSettings.js:76
+msgid "How many links should we insert?"
+msgstr "Combien de liens devrions-nous insérer ?"
 
 #: push/components/subscription/SubscriptionBlurbSettings.js:78
 msgid "Customizing the link"

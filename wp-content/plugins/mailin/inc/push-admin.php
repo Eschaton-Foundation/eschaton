@@ -155,14 +155,14 @@ if ( ! class_exists( 'SIB_Push_Admin' ) ) {
 				$all_brevo_segments = $credentials ? SIB_API_Manager::get_segments() : null;
 			} catch (Exception $e) {
 				$all_brevo_segments = array();
-				SIB_Push_Utils::log_error('Could not get segment list', $e);
+				SIB_Push_Utils::log_warn('Could not get segment list', $e);
 			}
 			// All lists
 			try {
 				$all_brevo_lists = $credentials ? SIB_API_Manager::get_lists() : null;
 			} catch (Exception $e) {
 				$all_brevo_lists = array();
-				SIB_Push_Utils::log_error('Could not get lists', $e);
+				SIB_Push_Utils::log_warn('Could not get lists', $e);
 			}
 
 
@@ -174,7 +174,7 @@ if ( ! class_exists( 'SIB_Push_Admin' ) ) {
 
 			} catch (Exception $e) {
 				$all_tags = array();
-				SIB_Push_Utils::log_error('Could not get tags', $e);
+				SIB_Push_Utils::log_warn('Could not get tags', $e);
 			}
 
 			// UTM params
@@ -837,7 +837,7 @@ if ( ! class_exists( 'SIB_Push_Admin' ) ) {
 						break;
 				}
 			} catch (Exception $e) {
-				SIB_Push_Utils::log_error('Caught Exception', $e);
+				SIB_Push_Utils::log_warn('Caught Exception', $e);
 			}
 		}
 

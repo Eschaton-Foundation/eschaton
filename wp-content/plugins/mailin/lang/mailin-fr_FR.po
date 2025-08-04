@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Sendinblue plugin\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mailin\n"
-"POT-Creation-Date: 2025-05-05T06:30:37+00:00\n"
+"POT-Creation-Date: 2025-05-27T08:57:42+00:00\n"
 "PO-Revision-Date: 2025-04-18 13:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -18,9 +18,8 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: sendinblue.php
-msgid "Newsletter, SMTP, Email marketing and Subscribe forms by Brevo"
+msgid "Brevo - Email, SMS, Web Push, Chat, and more."
 msgstr ""
-"Newsletter, SMTP, Email marketing et formulaires d’inscription par Brevo"
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
@@ -52,140 +51,144 @@ msgstr "Push web"
 msgid "Go to web push dashboard"
 msgstr "Tableau de bord web push"
 
-#: inc/push-admin.php:46
+#: inc/push-admin.php:49
 msgid "Web Push Notifications"
 msgstr "Notifications Push Web"
 
-#: inc/push-admin.php:58
+#: inc/push-admin.php:61
 msgid "Grow your audience with push notifications"
 msgstr "Elargissez votre audience avec les notifications push"
 
-#: inc/push-admin.php:61
+#: inc/push-admin.php:64
 msgid "Notify your readers whenever a new post is published."
 msgstr "Informez vos lecteurs de la publication d'un nouvel article."
 
-#: inc/push-admin.php:62
+#: inc/push-admin.php:65
 msgid "Let your users subscribe to their favorite topics."
 msgstr "Permettez à vos utilisateurs de s'abonner à leurs sujets favoris."
 
-#: inc/push-admin.php:215
+#: inc/push-admin.php:70 page/page-home.php:424
+msgid "Activate web push"
+msgstr "Activer web push"
+
+#: inc/push-admin.php:218
 msgid "Notify your readers:"
 msgstr "Notifiez vos lecteurs :"
 
 #. translators: %s: Type of post. Usually is the string "post"
-#: inc/push-admin.php:223 inc/push-admin.php:249
+#: inc/push-admin.php:226 inc/push-admin.php:252
 msgid "Send web push on %s update"
 msgstr "Envoyer un web push quand le %s est mis à jour"
 
 #. translators: %s: Type of post. Usually is the string "post"
-#: inc/push-admin.php:226 inc/push-admin.php:252
+#: inc/push-admin.php:229 inc/push-admin.php:255
 msgid "Send web push on %s publish"
 msgstr "Envoyer un web push quand un %s est publié"
 
-#: inc/push-admin.php:229
+#: inc/push-admin.php:232
 msgid "New"
 msgstr "New"
 
-#: inc/push-admin.php:233
+#: inc/push-admin.php:236
 msgid "Please wait a few seconds..."
 msgstr "Veuillez patienter quelques secondes…"
 
-#: inc/push-admin.php:258
+#: inc/push-admin.php:261
 msgid "Target audience"
 msgstr "Audience cible"
 
-#: inc/push-admin.php:266
+#: inc/push-admin.php:269
 msgid "Everybody"
 msgstr "Tout le monde"
 
-#: inc/push-admin.php:280
+#: inc/push-admin.php:283
 msgid "Users in segment(s)"
 msgstr "Les utilisateurs dans le(s) segment(s)"
 
-#: inc/push-admin.php:284
+#: inc/push-admin.php:287
 msgid "We'll notify users that match at least one of these segments:"
 msgstr ""
 "Nous notifierons tous les utilisateurs présents dans au moins un de ces "
 "segments :"
 
-#: inc/push-admin.php:288 inc/push-admin.php:315
+#: inc/push-admin.php:291 inc/push-admin.php:318
 msgid "Everyone"
 msgstr "Tout le monde"
 
-#: inc/push-admin.php:307
+#: inc/push-admin.php:310
 msgid "Users in list(s)"
 msgstr "Utilisateurs dans la ou les listes"
 
-#: inc/push-admin.php:311
+#: inc/push-admin.php:314
 msgid "We'll notify users that match at least one of these lists:"
 msgstr ""
 "Nous notifierons tous les utilisateurs présents dans au moins une de ces "
 "listes :"
 
-#: inc/push-admin.php:334
+#: inc/push-admin.php:337
 msgid "Users with tag(s)"
 msgstr "Utilisateurs avec le(s) tag(s)"
 
-#: inc/push-admin.php:338
+#: inc/push-admin.php:341
 msgid "We'll notify users that match at least one of these tags:"
 msgstr "Nous notifierons tous les utilisateurs qui on au moins un de ces tags:"
 
-#: inc/push-admin.php:356
+#: inc/push-admin.php:359
 msgid "Send later"
 msgstr "Envoyer plus tard"
 
-#: inc/push-admin.php:357
+#: inc/push-admin.php:360
 msgid "Delay the notification after this post gets published:"
 msgstr ""
 "Retarder l’envoi de la notification après que le billet ne soit publié :"
 
-#: inc/push-admin.php:360
+#: inc/push-admin.php:363
 msgid "No delay"
 msgstr "Immédiatement"
 
-#: inc/push-admin.php:365
+#: inc/push-admin.php:368
 msgid "minutes"
 msgstr "minutes"
 
-#: inc/push-admin.php:372
+#: inc/push-admin.php:375
 msgid "hour"
 msgid_plural "hours"
 msgstr[0] "heure"
 msgstr[1] "heures"
 
-#: inc/push-admin.php:376
+#: inc/push-admin.php:379
 msgid "Google campaign parameters"
 msgstr "Paramètres de campagne Google"
 
-#: inc/push-admin.php:377
+#: inc/push-admin.php:380
 msgid "Campaign params help you see web push traffic in Google Analytics."
 msgstr ""
 "Les paramètres de campagne vous aideront à voir le traffic lié aux web push "
 "dans Google Analytics."
 
-#: inc/push-admin.php:377
+#: inc/push-admin.php:380
 msgid "Learn more"
 msgstr "En savoir plus"
 
-#: inc/push-admin.php:800
+#: inc/push-admin.php:803
 msgid "Brevo push notification sent."
 msgstr "Notification push Brevo envoyée."
 
 #. translators: %d is the number of subscribers, %s is the date and time
-#: inc/push-admin.php:817
+#: inc/push-admin.php:820
 msgid "Brevo will send a notification to %d subscribers on %s."
 msgstr "Brevo enverra une notification à %d abonnés le %s."
 
 #. translators: %d is the number of subscribers
-#: inc/push-admin.php:820
+#: inc/push-admin.php:823
 msgid "Brevo notification sent to %d subscribers."
 msgstr "Notification Brevo envoyée à %d abonnés."
 
-#: inc/push-admin.php:823
+#: inc/push-admin.php:826
 msgid "Brevo notification sent but the target audience is empty."
 msgstr "Notification Brevo envoyée mais l'audience cible est vide."
 
-#: inc/push-admin.php:828
+#: inc/push-admin.php:831
 msgid "Brevo notification could not be sent."
 msgstr "La notification Brevo n'a pas pu être envoyée."
 
@@ -197,7 +200,7 @@ msgstr "S’abonner aux mises à jour"
 msgid "Unsubscribe from news updates"
 msgstr "Se désabonner des mises à jour"
 
-#: inc/push-utils.php:299 inc/push-utils.php:369
+#: inc/push-utils.php:304 inc/push-utils.php:374
 msgid "My WordPress Site"
 msgstr "Mon Site WordPress"
 
@@ -1087,10 +1090,6 @@ msgstr ""
 msgid "deactivate web push"
 msgstr "désactiver web push"
 
-#: page/page-home.php:424
-msgid "Activate web push"
-msgstr "Activer web push"
-
 #: page/page-home.php:431
 msgid "Please wait, activation might take up to a minute."
 msgstr "Veuillez patienter, l’activation peut prendre jusqu’à une minute."
@@ -1348,6 +1347,10 @@ msgstr "Titre du Widget"
 #: widget/widget_form.php:56
 msgid "Form to use"
 msgstr "Formulaire à utiliser"
+
+#~ msgid "Newsletter, SMTP, Email marketing and Subscribe forms by Brevo"
+#~ msgstr ""
+#~ "Newsletter, SMTP, Email marketing et formulaires d’inscription par Brevo"
 
 #~ msgid "Activate push notifications"
 #~ msgstr "Activier les notifications push"

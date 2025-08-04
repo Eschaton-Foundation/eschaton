@@ -3,7 +3,7 @@
  * Plugin Name: Brevo - Email, SMS, Web Push, Chat, and more.
  * Plugin URI: https://www.brevo.com/?r=wporg
  * Description: Manage your contact lists, subscription forms and all email and marketing-related topics from your wp panel, within one single plugin
- * Version: 3.2.2
+ * Version: 3.2.6
  * Author: Brevo
  * Author URI: https://www.brevo.com/?r=wporg
  * License: GPLv2 or later
@@ -137,13 +137,10 @@ if ( ! class_exists( 'SIB_Manager' ) ) {
 		const INSTALLATION_ID = 'sib_installation_id';
 		const BREVO_PLUGIN_VERSION = 'brevo_plugin_version';
 
-        /*Pushowl Url */
-        const PUSHOWL_STAGING_URL = "https://cdn-staging.pushowl.com/latest/sdks/service-worker.js";
-        const PUSHOWL_PRODUCTION_URL = "https://cdn.pushowl.com/latest/sdks/service-worker.js";
         const SDK_LOADER_PRODUCTION_URL = "https://cdn.brevo.com/js/sdk-loader.js";
         const SDK_LOADER_STAGING_URL = "https://cdn.brevo.com/js/sdk-staging-loader.js";
         const URL_CHECK_STAGING = "staging";
-        const SERVICE_WORKER_FILE_URL = "/js/service-worker.js";
+		const SERVICE_WORKER_FILE_URL = "/js/service-worker.js";
 
         const SIB_ATTRIBUTE = array(
 			'input' => array(
@@ -642,8 +639,7 @@ if ( ! class_exists( 'SIB_Manager' ) ) {
 		 */
 		static function deactivate() {
 			update_option( SIB_Manager::LANGUAGE_OPTION_NAME, false );
-            // Remove service worker file.
-            self::uninstall_service_worker_script();
+			self::uninstall_service_worker_script();
 			// Remove sync users option.
 			delete_option( 'sib_sync_users' );
 			// Remove all transient.
@@ -726,26 +722,7 @@ if ( ! class_exists( 'SIB_Manager' ) ) {
 			}
 		}
 
-        /**
-         * Install service-worker script in plugin for push notifications
-         * @return void
-         */
-        static function install_service_worker_script($service_worker)
-        {
-            try {
-                $service_worker_file   = self::is_staging()
-                    ? self::PUSHOWL_STAGING_URL
-                    : self::PUSHOWL_PRODUCTION_URL;
-                $js_content            = "importScripts('" . $service_worker_file . "');";
-                $service_worker_script = fopen($service_worker, "wb");
-                fwrite($service_worker_script, $js_content);
-                fclose($service_worker_script);
-            } catch (\Throwable $th) {
-                update_option('sib_service_worker_install_exception', $th->getMessage());
-            }
-        }
-
-        /**
+		/**
          * Uninstall service-worker script from plugin
          * @return void
          */
@@ -769,10 +746,6 @@ if ( ! class_exists( 'SIB_Manager' ) ) {
 			$push_enabled = SIB_Push_Utils::is_push_sdk_enabled();
 			if ( SIB_Manager::is_ma_active() ) {
 				$init_options = json_encode( SIB_Push_Utils::brevo_init_options() );
-                $service_worker = __DIR__ . self::SERVICE_WORKER_FILE_URL;
-				if ( !file_exists( $service_worker ) ) {
-					self::install_service_worker_script( $service_worker );
-				}
 				$script_url = self::is_staging() ? self::SDK_LOADER_STAGING_URL : self::SDK_LOADER_PRODUCTION_URL;
 				$output = <<<EOT
 <script type="text/javascript" src="{$script_url}" async></script>

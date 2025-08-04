@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-12T09:54:59+00:00\n"
+"POT-Creation-Date: 2025-05-27T08:57:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: push\n"
@@ -1600,44 +1600,44 @@ msgstr ""
 msgid "There was an error saving your changes:"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:109
+#: push/components/settings/PressureCategories.js:113
 msgid "per hour"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:114
+#: push/components/settings/PressureCategories.js:118
 msgid "per day"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:119
+#: push/components/settings/PressureCategories.js:123
 msgid "per week"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:126
+#: push/components/settings/PressureCategories.js:130
 msgid "Minutes"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:131
+#: push/components/settings/PressureCategories.js:135
 msgid "Hours"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:136
+#: push/components/settings/PressureCategories.js:140
 msgid "Days"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:155
+#: push/components/settings/PressureCategories.js:167
 msgid "Max number of pushes"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:165
-#: push/components/settings/PressureCategories.js:181
+#: push/components/settings/PressureCategories.js:177
+#: push/components/settings/PressureCategories.js:193
 msgid "Select a duration"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:171
+#: push/components/settings/PressureCategories.js:183
 msgid "TTL"
 msgstr ""
 
-#: push/components/settings/PressureCategories.js:189
+#: push/components/settings/PressureCategories.js:201
 msgid "Show more categories"
 msgstr ""
 
@@ -1971,6 +1971,10 @@ msgstr ""
 
 #: push/components/subscription/SubscriptionBlurbSettings.js:76
 msgid "Insert link before, or after other children in the container?"
+msgstr ""
+
+#: push/components/subscription/SubscriptionBlurbSettings.js:76
+msgid "How many links should we insert?"
 msgstr ""
 
 #: push/components/subscription/SubscriptionBlurbSettings.js:78
