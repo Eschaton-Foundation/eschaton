@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.6.0] - 2025-08-28
+### Added:
+- New transactional mailer: Mandrill integration.
+
+### Fixed:
+- Incorrect deliverability verification webhook status for SMTP.com mailer.
+- References and In-Reply-To email headers are now correctly preserved for API-based mailers.
+- License verification failures on WPML or Polylang multidomain setups.
+
 ## [4.5.0] - 2025-06-04
 ### IMPORTANT
 - Support for PHP 7.2 has been discontinued. If you are running this version, you MUST upgrade PHP before installing or upgrading to WP Mail SMTP v4.5. Failure to do that will disable WP Mail SMTP functionality.

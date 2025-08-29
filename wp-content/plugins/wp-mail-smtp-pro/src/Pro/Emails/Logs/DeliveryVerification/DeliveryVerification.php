@@ -8,6 +8,7 @@ use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\ElasticEmail\DeliveryVerifie
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\MailerSend\DeliveryVerifier as MailerSendDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailgun\DeliveryVerifier as MailgunDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailjet\DeliveryVerifier as MailjetDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mandrill\DeliveryVerifier as MandrillDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Postmark\DeliveryVerifier as PostmarkDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendinblue\DeliveryVerifier as SendinblueDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendlayer\DeliveryVerifier as SendlayerDeliveryVerifier;
@@ -19,6 +20,7 @@ use WPMailSMTP\Pro\Tasks\Logs\ElasticEmail\VerifySentStatusTask as ElasticEmailV
 use WPMailSMTP\Pro\Tasks\Logs\MailerSend\VerifySentStatusTask as MailerSendVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask as MailgunVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask as MailjetVerifySentStatusTask;
+use WPMailSMTP\Pro\Tasks\Logs\Mandrill\VerifySentStatusTask as MandrillVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask as PostmarkVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendinblue\VerifySentStatusTask as SendinblueVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendlayer\VerifySentStatusTask as SendlayerVerifySentStatusTask;
@@ -43,6 +45,7 @@ class DeliveryVerification {
 	 */
 	const DELIVERY_VERIFIERS_PER_MAILER = [
 		'mailgun'      => MailgunDeliveryVerifier::class,
+		'mandrill'     => MandrillDeliveryVerifier::class,
 		'postmark'     => PostmarkDeliveryVerifier::class,
 		'sendlayer'    => SendlayerDeliveryVerifier::class,
 		'smtpcom'      => SMTPcomDeliveryVerifier::class,
@@ -63,6 +66,7 @@ class DeliveryVerification {
 	 */
 	const VERIFY_TASKS_PER_MAILER = [
 		'mailgun'      => MailgunVerifySentStatusTask::class,
+		'mandrill'     => MandrillVerifySentStatusTask::class,
 		'postmark'     => PostmarkVerifySentStatusTask::class,
 		'sendlayer'    => SendlayerVerifySentStatusTask::class,
 		'smtpcom'      => SMTPcomVerifySentStatusTask::class,

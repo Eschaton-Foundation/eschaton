@@ -463,6 +463,8 @@ class Webhooks {
 	 * @since 3.3.0
 	 * @since 3.4.0 Added SendLayer.
 	 * @since 4.1.0 Added SMTP2GO.
+	 * @since 4.5.0 Added MailerSend.
+	 * @since 4.6.0 Added Mandrill.
 	 *
 	 * @param string $mailer_name Mailer name/slug.
 	 *
@@ -482,6 +484,7 @@ class Webhooks {
 			'smtp2go'    => Providers\SMTP2GO\Provider::class,
 			'mailjet'    => Providers\Mailjet\Provider::class,
 			'mailersend' => Providers\MailerSend\Provider::class,
+			'mandrill'   => Providers\Mandrill\Provider::class,
 		];
 
 		if ( isset( $providers[ $mailer_name ] ) ) {

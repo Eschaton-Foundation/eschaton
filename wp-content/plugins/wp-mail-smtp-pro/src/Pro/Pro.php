@@ -699,6 +699,7 @@ class Pro {
 				\WPMailSMTP\Pro\Tasks\Logs\SMTP2GO\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ElasticEmail\VerifySentStatusTask::class,
+				\WPMailSMTP\Pro\Tasks\Logs\Mandrill\VerifySentStatusTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ExportCleanupTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\ResendTask::class,
 				\WPMailSMTP\Pro\Tasks\Logs\BulkVerifySentStatusTask::class,

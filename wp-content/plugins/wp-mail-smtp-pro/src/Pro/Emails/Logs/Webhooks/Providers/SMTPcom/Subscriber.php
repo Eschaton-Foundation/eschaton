@@ -23,7 +23,7 @@ class Subscriber extends AbstractSubscriber {
 	 */
 	const EVENTS = [
 		'delivered',
-		'hard_bounced',
+		'failed',
 	];
 
 	/**
@@ -36,7 +36,7 @@ class Subscriber extends AbstractSubscriber {
 	public function subscribe() {
 
 		// Already subscribed.
-		if ( $this->is_subscribed() ) {
+		if ( $this->is_subscribed() === true ) {
 			return true;
 		}
 
@@ -97,7 +97,6 @@ class Subscriber extends AbstractSubscriber {
 	public function is_subscribed() {
 
 		foreach ( self::EVENTS as $event ) {
-
 			$is_subscribed = $this->is_event_subscribed( $event );
 
 			if ( is_wp_error( $is_subscribed ) ) {
