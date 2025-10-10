@@ -1,28 +1,28 @@
-=== WordPress Button Plugin MaxButtons ===
+=== MaxButtons - Create buttons ===
 Contributors: maxfoundry, basszje, arcware, johnbhartley
-Tags: wordpress button plugin, share button, css3 button generator, responsive buttons, css wordpress button
+Tags: butotn creator, share button, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
 Tested up to: 6.8
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 7.0
-Stable tag: 9.8.4
+Stable tag: 9.8.5
 
-WordPress button plugin so powerful and easy to use anyone can create beautiful buttons, share buttons and social icons.
+Maxbuttons is the best and easiest button plugin for WordPress. Within minutes you can create beautiful buttons, share buttons and social icons.
 
 == Description ==
 [MaxButtons](https://maxbuttons.com/?utm_source=repowp1&utm_medium=mbrepo&utm_content=mbr_maxbuttons&utm_campaign=mbr_maxbuttons) is a powerful WordPress button, share button and social icon plugin. Create great looking CSS3 WordPress buttons in a minute. Easy to understand. Our button editor with live preview makes it a snap to generate awesome responsive buttons in very little time. The social share buttons and social icon features allow you to add social options to your website in minutes.
 
-MaxButtons [WordPress button plugin](https://www.maxbuttons.com/#CSS3/?utm_source=repowbp&utm_medium=mbrepo&utm_content=wordpress_button_plugin&utm_campaign=repowbp) has been going strong for over 6 years and was the first button plugin for WordPress. MaxButtons has earned over 1000 5-star reviews and over 3.5 million downloads.  Here are couple of our favorites:
+MaxButtons [WordPress button plugin](https://www.maxbuttons.com/#CSS3/?utm_source=repowbp&utm_medium=mbrepo&utm_content=wordpress_button_plugin&utm_campaign=repowbp) has been going strong for over 15 years and was the first button plugin for WordPress. MaxButtons has earned over 1000 5-star reviews and over 3.5 million downloads.  Here are couple of our favorites:
 
-> “The best plugin of its kind” - by celito
+> “The best plugin of its kind”
 
-> “This plugin makes creating buttons sooooo easy.” - by ncrocker202
+> “This plugin makes creating buttons sooooo easy.”
 
 > Why aren’t all plugins like this?!?
 MaxButtons easily solved my problem with lots of options when creating the button and a live view of what it was going to look like. It would have done the job for me there and then but being able to adjust the text AND link with shortcodes on my page made modifications a breeze. - by discgosforth
 
-> “Easy, clear, and robust. I'm a programmer and can write CSS till the cows come home, but why? Just get it, install it and use it. Then, when you're impressed, buy the pro version” - by jleahy
+> “Easy, clear, and robust. I'm a programmer and can write CSS till the cows come home, but why? Just get it, install it and use it. Then, when you're impressed, buy the pro version” 
 
 Max Foundry also makes the WordPress Gallery plugin [MaxGalleria](https://maxgalleria.com) and [WordPress Media Folders](https://maxgalleria.com/downloads/media-library-plus-pro/) plugin for real WordPress Media Library folders.
 
@@ -66,7 +66,6 @@ MaxButtons has a [share buttons addon](https://maxbuttons.com/?utm_source=repobe
 * Linkedin
 * Google+
 * Pinterest
-* VKontakte
 * StumbleUpon
 * Reddit
 * Whatsapp
@@ -278,6 +277,11 @@ Secondly, please use latin only characters for button name ( Basic settings) and
 Upgrading to the PRO version is quite simple. Obtain a license key via our [site](https://maxbuttons.com). You can enter the license code within the free version on the 'Upgrade to PRO' page. After entering the license key, the PRO version will automatically download and install. You are good to go!
 
 == Changelog ==
+
+= 9.8.5 =
+
+* Fix for page check in admin footer 
+* Readme updates
 
 = 9.8.4 = 
 

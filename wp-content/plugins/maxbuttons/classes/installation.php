@@ -421,7 +421,7 @@ class maxInstall
 									 	 if ($fvalue === '')
 										 	continue;
 
-									 	 $fname = str_replace('mq_', '', $fname);
+									 	 $fname = str_replace('mq_', '', (string) $fname);
 										 if (isset($fieldMap[$fname]))
 										 {
 
@@ -450,7 +450,6 @@ class maxInstall
 													break;
 												}
 											}
-			//								echo "$fname set, doing $block and $field for $fvalue <BR>";
 											$button_data[$block][$screen->getFieldID($field)]	= $fvalue;
  									 	 }
 
