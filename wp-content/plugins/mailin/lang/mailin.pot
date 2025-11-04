@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Brevo - Email, SMS, Web Push, Chat, and more. 3.2.8\n"
+"Project-Id-Version: Brevo - Email, SMS, Web Push, Chat, and more. 3.2.9\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mailin\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -975,7 +975,15 @@ msgid "Your Marketing Automation script has been uninstalled"
 msgstr ""
 
 #: page/page-home.php:379
-msgid "You have not enabled automation in Brevo. Please do so by choosing the Automation application here: "
+msgid "Brevo Automation could not be activated. Please click "
+msgstr ""
+
+#: page/page-home.php:379
+msgid "here"
+msgstr ""
+
+#: page/page-home.php:379
+msgid " to complete activation"
 msgstr ""
 
 #: page/page-home.php:379
