@@ -373,7 +373,12 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		$cc_input .= "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard ginput_stripe_creditcard gform-grid-row' id='{$field_id}'>";
 
 		$is_payment_element = ( $this->enableMultiplePaymentMethods && gf_stripe()->is_stripe_connect_enabled() === true ) ? 'true' : 'false';
-		$field_control_class = $this->enableMultiplePaymentMethods ? 'StripeElement--payment-element' : 'gform-theme-field-control StripeElement--card';
+
+		$field_control_class = '';
+
+		if ( ! gf_stripe()->is_stripe_checkout_enabled() ) {
+			$field_control_class = $this->enableMultiplePaymentMethods ? 'StripeElement--payment-element' : 'gform-theme-field-control StripeElement--card';
+		}
 
 		if ( $is_sub_label_above ) {
 			$cc_input .= "<div class='ginput_full gform-grid-col' id='{$field_id}_1_container' data-payment-element='{$is_payment_element}'>";
@@ -530,10 +535,6 @@ class GF_Field_Stripe_CreditCard extends GF_Field {
 		$cc_input      = '<div class="ginput_complex' . $class_suffix . ' ginput_container ginput_container_creditcard ginput_stripe_creditcard gform-grid-row">';
 
 		$cc_details_input = '<span class="cc-details-container">
-			<span class="cc-placeholders">
-				<span class="cc-mmdd-placeholder">' . esc_html__( 'MM/YY', 'gravityformsstripe' ) . '</span>
-				<span class="cc-cvc-placeholder">' . esc_html__( 'CVC', 'gravityformsstripe' ) . '</span>
-            </span>
 			<input id="' . esc_attr( $field_id ) . '_1"' . $disabled_text . ' type="text" class="cc-cardnumber" placeholder="' . esc_attr__( 'Card Number', 'gravityformsstripe' ) . '">
 		</span>';
 
