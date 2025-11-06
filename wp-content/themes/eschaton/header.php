@@ -222,11 +222,18 @@
 				</button>
 			</div>
 
-			<div class="lang_switcher">
-				<ul id="lang_list" class="dropdown_panel">
-					<?php pll_the_languages();?>
-				</ul>
+			<div class="flex fl-v-center gap-medium">
+				<div class="lang_switcher">
+					<ul id="lang_list" class="dropdown_panel">
+						<?php pll_the_languages();?>
+					</ul>
+				</div>
+
+				<div>
+					<a href="<?php the_field('booking_url', 'options'); ?><?php echo pll_current_language('slug'); ?>" class="button"><?php pll_e('Tickets'); ?></a>
+				</div>
 			</div>
+
 		</div>
 		
 	</header>

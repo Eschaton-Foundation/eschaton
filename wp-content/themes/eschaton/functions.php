@@ -98,6 +98,7 @@ function orientClass($inputRatio)
 // Strings translation by Polylanf
 // https://polylang.pro/doc/function-reference/#pll_register_string
 pll_register_string( 'eschaton', 'All' );
+pll_register_string( 'eschaton', 'Tickets' );
 
 
 // Attempt to modify translation to enable wysiwyg

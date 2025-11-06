@@ -1,6 +1,6 @@
 {
     "key": "group_655b398ab85df",
-    "title": "Bessage banner",
+    "title": "Message banner",
     "fields": [
         {
             "key": "field_655b39e1a5ac5",
@@ -103,6 +103,27 @@
             "toolbar": "basic",
             "media_upload": 0,
             "delay": 0
+        },
+        {
+            "key": "field_690c6ad89dfb2",
+            "label": "URL pour bouton header",
+            "name": "booking_url",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
         }
     ],
     "location": [
@@ -123,5 +144,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1700483035
+    "display_title": "",
+    "modified": 1762421487
 }

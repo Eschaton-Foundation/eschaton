@@ -68,6 +68,49 @@
   object-fit: cover;
 }
 
+.flex {
+  display: flex;
+}
+
+.fl-space {
+  justify-content: space-between;
+}
+
+.fl-v-center {
+  align-items: center;
+}
+
+.gap-small {
+  gap: 20px;
+}
+
+.gap-medium {
+  gap: 40px;
+}
+
+.gap-large {
+  gap: 80px;
+}
+
+.button {
+  padding: 0.3em 0.8em;
+  background-color: var(--colorGray);
+  color: white;
+  border: 1px solid gray;
+  transition: background-color 0.3s, color 0.3s;
+  font-size: 1.2rem;
+}
+.button:hover {
+  background-color: white;
+  color: var(--colorGray);
+}
+.button:hover[target=_blank]:after {
+  background-image: url("../assets/link-out.svg");
+}
+.button[target=_blank]:after {
+  background-image: url("../assets/link-out-white.svg");
+}
+
 @font-face {
   font-family: "Romaine";
   src: url("../fonts/Romaine-Regular.woff2") format("woff2"), url("../fonts/Romaine-Regular.woff");
