@@ -1,0 +1,30 @@
+[
+    {
+        "id": "23",
+        "name": "Sample Function",
+        "shortcode": "",
+        "code": "<?php\r\n\r\n\/**\r\n * CWP Snippets - Test Function Execution\r\n *\r\n * This function adds a visible message to the page to confirm execution.\r\n *\/\r\nfunction cwp_test_function_execution() {\r\n    \/\/ Check if headers have already been sent to avoid errors\r\n    if (headers_sent()) {\r\n        error_log(\"CWP Test Function: Cannot output message, headers already sent.\");\r\n        return;\r\n    }\r\n\r\n    \/\/ Determine context for the message\r\n    $context = is_admin() ? 'Admin Area' : 'Frontend';\r\n\r\n    \/\/ Output the message div with only the ID\r\n    \/\/ --- MODIFIED THIS LINE ---\r\n    echo '<div id=\"cwp-function-test-message\">';\r\n    echo 'CWP Function Snippet Executed Successfully in: ' . esc_html($context);\r\n    echo '<\/div>';\r\n}\r\n\r\n\/\/ Call the function immediately (since it's evaluated within the injection function)\r\ncwp_test_function_execution();\r\n\r\n?>\r\n\r\n",
+        "css": "\/* CSS *\/\r\n\r\n\r\n\r\n",
+        "type": "Function",
+        "status": "0",
+        "time": "2025-09-20 14:00:10",
+        "modified_time": "2025-09-24 19:44:00",
+        "description": "",
+        "location": "admin",
+        "priority": "10"
+    },
+    {
+        "id": "33",
+        "name": "CWP Message",
+        "shortcode": "",
+        "code": "<?php\r\n\r\n\/\/ CWP Format Error Response\r\nif (!function_exists('cwpErrorMessage')) {\r\n\tfunction cwpErrorMessage($response){\r\n\t\t$message = is_array($response) ? 'Error!! ' . $response['messages'][0]['message'] : 'Error!! ' . $response;\r\n\t\techo '<div style=\"background: #fff; border: 1px solid #c3c4c7; border-left-width: 4px; border-left-color: #d63638; box-shadow: 0 1px 1px rgba(0, 0, 0, .04); margin: 5px 0 25px; padding: 1px 12px;\">' .\r\n\t\t\t '<p style=\"margin: .5em 0; padding: 2px; font-size: 0.875em; color: #444;\">' . esc_html($message) . '<\/p>' .\r\n\t\t\t '<\/div>';\r\n\t}\r\n}\r\n\r\n\/\/ CWP Format Warning Response\r\nif (!function_exists('cwpWarningMessage')) {\r\n\tfunction cwpWarningMessage($response){\r\n\t\t$message = is_array($response) ? 'Warning!! ' . $response['messages'][0]['message'] : 'Error!! ' . $response;\r\n\t\techo '<div style=\"background: #fff; border: 1px solid #c3c4c7; border-left-width: 4px; border-left-color: #00a32a; box-shadow: 0 1px 1px rgba(0, 0, 0, .04); margin: 5px 0 25px; padding: 1px 12px;\">' .\r\n\t\t\t '<p style=\"margin: .5em 0; padding: 2px; font-size: 0.875em; color: #444;\">' . esc_html($message) . '<\/p>' .\r\n\t\t\t '<\/div>';\r\n\t}\r\n}\r\n\r\n\/\/ CWP Format Success Response\r\nif (!function_exists('cwpSuccessMessage')) {\r\n\tfunction cwpSuccessMessage($response){\r\n\t\t$message = is_array($response) ? 'Success!! ' . $response['messages'][0]['message'] : 'Error!! ' . $response;\r\n\t\techo '<div style=\"background: #fff; border: 1px solid #c3c4c7; border-left-width: 4px; border-left-color: #00a32a; box-shadow: 0 1px 1px rgba(0, 0, 0, .04); margin: 5px 0 25px; padding: 1px 12px;\">' .\r\n\t\t\t '<p style=\"margin: .5em 0; padding: 2px; font-size: 0.875em; color: #444;\">' . esc_html($message) . '<\/p>' .\r\n\t\t\t '<\/div>';\r\n\t}\r\n}\r\n\r\n\r\n\r\n",
+        "css": "\/* CSS *\/\r\n\r\n\r\n\r\n",
+        "type": "Function",
+        "status": "1",
+        "time": "2025-08-08 15:26:15",
+        "modified_time": "2025-08-08 18:27:53",
+        "description": "",
+        "location": "everywhere",
+        "priority": "10"
+    }
+]

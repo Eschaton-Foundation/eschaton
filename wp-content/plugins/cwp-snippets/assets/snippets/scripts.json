@@ -1,0 +1,16 @@
+[
+    {
+        "id": "45",
+        "name": "Sample Script",
+        "shortcode": "",
+        "code": "<script>\r\n\r\n\/\/ Test Script Snippet (Using CSS Snippet for Styling)\r\ndocument.addEventListener('DOMContentLoaded', function() {\r\n    \/\/ Create a new div element\r\n    var testDiv = document.createElement('div');\r\n\r\n    \/\/ Give it the ID that the CSS snippet targets\r\n    testDiv.id = 'cwp-script-test-message';\r\n\r\n    \/\/ Add text content\r\n    testDiv.textContent = 'CWP Script Snippet Executed Successfully!';\r\n\r\n    \/\/ Prepend the div to the body\r\n    document.body.prepend(testDiv);\r\n\r\n    console.log('CWP Script Snippet test message added to page (styled by CSS snippet).');\r\n});\r\n\r\n\r\n<\/script>\r\n\t\r\n\t",
+        "css": "\/* CSS *\/\r\n\r\n\r\n\r\n",
+        "type": "Script",
+        "status": "0",
+        "time": "2025-04-28 19:50:41",
+        "modified_time": "2025-08-22 21:19:02",
+        "description": "",
+        "location": "admin",
+        "priority": "10"
+    }
+]

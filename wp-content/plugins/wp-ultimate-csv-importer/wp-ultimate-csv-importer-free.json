@@ -1,0 +1,14 @@
+{
+  "Plugin Name": "WP Ultimate CSV Importer Pro",
+  "version": [
+    "7.28"
+  ],
+  "message":[
+    "Security: Use wp_verify_nonce for nonce validation",
+    "Security fix: Add capability checks to FTP credential access",
+    "Feat: Single page import & export for elementor page builder",
+    "Feat: Auto-detect field separator (comma, semicolon, tab) Implemented",
+    "Feedback: Implement to get feedback after one week of usage. "
+  ]
+}
+  

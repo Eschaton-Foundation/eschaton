@@ -1,0 +1,16 @@
+[
+    {
+        "id": "47",
+        "name": "Sample Styles",
+        "shortcode": "",
+        "code": "<?php\r\n\r\n\r\n\r\n",
+        "css": "\/* CSS *\/\r\n\r\n\/* Style for the Test Function message (lightblue bar) *\/\r\n#cwp-function-test-message {\r\n\tbackground-color: lightblue;\r\n\tcolor: black;\r\n\tpadding: 15px;\r\n\tmargin-top: 20px;\r\n\ttext-align: center;\r\n\tfont-weight: bold;\r\n\tborder: 1px solid darkblue;\r\n}\r\n\r\n\/* Style for the Test Script message (lightgreen bar) *\/\r\n#cwp-script-test-message {\r\n  \/* Original styles translated to CSS *\/\r\n  background-color: lightgreen;\r\n  color: black;\r\n  padding: 15px;\r\n  margin-top: 20px;\r\n  text-align: center;\r\n  font-weight: bold;\r\n  border: 1px solid darkgreen;\r\n\r\n  \/* Keep any additional styles you added, like: *\/\r\n  font-style: italic;\r\n  text-shadow: 1px 1px 1px #ccc;\r\n  \/* If you had !important on border\/padding\/margin, you can likely remove it now *\/\r\n}\r\n",
+        "type": "Style",
+        "status": "1",
+        "time": "2025-04-28 20:58:27",
+        "modified_time": "2025-08-22 21:22:26",
+        "description": "",
+        "location": "everywhere",
+        "priority": "10"
+    }
+]

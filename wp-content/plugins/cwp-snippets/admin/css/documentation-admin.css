@@ -1,0 +1,19 @@
+
+/* Styles for the CodeMirror instances on the documentation page */
+.cwp-doc-content .CodeMirror {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    height: auto; /* Let CodeMirror determine the height */
+    line-height: 1.6;
+}
+
+.cwp-doc-content .CodeMirror-scroll {
+    min-height: 100px; /* Set a minimum height */
+    max-height: 600px; /* But allow it to grow up to a max height */
+}
+
+/* Ensure the container flex properties work well with CodeMirror */
+.cwp-doc-content {
+    flex: 1 1 70%;
+    min-width: 0; /* Prevents flexbox overflow issues */
+}
