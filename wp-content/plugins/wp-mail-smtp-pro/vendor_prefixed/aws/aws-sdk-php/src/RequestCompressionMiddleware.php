@@ -36,7 +36,7 @@ class RequestCompressionMiddleware
         $this->api = $config['api'];
         $this->nextHandler = $nextHandler;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    public function __invoke(CommandInterface $command, RequestInterface $request)
     {
         if (isset($command['@request_min_compression_size_bytes']) && \is_int($command['@request_min_compression_size_bytes']) && $this->isValidCompressionSize($command['@request_min_compression_size_bytes'])) {
             $this->minimumCompressionSize = $command['@request_min_compression_size_bytes'];
@@ -53,7 +53,7 @@ class RequestCompressionMiddleware
         $command->getMetricsBuilder()->identifyMetricByValueAndAppend('request_compression', $request->getHeaderLine('content-encoding'));
         return $nextHandler($command, $request);
     }
-    private function compressRequestBody(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    private function compressRequestBody(RequestInterface $request)
     {
         $fn = $this->determineEncoding();
         if (\is_null($fn)) {
@@ -61,7 +61,7 @@ class RequestCompressionMiddleware
         }
         $body = $request->getBody()->getContents();
         $compressedBody = $fn($body);
-        return $request->withBody(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($compressedBody))->withHeader('content-encoding', $this->encoding);
+        return $request->withBody(Psr7\Utils::streamFor($compressedBody))->withHeader('content-encoding', $this->encoding);
     }
     private function determineEncoding()
     {

@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints;
 
-class Configuration implements \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationInterface
+class Configuration implements ConfigurationInterface
 {
     private $endpointsType;
     private $isFallback;

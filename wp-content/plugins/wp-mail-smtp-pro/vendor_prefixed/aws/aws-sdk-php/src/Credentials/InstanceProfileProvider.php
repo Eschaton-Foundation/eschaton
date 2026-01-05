@@ -91,14 +91,14 @@ class InstanceProfileProvider
     public function __invoke($previousCredentials = null)
     {
         $this->attempts = 0;
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () use($previousCredentials) {
+        return Promise\Coroutine::of(function () use($previousCredentials) {
             // Retrieve token or switch out of secure mode
             $token = null;
             while ($this->secureMode && \is_null($token)) {
                 try {
                     $token = (yield $this->request(self::TOKEN_PATH, 'PUT', ['x-aws-ec2-metadata-token-ttl-seconds' => self::DEFAULT_TOKEN_TTL_SECONDS]));
-                } catch (\WPMailSMTP\Vendor\GuzzleHttp\Exception\TransferException $e) {
-                    if ($this->getExceptionStatusCode($e) === 500 && $previousCredentials instanceof \WPMailSMTP\Vendor\Aws\Credentials\Credentials) {
+                } catch (TransferException $e) {
+                    if ($this->getExceptionStatusCode($e) === 500 && $previousCredentials instanceof Credentials) {
                         goto generateCredentials;
                     } elseif ($this->shouldFallbackToIMDSv1() && (!\method_exists($e, 'getResponse') || empty($e->getResponse()) || !\in_array($e->getResponse()->getStatusCode(), [400, 500, 502, 503, 504]))) {
                         $this->secureMode = \false;
@@ -117,7 +117,7 @@ class InstanceProfileProvider
             while (!$this->profile) {
                 try {
                     $this->profile = (yield $this->request(self::CRED_PATH, 'GET', $headers));
-                } catch (\WPMailSMTP\Vendor\GuzzleHttp\Exception\TransferException $e) {
+                } catch (TransferException $e) {
                     // 401 indicates insecure flow not supported, switch to
                     // attempting secure mode for subsequent calls
                     if (!empty($this->getExceptionStatusCode($e)) && $this->getExceptionStatusCode($e) === 401) {
@@ -133,12 +133,12 @@ class InstanceProfileProvider
                 try {
                     $json = (yield $this->request(self::CRED_PATH . $this->profile, 'GET', $headers));
                     $result = $this->decodeResult($json);
-                } catch (\WPMailSMTP\Vendor\Aws\Exception\InvalidJsonException $e) {
+                } catch (InvalidJsonException $e) {
                     $this->handleRetryableException($e, ['blacklist' => [401, 403]], $this->createErrorMessage('Invalid JSON response, retries exhausted'));
-                } catch (\WPMailSMTP\Vendor\GuzzleHttp\Exception\TransferException $e) {
+                } catch (TransferException $e) {
                     // 401 indicates insecure flow not supported, switch to
                     // attempting secure mode for subsequent calls
-                    if (($this->getExceptionStatusCode($e) === 500 || \strpos($e->getMessage(), "cURL error 28") !== \false) && $previousCredentials instanceof \WPMailSMTP\Vendor\Aws\Credentials\Credentials) {
+                    if (($this->getExceptionStatusCode($e) === 500 || \strpos($e->getMessage(), "cURL error 28") !== \false) && $previousCredentials instanceof Credentials) {
                         goto generateCredentials;
                     } elseif (!empty($this->getExceptionStatusCode($e)) && $this->getExceptionStatusCode($e) === 401) {
                         $this->secureMode = \true;
@@ -151,7 +151,7 @@ class InstanceProfileProvider
             if (!isset($result)) {
                 $credentials = $previousCredentials;
             } else {
-                $credentials = new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::IMDS);
+                $credentials = new Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null, CredentialSources::IMDS);
             }
             if ($credentials->isExpired()) {
                 $credentials->extendExpiration();
@@ -170,11 +170,11 @@ class InstanceProfileProvider
     {
         $disabled = \getenv(self::ENV_DISABLE) ?: \false;
         if (\strcasecmp($disabled, 'true') === 0) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException($this->createErrorMessage('EC2 metadata service access disabled'));
+            throw new CredentialsException($this->createErrorMessage('EC2 metadata service access disabled'));
         }
         $fn = $this->client;
-        $request = new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request($method, $this->resolveEndpoint() . $url);
-        $userAgent = 'aws-sdk-php/' . \WPMailSMTP\Vendor\Aws\Sdk::VERSION;
+        $request = new Request($method, $this->resolveEndpoint() . $url);
+        $userAgent = 'aws-sdk-php/' . Sdk::VERSION;
         if (\defined('WPMailSMTP\\Vendor\\HHVM_VERSION')) {
             $userAgent .= ' HHVM/' . HHVM_VERSION;
         }
@@ -183,15 +183,15 @@ class InstanceProfileProvider
         foreach ($headers as $key => $value) {
             $request = $request->withHeader($key, $value);
         }
-        return $fn($request, ['timeout' => $this->timeout])->then(function (\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response) {
+        return $fn($request, ['timeout' => $this->timeout])->then(function (ResponseInterface $response) {
             return (string) $response->getBody();
         })->otherwise(function (array $reason) {
             $reason = $reason['exception'];
-            if ($reason instanceof \WPMailSMTP\Vendor\GuzzleHttp\Exception\TransferException) {
+            if ($reason instanceof TransferException) {
                 throw $reason;
             }
             $msg = $reason->getMessage();
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException($this->createErrorMessage($msg));
+            throw new CredentialsException($this->createErrorMessage($msg));
         });
     }
     private function handleRetryableException(\Exception $e, $retryOptions, $message)
@@ -203,7 +203,7 @@ class InstanceProfileProvider
         if ($isRetryable && $this->attempts < $this->retries) {
             \sleep((int) \pow(1.2, $this->attempts));
         } else {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException($message);
+            throw new CredentialsException($message);
         }
     }
     private function getExceptionStatusCode(\Exception $e)
@@ -221,10 +221,10 @@ class InstanceProfileProvider
     {
         $result = \json_decode($response, \true);
         if (\json_last_error() > 0) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\InvalidJsonException();
+            throw new InvalidJsonException();
         }
         if ($result['Code'] !== 'Success') {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException('Unexpected instance profile ' . 'response code: ' . $result['Code']);
+            throw new CredentialsException('Unexpected instance profile ' . 'response code: ' . $result['Code']);
         }
         return $result;
     }
@@ -240,7 +240,7 @@ class InstanceProfileProvider
      */
     private function shouldFallbackToIMDSv1() : bool
     {
-        $isImdsV1Disabled = \WPMailSMTP\Vendor\Aws\boolean_value($this->ec2MetadataV1Disabled) ?? \WPMailSMTP\Vendor\Aws\boolean_value(\WPMailSMTP\Vendor\Aws\Configuration\ConfigurationResolver::resolve(self::CFG_EC2_METADATA_V1_DISABLED, self::DEFAULT_AWS_EC2_METADATA_V1_DISABLED, 'bool', $this->config)) ?? self::DEFAULT_AWS_EC2_METADATA_V1_DISABLED;
+        $isImdsV1Disabled = \WPMailSMTP\Vendor\Aws\boolean_value($this->ec2MetadataV1Disabled) ?? \WPMailSMTP\Vendor\Aws\boolean_value(ConfigurationResolver::resolve(self::CFG_EC2_METADATA_V1_DISABLED, self::DEFAULT_AWS_EC2_METADATA_V1_DISABLED, 'bool', $this->config)) ?? self::DEFAULT_AWS_EC2_METADATA_V1_DISABLED;
         return !$isImdsV1Disabled;
     }
     /**
@@ -256,10 +256,10 @@ class InstanceProfileProvider
     {
         $endpoint = $this->endpoint;
         if (\is_null($endpoint)) {
-            $endpoint = \WPMailSMTP\Vendor\Aws\Configuration\ConfigurationResolver::resolve(self::CFG_EC2_METADATA_SERVICE_ENDPOINT, $this->getDefaultEndpoint(), 'string', $this->config);
+            $endpoint = ConfigurationResolver::resolve(self::CFG_EC2_METADATA_SERVICE_ENDPOINT, $this->getDefaultEndpoint(), 'string', $this->config);
         }
         if (!$this->isValidEndpoint($endpoint)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException('The provided URI "' . $endpoint . '" is invalid, or contains an unsupported host');
+            throw new CredentialsException('The provided URI "' . $endpoint . '" is invalid, or contains an unsupported host');
         }
         if (\substr($endpoint, \strlen($endpoint) - 1) !== '/') {
             $endpoint = $endpoint . '/';
@@ -284,7 +284,7 @@ class InstanceProfileProvider
             case self::ENDPOINT_MODE_IPv6:
                 return self::DEFAULT_METADATA_SERVICE_IPv6_ENDPOINT;
         }
-        throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Invalid endpoint mode '{$endpointMode}' resolved");
+        throw new CredentialsException("Invalid endpoint mode '{$endpointMode}' resolved");
     }
     /**
      * Resolves the endpoint mode to be considered when resolving the default
@@ -296,7 +296,7 @@ class InstanceProfileProvider
     {
         $endpointMode = $this->endpointMode;
         if (\is_null($endpointMode)) {
-            $endpointMode = \WPMailSMTP\Vendor\Aws\Configuration\ConfigurationResolver::resolve(self::CFG_EC2_METADATA_SERVICE_ENDPOINT_MODE, self::ENDPOINT_MODE_IPv4, 'string', $this->config);
+            $endpointMode = ConfigurationResolver::resolve(self::CFG_EC2_METADATA_SERVICE_ENDPOINT_MODE, self::ENDPOINT_MODE_IPv4, 'string', $this->config);
         }
         return $endpointMode;
     }
@@ -317,7 +317,7 @@ class InstanceProfileProvider
         $parsedUri = \parse_url($uri);
         if ($parsedUri['scheme'] !== 'https') {
             $host = \trim($parsedUri['host'], '[]');
-            return \WPMailSMTP\Vendor\Aws\Credentials\CredentialsUtils::isLoopBackAddress(\gethostbyname($host)) || \in_array($uri, [self::DEFAULT_METADATA_SERVICE_IPv4_ENDPOINT, self::DEFAULT_METADATA_SERVICE_IPv6_ENDPOINT]);
+            return CredentialsUtils::isLoopBackAddress(\gethostbyname($host)) || \in_array($uri, [self::DEFAULT_METADATA_SERVICE_IPv4_ENDPOINT, self::DEFAULT_METADATA_SERVICE_IPv6_ENDPOINT]);
         }
         return \true;
     }

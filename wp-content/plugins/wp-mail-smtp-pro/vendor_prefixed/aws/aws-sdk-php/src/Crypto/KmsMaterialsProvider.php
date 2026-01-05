@@ -13,7 +13,7 @@ use WPMailSMTP\Vendor\Aws\Kms\KmsClient;
  *
  * @deprecated
  */
-class KmsMaterialsProvider extends \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProvider implements \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProviderInterface
+class KmsMaterialsProvider extends MaterialsProvider implements MaterialsProviderInterface
 {
     const WRAP_ALGORITHM_NAME = 'kms';
     private $kmsClient;
@@ -24,17 +24,17 @@ class KmsMaterialsProvider extends \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProvid
      * @param string $kmsKeyId The private KMS key id to be used for encrypting
      *                         and decrypting keys.
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Kms\KmsClient $kmsClient, $kmsKeyId = null)
+    public function __construct(KmsClient $kmsClient, $kmsKeyId = null)
     {
         $this->kmsClient = $kmsClient;
         $this->kmsKeyId = $kmsKeyId;
     }
-    public function fromDecryptionEnvelope(\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope)
+    public function fromDecryptionEnvelope(MetadataEnvelope $envelope)
     {
-        if (empty($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER])) {
+        if (empty($envelope[MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER])) {
             throw new \RuntimeException('Not able to detect the materials description.');
         }
-        $materialsDescription = \json_decode($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER], \true);
+        $materialsDescription = \json_decode($envelope[MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER], \true);
         if (empty($materialsDescription['kms_cmk_id']) && empty($materialsDescription['aws:x-amz-cek-alg'])) {
             throw new \RuntimeException('Not able to detect kms_cmk_id (legacy' . ' implementation) or aws:x-amz-cek-alg (current implementation)' . ' from kms materials description.');
         }

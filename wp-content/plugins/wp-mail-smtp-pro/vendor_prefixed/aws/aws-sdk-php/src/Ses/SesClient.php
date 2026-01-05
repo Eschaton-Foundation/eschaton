@@ -167,9 +167,9 @@ class SesClient extends \WPMailSMTP\Vendor\Aws\AwsClient
      *
      * @return string
      */
-    public static function generateSmtpPassword(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $creds)
+    public static function generateSmtpPassword(CredentialsInterface $creds)
     {
-        static $version = "\2";
+        static $version = "\x02";
         static $algo = 'sha256';
         static $message = 'SendRawEmail';
         $signature = \hash_hmac($algo, $message, $creds->getSecretKey(), \true);
@@ -190,7 +190,7 @@ class SesClient extends \WPMailSMTP\Vendor\Aws\AwsClient
      *
      * @return string
      */
-    public static function generateSmtpPasswordV4(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $creds, $region)
+    public static function generateSmtpPasswordV4(CredentialsInterface $creds, $region)
     {
         $key = $creds->getSecretKey();
         $date = "11111111";
@@ -218,6 +218,6 @@ class SesClient extends \WPMailSMTP\Vendor\Aws\AwsClient
     {
         $b64 = '<div class="alert alert-info">This value will be base64 encoded on your behalf.</div>';
         $docs['shapes']['RawMessage']['append'] = $b64;
-        return [new \WPMailSMTP\Vendor\Aws\Api\Service($api, \WPMailSMTP\Vendor\Aws\Api\ApiProvider::defaultProvider()), new \WPMailSMTP\Vendor\Aws\Api\DocModel($docs)];
+        return [new Service($api, ApiProvider::defaultProvider()), new DocModel($docs)];
     }
 }

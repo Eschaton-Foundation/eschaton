@@ -25,18 +25,18 @@ class EndpointParameterMiddleware
      * @param array $args
      * @return \Closure
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public static function wrap(Service $service)
     {
         return function (callable $handler) use($service) {
             return new self($handler, $service);
         };
     }
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public function __construct(callable $nextHandler, Service $service)
     {
         $this->nextHandler = $nextHandler;
         $this->service = $service;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    public function __invoke(CommandInterface $command, RequestInterface $request)
     {
         $nextHandler = $this->nextHandler;
         $operation = $this->service->getOperation($command->getName());

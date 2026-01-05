@@ -10,7 +10,7 @@ use WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException;
  *
  * @internal
  */
-class Arn implements \WPMailSMTP\Vendor\Aws\Arn\ArnInterface
+class Arn implements ArnInterface
 {
     protected $data;
     protected $string;
@@ -49,7 +49,7 @@ class Arn implements \WPMailSMTP\Vendor\Aws\Arn\ArnInterface
         } elseif (\is_string($data)) {
             $this->data = static::parse($data);
         } else {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException('Constructor accepts a string or an' . ' array as an argument.');
+            throw new InvalidArnException('Constructor accepts a string or an' . ' array as an argument.');
         }
         static::validate($this->data);
     }
@@ -97,28 +97,28 @@ class Arn implements \WPMailSMTP\Vendor\Aws\Arn\ArnInterface
     protected static function validate(array $data)
     {
         if ($data['arn'] !== 'arn') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 1st component of an ARN must be" . " 'arn'.");
+            throw new InvalidArnException("The 1st component of an ARN must be" . " 'arn'.");
         }
         if (empty($data['partition'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 2nd component of an ARN" . " represents the partition and must not be empty.");
+            throw new InvalidArnException("The 2nd component of an ARN" . " represents the partition and must not be empty.");
         }
         if (empty($data['service'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 3rd component of an ARN" . " represents the service and must not be empty.");
+            throw new InvalidArnException("The 3rd component of an ARN" . " represents the service and must not be empty.");
         }
         if (empty($data['resource'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 6th component of an ARN" . " represents the resource information and must not be empty." . " Individual service ARNs may include additional delimiters" . " to further qualify resources.");
+            throw new InvalidArnException("The 6th component of an ARN" . " represents the resource information and must not be empty." . " Individual service ARNs may include additional delimiters" . " to further qualify resources.");
         }
     }
     protected static function validateAccountId($data, $arnName)
     {
         if (!self::isValidHostLabel($data['account_id'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 5th component of a {$arnName}" . " is required, represents the account ID, and" . " must be a valid host label.");
+            throw new InvalidArnException("The 5th component of a {$arnName}" . " is required, represents the account ID, and" . " must be a valid host label.");
         }
     }
     protected static function validateRegion($data, $arnName)
     {
         if (empty($data['region'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 4th component of a {$arnName}" . " represents the region and must not be empty.");
+            throw new InvalidArnException("The 4th component of a {$arnName}" . " represents the region and must not be empty.");
         }
     }
     /**

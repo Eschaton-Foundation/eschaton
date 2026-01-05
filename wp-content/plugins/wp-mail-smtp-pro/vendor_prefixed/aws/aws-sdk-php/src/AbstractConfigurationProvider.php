@@ -26,13 +26,13 @@ abstract class AbstractConfigurationProvider
      *
      * @return callable
      */
-    public static function cache(callable $provider, \WPMailSMTP\Vendor\Aws\CacheInterface $cache, $cacheKey = null)
+    public static function cache(callable $provider, CacheInterface $cache, $cacheKey = null)
     {
         $cacheKey = $cacheKey ?: static::$cacheKey;
         return function () use($provider, $cache, $cacheKey) {
             $found = $cache->get($cacheKey);
             if ($found instanceof static::$interfaceClass) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($found);
+                return Promise\Create::promiseFor($found);
             }
             return $provider()->then(function ($config) use($cache, $cacheKey) {
                 $cache->set($cacheKey, $config);
@@ -128,6 +128,6 @@ abstract class AbstractConfigurationProvider
     protected static function reject($msg)
     {
         $exceptionClass = static::$exceptionClass;
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Promise\RejectedPromise(new $exceptionClass($msg));
+        return new Promise\RejectedPromise(new $exceptionClass($msg));
     }
 }

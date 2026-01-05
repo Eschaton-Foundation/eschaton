@@ -66,12 +66,12 @@ class RetryMiddleware
         if (\extension_loaded('curl')) {
             $retryCurlErrors[\CURLE_RECV_ERROR] = \true;
         }
-        return function ($retries, \WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, ?\WPMailSMTP\Vendor\Aws\ResultInterface $result = null, $error = null) use($maxRetries, $retryCurlErrors, $extraConfig) {
+        return function ($retries, CommandInterface $command, RequestInterface $request, ?ResultInterface $result = null, $error = null) use($maxRetries, $retryCurlErrors, $extraConfig) {
             // Allow command-level options to override this value
             $maxRetries = null !== $command['@retries'] ? $command['@retries'] : $maxRetries;
             $isRetryable = self::isRetryable($result, $error, $retryCurlErrors, $extraConfig);
             if ($retries >= $maxRetries) {
-                if (!empty($error) && $error instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException && $isRetryable) {
+                if (!empty($error) && $error instanceof AwsException && $isRetryable) {
                     $error->setMaxRetriesExceeded();
                 }
                 return \false;
@@ -104,7 +104,7 @@ class RetryMiddleware
             }
             return isset($statusCodes[$result['@metadata']['statusCode']]);
         }
-        if (!$error instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if (!$error instanceof AwsException) {
             return \false;
         }
         if ($error->isConnectionError()) {
@@ -116,7 +116,7 @@ class RetryMiddleware
         if (isset($statusCodes[$error->getStatusCode()])) {
             return \true;
         }
-        if (\count($retryCurlErrors) && ($previous = $error->getPrevious()) && $previous instanceof \WPMailSMTP\Vendor\GuzzleHttp\Exception\RequestException) {
+        if (\count($retryCurlErrors) && ($previous = $error->getPrevious()) && $previous instanceof RequestException) {
             if (\method_exists($previous, 'getHandlerContext')) {
                 $context = $previous->getHandlerContext();
                 return !empty($context['errno']) && isset($retryCurlErrors[$context['errno']]);
@@ -151,7 +151,7 @@ class RetryMiddleware
      *
      * @return PromiseInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null)
+    public function __invoke(CommandInterface $command, ?RequestInterface $request = null)
     {
         $retries = 0;
         $requestStats = [];
@@ -162,7 +162,7 @@ class RetryMiddleware
         $request = $this->addRetryHeader($request, 0, 0);
         $g = function ($value) use($handler, $decider, $delay, $command, $request, &$retries, &$requestStats, &$monitoringEvents, &$g) {
             $this->updateHttpStats($value, $requestStats);
-            if ($value instanceof \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface) {
+            if ($value instanceof MonitoringEventsInterface) {
                 $reversedEvents = \array_reverse($monitoringEvents);
                 $monitoringEvents = \array_merge($monitoringEvents, $value->getMonitoringEvents());
                 foreach ($reversedEvents as $event) {
@@ -171,9 +171,9 @@ class RetryMiddleware
             }
             if ($value instanceof \Exception || $value instanceof \Throwable) {
                 if (!$decider($retries, $command, $request, null, $value)) {
-                    return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::rejectionFor($this->bindStatsToReturn($value, $requestStats));
+                    return Promise\Create::rejectionFor($this->bindStatsToReturn($value, $requestStats));
                 }
-            } elseif ($value instanceof \WPMailSMTP\Vendor\Aws\ResultInterface && !$decider($retries, $command, $request, $value, null)) {
+            } elseif ($value instanceof ResultInterface && !$decider($retries, $command, $request, $value, null)) {
                 return $this->bindStatsToReturn($value, $requestStats);
             }
             // Delay fn is called with 0, 1, ... so increment after the call.

@@ -4,7 +4,7 @@ namespace WPMailSMTP\Vendor\Aws\EndpointV2\Rule;
 
 use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary;
 use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint;
-class EndpointRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
+class EndpointRule extends AbstractRule
 {
     /** @var array */
     private $endpoint;
@@ -26,7 +26,7 @@ class EndpointRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      *
      * @return RulesetEndpoint | null
      */
-    public function evaluate(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    public function evaluate(array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         if ($this->evaluateConditions($inputParameters, $standardLibrary)) {
             return $this->resolve($inputParameters, $standardLibrary);
@@ -38,12 +38,12 @@ class EndpointRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      *
      * @return RulesetEndpoint
      */
-    private function resolve(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    private function resolve(array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         $uri = $standardLibrary->resolveValue($this->endpoint['url'], $inputParameters);
         $properties = isset($this->endpoint['properties']) ? $this->resolveProperties($this->endpoint['properties'], $inputParameters, $standardLibrary) : null;
         $headers = $this->resolveHeaders($inputParameters, $standardLibrary);
-        return new \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint($uri, $properties, $headers);
+        return new RulesetEndpoint($uri, $properties, $headers);
     }
     /**
      * Recurse through an endpoint's `properties` attribute, resolving template
@@ -51,7 +51,7 @@ class EndpointRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      *
      * @return array
      */
-    private function resolveProperties($properties, array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    private function resolveProperties($properties, array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         if (\is_array($properties)) {
             $propertiesArr = [];
@@ -70,7 +70,7 @@ class EndpointRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      *
      * @return array
      */
-    private function resolveHeaders(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    private function resolveHeaders(array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         $headers = isset($this->endpoint['headers']) ? $this->endpoint['headers'] : null;
         if (\is_null($headers)) {

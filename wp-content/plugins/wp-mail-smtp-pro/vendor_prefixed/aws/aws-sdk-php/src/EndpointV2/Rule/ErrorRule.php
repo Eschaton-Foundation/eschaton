@@ -4,7 +4,7 @@ namespace WPMailSMTP\Vendor\Aws\EndpointV2\Rule;
 
 use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary;
 use WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException;
-class ErrorRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
+class ErrorRule extends AbstractRule
 {
     /** @var array */
     private $error;
@@ -27,11 +27,11 @@ class ErrorRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      * @return null
      * @throws UnresolvedEndpointException
      */
-    public function evaluate(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    public function evaluate(array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         if ($this->evaluateConditions($inputParameters, $standardLibrary)) {
             $message = $standardLibrary->resolveValue($this->error, $inputParameters);
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException($message);
+            throw new UnresolvedEndpointException($message);
         }
         return \false;
     }

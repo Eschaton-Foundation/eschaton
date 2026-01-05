@@ -3,11 +3,11 @@
 namespace WPMailSMTP\Vendor\Aws;
 
 use WPMailSMTP\Vendor\Doctrine\Common\Cache\Cache;
-class DoctrineCacheAdapter implements \WPMailSMTP\Vendor\Aws\CacheInterface, \WPMailSMTP\Vendor\Doctrine\Common\Cache\Cache
+class DoctrineCacheAdapter implements CacheInterface, Cache
 {
     /** @var Cache */
     private $cache;
-    public function __construct(\WPMailSMTP\Vendor\Doctrine\Common\Cache\Cache $cache)
+    public function __construct(Cache $cache)
     {
         $this->cache = $cache;
     }

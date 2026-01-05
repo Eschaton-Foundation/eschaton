@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 /**
  * @internal
  */
-abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
+abstract class AbstractRestParser extends AbstractParser
 {
     use PayloadParserTrait;
     /**
@@ -23,8 +23,8 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
      *
      * @return mixed
      */
-    protected abstract function payload(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\Api\StructureShape $member, array &$result);
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response)
+    protected abstract function payload(ResponseInterface $response, StructureShape $member, array &$result);
+    public function __invoke(CommandInterface $command, ResponseInterface $response)
     {
         $output = $this->api->getOperation($command->getName())->getOutput();
         $result = [];
@@ -48,15 +48,15 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
             // if no payload was found, then parse the contents of the body
             $this->payload($response, $output, $result);
         }
-        return new \WPMailSMTP\Vendor\Aws\Result($result);
+        return new Result($result);
     }
-    private function extractPayload($payload, \WPMailSMTP\Vendor\Aws\Api\StructureShape $output, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, array &$result)
+    private function extractPayload($payload, StructureShape $output, ResponseInterface $response, array &$result)
     {
         $member = $output->getMember($payload);
         if (!empty($member['eventstream'])) {
-            $result[$payload] = new \WPMailSMTP\Vendor\Aws\Api\Parser\EventParsingIterator($response->getBody(), $member, $this);
+            $result[$payload] = new EventParsingIterator($response->getBody(), $member, $this);
         } else {
-            if ($member instanceof \WPMailSMTP\Vendor\Aws\Api\StructureShape) {
+            if ($member instanceof StructureShape) {
                 // Structure members parse top-level data into a specific key.
                 $result[$payload] = [];
                 $this->payload($response, $member, $result[$payload]);
@@ -69,7 +69,7 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
     /**
      * Extract a single header from the response into the result.
      */
-    private function extractHeader($name, \WPMailSMTP\Vendor\Aws\Api\Shape $shape, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, &$result)
+    private function extractHeader($name, Shape $shape, ResponseInterface $response, &$result)
     {
         $value = $response->getHeaderLine($shape['locationName'] ?: $name);
         switch ($shape->getType()) {
@@ -88,7 +88,7 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
                 break;
             case 'timestamp':
                 try {
-                    $value = \WPMailSMTP\Vendor\Aws\Api\DateTimeResult::fromTimestamp($value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
+                    $value = DateTimeResult::fromTimestamp($value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
                     break;
                 } catch (\Exception $e) {
                     // If the value cannot be parsed, then do not add it to the
@@ -116,7 +116,7 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
     /**
      * Extract a map of headers with an optional prefix from the response.
      */
-    private function extractHeaders($name, \WPMailSMTP\Vendor\Aws\Api\Shape $shape, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, &$result)
+    private function extractHeaders($name, Shape $shape, ResponseInterface $response, &$result)
     {
         // Check if the headers are prefixed by a location name
         $result[$name] = [];
@@ -133,7 +133,7 @@ abstract class AbstractRestParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\Abst
     /**
      * Places the status code of the response into the result array.
      */
-    private function extractStatus($name, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, array &$result)
+    private function extractStatus($name, ResponseInterface $response, array &$result)
     {
         $result[$name] = (int) $response->getStatusCode();
     }

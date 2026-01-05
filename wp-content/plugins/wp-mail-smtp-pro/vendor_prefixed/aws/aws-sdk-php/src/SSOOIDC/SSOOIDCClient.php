@@ -14,6 +14,6 @@ use WPMailSMTP\Vendor\Aws\AwsClient;
  * @method \Aws\Result startDeviceAuthorization(array $args = [])
  * @method \GuzzleHttp\Promise\Promise startDeviceAuthorizationAsync(array $args = [])
  */
-class SSOOIDCClient extends \WPMailSMTP\Vendor\Aws\AwsClient
+class SSOOIDCClient extends AwsClient
 {
 }

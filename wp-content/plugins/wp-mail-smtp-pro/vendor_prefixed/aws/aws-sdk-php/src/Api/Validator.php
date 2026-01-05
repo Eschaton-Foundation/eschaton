@@ -32,7 +32,7 @@ class Validator
      *
      * @throws \InvalidArgumentException if the input is invalid.
      */
-    public function validate($name, \WPMailSMTP\Vendor\Aws\Api\Shape $shape, array $input)
+    public function validate($name, Shape $shape, array $input)
     {
         $this->dispatch($shape, $input);
         if ($this->errors) {
@@ -41,7 +41,7 @@ class Validator
             throw new \InvalidArgumentException($message);
         }
     }
-    private function dispatch(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function dispatch(Shape $shape, $value)
     {
         static $methods = ['structure' => 'check_structure', 'list' => 'check_list', 'map' => 'check_map', 'blob' => 'check_blob', 'boolean' => 'check_boolean', 'integer' => 'check_numeric', 'float' => 'check_numeric', 'long' => 'check_numeric', 'string' => 'check_string', 'byte' => 'check_string', 'char' => 'check_string'];
         $type = $shape->getType();
@@ -49,7 +49,7 @@ class Validator
             $this->{$methods[$type]}($shape, $value);
         }
     }
-    private function check_structure(\WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, $value)
+    private function check_structure(StructureShape $shape, $value)
     {
         $isDocument = isset($shape['document']) && $shape['document'];
         $isUnion = isset($shape['union']) && $shape['union'];
@@ -85,10 +85,10 @@ class Validator
             }
         }
     }
-    private function check_list(\WPMailSMTP\Vendor\Aws\Api\ListShape $shape, $value)
+    private function check_list(ListShape $shape, $value)
     {
         if (!\is_array($value)) {
-            $this->addError('must be an array. Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+            $this->addError('must be an array. Found ' . Aws\describe_type($value));
             return;
         }
         $this->validateRange($shape, \count($value), "list element count");
@@ -99,7 +99,7 @@ class Validator
             \array_pop($this->path);
         }
     }
-    private function check_map(\WPMailSMTP\Vendor\Aws\Api\MapShape $shape, $value)
+    private function check_map(MapShape $shape, $value)
     {
         if (!$this->checkAssociativeArray($value)) {
             return;
@@ -111,40 +111,40 @@ class Validator
             \array_pop($this->path);
         }
     }
-    private function check_blob(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function check_blob(Shape $shape, $value)
     {
         static $valid = ['string' => \true, 'integer' => \true, 'double' => \true, 'resource' => \true];
         $type = \gettype($value);
         if (!isset($valid[$type])) {
             if ($type != 'object' || !\method_exists($value, '__toString')) {
-                $this->addError('must be an fopen resource, a ' . 'GuzzleHttp\\Stream\\StreamInterface object, or something ' . 'that can be cast to a string. Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+                $this->addError('must be an fopen resource, a ' . 'GuzzleHttp\\Stream\\StreamInterface object, or something ' . 'that can be cast to a string. Found ' . Aws\describe_type($value));
             }
         }
     }
-    private function check_numeric(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function check_numeric(Shape $shape, $value)
     {
         if (!\is_numeric($value)) {
-            $this->addError('must be numeric. Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+            $this->addError('must be numeric. Found ' . Aws\describe_type($value));
             return;
         }
         $this->validateRange($shape, $value, "numeric value");
     }
-    private function check_boolean(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function check_boolean(Shape $shape, $value)
     {
         if (!\is_bool($value)) {
-            $this->addError('must be a boolean. Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+            $this->addError('must be a boolean. Found ' . Aws\describe_type($value));
         }
     }
-    private function check_string(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function check_string(Shape $shape, $value)
     {
         if ($shape['jsonvalue']) {
             if (!self::canJsonEncode($value)) {
-                $this->addError('must be a value encodable with \'json_encode\'.' . ' Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+                $this->addError('must be a value encodable with \'json_encode\'.' . ' Found ' . Aws\describe_type($value));
             }
             return;
         }
         if (!$this->checkCanString($value)) {
-            $this->addError('must be a string or an object that implements ' . '__toString(). Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+            $this->addError('must be a string or an object that implements ' . '__toString(). Found ' . Aws\describe_type($value));
             return;
         }
         $value = isset($value) ? $value : '';
@@ -156,7 +156,7 @@ class Validator
             }
         }
     }
-    private function validateRange(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $length, $descriptor)
+    private function validateRange(Shape $shape, $length, $descriptor)
     {
         if ($this->constraints['min']) {
             $min = $shape['min'];
@@ -202,7 +202,7 @@ class Validator
             } while (!$isAssociative && null !== $key);
         }
         if (!$isAssociative) {
-            $this->addError('must be an associative array. Found ' . \WPMailSMTP\Vendor\Aws\describe_type($value));
+            $this->addError('must be an associative array. Found ' . Aws\describe_type($value));
             return \false;
         }
         return \true;

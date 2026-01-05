@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Key;
 /**
  * @internal Represents a stream of data to be gcm decrypted.
  */
-class AesGcmDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInterface
+class AesGcmDecryptingStream implements AesStreamInterface
 {
     use StreamDecoratorTrait;
     private $aad;
@@ -34,7 +34,7 @@ class AesGcmDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamI
      * @param int $tagLength
      * @param int $keySize
      */
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $cipherText, $key, $initializationVector, $tag, $aad = '', $tagLength = 128, $keySize = 256)
+    public function __construct(StreamInterface $cipherText, $key, $initializationVector, $tag, $aad = '', $tagLength = 128, $keySize = 256)
     {
         $this->cipherText = $cipherText;
         $this->key = $key;
@@ -62,13 +62,13 @@ class AesGcmDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamI
     public function createStream()
     {
         if (\version_compare(\PHP_VERSION, '7.1', '<')) {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor(\WPMailSMTP\Vendor\Aws\Crypto\Polyfill\AesGcm::decrypt((string) $this->cipherText, $this->initializationVector, new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Key($this->key), $this->aad, $this->tag, $this->keySize));
+            return Psr7\Utils::streamFor(AesGcm::decrypt((string) $this->cipherText, $this->initializationVector, new Key($this->key), $this->aad, $this->tag, $this->keySize));
         } else {
             $result = \openssl_decrypt((string) $this->cipherText, $this->getOpenSslName(), $this->key, \OPENSSL_RAW_DATA, $this->initializationVector, $this->tag, $this->aad);
             if ($result === \false) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\CryptoException('The requested object could not be' . ' decrypted due to an invalid authentication tag.');
+                throw new CryptoException('The requested object could not be' . ' decrypted due to an invalid authentication tag.');
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($result);
+            return Psr7\Utils::streamFor($result);
         }
     }
     public function isWritable() : bool

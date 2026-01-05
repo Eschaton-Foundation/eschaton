@@ -9,13 +9,13 @@ class RuleCreator
     {
         switch ($type) {
             case 'endpoint':
-                return new \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\EndpointRule($definition);
+                return new EndpointRule($definition);
             case 'error':
-                return new \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\ErrorRule($definition);
+                return new ErrorRule($definition);
             case 'tree':
-                return new \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\TreeRule($definition);
+                return new TreeRule($definition);
             default:
-                throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Unknown rule type ' . $type . ' must be of type `endpoint`, `tree` or `error`');
+                throw new UnresolvedEndpointException('Unknown rule type ' . $type . ' must be of type `endpoint`, `tree` or `error`');
         }
     }
 }

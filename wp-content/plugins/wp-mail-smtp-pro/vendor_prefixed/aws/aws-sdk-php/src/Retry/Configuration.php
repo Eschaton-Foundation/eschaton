@@ -3,7 +3,7 @@
 namespace WPMailSMTP\Vendor\Aws\Retry;
 
 use WPMailSMTP\Vendor\Aws\Retry\Exception\ConfigurationException;
-class Configuration implements \WPMailSMTP\Vendor\Aws\Retry\ConfigurationInterface
+class Configuration implements ConfigurationInterface
 {
     private $mode;
     private $maxAttempts;
@@ -12,10 +12,10 @@ class Configuration implements \WPMailSMTP\Vendor\Aws\Retry\ConfigurationInterfa
     {
         $mode = \strtolower($mode);
         if (!\in_array($mode, $this->validModes)) {
-            throw new \WPMailSMTP\Vendor\Aws\Retry\Exception\ConfigurationException("'{$mode}' is not a valid mode." . " The mode has to be 'legacy', 'standard', or 'adaptive'.");
+            throw new ConfigurationException("'{$mode}' is not a valid mode." . " The mode has to be 'legacy', 'standard', or 'adaptive'.");
         }
         if (!\is_numeric($maxAttempts) || \intval($maxAttempts) != $maxAttempts || $maxAttempts < 1) {
-            throw new \WPMailSMTP\Vendor\Aws\Retry\Exception\ConfigurationException("The 'maxAttempts' parameter has" . " to be an integer >= 1.");
+            throw new ConfigurationException("The 'maxAttempts' parameter has" . " to be an integer >= 1.");
         }
         $this->mode = $mode;
         $this->maxAttempts = \intval($maxAttempts);

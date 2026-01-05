@@ -7,12 +7,12 @@
 namespace WPMailSMTP\Vendor\AWS\CRT\Auth;
 
 use WPMailSMTP\Vendor\AWS\CRT\NativeResource;
-abstract class Signing extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+abstract class Signing extends NativeResource
 {
     static function signRequestAws($signable, $signing_config, $on_complete)
     {
         return self::$crt->sign_request_aws($signable->native, $signing_config->native, function ($result, $error_code) use($on_complete) {
-            $signing_result = \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningResult::fromNative($result);
+            $signing_result = SigningResult::fromNative($result);
             $on_complete($signing_result, $error_code);
         }, null);
     }

@@ -7,15 +7,15 @@ use WPMailSMTP\Vendor\Symfony\Component\Filesystem\Exception\IOException;
 use WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem;
 class Composer
 {
-    public static function removeUnusedServicesInDev(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
+    public static function removeUnusedServicesInDev(Event $event, ?Filesystem $filesystem = null)
     {
         self::removeUnusedServicesWithConfig($event, $filesystem, \true);
     }
-    public static function removeUnusedServices(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null)
+    public static function removeUnusedServices(Event $event, ?Filesystem $filesystem = null)
     {
         self::removeUnusedServicesWithConfig($event, $filesystem, \false);
     }
-    private static function removeUnusedServicesWithConfig(\WPMailSMTP\Vendor\Composer\Script\Event $event, ?\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem $filesystem = null, $isDev = \false)
+    private static function removeUnusedServicesWithConfig(Event $event, ?Filesystem $filesystem = null, $isDev = \false)
     {
         if ($isDev && !$event->isDevMode()) {
             return;
@@ -26,7 +26,7 @@ class Composer
         if ($listedServices) {
             $serviceMapping = self::buildServiceMapping();
             self::verifyListedServices($serviceMapping, $listedServices);
-            $filesystem = $filesystem ?: new \WPMailSMTP\Vendor\Symfony\Component\Filesystem\Filesystem();
+            $filesystem = $filesystem ?: new Filesystem();
             $vendorPath = $composer->getConfig()->get('vendor-dir');
             self::removeServiceDirs($event, $filesystem, $serviceMapping, $listedServices, $vendorPath);
         } else {
@@ -71,10 +71,10 @@ class Composer
                             $filesystem->remove([$clientDir, $modelDir]);
                             $deleteCount++;
                             break;
-                        } catch (\WPMailSMTP\Vendor\Symfony\Component\Filesystem\Exception\IOException $e) {
+                        } catch (IOException $e) {
                             $attempts--;
                             if (!$attempts) {
-                                throw new \WPMailSMTP\Vendor\Symfony\Component\Filesystem\Exception\IOException("Removal failed after several attempts. Last error: " . $e->getMessage());
+                                throw new IOException("Removal failed after several attempts. Last error: " . $e->getMessage());
                             } else {
                                 \sleep($delay);
                                 $event->getIO()->write("Error encountered: " . $e->getMessage() . ". Retrying...");

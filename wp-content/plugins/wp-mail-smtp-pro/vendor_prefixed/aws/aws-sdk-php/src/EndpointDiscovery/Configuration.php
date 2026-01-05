@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\EndpointDiscovery;
 
-class Configuration implements \WPMailSMTP\Vendor\Aws\EndpointDiscovery\ConfigurationInterface
+class Configuration implements ConfigurationInterface
 {
     private $cacheLimit;
     private $enabled;

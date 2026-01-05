@@ -11,11 +11,11 @@ class AstRuntime
     private $interpreter;
     private $cache = [];
     private $cachedCount = 0;
-    public function __construct(?\WPMailSMTP\Vendor\JmesPath\Parser $parser = null, ?callable $fnDispatcher = null)
+    public function __construct(?Parser $parser = null, ?callable $fnDispatcher = null)
     {
-        $fnDispatcher = $fnDispatcher ?: \WPMailSMTP\Vendor\JmesPath\FnDispatcher::getInstance();
-        $this->interpreter = new \WPMailSMTP\Vendor\JmesPath\TreeInterpreter($fnDispatcher);
-        $this->parser = $parser ?: new \WPMailSMTP\Vendor\JmesPath\Parser();
+        $fnDispatcher = $fnDispatcher ?: FnDispatcher::getInstance();
+        $this->interpreter = new TreeInterpreter($fnDispatcher);
+        $this->parser = $parser ?: new Parser();
     }
     /**
      * Returns data from the provided input that matches a given JMESPath

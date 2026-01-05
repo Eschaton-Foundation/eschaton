@@ -23,22 +23,22 @@ trait RetryHelperTrait
         if (empty($stats['http'])) {
             $stats['http'] = [];
         }
-        if ($value instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if ($value instanceof AwsException) {
             $resultStats = $value->getTransferInfo();
             $stats['http'][] = $resultStats;
-        } elseif ($value instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        } elseif ($value instanceof ResultInterface) {
             $resultStats = isset($value['@metadata']['transferStats']['http'][0]) ? $value['@metadata']['transferStats']['http'][0] : [];
             $stats['http'][] = $resultStats;
         }
     }
     private function bindStatsToReturn($return, array $stats)
     {
-        if ($return instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        if ($return instanceof ResultInterface) {
             if (!isset($return['@metadata'])) {
                 $return['@metadata'] = [];
             }
             $return['@metadata']['transferStats'] = $stats;
-        } elseif ($return instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        } elseif ($return instanceof AwsException) {
             $return->setTransferInfo($stats);
         }
         return $return;

@@ -52,32 +52,32 @@ trait DecryptionTrait
      *
      * @internal
      */
-    public function decrypt($cipherText, \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProviderInterface $provider, \WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope, array $cipherOptions = [])
+    public function decrypt($cipherText, MaterialsProviderInterface $provider, MetadataEnvelope $envelope, array $cipherOptions = [])
     {
-        $cipherOptions['Iv'] = \base64_decode($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::IV_HEADER]);
-        $cipherOptions['TagLength'] = $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CRYPTO_TAG_LENGTH_HEADER] / 8;
-        $cek = $provider->decryptCek(\base64_decode($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CONTENT_KEY_V2_HEADER]), \json_decode($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER], \true));
+        $cipherOptions['Iv'] = \base64_decode($envelope[MetadataEnvelope::IV_HEADER]);
+        $cipherOptions['TagLength'] = $envelope[MetadataEnvelope::CRYPTO_TAG_LENGTH_HEADER] / 8;
+        $cek = $provider->decryptCek(\base64_decode($envelope[MetadataEnvelope::CONTENT_KEY_V2_HEADER]), \json_decode($envelope[MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER], \true));
         $cipherOptions['KeySize'] = \strlen($cek) * 8;
-        $cipherOptions['Cipher'] = $this->getCipherFromAesName($envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CONTENT_CRYPTO_SCHEME_HEADER]);
+        $cipherOptions['Cipher'] = $this->getCipherFromAesName($envelope[MetadataEnvelope::CONTENT_CRYPTO_SCHEME_HEADER]);
         $decryptionStream = $this->getDecryptingStream($cipherText, $cek, $cipherOptions);
         unset($cek);
         return $decryptionStream;
     }
-    private function getTagFromCiphertextStream(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $cipherText, $tagLength)
+    private function getTagFromCiphertextStream(StreamInterface $cipherText, $tagLength)
     {
         $cipherTextSize = $cipherText->getSize();
         if ($cipherTextSize == null || $cipherTextSize <= 0) {
             throw new \RuntimeException('Cannot decrypt a stream of unknown' . ' size.');
         }
-        return (string) new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\LimitStream($cipherText, $tagLength, $cipherTextSize - $tagLength);
+        return (string) new LimitStream($cipherText, $tagLength, $cipherTextSize - $tagLength);
     }
-    private function getStrippedCiphertextStream(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $cipherText, $tagLength)
+    private function getStrippedCiphertextStream(StreamInterface $cipherText, $tagLength)
     {
         $cipherTextSize = $cipherText->getSize();
         if ($cipherTextSize == null || $cipherTextSize <= 0) {
             throw new \RuntimeException('Cannot decrypt a stream of unknown' . ' size.');
         }
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\LimitStream($cipherText, $cipherTextSize - $tagLength, 0);
+        return new LimitStream($cipherText, $cipherTextSize - $tagLength, 0);
     }
     /**
      * Generates a stream that wraps the cipher text with the proper cipher and
@@ -96,14 +96,14 @@ trait DecryptionTrait
      */
     protected function getDecryptingStream($cipherText, $cek, $cipherOptions)
     {
-        $cipherTextStream = \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($cipherText);
+        $cipherTextStream = Psr7\Utils::streamFor($cipherText);
         switch ($cipherOptions['Cipher']) {
             case 'gcm':
                 $cipherOptions['Tag'] = $this->getTagFromCiphertextStream($cipherTextStream, $cipherOptions['TagLength']);
-                return new \WPMailSMTP\Vendor\Aws\Crypto\AesGcmDecryptingStream($this->getStrippedCiphertextStream($cipherTextStream, $cipherOptions['TagLength']), $cek, $cipherOptions['Iv'], $cipherOptions['Tag'], $cipherOptions['Aad'] = isset($cipherOptions['Aad']) ? $cipherOptions['Aad'] : '', $cipherOptions['TagLength'] ?: null, $cipherOptions['KeySize']);
+                return new AesGcmDecryptingStream($this->getStrippedCiphertextStream($cipherTextStream, $cipherOptions['TagLength']), $cek, $cipherOptions['Iv'], $cipherOptions['Tag'], $cipherOptions['Aad'] = isset($cipherOptions['Aad']) ? $cipherOptions['Aad'] : '', $cipherOptions['TagLength'] ?: null, $cipherOptions['KeySize']);
             default:
                 $cipherMethod = $this->buildCipherMethod($cipherOptions['Cipher'], $cipherOptions['Iv'], $cipherOptions['KeySize']);
-                return new \WPMailSMTP\Vendor\Aws\Crypto\AesDecryptingStream($cipherTextStream, $cek, $cipherMethod);
+                return new AesDecryptingStream($cipherTextStream, $cek, $cipherMethod);
         }
     }
 }

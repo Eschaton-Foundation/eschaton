@@ -17,7 +17,7 @@ namespace WPMailSMTP\Vendor\League\OAuth2\Client\Provider;
 /**
  * Represents a generic resource owner for use with the GenericProvider.
  */
-class GenericResourceOwner implements \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\ResourceOwnerInterface
+class GenericResourceOwner implements ResourceOwnerInterface
 {
     /**
      * @var array

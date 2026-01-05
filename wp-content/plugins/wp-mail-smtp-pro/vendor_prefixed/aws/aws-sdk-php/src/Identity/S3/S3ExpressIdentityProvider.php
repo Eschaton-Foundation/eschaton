@@ -13,7 +13,7 @@ class S3ExpressIdentityProvider
     private $s3Client;
     public function __construct($clientRegion, array $config = [])
     {
-        $this->cache = new \WPMailSMTP\Vendor\Aws\LruArrayCache(100);
+        $this->cache = new LruArrayCache(100);
         $this->region = $clientRegion;
         $this->config = $config;
     }
@@ -23,18 +23,18 @@ class S3ExpressIdentityProvider
         $bucket = $command['Bucket'];
         if ($identity = $this->cache->get($bucket)) {
             if (!$identity->isExpired()) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($identity);
+                return Promise\Create::promiseFor($identity);
             }
         }
         $response = $s3Client->createSession(['Bucket' => $bucket]);
-        $identity = new \WPMailSMTP\Vendor\Aws\Identity\S3\S3ExpressIdentity($response['Credentials']['AccessKeyId'], $response['Credentials']['SecretAccessKey'], $response['Credentials']['SessionToken'], $response['Credentials']['Expiration']->getTimestamp());
+        $identity = new Aws\Identity\S3\S3ExpressIdentity($response['Credentials']['AccessKeyId'], $response['Credentials']['SecretAccessKey'], $response['Credentials']['SessionToken'], $response['Credentials']['Expiration']->getTimestamp());
         $this->cache->set($bucket, $identity);
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($identity);
+        return Promise\Create::promiseFor($identity);
     }
     private function getS3Client()
     {
         if (\is_null($this->s3Client)) {
-            $this->s3Client = $this->config['client'] ?? new \WPMailSMTP\Vendor\Aws\S3\S3Client(['region' => $this->region, 'disable_express_session_auth' => \true]);
+            $this->s3Client = $this->config['client'] ?? new Aws\S3\S3Client(['region' => $this->region, 'disable_express_session_auth' => \true]);
         }
         return $this->s3Client;
     }

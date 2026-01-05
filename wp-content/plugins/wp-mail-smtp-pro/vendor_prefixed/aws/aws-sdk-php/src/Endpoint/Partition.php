@@ -10,7 +10,7 @@ use InvalidArgumentException as Iae;
 /**
  * Default implementation of an AWS partition.
  */
-final class Partition implements \ArrayAccess, \WPMailSMTP\Vendor\Aws\Endpoint\PartitionInterface
+final class Partition implements ArrayAccess, PartitionInterface
 {
     use HasDataTrait;
     private $stsLegacyGlobalRegions = ['ap-northeast-1', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'aws-global', 'ca-central-1', 'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'sa-east-1', 'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'];
@@ -42,7 +42,7 @@ final class Partition implements \ArrayAccess, \WPMailSMTP\Vendor\Aws\Endpoint\P
     {
         foreach (['partition', 'regions', 'services', 'dnsSuffix'] as $key) {
             if (!isset($definition[$key])) {
-                throw new \InvalidArgumentException("Partition missing required {$key} field");
+                throw new Iae("Partition missing required {$key} field");
             }
         }
         $this->data = $definition;
@@ -135,7 +135,7 @@ final class Partition implements \ArrayAccess, \WPMailSMTP\Vendor\Aws\Endpoint\P
      */
     private function isStsLegacyEndpointUsed($service, $region, $options)
     {
-        return $service === 'sts' && \in_array($region, $this->stsLegacyGlobalRegions) && (empty($options['sts_regional_endpoints']) || \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationProvider::unwrap($options['sts_regional_endpoints'])->getEndpointsType() !== 'regional');
+        return $service === 'sts' && \in_array($region, $this->stsLegacyGlobalRegions) && (empty($options['sts_regional_endpoints']) || ConfigurationProvider::unwrap($options['sts_regional_endpoints'])->getEndpointsType() !== 'regional');
     }
     /**
      * S3 legacy us-east-1 endpoint used for valid regions unless option is explicitly
@@ -148,7 +148,7 @@ final class Partition implements \ArrayAccess, \WPMailSMTP\Vendor\Aws\Endpoint\P
      */
     private function isS3LegacyEndpointUsed($service, $region, $options)
     {
-        return $service === 's3' && $region === 'us-east-1' && (empty($options['s3_us_east_1_regional_endpoint']) || \WPMailSMTP\Vendor\Aws\S3\RegionalEndpoint\ConfigurationProvider::unwrap($options['s3_us_east_1_regional_endpoint'])->getEndpointsType() !== 'regional');
+        return $service === 's3' && $region === 'us-east-1' && (empty($options['s3_us_east_1_regional_endpoint']) || S3ConfigurationProvider::unwrap($options['s3_us_east_1_regional_endpoint'])->getEndpointsType() !== 'regional');
     }
     private function getPartitionEndpoint($service)
     {

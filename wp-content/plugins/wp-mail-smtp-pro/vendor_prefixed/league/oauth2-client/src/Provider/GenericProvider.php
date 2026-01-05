@@ -23,7 +23,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
  * Represents a generic service provider that may be used to interact with any
  * OAuth 2.0 service provider, using Bearer token authentication.
  */
-class GenericProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\AbstractProvider
+class GenericProvider extends AbstractProvider
 {
     use BearerAuthorizationTrait;
     /**
@@ -115,7 +115,7 @@ class GenericProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\A
     {
         $missing = \array_diff_key(\array_flip($this->getRequiredOptions()), $options);
         if (!empty($missing)) {
-            throw new \InvalidArgumentException('Required options not defined: ' . \implode(', ', \array_keys($missing)));
+            throw new InvalidArgumentException('Required options not defined: ' . \implode(', ', \array_keys($missing)));
         }
     }
     /**
@@ -135,7 +135,7 @@ class GenericProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\A
     /**
      * @inheritdoc
      */
-    public function getResourceOwnerDetailsUrl(\WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessToken $token)
+    public function getResourceOwnerDetailsUrl(AccessToken $token)
     {
         return $this->urlResourceOwnerDetails;
     }
@@ -177,7 +177,7 @@ class GenericProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\A
     /**
      * @inheritdoc
      */
-    protected function checkResponse(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, $data)
+    protected function checkResponse(ResponseInterface $response, $data)
     {
         if (!empty($data[$this->responseError])) {
             $error = $data[$this->responseError];
@@ -188,14 +188,14 @@ class GenericProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\A
             if (!\is_int($code)) {
                 $code = \intval($code);
             }
-            throw new \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\Exception\IdentityProviderException($error, $code, $data);
+            throw new IdentityProviderException($error, $code, $data);
         }
     }
     /**
      * @inheritdoc
      */
-    protected function createResourceOwner(array $response, \WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessToken $token)
+    protected function createResourceOwner(array $response, AccessToken $token)
     {
-        return new \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\GenericResourceOwner($response, $this->responseResourceOwnerId);
+        return new GenericResourceOwner($response, $this->responseResourceOwnerId);
     }
 }

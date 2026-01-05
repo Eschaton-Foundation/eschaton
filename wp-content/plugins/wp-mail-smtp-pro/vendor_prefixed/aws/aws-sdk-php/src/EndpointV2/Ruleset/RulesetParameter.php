@@ -31,7 +31,7 @@ class RulesetParameter
         if ($this->isValidType($type)) {
             $this->type = $type;
         } else {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Unknown parameter type ' . "`{$type}`" . '. Parameters must be of type `String`, `Boolean` or `StringArray.');
+            throw new UnresolvedEndpointException('Unknown parameter type ' . "`{$type}`" . '. Parameters must be of type `String`, `Boolean` or `StringArray.');
         }
         $this->name = $name;
         $this->builtIn = $definition['builtIn'] ?? null;
@@ -98,7 +98,7 @@ class RulesetParameter
     public function validateInputParam($inputParam)
     {
         if (!$this->isValidInput($inputParam)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException("Input parameter `{$this->name}` is the wrong type. Must be a {$this->type}.");
+            throw new UnresolvedEndpointException("Input parameter `{$this->name}` is the wrong type. Must be a {$this->type}.");
         }
         if ($this->deprecated) {
             $deprecated = $this->deprecated;
@@ -130,7 +130,7 @@ class RulesetParameter
     }
     private function isStringArray(array $array) : bool
     {
-        if (\WPMailSMTP\Vendor\Aws\is_associative($array)) {
+        if (is_associative($array)) {
             return \false;
         }
         foreach ($array as $value) {

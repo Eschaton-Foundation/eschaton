@@ -8,7 +8,7 @@ namespace WPMailSMTP\Vendor\Aws\Arn;
  *
  * @internal
  */
-class ObjectLambdaAccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn
+class ObjectLambdaAccessPointArn extends AccessPointArn
 {
     /**
      * Parses a string into an associative array of components that represent

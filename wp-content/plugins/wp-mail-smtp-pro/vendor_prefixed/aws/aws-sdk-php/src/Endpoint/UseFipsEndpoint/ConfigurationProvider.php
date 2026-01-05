@@ -41,13 +41,13 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const ENV_USE_FIPS_ENDPOINT = 'AWS_USE_FIPS_ENDPOINT';
     const INI_USE_FIPS_ENDPOINT = 'use_fips_endpoint';
     public static $cacheKey = 'aws_cached_use_fips_endpoint_config';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -70,8 +70,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini();
         }
         $configProviders[] = self::fallback($config['region']);
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['use_fips_endpoint']) && $config['use_fips_endpoint'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['use_fips_endpoint']) && $config['use_fips_endpoint'] instanceof CacheInterface) {
             return self::cache($memo, $config['use_fips_endpoint'], self::$cacheKey);
         }
         return $memo;
@@ -87,7 +87,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             // Use config from environment variables, if available
             $useFipsEndpoint = \getenv(self::ENV_USE_FIPS_ENDPOINT);
             if (!empty($useFipsEndpoint)) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\Configuration($useFipsEndpoint));
+                return Promise\Create::promiseFor(new Configuration($useFipsEndpoint));
             }
             return self::reject('Could not find environment variable config' . ' in ' . self::ENV_USE_FIPS_ENDPOINT);
         };
@@ -127,7 +127,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if ($data[$profile][self::INI_USE_FIPS_ENDPOINT] === "") {
                 $data[$profile][self::INI_USE_FIPS_ENDPOINT] = \false;
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\Configuration($data[$profile][self::INI_USE_FIPS_ENDPOINT]));
+            return Promise\Create::promiseFor(new Configuration($data[$profile][self::INI_USE_FIPS_ENDPOINT]));
         };
     }
     /**
@@ -140,11 +140,11 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
         return function () use($region) {
             $isFipsPseudoRegion = \strpos($region, 'fips-') !== \false || \strpos($region, '-fips') !== \false;
             if ($isFipsPseudoRegion) {
-                $configuration = new \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\Configuration(\true);
+                $configuration = new Configuration(\true);
             } else {
-                $configuration = new \WPMailSMTP\Vendor\Aws\Endpoint\UseFipsEndpoint\Configuration(\false);
+                $configuration = new Configuration(\false);
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($configuration);
+            return Promise\Create::promiseFor($configuration);
         };
     }
 }

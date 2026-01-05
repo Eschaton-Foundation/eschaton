@@ -22,7 +22,7 @@ class Ruleset
         $this->version = $ruleset['version'];
         $this->parameters = $this->createParameters($ruleset['parameters']);
         $this->rules = $this->createRules($ruleset['rules']);
-        $this->standardLibrary = new \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary($partitions);
+        $this->standardLibrary = new RulesetStandardLibrary($partitions);
     }
     /**
      * @return mixed
@@ -83,7 +83,7 @@ class Ruleset
     {
         $parameterList = [];
         foreach ($parameters as $name => $definition) {
-            $parameterList[$name] = new \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetParameter($name, $definition);
+            $parameterList[$name] = new RulesetParameter($name, $definition);
         }
         return $parameterList;
     }
@@ -91,7 +91,7 @@ class Ruleset
     {
         $rulesList = [];
         foreach ($rules as $rule) {
-            $ruleObj = \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\RuleCreator::create($rule['type'], $rule);
+            $ruleObj = RuleCreator::create($rule['type'], $rule);
             $rulesList[] = $ruleObj;
         }
         return $rulesList;

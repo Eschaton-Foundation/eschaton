@@ -10,7 +10,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
  * Amazon S3 signature version 4 support.
  */
-class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
+class S3SignatureV4 extends SignatureV4
 {
     /**
      * S3-specific signing logic
@@ -18,7 +18,7 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
      * {@inheritdoc}
      */
     use SignatureTrait;
-    public function signRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $signingService = null)
+    public function signRequest(RequestInterface $request, CredentialsInterface $credentials, $signingService = null)
     {
         // Always add a x-amz-content-sha-256 for data integrity
         if (!$request->hasHeader('x-amz-content-sha256')) {
@@ -44,11 +44,11 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
      * Instantiates a separate sigv4a signing config.  All services except S3
      * use double encoding.  All services except S3 require path normalization.
      */
-    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, ?\WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
+    protected function signWithV4a(CredentialsInterface $credentials, RequestInterface $request, $signingService, ?SigningConfigAWS $signingConfig = null)
     {
         $this->verifyCRTLoaded();
         $credentials_provider = $this->createCRTStaticCredentialsProvider($credentials);
-        $signingConfig = new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPayload($request), 'region' => $this->region, 'should_normalize_uri_path' => \false, 'use_double_uri_encode' => \false, 'service' => $signingService, 'date' => \time()]);
+        $signingConfig = new SigningConfigAWS(['algorithm' => SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPayload($request), 'region' => $this->region, 'should_normalize_uri_path' => \false, 'use_double_uri_encode' => \false, 'service' => $signingService, 'date' => \time()]);
         return parent::signWithV4a($credentials, $request, $signingService, $signingConfig);
     }
     /**
@@ -56,7 +56,7 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
      *
      * {@inheritdoc}
      */
-    public function presign(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $expires, array $options = [])
+    public function presign(RequestInterface $request, CredentialsInterface $credentials, $expires, array $options = [])
     {
         if (!$request->hasHeader('x-amz-content-sha256')) {
             $request = $request->withHeader('X-Amz-Content-Sha256', $this->getPresignedPayload($request));
@@ -70,9 +70,9 @@ class S3SignatureV4 extends \WPMailSMTP\Vendor\Aws\Signature\SignatureV4
      * Override used to allow pre-signed URLs to be created for an
      * in-determinate request payload.
      */
-    protected function getPresignedPayload(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    protected function getPresignedPayload(RequestInterface $request)
     {
-        return \WPMailSMTP\Vendor\Aws\Signature\SignatureV4::UNSIGNED_PAYLOAD;
+        return SignatureV4::UNSIGNED_PAYLOAD;
     }
     /**
      * Amazon S3 does not double-encode the path component in the canonical request

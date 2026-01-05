@@ -5,13 +5,13 @@ namespace WPMailSMTP\Vendor\Aws\Api;
 /**
  * Represents a structure shape and resolve member shape references.
  */
-class StructureShape extends \WPMailSMTP\Vendor\Aws\Api\Shape
+class StructureShape extends Shape
 {
     /**
      * @var Shape[]
      */
     private $members;
-    public function __construct(array $definition, \WPMailSMTP\Vendor\Aws\Api\ShapeMap $shapeMap)
+    public function __construct(array $definition, ShapeMap $shapeMap)
     {
         $definition['type'] = 'structure';
         if (!isset($definition['members'])) {

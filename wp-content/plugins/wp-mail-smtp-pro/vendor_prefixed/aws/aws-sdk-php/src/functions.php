@@ -292,7 +292,7 @@ function guzzle_major_version()
         return $cache;
     }
     if (\defined('\\WPMailSMTP\\Vendor\\GuzzleHttp\\ClientInterface::VERSION')) {
-        $version = (string) \WPMailSMTP\Vendor\GuzzleHttp\ClientInterface::VERSION;
+        $version = (string) ClientInterface::VERSION;
         if ($version[0] === '6') {
             return $cache = 6;
         }
@@ -300,7 +300,7 @@ function guzzle_major_version()
             return $cache = 5;
         }
     } elseif (\defined('\\WPMailSMTP\\Vendor\\GuzzleHttp\\ClientInterface::MAJOR_VERSION')) {
-        return $cache = \WPMailSMTP\Vendor\GuzzleHttp\ClientInterface::MAJOR_VERSION;
+        return $cache = ClientInterface::MAJOR_VERSION;
     }
     throw new \RuntimeException('Unable to determine what Guzzle version is installed.');
 }
@@ -314,17 +314,17 @@ function guzzle_major_version()
  * @return RequestInterface
  * @throws \RuntimeException
  */
-function serialize(\WPMailSMTP\Vendor\Aws\CommandInterface $command)
+function serialize(CommandInterface $command)
 {
     $request = null;
     $handlerList = $command->getHandlerList();
     // Return a mock result.
-    $handlerList->setHandler(function (\WPMailSMTP\Vendor\Aws\CommandInterface $_, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $r) use(&$request) {
+    $handlerList->setHandler(function (CommandInterface $_, RequestInterface $r) use(&$request) {
         $request = $r;
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Promise\FulfilledPromise(new \WPMailSMTP\Vendor\Aws\Result([]));
+        return new FulfilledPromise(new Result([]));
     });
     \call_user_func($handlerList->resolve(), $command)->wait();
-    if (!$request instanceof \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface) {
+    if (!$request instanceof RequestInterface) {
         throw new \RuntimeException('Calling handler did not serialize request');
     }
     return $request;
@@ -532,8 +532,8 @@ function is_associative(array $array) : bool
     if (empty($array)) {
         return \false;
     }
-    if (\function_exists('WPMailSMTP\\Vendor\\array_is_list')) {
-        return !array_is_list($array);
+    if (\function_exists('array_is_list')) {
+        return !\array_is_list($array);
     }
     return \array_keys($array) !== \range(0, \count($array) - 1);
 }

@@ -242,7 +242,19 @@ class Common {
 
 		$message_id = '';
 
-		$custom_id_mailers = [ 'sendlayer', 'smtpcom', 'postmark', 'sparkpost', 'sendgrid', 'smtp2go', 'mailjet', 'elasticemail', 'mailersend', 'mandrill' ];
+		$custom_id_mailers = [
+			'sendlayer',
+			'smtpcom',
+			'postmark',
+			'sparkpost',
+			'sendgrid',
+			'smtp2go',
+			'mailjet',
+			'elasticemail',
+			'mailersend',
+			'mandrill',
+			'resend',
+		];
 
 		if ( in_array( $this->mailer->get_mailer_name(), $custom_id_mailers, true ) ) {
 			foreach ( $this->mailcatcher->getCustomHeaders() as $header ) {

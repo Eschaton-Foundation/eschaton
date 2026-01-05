@@ -15,7 +15,7 @@ use WPMailSMTP\Vendor\AWS\CRT\Options as Options;
  * @param array options:
  * - int num_threads - Number of worker threads in the EventLoopGroup. Defaults to 0/1 per logical core.
  */
-final class EventLoopGroup extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+final class EventLoopGroup extends NativeResource
 {
     static function defaults()
     {
@@ -24,7 +24,7 @@ final class EventLoopGroup extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
     function __construct(array $options = [])
     {
         parent::__construct();
-        $options = new \WPMailSMTP\Vendor\AWS\CRT\Options($options, self::defaults());
+        $options = new Options($options, self::defaults());
         $elg_options = self::$crt->event_loop_group_options_new();
         self::$crt->event_loop_group_options_set_max_threads($elg_options, $options->getInt('max_threads'));
         $this->acquire(self::$crt->event_loop_group_new($elg_options));

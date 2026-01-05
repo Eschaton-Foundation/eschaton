@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.7.1] - 2025-11-26
+### Fixed:
+- Text domain in a couple of strings.
+### Changed:
+- Switched Return-Path option to enabled by default to align with WordPress core.
+
+## [4.7.0] - 2025-11-12
+### Added:
+- New transactional mailer: Resend integration.
+
+### Fixed:
+- Recurring task filling up task meta table.
+- Outlook one-click setup redirection after authentication.
+
 ## [4.6.0] - 2025-08-28
 ### Added:
 - New transactional mailer: Mandrill integration.

@@ -64,9 +64,9 @@ class AssumeRoleWithWebIdentityCredentialProvider
         if (isset($config['client'])) {
             $this->client = $config['client'];
         } else {
-            $this->client = new \WPMailSMTP\Vendor\Aws\Sts\StsClient(['credentials' => \false, 'region' => $region, 'version' => 'latest']);
+            $this->client = new StsClient(['credentials' => \false, 'region' => $region, 'version' => 'latest']);
         }
-        $this->source = $config['source'] ?? \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STS_WEB_ID_TOKEN;
+        $this->source = $config['source'] ?? CredentialSources::STS_WEB_ID_TOKEN;
     }
     /**
      * Loads assume role with web identity credentials.
@@ -75,7 +75,7 @@ class AssumeRoleWithWebIdentityCredentialProvider
      */
     public function __invoke()
     {
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () {
+        return Promise\Coroutine::of(function () {
             $client = $this->client;
             $result = null;
             while ($result == null) {
@@ -86,7 +86,7 @@ class AssumeRoleWithWebIdentityCredentialProvider
                         \clearstatcache(\true, \dirname($this->tokenFile) . "/" . \dirname(\readlink($this->tokenFile)));
                         \clearstatcache(\true, $this->tokenFile);
                         if (!@\is_readable($this->tokenFile)) {
-                            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Unreadable tokenfile at location {$this->tokenFile}");
+                            throw new CredentialsException("Unreadable tokenfile at location {$this->tokenFile}");
                         }
                         $token = @\file_get_contents($this->tokenFile);
                     }
@@ -96,26 +96,26 @@ class AssumeRoleWithWebIdentityCredentialProvider
                             $this->tokenFileReadAttempts++;
                             continue;
                         }
-                        throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("InvalidIdentityToken from file: {$this->tokenFile}");
+                        throw new CredentialsException("InvalidIdentityToken from file: {$this->tokenFile}");
                     }
                 } catch (\Exception $exception) {
-                    throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Error reading WebIdentityTokenFile from " . $this->tokenFile, 0, $exception);
+                    throw new CredentialsException("Error reading WebIdentityTokenFile from " . $this->tokenFile, 0, $exception);
                 }
                 $assumeParams = ['RoleArn' => $this->arn, 'RoleSessionName' => $this->session, 'WebIdentityToken' => $token];
                 try {
                     $result = $client->assumeRoleWithWebIdentity($assumeParams);
-                } catch (\WPMailSMTP\Vendor\Aws\Exception\AwsException $e) {
+                } catch (AwsException $e) {
                     if ($e->getAwsErrorCode() == 'InvalidIdentityToken') {
                         if ($this->authenticationAttempts < $this->retries) {
                             \sleep((int) \pow(1.2, $this->authenticationAttempts));
                         } else {
-                            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("InvalidIdentityToken, retries exhausted");
+                            throw new CredentialsException("InvalidIdentityToken, retries exhausted");
                         }
                     } else {
-                        throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Error assuming role from web identity credentials", 0, $e);
+                        throw new CredentialsException("Error assuming role from web identity credentials", 0, $e);
                     }
                 } catch (\Exception $e) {
-                    throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Error retrieving web identity credentials: " . $e->getMessage() . " (" . $e->getCode() . ")");
+                    throw new CredentialsException("Error retrieving web identity credentials: " . $e->getMessage() . " (" . $e->getCode() . ")");
                 }
                 $this->authenticationAttempts++;
             }

@@ -29,7 +29,7 @@ trait NeedsTrait
     {
         if (!$condition) {
             if (!$exceptionClass) {
-                $exceptionClass = \WPMailSMTP\Vendor\Aws\Exception\CryptoPolyfillException::class;
+                $exceptionClass = CryptoPolyfillException::class;
             }
             throw new $exceptionClass($errorMessage);
         }

@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException;
 /**
  * @internal
  */
-class AccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\Arn implements \WPMailSMTP\Vendor\Aws\Arn\AccessPointArnInterface
+class AccessPointArn extends Arn implements AccessPointArnInterface
 {
     use ResourceTypeAndIdTrait;
     /**
@@ -40,16 +40,16 @@ class AccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\Arn implements \WPMailSM
         self::validateRegion($data, 'access point ARN');
         self::validateAccountId($data, 'access point ARN');
         if ($data['resource_type'] !== 'accesspoint') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 6th component of an access point ARN" . " represents the resource type and must be 'accesspoint'.");
+            throw new InvalidArnException("The 6th component of an access point ARN" . " represents the resource type and must be 'accesspoint'.");
         }
         if (empty($data['resource_id'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 7th component of an access point ARN" . " represents the resource ID and must not be empty.");
+            throw new InvalidArnException("The 7th component of an access point ARN" . " represents the resource ID and must not be empty.");
         }
         if (\strpos($data['resource_id'], ':') !== \false) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The resource ID component of an access" . " point ARN must not contain additional components" . " (delimited by ':').");
+            throw new InvalidArnException("The resource ID component of an access" . " point ARN must not contain additional components" . " (delimited by ':').");
         }
         if (!self::isValidHostLabel($data['resource_id'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The resource ID in an access point ARN" . " must be a valid host label value.");
+            throw new InvalidArnException("The resource ID in an access point ARN" . " must be a valid host label value.");
         }
     }
 }

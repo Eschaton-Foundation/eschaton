@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 trait JsonParserTrait
 {
     use PayloadParserTrait;
-    private function genericHandler(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response)
+    private function genericHandler(ResponseInterface $response)
     {
         $code = (string) $response->getStatusCode();
         if ($this->api && !\is_null($this->api->getMetadata('awsQueryCompatible')) && $response->getHeaderLine('x-amzn-query-error')) {
@@ -27,7 +27,7 @@ trait JsonParserTrait
         }
         return ['request_id' => (string) $response->getHeaderLine('x-amzn-requestid'), 'code' => isset($error_code) ? $error_code : null, 'message' => null, 'type' => $error_type, 'parsed' => $this->parseJson($response->getBody(), $response)];
     }
-    protected function payload(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\Api\StructureShape $member)
+    protected function payload(ResponseInterface $response, StructureShape $member)
     {
         $jsonBody = $this->parseJson($response->getBody(), $response);
         if ($jsonBody) {

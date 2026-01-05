@@ -198,6 +198,6 @@ use WPMailSMTP\Vendor\Aws\AwsClient;
  * @method \Aws\Result updateEmailTemplate(array $args = [])
  * @method \GuzzleHttp\Promise\Promise updateEmailTemplateAsync(array $args = [])
  */
-class SesV2Client extends \WPMailSMTP\Vendor\Aws\AwsClient
+class SesV2Client extends AwsClient
 {
 }

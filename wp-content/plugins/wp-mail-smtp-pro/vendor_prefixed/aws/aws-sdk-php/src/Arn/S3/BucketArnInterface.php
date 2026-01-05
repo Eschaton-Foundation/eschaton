@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\Aws\Arn\ArnInterface;
 /**
  * @internal
  */
-interface BucketArnInterface extends \WPMailSMTP\Vendor\Aws\Arn\ArnInterface
+interface BucketArnInterface extends ArnInterface
 {
     public function getBucketName();
 }

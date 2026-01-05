@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @link http://tools.ietf.org/html/rfc6749#section-1.4 Access Token (RFC 6749, §1.4)
  */
-class AccessToken implements \WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessTokenInterface, \WPMailSMTP\Vendor\League\OAuth2\Client\Token\ResourceOwnerAccessTokenInterface, \WPMailSMTP\Vendor\League\OAuth2\Client\Token\SettableRefreshTokenInterface
+class AccessToken implements AccessTokenInterface, ResourceOwnerAccessTokenInterface, SettableRefreshTokenInterface
 {
     /**
      * @var string
@@ -83,7 +83,7 @@ class AccessToken implements \WPMailSMTP\Vendor\League\OAuth2\Client\Token\Acces
     public function __construct(array $options = [])
     {
         if (empty($options['access_token'])) {
-            throw new \InvalidArgumentException('Required option not passed: "access_token"');
+            throw new InvalidArgumentException('Required option not passed: "access_token"');
         }
         $this->accessToken = $options['access_token'];
         if (!empty($options['resource_owner_id'])) {
@@ -170,7 +170,7 @@ class AccessToken implements \WPMailSMTP\Vendor\League\OAuth2\Client\Token\Acces
     {
         $expires = $this->getExpires();
         if (empty($expires)) {
-            throw new \RuntimeException('"expires" is not set on the token');
+            throw new RuntimeException('"expires" is not set on the token');
         }
         return $expires < $this->getTimeNow();
     }

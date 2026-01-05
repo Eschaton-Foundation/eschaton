@@ -29,7 +29,7 @@ class UserAgentMiddleware
      *
      * @return Closure
      */
-    public static function wrap(array $args) : \Closure
+    public static function wrap(array $args) : Closure
     {
         return function (callable $handler) use($args) {
             return new self($handler, $args);
@@ -53,10 +53,10 @@ class UserAgentMiddleware
      *
      * @return mixed
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    public function __invoke(CommandInterface $command, RequestInterface $request)
     {
         $handler = $this->nextHandler;
-        $this->metricsBuilder = \WPMailSMTP\Vendor\Aws\MetricsBuilder::fromCommand($command);
+        $this->metricsBuilder = MetricsBuilder::fromCommand($command);
         $request = $this->requestWithUserAgentHeader($request);
         return $handler($command, $request);
     }
@@ -68,7 +68,7 @@ class UserAgentMiddleware
      *
      * @return RequestInterface
      */
-    private function requestWithUserAgentHeader(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request) : \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface
+    private function requestWithUserAgentHeader(RequestInterface $request) : RequestInterface
     {
         $uaAppend = $this->args['ua_append'] ?? [];
         $userAgentValue = \array_merge($this->buildUserAgentValue(), $uaAppend);
@@ -100,7 +100,7 @@ class UserAgentMiddleware
      */
     private function getSdkVersion() : string
     {
-        return 'aws-sdk-php/' . \WPMailSMTP\Vendor\Aws\Sdk::VERSION;
+        return 'aws-sdk-php/' . Sdk::VERSION;
     }
     /**
      * Returns the user agent value for the agent version.
@@ -171,7 +171,7 @@ class UserAgentMiddleware
     {
         $args = $this->args;
         if (isset($args['endpoint_discovery'])) {
-            if ($args['endpoint_discovery'] instanceof \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration && $args['endpoint_discovery']->isEnabled()) {
+            if ($args['endpoint_discovery'] instanceof Configuration && $args['endpoint_discovery']->isEnabled()) {
                 return 'cfg/endpoint-discovery';
             } elseif (\is_array($args['endpoint_discovery']) && isset($args['endpoint_discovery']['enabled']) && $args['endpoint_discovery']['enabled']) {
                 return 'cfg/endpoint-discovery';
@@ -215,7 +215,7 @@ class UserAgentMiddleware
     private function appendEndpointMetric() : void
     {
         if (!empty($this->args['endpoint_override'])) {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::ENDPOINT_OVERRIDE);
+            $this->metricsBuilder->append(MetricsBuilder::ENDPOINT_OVERRIDE);
         }
     }
     /**
@@ -229,11 +229,11 @@ class UserAgentMiddleware
             return;
         }
         if ($accountIdMode === 'preferred') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::ACCOUNT_ID_MODE_PREFERRED);
+            $this->metricsBuilder->append(MetricsBuilder::ACCOUNT_ID_MODE_PREFERRED);
         } elseif ($accountIdMode === 'disabled') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::ACCOUNT_ID_MODE_DISABLED);
+            $this->metricsBuilder->append(MetricsBuilder::ACCOUNT_ID_MODE_DISABLED);
         } elseif ($accountIdMode === 'required') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::ACCOUNT_ID_MODE_REQUIRED);
+            $this->metricsBuilder->append(MetricsBuilder::ACCOUNT_ID_MODE_REQUIRED);
         }
     }
     /**
@@ -253,11 +253,11 @@ class UserAgentMiddleware
             $retryMode = $retries["mode"];
         }
         if ($retryMode === 'legacy') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::RETRY_MODE_LEGACY);
+            $this->metricsBuilder->append(MetricsBuilder::RETRY_MODE_LEGACY);
         } elseif ($retryMode === 'standard') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::RETRY_MODE_STANDARD);
+            $this->metricsBuilder->append(MetricsBuilder::RETRY_MODE_STANDARD);
         } elseif ($retryMode === 'adaptive') {
-            $this->metricsBuilder->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::RETRY_MODE_ADAPTIVE);
+            $this->metricsBuilder->append(MetricsBuilder::RETRY_MODE_ADAPTIVE);
         }
     }
 }

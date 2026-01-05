@@ -22,7 +22,7 @@ class InputValidationMiddleware
      * @param Service $service
      * @param array $mandatoryAttributeList
      * @return callable     */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Api\Service $service, $mandatoryAttributeList)
+    public static function wrap(Service $service, $mandatoryAttributeList)
     {
         if (!\is_array($mandatoryAttributeList) || \array_filter($mandatoryAttributeList, 'is_string') !== $mandatoryAttributeList) {
             throw new \InvalidArgumentException("The mandatory attribute list must be an array of strings");
@@ -31,13 +31,13 @@ class InputValidationMiddleware
             return new self($handler, $service, $mandatoryAttributeList);
         };
     }
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Api\Service $service, $mandatoryAttributeList)
+    public function __construct(callable $nextHandler, Service $service, $mandatoryAttributeList)
     {
         $this->service = $service;
         $this->nextHandler = $nextHandler;
         $this->mandatoryAttributeList = $mandatoryAttributeList;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd)
+    public function __invoke(CommandInterface $cmd)
     {
         $nextHandler = $this->nextHandler;
         $op = $this->service->getOperation($cmd->getName())->toArray();

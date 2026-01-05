@@ -13,7 +13,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 /**
  * @internal
  */
-abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\MonitoringMiddlewareInterface
+abstract class AbstractMonitoringMiddleware implements MonitoringMiddlewareInterface
 {
     private static $socket;
     private $nextHandler;
@@ -21,7 +21,7 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
     protected $credentialProvider;
     protected $region;
     protected $service;
-    protected static function getAwsExceptionHeader(\WPMailSMTP\Vendor\Aws\Exception\AwsException $e, $headerName)
+    protected static function getAwsExceptionHeader(AwsException $e, $headerName)
     {
         $response = $e->getResponse();
         if ($response !== null) {
@@ -32,7 +32,7 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
         }
         return null;
     }
-    protected static function getResultHeader(\WPMailSMTP\Vendor\Aws\ResultInterface $result, $headerName)
+    protected static function getResultHeader(ResultInterface $result, $headerName)
     {
         if (isset($result['@metadata']['headers'][$headerName])) {
             return $result['@metadata']['headers'][$headerName];
@@ -41,9 +41,9 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
     }
     protected static function getExceptionHeader(\Exception $e, $headerName)
     {
-        if ($e instanceof \WPMailSMTP\Vendor\Aws\ResponseContainerInterface) {
+        if ($e instanceof ResponseContainerInterface) {
             $response = $e->getResponse();
-            if ($response instanceof \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface) {
+            if ($response instanceof ResponseInterface) {
                 $header = $response->getHeader($headerName);
                 if (!empty($header[0])) {
                     return $header[0];
@@ -77,7 +77,7 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
      * @param  RequestInterface $request
      * @return Promise\PromiseInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    public function __invoke(CommandInterface $cmd, RequestInterface $request)
     {
         $handler = $this->nextHandler;
         $eventData = null;
@@ -90,22 +90,22 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
             if ($enabled) {
                 $eventData = $this->populateResultEventData($value, $eventData);
                 $this->sendEventData($eventData);
-                if ($value instanceof \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface) {
+                if ($value instanceof MonitoringEventsInterface) {
                     $value->appendMonitoringEvent($eventData);
                 }
             }
             if ($value instanceof \Exception || $value instanceof \Throwable) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::rejectionFor($value);
+                return Promise\Create::rejectionFor($value);
             }
             return $value;
         };
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($handler($cmd, $request))->then($g, $g);
+        return Promise\Create::promiseFor($handler($cmd, $request))->then($g, $g);
     }
     private function getClientId()
     {
         return $this->unwrappedOptions()->getClientId();
     }
-    private function getNewEvent(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    private function getNewEvent(CommandInterface $cmd, RequestInterface $request)
     {
         $event = ['Api' => $cmd->getName(), 'ClientId' => $this->getClientId(), 'Region' => $this->getRegion(), 'Service' => $this->getService(), 'Timestamp' => (int) \floor(\microtime(\true) * 1000), 'UserAgent' => \substr($request->getHeaderLine('User-Agent') . ' ' . \WPMailSMTP\Vendor\Aws\default_user_agent(), 0, 256), 'Version' => 1];
         return $event;
@@ -143,7 +143,7 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
      * @param array $event
      * @return array
      */
-    protected function populateRequestEventData(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, array $event)
+    protected function populateRequestEventData(CommandInterface $cmd, RequestInterface $request, array $event)
     {
         $dataFormat = static::getRequestData($request);
         foreach ($dataFormat as $eventKey => $value) {
@@ -231,12 +231,12 @@ abstract class AbstractMonitoringMiddleware implements \WPMailSMTP\Vendor\Aws\Cl
      */
     private function unwrappedOptions()
     {
-        if (!$this->options instanceof \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationInterface) {
+        if (!$this->options instanceof ConfigurationInterface) {
             try {
-                $this->options = \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationProvider::unwrap($this->options);
+                $this->options = ConfigurationProvider::unwrap($this->options);
             } catch (\Exception $e) {
                 // Errors unwrapping CSM config defaults to disabling it
-                $this->options = new \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Configuration(\false, \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationProvider::DEFAULT_HOST, \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationProvider::DEFAULT_PORT);
+                $this->options = new Configuration(\false, ConfigurationProvider::DEFAULT_HOST, ConfigurationProvider::DEFAULT_PORT);
             }
         }
         return $this->options;

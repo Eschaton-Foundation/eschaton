@@ -4,7 +4,7 @@ namespace WPMailSMTP\Vendor\Aws\Exception;
 
 use WPMailSMTP\Vendor\Aws\HasMonitoringEventsTrait;
 use WPMailSMTP\Vendor\Aws\MonitoringEventsInterface;
-class CouldNotCreateChecksumException extends \RuntimeException implements \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface
+class CouldNotCreateChecksumException extends \RuntimeException implements MonitoringEventsInterface
 {
     use HasMonitoringEventsTrait;
     public function __construct($algorithm, ?\Exception $previous = null)

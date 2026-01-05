@@ -17,7 +17,7 @@ use WPMailSMTP\Vendor\AWS\CRT\Options as Options;
  * - string session_token - Optional STS session token
  * - int expiration_timepoint_seconds - Optional time to expire these credentials
  */
-final class AwsCredentials extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+final class AwsCredentials extends NativeResource
 {
     static function defaults()
     {
@@ -34,7 +34,7 @@ final class AwsCredentials extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
     function __construct(array $options = [])
     {
         parent::__construct();
-        $options = new \WPMailSMTP\Vendor\AWS\CRT\Options($options, self::defaults());
+        $options = new Options($options, self::defaults());
         $this->access_key_id = $options->access_key_id->asString();
         $this->secret_access_key = $options->secret_access_key->asString();
         $this->session_token = $options->session_token ? $options->session_token->asString() : null;

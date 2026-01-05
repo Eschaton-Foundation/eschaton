@@ -8,7 +8,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise;
 /**
  * Token that comes from the SSO provider
  */
-class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenProviderInterface
+class SsoTokenProvider implements RefreshableTokenProviderInterface
 {
     use ParsesIniTrait;
     const ENV_PROFILE = 'AWS_PROFILE';
@@ -28,7 +28,7 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
      * @param string|null $configFilePath Name of the config file to sso profile from
      * @param SSOOIDCClient|null $ssoOidcClient The sso client for generating a new token
      */
-    public function __construct($profileName, $configFilePath = null, ?\WPMailSMTP\Vendor\Aws\SSOOIDC\SSOOIDCClient $ssoOidcClient = null)
+    public function __construct($profileName, $configFilePath = null, ?SSOOIDCClient $ssoOidcClient = null)
     {
         $this->profileName = $this->resolveProfileName($profileName);
         $this->configFilePath = $this->resolveConfigFile($configFilePath);
@@ -76,37 +76,37 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
      */
     public function __invoke()
     {
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () {
+        return Promise\Coroutine::of(function () {
             if (empty($this->configFilePath) || !\is_readable($this->configFilePath)) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cannot read profiles from {$this->configFilePath}");
+                throw new TokenException("Cannot read profiles from {$this->configFilePath}");
             }
             $profiles = self::loadProfiles($this->configFilePath);
             if (!isset($profiles[$this->profileName])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Profile `{$this->profileName}` does not exist in {$this->configFilePath}.");
+                throw new TokenException("Profile `{$this->profileName}` does not exist in {$this->configFilePath}.");
             }
             $profile = $profiles[$this->profileName];
             if (empty($profile['sso_session'])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Profile `{$this->profileName}` in {$this->configFilePath} must contain an sso_session.");
+                throw new TokenException("Profile `{$this->profileName}` in {$this->configFilePath} must contain an sso_session.");
             }
             $ssoSessionName = $profile['sso_session'];
             $this->ssoSessionName = $ssoSessionName;
             $profileSsoSession = 'sso-session ' . $ssoSessionName;
             if (empty($profiles[$profileSsoSession])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Sso session `{$ssoSessionName}` does not exist in {$this->configFilePath}");
+                throw new TokenException("Sso session `{$ssoSessionName}` does not exist in {$this->configFilePath}");
             }
             $sessionProfileData = $profiles[$profileSsoSession];
             foreach (['sso_start_url', 'sso_region'] as $requiredProp) {
                 if (empty($sessionProfileData[$requiredProp])) {
-                    throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Sso session `{$ssoSessionName}` in {$this->configFilePath} is missing the required property `{$requiredProp}`");
+                    throw new TokenException("Sso session `{$ssoSessionName}` in {$this->configFilePath} is missing the required property `{$requiredProp}`");
                 }
             }
             $tokenData = $this->refresh();
             $tokenLocation = self::getTokenLocation($ssoSessionName);
             $this->validateTokenData($tokenLocation, $tokenData);
-            $ssoToken = \WPMailSMTP\Vendor\Aws\Token\SsoToken::fromTokenData($tokenData);
+            $ssoToken = SsoToken::fromTokenData($tokenData);
             // To make sure the token is not expired
             if ($ssoToken->isExpired()) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cached SSO token returned an expired token.");
+                throw new TokenException("Cached SSO token returned an expired token.");
             }
             (yield $ssoToken);
         });
@@ -127,11 +127,11 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
             return $tokenData;
         }
         if (null === $this->ssoOidcClient) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cannot refresh this token without an 'ssooidcClient' ");
+            throw new TokenException("Cannot refresh this token without an 'ssooidcClient' ");
         }
         foreach (['clientId', 'clientSecret', 'refreshToken'] as $requiredProp) {
             if (empty($tokenData[$requiredProp])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cannot refresh this token without `{$requiredProp}` being set");
+                throw new TokenException("Cannot refresh this token without `{$requiredProp}` being set");
             }
         }
         $response = $this->ssoOidcClient->createToken([
@@ -142,7 +142,7 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
             'refreshToken' => $tokenData['refreshToken'],
         ]);
         if ($response['@metadata']['statusCode'] !== 200) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException('Unable to create a new sso token');
+            throw new TokenException('Unable to create a new sso token');
         }
         $tokenData['accessToken'] = $response['accessToken'];
         $tokenData['expiresAt'] = \time() + $response['expiresIn'];
@@ -162,7 +162,7 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
         $tokenLocation = self::getTokenLocation($this->ssoSessionName);
         $tokenData = $this->getTokenData($tokenLocation);
         if (empty($tokenData['expiresAt'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Token file at {$tokenLocation} must contain an expiration date");
+            throw new TokenException("Token file at {$tokenLocation} must contain an expiration date");
         }
         $tokenExpiresAt = \strtotime($tokenData['expiresAt']);
         $lastRefreshAt = \filemtime($tokenLocation);
@@ -186,7 +186,7 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
     function getTokenData($tokenLocation) : array
     {
         if (empty($tokenLocation) || !\is_readable($tokenLocation)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Unable to read token file at {$tokenLocation}");
+            throw new TokenException("Unable to read token file at {$tokenLocation}");
         }
         return \json_decode(\file_get_contents($tokenLocation), \true);
     }
@@ -199,14 +199,14 @@ class SsoTokenProvider implements \WPMailSMTP\Vendor\Aws\Token\RefreshableTokenP
     {
         foreach (['accessToken', 'expiresAt'] as $requiredProp) {
             if (empty($tokenData[$requiredProp])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Token file at {$tokenLocation} must contain the required property `{$requiredProp}`");
+                throw new TokenException("Token file at {$tokenLocation} must contain the required property `{$requiredProp}`");
             }
         }
         $expiration = \strtotime($tokenData['expiresAt']);
         if ($expiration === \false) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cached SSO token returned an invalid expiration");
+            throw new TokenException("Cached SSO token returned an invalid expiration");
         } elseif ($expiration < \time()) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\TokenException("Cached SSO token returned an expired token");
+            throw new TokenException("Cached SSO token returned an expired token");
         }
         return $tokenData;
     }

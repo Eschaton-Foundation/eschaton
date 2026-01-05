@@ -7,19 +7,19 @@ use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
  * Provides anonymous client access (does not sign requests).
  */
-class AnonymousSignature implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
+class AnonymousSignature implements SignatureInterface
 {
     /**
      * /** {@inheritdoc}
      */
-    public function signRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials)
+    public function signRequest(RequestInterface $request, CredentialsInterface $credentials)
     {
         return $request;
     }
     /**
      * /** {@inheritdoc}
      */
-    public function presign(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $expires, array $options = [])
+    public function presign(RequestInterface $request, CredentialsInterface $credentials, $expires, array $options = [])
     {
         return $request;
     }

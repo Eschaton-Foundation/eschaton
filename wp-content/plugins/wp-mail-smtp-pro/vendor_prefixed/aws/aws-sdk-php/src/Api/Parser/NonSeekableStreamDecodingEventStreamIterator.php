@@ -8,7 +8,7 @@ use WPMailSMTP\Vendor\Aws\Api\Parser\Exception\ParserException;
 /**
  * @inheritDoc
  */
-class NonSeekableStreamDecodingEventStreamIterator extends \WPMailSMTP\Vendor\Aws\Api\Parser\DecodingEventStreamIterator
+class NonSeekableStreamDecodingEventStreamIterator extends DecodingEventStreamIterator
 {
     /** @var array $tempBuffer */
     private $tempBuffer;
@@ -17,7 +17,7 @@ class NonSeekableStreamDecodingEventStreamIterator extends \WPMailSMTP\Vendor\Aw
      *
      * @param StreamInterface $stream
      */
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream)
+    public function __construct(StreamInterface $stream)
     {
         $this->stream = $stream;
         if ($this->stream->isSeekable()) {
@@ -36,11 +36,11 @@ class NonSeekableStreamDecodingEventStreamIterator extends \WPMailSMTP\Vendor\Aw
         $this->hashContext = \hash_init('crc32b');
         $prelude = $this->parsePrelude()[0];
         list($event[self::HEADERS], $numBytes) = $this->parseHeaders($prelude[self::LENGTH_HEADERS]);
-        $event[self::PAYLOAD] = \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($this->readAndHashBytes($prelude[self::LENGTH_TOTAL] - self::BYTES_PRELUDE - $numBytes - self::BYTES_TRAILING));
+        $event[self::PAYLOAD] = Psr7\Utils::streamFor($this->readAndHashBytes($prelude[self::LENGTH_TOTAL] - self::BYTES_PRELUDE - $numBytes - self::BYTES_TRAILING));
         $calculatedCrc = \hash_final($this->hashContext, \true);
         $messageCrc = $this->stream->read(4);
         if ($calculatedCrc !== $messageCrc) {
-            throw new \WPMailSMTP\Vendor\Aws\Api\Parser\Exception\ParserException('Message checksum mismatch.');
+            throw new ParserException('Message checksum mismatch.');
         }
         return $event;
     }

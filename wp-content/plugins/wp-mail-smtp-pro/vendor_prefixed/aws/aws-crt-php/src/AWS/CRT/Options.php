@@ -63,7 +63,7 @@ final class Options
     }
     public function get($name)
     {
-        return new \WPMailSMTP\Vendor\AWS\CRT\OptionValue($this->options[$name]);
+        return new OptionValue($this->options[$name]);
     }
     public function getInt($name)
     {

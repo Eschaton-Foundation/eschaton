@@ -10,7 +10,7 @@ use WPMailSMTP\Vendor\Aws\Arn\ResourceTypeAndIdTrait;
  *
  * @internal
  */
-class MultiRegionAccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\S3\AccessPointArn
+class MultiRegionAccessPointArn extends AccessPointArn
 {
     use ResourceTypeAndIdTrait;
     /**
@@ -30,6 +30,6 @@ class MultiRegionAccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\S3\AccessPoin
      */
     public static function validate(array $data)
     {
-        \WPMailSMTP\Vendor\Aws\Arn\Arn::validate($data);
+        Arn::validate($data);
     }
 }

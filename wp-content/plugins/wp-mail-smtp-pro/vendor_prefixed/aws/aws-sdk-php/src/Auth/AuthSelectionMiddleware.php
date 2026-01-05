@@ -31,7 +31,7 @@ class AuthSelectionMiddleware
      * @param Service $api
      * @return Closure
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolverInterface $authResolver, \WPMailSMTP\Vendor\Aws\Api\Service $api) : \Closure
+    public static function wrap(AuthSchemeResolverInterface $authResolver, Service $api) : Closure
     {
         return function (callable $handler) use($authResolver, $api) {
             return new self($handler, $authResolver, $api);
@@ -43,7 +43,7 @@ class AuthSelectionMiddleware
      * @param callable $identityProvider
      * @param Service $api
      */
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolverInterface $authResolver, \WPMailSMTP\Vendor\Aws\Api\Service $api)
+    public function __construct(callable $nextHandler, AuthSchemeResolverInterface $authResolver, Service $api)
     {
         $this->nextHandler = $nextHandler;
         $this->authResolver = $authResolver;
@@ -54,7 +54,7 @@ class AuthSelectionMiddleware
      *
      * @return Promise
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command)
+    public function __invoke(CommandInterface $command)
     {
         $nextHandler = $this->nextHandler;
         $serviceAuth = $this->api->getMetadata('auth') ?: [];
@@ -63,7 +63,7 @@ class AuthSelectionMiddleware
         $unsignedPayload = $operation['unsignedpayload'] ?? \false;
         $resolvableAuth = $operationAuth ?: $serviceAuth;
         if (!empty($resolvableAuth)) {
-            if (isset($command['@context']['auth_scheme_resolver']) && $command['@context']['auth_scheme_resolver'] instanceof \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolverInterface) {
+            if (isset($command['@context']['auth_scheme_resolver']) && $command['@context']['auth_scheme_resolver'] instanceof AuthSchemeResolverInterface) {
                 $resolver = $command['@context']['auth_scheme_resolver'];
             } else {
                 $resolver = $this->authResolver;

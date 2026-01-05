@@ -19,7 +19,7 @@ use WPMailSMTP\Vendor\League\OAuth2\Client\Tool\QueryBuilderTrait;
 /**
  * Provide options for access token
  */
-class PostAuthOptionProvider implements \WPMailSMTP\Vendor\League\OAuth2\Client\OptionProvider\OptionProviderInterface
+class PostAuthOptionProvider implements OptionProviderInterface
 {
     use QueryBuilderTrait;
     /**
@@ -28,7 +28,7 @@ class PostAuthOptionProvider implements \WPMailSMTP\Vendor\League\OAuth2\Client\
     public function getAccessTokenOptions($method, array $params)
     {
         $options = ['headers' => ['content-type' => 'application/x-www-form-urlencoded']];
-        if ($method === \WPMailSMTP\Vendor\League\OAuth2\Client\Provider\AbstractProvider::METHOD_POST) {
+        if ($method === AbstractProvider::METHOD_POST) {
             $options['body'] = $this->getAccessTokenBody($params);
         }
         return $options;

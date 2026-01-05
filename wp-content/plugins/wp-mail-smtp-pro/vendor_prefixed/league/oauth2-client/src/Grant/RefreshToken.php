@@ -19,7 +19,7 @@ namespace WPMailSMTP\Vendor\League\OAuth2\Client\Grant;
  *
  * @link http://tools.ietf.org/html/rfc6749#section-6 Refreshing an Access Token (RFC 6749, §6)
  */
-class RefreshToken extends \WPMailSMTP\Vendor\League\OAuth2\Client\Grant\AbstractGrant
+class RefreshToken extends AbstractGrant
 {
     /**
      * @inheritdoc

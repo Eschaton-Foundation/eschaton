@@ -18,8 +18,8 @@ class EndpointProviderV2
     private $cache;
     public function __construct(array $ruleset, array $partitions)
     {
-        $this->ruleset = new \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\Ruleset($ruleset, $partitions);
-        $this->cache = new \WPMailSMTP\Vendor\Aws\LruArrayCache(100);
+        $this->ruleset = new Ruleset($ruleset, $partitions);
+        $this->cache = new LruArrayCache(100);
     }
     /**
      * @return Ruleset
@@ -44,7 +44,7 @@ class EndpointProviderV2
         }
         $endpoint = $this->ruleset->evaluate($inputParameters);
         if ($endpoint === \false) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Unable to resolve an endpoint using the provider arguments: ' . \json_encode($inputParameters));
+            throw new UnresolvedEndpointException('Unable to resolve an endpoint using the provider arguments: ' . \json_encode($inputParameters));
         }
         $this->cache->set($hashedParams, $endpoint);
         return $endpoint;

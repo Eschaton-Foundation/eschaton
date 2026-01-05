@@ -14,6 +14,6 @@ use WPMailSMTP\Vendor\Aws\AwsClient;
  * @method \Aws\Result logout(array $args = [])
  * @method \GuzzleHttp\Promise\Promise logoutAsync(array $args = [])
  */
-class SSOClient extends \WPMailSMTP\Vendor\Aws\AwsClient
+class SSOClient extends AwsClient
 {
 }

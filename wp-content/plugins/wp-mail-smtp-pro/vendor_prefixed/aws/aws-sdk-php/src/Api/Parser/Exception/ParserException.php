@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\Aws\HasMonitoringEventsTrait;
 use WPMailSMTP\Vendor\Aws\MonitoringEventsInterface;
 use WPMailSMTP\Vendor\Aws\ResponseContainerInterface;
 use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
-class ParserException extends \RuntimeException implements \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface, \WPMailSMTP\Vendor\Aws\ResponseContainerInterface
+class ParserException extends \RuntimeException implements MonitoringEventsInterface, ResponseContainerInterface
 {
     use HasMonitoringEventsTrait;
     private $errorCode;

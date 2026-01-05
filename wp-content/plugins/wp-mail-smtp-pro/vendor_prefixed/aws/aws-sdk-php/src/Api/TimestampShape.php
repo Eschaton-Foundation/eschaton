@@ -5,9 +5,9 @@ namespace WPMailSMTP\Vendor\Aws\Api;
 /**
  * Represents a timestamp shape.
  */
-class TimestampShape extends \WPMailSMTP\Vendor\Aws\Api\Shape
+class TimestampShape extends Shape
 {
-    public function __construct(array $definition, \WPMailSMTP\Vendor\Aws\Api\ShapeMap $shapeMap)
+    public function __construct(array $definition, ShapeMap $shapeMap)
     {
         $definition['type'] = 'timestamp';
         parent::__construct($definition, $shapeMap);

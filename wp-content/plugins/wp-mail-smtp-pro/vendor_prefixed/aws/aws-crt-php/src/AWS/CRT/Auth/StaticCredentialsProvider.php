@@ -14,7 +14,7 @@ namespace WPMailSMTP\Vendor\AWS\CRT\Auth;
  * - string secret_access_key - AWS Secret Access Key
  * - string session_token - Optional STS session token
  */
-final class StaticCredentialsProvider extends \WPMailSMTP\Vendor\AWS\CRT\Auth\CredentialsProvider
+final class StaticCredentialsProvider extends CredentialsProvider
 {
     private $credentials;
     public function __get($name)
@@ -24,7 +24,7 @@ final class StaticCredentialsProvider extends \WPMailSMTP\Vendor\AWS\CRT\Auth\Cr
     function __construct(array $options = [])
     {
         parent::__construct();
-        $this->credentials = new \WPMailSMTP\Vendor\AWS\CRT\Auth\AwsCredentials($options);
+        $this->credentials = new AwsCredentials($options);
         $provider_options = self::$crt->credentials_provider_static_options_new();
         self::$crt->credentials_provider_static_options_set_access_key_id($provider_options, $this->credentials->access_key_id);
         self::$crt->credentials_provider_static_options_set_secret_access_key($provider_options, $this->credentials->secret_access_key);

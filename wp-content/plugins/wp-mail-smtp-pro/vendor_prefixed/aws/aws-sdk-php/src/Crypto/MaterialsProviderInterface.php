@@ -21,7 +21,7 @@ interface MaterialsProviderInterface
      *
      * @internal
      */
-    public function fromDecryptionEnvelope(\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope);
+    public function fromDecryptionEnvelope(MetadataEnvelope $envelope);
     /**
      * Returns the wrap algorithm name for this Provider.
      *

@@ -35,7 +35,7 @@ abstract class AbstractRule
      *
      * @return boolean
      */
-    protected function evaluateConditions(array &$inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    protected function evaluateConditions(array &$inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         foreach ($this->getConditions() as $condition) {
             $result = $standardLibrary->callFunction($condition, $inputParameters);
@@ -45,5 +45,5 @@ abstract class AbstractRule
         }
         return \true;
     }
-    public abstract function evaluate(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary);
+    public abstract function evaluate(array $inputParameters, RulesetStandardLibrary $standardLibrary);
 }

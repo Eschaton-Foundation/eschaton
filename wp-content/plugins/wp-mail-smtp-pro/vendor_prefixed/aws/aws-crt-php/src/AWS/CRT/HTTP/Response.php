@@ -6,7 +6,7 @@
  */
 namespace WPMailSMTP\Vendor\AWS\CRT\HTTP;
 
-class Response extends \WPMailSMTP\Vendor\AWS\CRT\HTTP\Message
+class Response extends Message
 {
     private $status_code;
     public function __construct($method, $path, $query, $headers, $status_code)
@@ -20,7 +20,7 @@ class Response extends \WPMailSMTP\Vendor\AWS\CRT\HTTP\Message
     }
     public static function unmarshall($buf)
     {
-        return parent::_unmarshall($buf, \WPMailSMTP\Vendor\AWS\CRT\HTTP\Response::class);
+        return parent::_unmarshall($buf, Response::class);
     }
     public function status_code()
     {

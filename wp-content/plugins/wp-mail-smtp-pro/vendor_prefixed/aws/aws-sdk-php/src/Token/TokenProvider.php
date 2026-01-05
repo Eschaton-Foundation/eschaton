@@ -49,14 +49,14 @@ class TokenProvider
             $profileName = \getenv(self::ENV_PROFILE) ?: 'default';
             $defaultChain['sso'] = self::sso($profileName, self::getHomeDir() . '/.aws/config', $config);
         }
-        if (isset($config['token']) && $config['token'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        if (isset($config['token']) && $config['token'] instanceof CacheInterface) {
             foreach ($cacheable as $provider) {
                 if (isset($defaultChain[$provider])) {
                     $defaultChain[$provider] = self::cache($defaultChain[$provider], $config['token'], 'aws_cached_' . $provider . '_token');
                 }
             }
         }
-        return self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\Token\TokenProvider::class, 'chain'], \array_values($defaultChain)));
+        return self::memoize(\call_user_func_array([TokenProvider::class, 'chain'], \array_values($defaultChain)));
     }
     /**
      * Create a token provider function from a static token.
@@ -65,9 +65,9 @@ class TokenProvider
      *
      * @return callable
      */
-    public static function fromToken(\WPMailSMTP\Vendor\Aws\Token\TokenInterface $token)
+    public static function fromToken(TokenInterface $token)
     {
-        $promise = \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($token);
+        $promise = Promise\Create::promiseFor($token);
         return function () use($promise) {
             return $promise;
         };
@@ -85,7 +85,7 @@ class TokenProvider
         //Common use case for when aws_shared_config_files is false
         if (empty($links)) {
             return function () {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(\false);
+                return Promise\Create::promiseFor(\false);
             };
         }
         return function () use($links) {
@@ -120,7 +120,7 @@ class TokenProvider
                 $result = $provider();
             }
             // Return a token that could expire and refresh when needed.
-            return $result->then(function (\WPMailSMTP\Vendor\Aws\Token\TokenInterface $token) use($provider, &$isConstant, &$result) {
+            return $result->then(function (TokenInterface $token) use($provider, &$isConstant, &$result) {
                 // Determine if the token is constant.
                 if (!$token->getExpiration()) {
                     $isConstant = \true;
@@ -133,7 +133,7 @@ class TokenProvider
             })->otherwise(function ($reason) use(&$result) {
                 // Cleanup rejected promise.
                 $result = null;
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(null);
+                return Promise\Create::promiseFor(null);
             });
         };
     }
@@ -148,23 +148,23 @@ class TokenProvider
      *
      * @return callable
      */
-    public static function cache(callable $provider, \WPMailSMTP\Vendor\Aws\CacheInterface $cache, $cacheKey = null)
+    public static function cache(callable $provider, CacheInterface $cache, $cacheKey = null)
     {
         $cacheKey = $cacheKey ?: 'aws_cached_token';
         return function () use($provider, $cache, $cacheKey) {
             $found = $cache->get($cacheKey);
             if (\is_array($found) && isset($found['token'])) {
                 $foundToken = $found['token'];
-                if ($foundToken instanceof \WPMailSMTP\Vendor\Aws\Token\TokenInterface) {
+                if ($foundToken instanceof TokenInterface) {
                     if (!$foundToken->isExpired()) {
-                        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($foundToken);
+                        return Promise\Create::promiseFor($foundToken);
                     }
                     if (isset($found['refreshMethod']) && \is_callable($found['refreshMethod'])) {
-                        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($found['refreshMethod']());
+                        return Promise\Create::promiseFor($found['refreshMethod']());
                     }
                 }
             }
-            return $provider()->then(function (\WPMailSMTP\Vendor\Aws\Token\TokenInterface $token) use($cache, $cacheKey) {
+            return $provider()->then(function (TokenInterface $token) use($cache, $cacheKey) {
                 $cache->set($cacheKey, $token, null === $token->getExpiration() ? 0 : $token->getExpiration() - \time());
                 return $token;
             });
@@ -191,7 +191,7 @@ class TokenProvider
     }
     private static function reject($msg)
     {
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Promise\RejectedPromise(new \WPMailSMTP\Vendor\Aws\Exception\TokenException($msg));
+        return new Promise\RejectedPromise(new TokenException($msg));
     }
     /**
      * Token provider that creates a token from cached sso credentials
@@ -206,6 +206,6 @@ class TokenProvider
     public static function sso($profileName, $filename, $config = [])
     {
         $ssoClient = isset($config['ssoClient']) ? $config['ssoClient'] : null;
-        return new \WPMailSMTP\Vendor\Aws\Token\SsoTokenProvider($profileName, $filename, $ssoClient);
+        return new SsoTokenProvider($profileName, $filename, $ssoClient);
     }
 }

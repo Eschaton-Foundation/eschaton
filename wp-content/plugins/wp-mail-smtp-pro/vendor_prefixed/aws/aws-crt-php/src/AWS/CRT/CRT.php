@@ -22,9 +22,9 @@ final class CRT
     {
         if (\is_null(self::$impl)) {
             try {
-                self::$impl = new \WPMailSMTP\Vendor\AWS\CRT\Internal\Extension();
-            } catch (\RuntimeException $rex) {
-                throw new \RuntimeException("Unable to initialize AWS CRT via awscrt extension: \n{$rex}", -1);
+                self::$impl = new Extension();
+            } catch (RuntimeException $rex) {
+                throw new RuntimeException("Unable to initialize AWS CRT via awscrt extension: \n{$rex}", -1);
             }
         }
         ++self::$refcount;
@@ -48,9 +48,9 @@ final class CRT
     public static function isAvailable()
     {
         try {
-            new \WPMailSMTP\Vendor\AWS\CRT\CRT();
+            new CRT();
             return \true;
-        } catch (\RuntimeException $ex) {
+        } catch (RuntimeException $ex) {
             return \false;
         }
     }

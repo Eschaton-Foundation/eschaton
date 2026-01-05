@@ -14,7 +14,7 @@
  */
 namespace WPMailSMTP\Vendor\League\OAuth2\Client\Token;
 
-interface ResourceOwnerAccessTokenInterface extends \WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessTokenInterface
+interface ResourceOwnerAccessTokenInterface extends AccessTokenInterface
 {
     /**
      * Returns the resource owner identifier, if defined.

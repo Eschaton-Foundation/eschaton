@@ -10,7 +10,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface;
  * Houses logic for selecting an auth scheme modeled in a service's `auth` trait.
  * The `auth` trait can be modeled either in a service's metadata, or at the operation level.
  */
-class AuthSchemeResolver implements \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolverInterface
+class AuthSchemeResolver implements AuthSchemeResolverInterface
 {
     const UNSIGNED_BODY = '-unsigned-body';
     /**
@@ -57,7 +57,7 @@ class AuthSchemeResolver implements \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolv
                 $failureReasons[] = $this->getIncompatibilityMessage($normalizedAuthScheme);
             }
         }
-        throw new \WPMailSMTP\Vendor\Aws\Auth\Exception\UnresolvedAuthSchemeException('Could not resolve an authentication scheme: ' . \implode('; ', $failureReasons));
+        throw new UnresolvedAuthSchemeException('Could not resolve an authentication scheme: ' . \implode('; ', $failureReasons));
     }
     /**
      * Determines compatibility based on either Identity or the availability
@@ -111,10 +111,10 @@ class AuthSchemeResolver implements \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolv
     {
         $fn = $this->credentialProvider;
         $result = $fn();
-        if ($result instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
-            return $result->wait() instanceof \WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity;
+        if ($result instanceof PromiseInterface) {
+            return $result->wait() instanceof AwsCredentialIdentity;
         }
-        return $result instanceof \WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity;
+        return $result instanceof AwsCredentialIdentity;
     }
     /**
      * @return bool
@@ -124,10 +124,10 @@ class AuthSchemeResolver implements \WPMailSMTP\Vendor\Aws\Auth\AuthSchemeResolv
         if ($this->tokenProvider) {
             $fn = $this->tokenProvider;
             $result = $fn();
-            if ($result instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
-                return $result->wait() instanceof \WPMailSMTP\Vendor\Aws\Identity\BearerTokenIdentity;
+            if ($result instanceof PromiseInterface) {
+                return $result->wait() instanceof BearerTokenIdentity;
             }
-            return $result instanceof \WPMailSMTP\Vendor\Aws\Identity\BearerTokenIdentity;
+            return $result instanceof BearerTokenIdentity;
         }
         return \false;
     }

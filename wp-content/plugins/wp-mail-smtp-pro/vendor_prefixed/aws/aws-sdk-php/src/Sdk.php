@@ -868,7 +868,7 @@ class Sdk
         $service = manifest($name);
         $namespace = $service['namespace'];
         $klass = "WPMailSMTP\\Vendor\\Aws\\{$namespace}\\{$namespace}MultiRegionClient";
-        $klass = \class_exists($klass) ? $klass : \WPMailSMTP\Vendor\Aws\MultiRegionClient::class;
+        $klass = \class_exists($klass) ? $klass : MultiRegionClient::class;
         return new $klass($this->mergeArgs($namespace, $service, $args));
     }
     /**

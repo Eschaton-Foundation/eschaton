@@ -35,11 +35,11 @@ class AesGcm
      * @throws InvalidArgumentException
      * @throws RangeException
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Key $aesKey, $keySize = 256, $blockSize = 8192)
+    public function __construct(Key $aesKey, $keySize = 256, $blockSize = 8192)
     {
         /* Preconditions: */
-        self::needs(\in_array($keySize, [128, 192, 256], \true), "Key size must be 128, 192, or 256 bits; {$keySize} given", \InvalidArgumentException::class);
-        self::needs(\is_int($blockSize) && $blockSize > 0 && $blockSize <= \PHP_INT_MAX, 'Block size must be a positive integer.', \RangeException::class);
+        self::needs(\in_array($keySize, [128, 192, 256], \true), "Key size must be 128, 192, or 256 bits; {$keySize} given", InvalidArgumentException::class);
+        self::needs(\is_int($blockSize) && $blockSize > 0 && $blockSize <= \PHP_INT_MAX, 'Block size must be a positive integer.', RangeException::class);
         self::needs($aesKey->length() << 3 === $keySize, 'Incorrect key size; expected ' . $keySize . ' bits, got ' . ($aesKey->length() << 3) . ' bits.');
         $this->aesKey = $aesKey;
         $this->keySize = $keySize;
@@ -57,16 +57,16 @@ class AesGcm
      * @return string
      * @throws InvalidArgumentException
      */
-    public static function encrypt($plaintext, $nonce, \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Key $key, $aad, &$tag, $keySize = 256, $blockSize = 8192)
+    public static function encrypt($plaintext, $nonce, Key $key, $aad, &$tag, $keySize = 256, $blockSize = 8192)
     {
-        self::needs(self::strlen($nonce) === 12, 'Nonce must be exactly 12 bytes', \InvalidArgumentException::class);
-        $encryptor = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\AesGcm($key, $keySize, $blockSize);
+        self::needs(self::strlen($nonce) === 12, 'Nonce must be exactly 12 bytes', InvalidArgumentException::class);
+        $encryptor = new AesGcm($key, $keySize, $blockSize);
         list($aadLength, $gmac) = $encryptor->gmacInit($nonce, $aad);
-        $ciphertext = \openssl_encrypt($plaintext, "aes-{$encryptor->keySize}-ctr", $key->get(), \OPENSSL_NO_PADDING | \OPENSSL_RAW_DATA, $nonce . "\0\0\0\2");
+        $ciphertext = \openssl_encrypt($plaintext, "aes-{$encryptor->keySize}-ctr", $key->get(), \OPENSSL_NO_PADDING | \OPENSSL_RAW_DATA, $nonce . "\x00\x00\x00\x02");
         /* Calculate auth tag in a streaming fashion to minimize memory usage: */
         $ciphertextLength = self::strlen($ciphertext);
         for ($i = 0; $i < $ciphertextLength; $i += $encryptor->blockSize) {
-            $cBlock = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray(self::substr($ciphertext, $i, $encryptor->blockSize));
+            $cBlock = new ByteArray(self::substr($ciphertext, $i, $encryptor->blockSize));
             $gmac->update($cBlock);
         }
         $tag = $gmac->finish($aadLength, $ciphertextLength)->toString();
@@ -87,24 +87,24 @@ class AesGcm
      * @throws CryptoPolyfillException
      * @throws InvalidArgumentException
      */
-    public static function decrypt($ciphertext, $nonce, \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Key $key, $aad, &$tag, $keySize = 256, $blockSize = 8192)
+    public static function decrypt($ciphertext, $nonce, Key $key, $aad, &$tag, $keySize = 256, $blockSize = 8192)
     {
         /* Precondition: */
-        self::needs(self::strlen($nonce) === 12, 'Nonce must be exactly 12 bytes', \InvalidArgumentException::class);
-        $encryptor = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\AesGcm($key, $keySize, $blockSize);
+        self::needs(self::strlen($nonce) === 12, 'Nonce must be exactly 12 bytes', InvalidArgumentException::class);
+        $encryptor = new AesGcm($key, $keySize, $blockSize);
         list($aadLength, $gmac) = $encryptor->gmacInit($nonce, $aad);
         /* Calculate auth tag in a streaming fashion to minimize memory usage: */
         $ciphertextLength = self::strlen($ciphertext);
         for ($i = 0; $i < $ciphertextLength; $i += $encryptor->blockSize) {
-            $cBlock = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray(self::substr($ciphertext, $i, $encryptor->blockSize));
+            $cBlock = new ByteArray(self::substr($ciphertext, $i, $encryptor->blockSize));
             $gmac->update($cBlock);
         }
         /* Validate auth tag in constant-time: */
         $calc = $gmac->finish($aadLength, $ciphertextLength);
-        $expected = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray($tag);
+        $expected = new ByteArray($tag);
         self::needs($calc->equals($expected), 'Invalid authentication tag');
         /* Return plaintext if auth tag check succeeded: */
-        return \openssl_decrypt($ciphertext, "aes-{$encryptor->keySize}-ctr", $key->get(), \OPENSSL_NO_PADDING | \OPENSSL_RAW_DATA, $nonce . "\0\0\0\2");
+        return \openssl_decrypt($ciphertext, "aes-{$encryptor->keySize}-ctr", $key->get(), \OPENSSL_NO_PADDING | \OPENSSL_RAW_DATA, $nonce . "\x00\x00\x00\x02");
     }
     /**
      * Initialize a Gmac object with the nonce and this object's key.
@@ -115,8 +115,8 @@ class AesGcm
      */
     protected function gmacInit($nonce, $aad = null)
     {
-        $gmac = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\Gmac($this->aesKey, $nonce . "\0\0\0\1", $this->keySize);
-        $aadBlock = new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray($aad);
+        $gmac = new Gmac($this->aesKey, $nonce . "\x00\x00\x00\x01", $this->keySize);
+        $aadBlock = new ByteArray($aad);
         $aadLength = $aadBlock->count();
         $gmac->update($aadBlock);
         $gmac->flush();

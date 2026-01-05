@@ -19,11 +19,11 @@ class QuerySerializer
     private $endpoint;
     private $api;
     private $paramBuilder;
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint, ?callable $paramBuilder = null)
+    public function __construct(Service $api, $endpoint, ?callable $paramBuilder = null)
     {
         $this->api = $api;
         $this->endpoint = $endpoint;
-        $this->paramBuilder = $paramBuilder ?: new \WPMailSMTP\Vendor\Aws\Api\Serializer\QueryParamBuilder();
+        $this->paramBuilder = $paramBuilder ?: new QueryParamBuilder();
     }
     /**
      * When invoked with an AWS command, returns a serialization array
@@ -35,7 +35,7 @@ class QuerySerializer
      *
      * @return RequestInterface
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, $endpoint = null)
+    public function __invoke(CommandInterface $command, $endpoint = null)
     {
         $operation = $this->api->getOperation($command->getName());
         $body = ['Action' => $command->getName(), 'Version' => $this->api->getMetadata('apiVersion')];
@@ -46,9 +46,9 @@ class QuerySerializer
         }
         $body = \http_build_query($body, '', '&', \PHP_QUERY_RFC3986);
         $headers = ['Content-Length' => \strlen($body), 'Content-Type' => 'application/x-www-form-urlencoded'];
-        if ($endpoint instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint) {
+        if ($endpoint instanceof RulesetEndpoint) {
             $this->setEndpointV2RequestOptions($endpoint, $headers);
         }
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request('POST', $this->endpoint, $headers, $body);
+        return new Request('POST', $this->endpoint, $headers, $body);
     }
 }

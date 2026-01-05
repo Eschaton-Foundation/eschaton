@@ -42,7 +42,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const DEFAULT_CLIENT_ID = '';
     const DEFAULT_ENABLED = \false;
@@ -54,8 +54,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     const ENV_PORT = 'AWS_CSM_PORT';
     const ENV_PROFILE = 'AWS_PROFILE';
     public static $cacheKey = 'aws_cached_csm_config';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -78,8 +78,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini();
         }
         $configProviders[] = self::fallback();
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['csm']) && $config['csm'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['csm']) && $config['csm'] instanceof CacheInterface) {
             return self::cache($memo, $config['csm'], self::$cacheKey);
         }
         return $memo;
@@ -95,7 +95,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             // Use credentials from environment variables, if available
             $enabled = \getenv(self::ENV_ENABLED);
             if ($enabled !== \false) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Configuration($enabled, \getenv(self::ENV_HOST) ?: self::DEFAULT_HOST, \getenv(self::ENV_PORT) ?: self::DEFAULT_PORT, \getenv(self::ENV_CLIENT_ID) ?: self::DEFAULT_CLIENT_ID));
+                return Promise\Create::promiseFor(new Configuration($enabled, \getenv(self::ENV_HOST) ?: self::DEFAULT_HOST, \getenv(self::ENV_PORT) ?: self::DEFAULT_PORT, \getenv(self::ENV_CLIENT_ID) ?: self::DEFAULT_CLIENT_ID));
             }
             return self::reject('Could not find environment variable CSM config' . ' in ' . self::ENV_ENABLED . '/' . self::ENV_HOST . '/' . self::ENV_PORT . '/' . self::ENV_CLIENT_ID);
         };
@@ -108,7 +108,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     public static function fallback()
     {
         return function () {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Configuration(self::DEFAULT_ENABLED, self::DEFAULT_HOST, self::DEFAULT_PORT, self::DEFAULT_CLIENT_ID));
+            return Promise\Create::promiseFor(new Configuration(self::DEFAULT_ENABLED, self::DEFAULT_HOST, self::DEFAULT_PORT, self::DEFAULT_CLIENT_ID));
         };
     }
     /**
@@ -153,7 +153,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if (empty($data[$profile]['csm_client_id'])) {
                 $data[$profile]['csm_client_id'] = self::DEFAULT_CLIENT_ID;
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Configuration($data[$profile]['csm_enabled'], $data[$profile]['csm_host'], $data[$profile]['csm_port'], $data[$profile]['csm_client_id']));
+            return Promise\Create::promiseFor(new Configuration($data[$profile]['csm_enabled'], $data[$profile]['csm_host'], $data[$profile]['csm_port'], $data[$profile]['csm_client_id']));
         };
     }
     /**
@@ -169,16 +169,16 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
         if (\is_callable($config)) {
             $config = $config();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
+        if ($config instanceof PromiseInterface) {
             $config = $config->wait();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationInterface) {
+        if ($config instanceof ConfigurationInterface) {
             return $config;
         } elseif (\is_array($config) && isset($config['enabled'])) {
             $client_id = isset($config['client_id']) ? $config['client_id'] : self::DEFAULT_CLIENT_ID;
             $host = isset($config['host']) ? $config['host'] : self::DEFAULT_HOST;
             $port = isset($config['port']) ? $config['port'] : self::DEFAULT_PORT;
-            return new \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\Configuration($config['enabled'], $host, $port, $client_id);
+            return new Configuration($config['enabled'], $host, $port, $client_id);
         }
         throw new \InvalidArgumentException('Not a valid CSM configuration ' . 'argument.');
     }

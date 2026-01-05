@@ -24,7 +24,7 @@ class PresignUrlMiddleware
     private $presignParam;
     /** @var bool */
     private $requireDifferentRegion;
-    public function __construct(array $options, $endpointProvider, \WPMailSMTP\Vendor\Aws\AwsClientInterface $client, callable $nextHandler)
+    public function __construct(array $options, $endpointProvider, AwsClientInterface $client, callable $nextHandler)
     {
         $this->endpointProvider = $endpointProvider;
         $this->client = $client;
@@ -35,14 +35,14 @@ class PresignUrlMiddleware
         $this->extraQueryParams = !empty($options['extra_query_params']) ? $options['extra_query_params'] : [];
         $this->requireDifferentRegion = !empty($options['require_different_region']);
     }
-    public static function wrap(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $endpointProvider, array $options = [])
+    public static function wrap(AwsClientInterface $client, $endpointProvider, array $options = [])
     {
         return function (callable $handler) use($endpointProvider, $client, $options) {
-            $f = new \WPMailSMTP\Vendor\Aws\PresignUrlMiddleware($options, $endpointProvider, $client, $handler);
+            $f = new PresignUrlMiddleware($options, $endpointProvider, $client, $handler);
             return $f;
         };
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null)
+    public function __invoke(CommandInterface $cmd, ?RequestInterface $request = null)
     {
         if (\in_array($cmd->getName(), $this->commandPool) && !isset($cmd['__skip' . $cmd->getName()])) {
             $cmd['DestinationRegion'] = $this->client->getRegion();
@@ -57,7 +57,7 @@ class PresignUrlMiddleware
         $nextHandler = $this->nextHandler;
         return $nextHandler($cmd, $request);
     }
-    private function createPresignedUrl(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, \WPMailSMTP\Vendor\Aws\CommandInterface $cmd)
+    private function createPresignedUrl(AwsClientInterface $client, CommandInterface $cmd)
     {
         $cmdName = $cmd->getName();
         $newCmd = $client->getCommand($cmdName, $cmd->toArray());
@@ -70,13 +70,13 @@ class PresignUrlMiddleware
             $providerArgs = \array_merge($this->client->getEndpointProviderArgs(), ['Region' => $cmd['SourceRegion']]);
             $endpoint = $this->endpointProvider->resolveEndpoint($providerArgs)->getUrl();
         } else {
-            $endpoint = \WPMailSMTP\Vendor\Aws\Endpoint\EndpointProvider::resolve($this->endpointProvider, ['region' => $cmd['SourceRegion'], 'service' => $this->serviceName])['endpoint'];
+            $endpoint = EndpointProvider::resolve($this->endpointProvider, ['region' => $cmd['SourceRegion'], 'service' => $this->serviceName])['endpoint'];
         }
         // Set the request to hit the target endpoint.
-        $uri = $request->getUri()->withHost((new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($endpoint))->getHost());
+        $uri = $request->getUri()->withHost((new Uri($endpoint))->getHost());
         $request = $request->withUri($uri);
         // Create a presigned URL for our generated request.
-        $signer = new \WPMailSMTP\Vendor\Aws\Signature\SignatureV4($this->serviceName, $cmd['SourceRegion']);
+        $signer = new SignatureV4($this->serviceName, $cmd['SourceRegion']);
         $currentQueryParams = (string) $request->getBody();
         $paramsToAdd = \false;
         if (!empty($this->extraQueryParams[$cmdName])) {
@@ -86,6 +86,6 @@ class PresignUrlMiddleware
                 }
             }
         }
-        return (string) $signer->presign(\WPMailSMTP\Vendor\Aws\Signature\SignatureV4::convertPostToGet($request, $paramsToAdd ?: ""), $client->getCredentials()->wait(), '+1 hour')->getUri();
+        return (string) $signer->presign(SignatureV4::convertPostToGet($request, $paramsToAdd ?: ""), $client->getCredentials()->wait(), '+1 hour')->getUri();
     }
 }

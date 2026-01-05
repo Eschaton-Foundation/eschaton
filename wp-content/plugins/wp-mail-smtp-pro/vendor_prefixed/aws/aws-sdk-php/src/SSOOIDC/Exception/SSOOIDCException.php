@@ -6,6 +6,6 @@ use WPMailSMTP\Vendor\Aws\Exception\AwsException;
 /**
  * Represents an error interacting with the **AWS SSO OIDC** service.
  */
-class SSOOIDCException extends \WPMailSMTP\Vendor\Aws\Exception\AwsException
+class SSOOIDCException extends AwsException
 {
 }

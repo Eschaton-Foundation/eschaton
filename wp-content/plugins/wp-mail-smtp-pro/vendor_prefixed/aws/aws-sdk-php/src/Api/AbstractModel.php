@@ -17,7 +17,7 @@ abstract class AbstractModel implements \ArrayAccess
      * @param array    $definition Service description
      * @param ShapeMap $shapeMap   Shapemap used for creating shapes
      */
-    public function __construct(array $definition, \WPMailSMTP\Vendor\Aws\Api\ShapeMap $shapeMap)
+    public function __construct(array $definition, ShapeMap $shapeMap)
     {
         $this->definition = $definition;
         $this->shapeMap = $shapeMap;
@@ -70,6 +70,6 @@ abstract class AbstractModel implements \ArrayAccess
     }
     protected function shapeFor(array $definition)
     {
-        return isset($definition['shape']) ? $this->shapeMap->resolve($definition) : \WPMailSMTP\Vendor\Aws\Api\Shape::create($definition, $this->shapeMap);
+        return isset($definition['shape']) ? $this->shapeMap->resolve($definition) : Shape::create($definition, $this->shapeMap);
     }
 }

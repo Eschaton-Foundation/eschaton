@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\Crypto;
 
-abstract class MaterialsProvider implements \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProviderInterface
+abstract class MaterialsProvider implements MaterialsProviderInterface
 {
     private static $supportedKeySizes = [128 => \true, 192 => \true, 256 => \true];
     /**
@@ -30,7 +30,7 @@ abstract class MaterialsProvider implements \WPMailSMTP\Vendor\Aws\Crypto\Materi
      *
      * @internal
      */
-    public abstract function fromDecryptionEnvelope(\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope);
+    public abstract function fromDecryptionEnvelope(MetadataEnvelope $envelope);
     /**
      * Returns the material description for this Provider so it can be verified
      * by encryption mechanisms.

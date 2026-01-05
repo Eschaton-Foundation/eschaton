@@ -3,11 +3,11 @@
 namespace WPMailSMTP\Vendor\Aws;
 
 use WPMailSMTP\Vendor\Psr\Cache\CacheItemPoolInterface;
-class PsrCacheAdapter implements \WPMailSMTP\Vendor\Aws\CacheInterface
+class PsrCacheAdapter implements CacheInterface
 {
     /** @var CacheItemPoolInterface */
     private $pool;
-    public function __construct(\WPMailSMTP\Vendor\Psr\Cache\CacheItemPoolInterface $pool)
+    public function __construct(CacheItemPoolInterface $pool)
     {
         $this->pool = $pool;
     }

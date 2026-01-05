@@ -19,7 +19,7 @@ use InvalidArgumentException;
  * Add http basic auth into access token request options
  * @link https://tools.ietf.org/html/rfc6749#section-2.3.1
  */
-class HttpBasicAuthOptionProvider extends \WPMailSMTP\Vendor\League\OAuth2\Client\OptionProvider\PostAuthOptionProvider
+class HttpBasicAuthOptionProvider extends PostAuthOptionProvider
 {
     /**
      * @inheritdoc
@@ -27,7 +27,7 @@ class HttpBasicAuthOptionProvider extends \WPMailSMTP\Vendor\League\OAuth2\Clien
     public function getAccessTokenOptions($method, array $params)
     {
         if (empty($params['client_id']) || empty($params['client_secret'])) {
-            throw new \InvalidArgumentException('clientId and clientSecret are required for http basic auth');
+            throw new InvalidArgumentException('clientId and clientSecret are required for http basic auth');
         }
         $encodedCredentials = \base64_encode(\sprintf('%s:%s', $params['client_id'], $params['client_secret']));
         unset($params['client_id'], $params['client_secret']);

@@ -26,7 +26,7 @@ final class Env
     {
         static $runtime;
         if (!$runtime) {
-            $runtime = \WPMailSMTP\Vendor\JmesPath\Env::createRuntime();
+            $runtime = Env::createRuntime();
         }
         return $runtime($expression, $data);
     }
@@ -40,11 +40,11 @@ final class Env
     {
         switch ($compileDir = self::getEnvVariable(self::COMPILE_DIR)) {
             case \false:
-                return new \WPMailSMTP\Vendor\JmesPath\AstRuntime();
+                return new AstRuntime();
             case 'on':
-                return new \WPMailSMTP\Vendor\JmesPath\CompilerRuntime();
+                return new CompilerRuntime();
             default:
-                return new \WPMailSMTP\Vendor\JmesPath\CompilerRuntime($compileDir);
+                return new CompilerRuntime($compileDir);
         }
     }
     /**

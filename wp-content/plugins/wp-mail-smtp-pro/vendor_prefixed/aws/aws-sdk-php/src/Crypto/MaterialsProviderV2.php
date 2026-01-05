@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\Crypto;
 
-abstract class MaterialsProviderV2 implements \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProviderInterfaceV2
+abstract class MaterialsProviderV2 implements MaterialsProviderInterfaceV2
 {
     private static $supportedKeySizes = [128 => \true, 256 => \true];
     /**

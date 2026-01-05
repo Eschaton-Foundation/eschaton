@@ -7,7 +7,7 @@ namespace WPMailSMTP\Vendor\Aws\Identity;
  *
  * @internal
  */
-abstract class AwsCredentialIdentity implements \WPMailSMTP\Vendor\Aws\Identity\IdentityInterface
+abstract class AwsCredentialIdentity implements IdentityInterface
 {
     /**
      * Returns a UNIX timestamp, if available, representing the expiration

@@ -42,15 +42,15 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const DEFAULT_MODE = 'legacy';
     const ENV_MODE = 'AWS_DEFAULTS_MODE';
     const ENV_PROFILE = 'AWS_PROFILE';
     const INI_MODE = 'defaults_mode';
     public static $cacheKey = 'aws_defaults_mode';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\DefaultsMode\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\DefaultsMode\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -73,8 +73,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini();
         }
         $configProviders[] = self::fallback();
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\DefaultsMode\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['defaultsMode']) && $config['defaultsMode'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['defaultsMode']) && $config['defaultsMode'] instanceof CacheInterface) {
             return self::cache($memo, $config['defaultsMode'], self::$cacheKey);
         }
         return $memo;
@@ -90,7 +90,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             // Use config from environment variables, if available
             $mode = \getenv(self::ENV_MODE);
             if (!empty($mode)) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\DefaultsMode\Configuration($mode));
+                return Promise\Create::promiseFor(new Configuration($mode));
             }
             return self::reject('Could not find environment variable config' . ' in ' . self::ENV_MODE);
         };
@@ -103,7 +103,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     public static function fallback()
     {
         return function () {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\DefaultsMode\Configuration(self::DEFAULT_MODE));
+            return Promise\Create::promiseFor(new Configuration(self::DEFAULT_MODE));
         };
     }
     /**
@@ -136,7 +136,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if (!isset($data[$profile][self::INI_MODE])) {
                 return self::reject("Required defaults mode config values\n                    not present in INI profile '{$profile}' ({$filename})");
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\DefaultsMode\Configuration($data[$profile][self::INI_MODE]));
+            return Promise\Create::promiseFor(new Configuration($data[$profile][self::INI_MODE]));
         };
     }
     /**
@@ -152,14 +152,14 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
         if (\is_callable($config)) {
             $config = $config();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
+        if ($config instanceof PromiseInterface) {
             $config = $config->wait();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\Aws\DefaultsMode\ConfigurationInterface) {
+        if ($config instanceof ConfigurationInterface) {
             return $config;
         }
         if (\is_string($config)) {
-            return new \WPMailSMTP\Vendor\Aws\DefaultsMode\Configuration($config);
+            return new Configuration($config);
         }
         throw new \InvalidArgumentException('Not a valid defaults mode configuration' . ' argument.');
     }

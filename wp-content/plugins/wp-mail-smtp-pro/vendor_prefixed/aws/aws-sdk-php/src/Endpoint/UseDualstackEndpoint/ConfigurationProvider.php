@@ -41,13 +41,13 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const ENV_USE_DUAL_STACK_ENDPOINT = 'AWS_USE_DUALSTACK_ENDPOINT';
     const INI_USE_DUAL_STACK_ENDPOINT = 'use_dualstack_endpoint';
     public static $cacheKey = 'aws_cached_use_dualstack_endpoint_config';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -71,8 +71,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini($region);
         }
         $configProviders[] = self::fallback($region);
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['use_dual_stack_endpoint']) && $config['use_dual_stack_endpoint'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['use_dual_stack_endpoint']) && $config['use_dual_stack_endpoint'] instanceof CacheInterface) {
             return self::cache($memo, $config['use_dual_stack_endpoint'], self::$cacheKey);
         }
         return $memo;
@@ -88,7 +88,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             // Use config from environment variables, if available
             $useDualstackEndpoint = \getenv(self::ENV_USE_DUAL_STACK_ENDPOINT);
             if (!empty($useDualstackEndpoint)) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\Configuration($useDualstackEndpoint, $region));
+                return Promise\Create::promiseFor(new Configuration($useDualstackEndpoint, $region));
             }
             return self::reject('Could not find environment variable config' . ' in ' . self::ENV_USE_DUAL_STACK_ENDPOINT);
         };
@@ -128,7 +128,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if ($data[$profile][self::INI_USE_DUAL_STACK_ENDPOINT] === "") {
                 $data[$profile][self::INI_USE_DUAL_STACK_ENDPOINT] = \false;
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\Configuration($data[$profile][self::INI_USE_DUAL_STACK_ENDPOINT], $region));
+            return Promise\Create::promiseFor(new Configuration($data[$profile][self::INI_USE_DUAL_STACK_ENDPOINT], $region));
         };
     }
     /**
@@ -139,7 +139,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     public static function fallback($region)
     {
         return function () use($region) {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Endpoint\UseDualstackEndpoint\Configuration(\false, $region));
+            return Promise\Create::promiseFor(new Configuration(\false, $region));
         };
     }
 }

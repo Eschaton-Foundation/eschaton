@@ -3,7 +3,7 @@
 namespace WPMailSMTP\Vendor\Aws\Crypto;
 
 use WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface;
-interface AesStreamInterface extends \WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface
+interface AesStreamInterface extends StreamInterface
 {
     /**
      * Returns an identifier recognizable by `openssl_*` functions, such as

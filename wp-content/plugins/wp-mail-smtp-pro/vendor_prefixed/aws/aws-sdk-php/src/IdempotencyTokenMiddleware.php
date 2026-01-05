@@ -34,19 +34,19 @@ class IdempotencyTokenMiddleware
      *
      * @return callable
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Api\Service $service, ?callable $bytesGenerator = null)
+    public static function wrap(Service $service, ?callable $bytesGenerator = null)
     {
         return function (callable $handler) use($service, $bytesGenerator) {
             return new self($handler, $service, $bytesGenerator);
         };
     }
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Api\Service $service, ?callable $bytesGenerator = null)
+    public function __construct(callable $nextHandler, Service $service, ?callable $bytesGenerator = null)
     {
         $this->bytesGenerator = $bytesGenerator ?: $this->findCompatibleRandomSource();
         $this->service = $service;
         $this->nextHandler = $nextHandler;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, ?\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request = null)
+    public function __invoke(CommandInterface $command, ?RequestInterface $request = null)
     {
         $handler = $this->nextHandler;
         if ($this->bytesGenerator) {

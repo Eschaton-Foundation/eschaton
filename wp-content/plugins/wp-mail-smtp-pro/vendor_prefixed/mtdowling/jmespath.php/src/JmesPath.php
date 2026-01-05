@@ -13,6 +13,6 @@ namespace WPMailSMTP\Vendor\JmesPath;
 if (!\function_exists(__NAMESPACE__ . '\\search')) {
     function search($expression, $data)
     {
-        return \WPMailSMTP\Vendor\JmesPath\Env::search($expression, $data);
+        return Env::search($expression, $data);
     }
 }

@@ -8,7 +8,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
  * Interface used to provide interchangeable strategies for adding authorization
  * to requests using the various AWS signature protocols.
  */
-class BearerTokenAuthorization implements \WPMailSMTP\Vendor\Aws\Token\TokenAuthorization
+class BearerTokenAuthorization implements TokenAuthorization
 {
     /**
      * Adds the specified token to a request by adding the required headers.
@@ -18,10 +18,10 @@ class BearerTokenAuthorization implements \WPMailSMTP\Vendor\Aws\Token\TokenAuth
      *
      * @return RequestInterface Returns the modified request.
      */
-    public function authorizeRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Token\TokenInterface $token)
+    public function authorizeRequest(RequestInterface $request, TokenInterface $token)
     {
         if (empty($token) || empty($token->getToken())) {
-            throw new \InvalidArgumentException("Cannot authorize a request with an empty token");
+            throw new InvalidArgumentException("Cannot authorize a request with an empty token");
         }
         $accessToken = $token->getToken();
         return $request->withHeader('Authorization', "Bearer {$accessToken}");

@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\JmesPath\Env as JmesPath;
 /**
  * AWS result.
  */
-class Result implements \WPMailSMTP\Vendor\Aws\ResultInterface, \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface
+class Result implements ResultInterface, MonitoringEventsInterface
 {
     use HasDataTrait;
     use HasMonitoringEventsTrait;
@@ -24,7 +24,7 @@ class Result implements \WPMailSMTP\Vendor\Aws\ResultInterface, \WPMailSMTP\Vend
     }
     public function search($expression)
     {
-        return \WPMailSMTP\Vendor\JmesPath\Env::search($expression, $this->toArray());
+        return JmesPath::search($expression, $this->toArray());
     }
     public function __toString()
     {

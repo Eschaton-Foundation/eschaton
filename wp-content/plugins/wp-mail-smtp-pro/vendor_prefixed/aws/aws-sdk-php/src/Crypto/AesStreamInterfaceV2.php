@@ -3,7 +3,7 @@
 namespace WPMailSMTP\Vendor\Aws\Crypto;
 
 use WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface;
-interface AesStreamInterfaceV2 extends \WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface
+interface AesStreamInterfaceV2 extends StreamInterface
 {
     /**
      * Returns an AES recognizable name, such as 'AES/GCM/NoPadding'. V2

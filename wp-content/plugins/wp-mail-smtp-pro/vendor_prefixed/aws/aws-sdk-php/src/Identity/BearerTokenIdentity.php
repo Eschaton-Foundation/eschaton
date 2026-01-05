@@ -7,7 +7,7 @@ namespace WPMailSMTP\Vendor\Aws\Identity;
  *
  * @internal
  */
-abstract class BearerTokenIdentity implements \WPMailSMTP\Vendor\Aws\Identity\IdentityInterface
+abstract class BearerTokenIdentity implements IdentityInterface
 {
     /**
      * Returns a UNIX timestamp, if available, representing the expiration

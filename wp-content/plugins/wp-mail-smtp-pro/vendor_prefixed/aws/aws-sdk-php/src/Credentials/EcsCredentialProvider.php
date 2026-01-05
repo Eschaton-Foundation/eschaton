@@ -60,31 +60,31 @@ class EcsCredentialProvider
         $this->attempts = 0;
         $uri = $this->getEcsUri();
         if ($this->isCompatibleUri($uri)) {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () {
+            return Promise\Coroutine::of(function () {
                 $client = $this->client;
-                $request = new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request('GET', $this->getEcsUri());
+                $request = new Request('GET', $this->getEcsUri());
                 $headers = $this->getHeadersForAuthToken();
                 $credentials = null;
                 while ($credentials === null) {
-                    $credentials = (yield $client($request, ['timeout' => $this->timeout, 'proxy' => '', 'headers' => $headers])->then(function (\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response) {
+                    $credentials = (yield $client($request, ['timeout' => $this->timeout, 'proxy' => '', 'headers' => $headers])->then(function (ResponseInterface $response) {
                         $result = $this->decodeResult((string) $response->getBody());
                         if (!isset($result['AccountId']) && isset($result['RoleArn'])) {
                             try {
-                                $parsedArn = new \WPMailSMTP\Vendor\Aws\Arn\Arn($result['RoleArn']);
+                                $parsedArn = new Arn($result['RoleArn']);
                                 $result['AccountId'] = $parsedArn->getAccountId();
                             } catch (\Exception $e) {
                                 // AccountId will be null
                             }
                         }
-                        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ECS);
+                        return new Credentials($result['AccessKeyId'], $result['SecretAccessKey'], $result['Token'], \strtotime($result['Expiration']), $result['AccountId'] ?? null, CredentialSources::ECS);
                     })->otherwise(function ($reason) {
                         $reason = \is_array($reason) ? $reason['exception'] : $reason;
-                        $isRetryable = $reason instanceof \WPMailSMTP\Vendor\GuzzleHttp\Exception\ConnectException;
+                        $isRetryable = $reason instanceof ConnectException;
                         if ($isRetryable && $this->attempts < $this->retries) {
                             \sleep((int) \pow(1.2, $this->attempts));
                         } else {
                             $msg = $reason->getMessage();
-                            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException(\sprintf('Error retrieving credentials from container metadata after attempt %d/%d (%s)', $this->attempts, $this->retries, $msg));
+                            throw new CredentialsException(\sprintf('Error retrieving credentials from container metadata after attempt %d/%d (%s)', $this->attempts, $this->retries, $msg));
                         }
                     }));
                     $this->attempts++;
@@ -92,7 +92,7 @@ class EcsCredentialProvider
                 (yield $credentials);
             });
         }
-        throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Uri '{$uri}' contains an unsupported host.");
+        throw new CredentialsException("Uri '{$uri}' contains an unsupported host.");
     }
     /**
      * Returns the number of attempts that have been done.
@@ -118,11 +118,11 @@ class EcsCredentialProvider
                 \clearstatcache(\true, $path);
             }
             if (!\is_readable($path)) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Failed to read authorization token from '{$path}': no such file or directory.");
+                throw new CredentialsException("Failed to read authorization token from '{$path}': no such file or directory.");
             }
             $token = @\file_get_contents($path);
             if (empty($token)) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException("Invalid authorization token read from `{$path}`. Token file is empty!");
+                throw new CredentialsException("Invalid authorization token read from `{$path}`. Token file is empty!");
             }
             return $token;
         }
@@ -178,7 +178,7 @@ class EcsCredentialProvider
     {
         $result = \json_decode($response, \true);
         if (!isset($result['AccessKeyId'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CredentialsException('Unexpected container metadata credentials value');
+            throw new CredentialsException('Unexpected container metadata credentials value');
         }
         return $result;
     }
@@ -197,7 +197,7 @@ class EcsCredentialProvider
             $host = \trim($parsed['host'], '[]');
             $ecsHost = \parse_url(self::SERVER_URI)['host'];
             $eksHost = self::EKS_SERVER_HOST_IPV4;
-            if ($host !== $ecsHost && $host !== $eksHost && $host !== self::EKS_SERVER_HOST_IPV6 && !\WPMailSMTP\Vendor\Aws\Credentials\CredentialsUtils::isLoopBackAddress(\gethostbyname($host))) {
+            if ($host !== $ecsHost && $host !== $eksHost && $host !== self::EKS_SERVER_HOST_IPV6 && !CredentialsUtils::isLoopBackAddress(\gethostbyname($host))) {
                 return \false;
             }
         }

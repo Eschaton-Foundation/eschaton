@@ -7,14 +7,14 @@
 namespace WPMailSMTP\Vendor\AWS\CRT\HTTP;
 
 use WPMailSMTP\Vendor\AWS\CRT\IO\InputStream;
-class Request extends \WPMailSMTP\Vendor\AWS\CRT\HTTP\Message
+class Request extends Message
 {
     private $body_stream = null;
     public function __construct($method, $path, $query = [], $headers = [], $body_stream = null)
     {
         parent::__construct($method, $path, $query, $headers);
-        if (!\is_null($body_stream) && !$body_stream instanceof \WPMailSMTP\Vendor\AWS\CRT\IO\InputStream) {
-            throw new \InvalidArgumentException('body_stream must be an instance of ' . \WPMailSMTP\Vendor\AWS\CRT\IO\InputStream::class);
+        if (!\is_null($body_stream) && !$body_stream instanceof InputStream) {
+            throw new \InvalidArgumentException('body_stream must be an instance of ' . InputStream::class);
         }
         $this->body_stream = $body_stream;
     }
@@ -24,7 +24,7 @@ class Request extends \WPMailSMTP\Vendor\AWS\CRT\HTTP\Message
     }
     public static function unmarshall($buf)
     {
-        return parent::_unmarshall($buf, \WPMailSMTP\Vendor\AWS\CRT\HTTP\Request::class);
+        return parent::_unmarshall($buf, Request::class);
     }
     public function body_stream()
     {

@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\Aws\Arn\ArnInterface;
 /**
  * @internal
  */
-interface OutpostsArnInterface extends \WPMailSMTP\Vendor\Aws\Arn\ArnInterface
+interface OutpostsArnInterface extends ArnInterface
 {
     public function getOutpostId();
 }

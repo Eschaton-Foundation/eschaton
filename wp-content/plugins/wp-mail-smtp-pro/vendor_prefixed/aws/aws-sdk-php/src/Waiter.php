@@ -18,7 +18,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\RejectedPromise;
  * The configuration for the waiter must include information about the operation
  * and the conditions for wait completion.
  */
-class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
+class Waiter implements PromisorInterface
 {
     /** @var AwsClientInterface Client used to execute each attempt. */
     private $client;
@@ -48,7 +48,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
      *
      * @throws \InvalidArgumentException if the configuration is incomplete.
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $name, array $args = [], array $config = [])
+    public function __construct(AwsClientInterface $client, $name, array $args = [], array $config = [])
     {
         $this->client = $client;
         $this->name = $name;
@@ -63,14 +63,14 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
         if ($this->config['before'] && !\is_callable($this->config['before'])) {
             throw new \InvalidArgumentException('The provided "before" callback is not callable.');
         }
-        \WPMailSMTP\Vendor\Aws\MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), \WPMailSMTP\Vendor\Aws\MetricsBuilder::WAITER);
+        MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), MetricsBuilder::WAITER);
     }
     /**
      * @return Coroutine
      */
-    public function promise() : \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface
+    public function promise() : PromiseInterface
     {
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () {
+        return Coroutine::of(function () {
             $name = $this->config['operation'];
             for ($state = 'retry', $attempt = 1; $state === 'retry'; $attempt++) {
                 // Execute the operation.
@@ -81,7 +81,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
                         $this->config['before']($command, $attempt);
                     }
                     $result = (yield $this->client->executeAsync($command));
-                } catch (\WPMailSMTP\Vendor\Aws\Exception\AwsException $e) {
+                } catch (AwsException $e) {
                     $result = $e;
                 }
                 // Determine the waiter's state and what to do next.
@@ -93,10 +93,10 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
                     if ($result instanceof \Exception) {
                         $msg .= ' Reason: ' . $result->getMessage();
                     }
-                    (yield new \WPMailSMTP\Vendor\GuzzleHttp\Promise\RejectedPromise(new \RuntimeException($msg)));
+                    (yield new RejectedPromise(new \RuntimeException($msg)));
                 } elseif ($state === 'retry' && $attempt >= $this->config['maxAttempts']) {
                     $state = 'failed';
-                    (yield new \WPMailSMTP\Vendor\GuzzleHttp\Promise\RejectedPromise(new \RuntimeException("The {$this->name} waiter failed after attempt #{$attempt}.")));
+                    (yield new RejectedPromise(new \RuntimeException("The {$this->name} waiter failed after attempt #{$attempt}.")));
                 }
             }
         });
@@ -150,7 +150,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
      */
     private function matchesPath($result, array $acceptor)
     {
-        return !$result instanceof \WPMailSMTP\Vendor\Aws\ResultInterface ? \false : $acceptor['expected'] == $result->search($acceptor['argument']);
+        return !$result instanceof ResultInterface ? \false : $acceptor['expected'] == $result->search($acceptor['argument']);
     }
     /**
      * @param Result $result   Result or exception.
@@ -160,7 +160,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
      */
     private function matchesPathAll($result, array $acceptor)
     {
-        if (!$result instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        if (!$result instanceof ResultInterface) {
             return \false;
         }
         $actuals = $result->search($acceptor['argument']) ?: [];
@@ -179,7 +179,7 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
      */
     private function matchesPathAny($result, array $acceptor)
     {
-        if (!$result instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        if (!$result instanceof ResultInterface) {
             return \false;
         }
         $actuals = $result->search($acceptor['argument']) ?: [];
@@ -193,10 +193,10 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
      */
     private function matchesStatus($result, array $acceptor)
     {
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        if ($result instanceof ResultInterface) {
             return $acceptor['expected'] == $result['@metadata']['statusCode'];
         }
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException && ($response = $result->getResponse())) {
+        if ($result instanceof AwsException && ($response = $result->getResponse())) {
             return $acceptor['expected'] == $response->getStatusCode();
         }
         return \false;
@@ -212,9 +212,9 @@ class Waiter implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
         // If expected is true then the $result should be an instance of
         // AwsException, otherwise it should not.
         if (isset($acceptor['expected']) && \is_bool($acceptor['expected'])) {
-            return $acceptor['expected'] === $result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException;
+            return $acceptor['expected'] === $result instanceof AwsException;
         }
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if ($result instanceof AwsException) {
             return $result->isConnectionError() || $result->getAwsErrorCode() == $acceptor['expected'];
         }
         return \false;

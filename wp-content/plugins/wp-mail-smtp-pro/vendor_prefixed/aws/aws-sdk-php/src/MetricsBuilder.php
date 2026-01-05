@@ -131,9 +131,9 @@ final class MetricsBuilder
     private function appendSignatureMetric(string $signature) : void
     {
         if ($signature === 'v4-s3express') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::S3_EXPRESS_BUCKET);
+            $this->append(MetricsBuilder::S3_EXPRESS_BUCKET);
         } elseif ($signature === 'v4a') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::SIGV4A_SIGNING);
+            $this->append(MetricsBuilder::SIGV4A_SIGNING);
         }
     }
     /**
@@ -146,7 +146,7 @@ final class MetricsBuilder
     private function appendRequestCompressionMetric(string $format) : void
     {
         if ($format === 'gzip') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::GZIP_REQUEST_COMPRESSION);
+            $this->append(MetricsBuilder::GZIP_REQUEST_COMPRESSION);
         }
     }
     /**
@@ -159,15 +159,15 @@ final class MetricsBuilder
     private function appendRequestChecksumMetric(string $algorithm) : void
     {
         if ($algorithm === 'crc32') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC32);
+            $this->append(MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC32);
         } elseif ($algorithm === 'crc32c') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC32C);
+            $this->append(MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC32C);
         } elseif ($algorithm === 'crc64') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC64);
+            $this->append(MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_CRC64);
         } elseif ($algorithm === 'sha1') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_SHA1);
+            $this->append(MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_SHA1);
         } elseif ($algorithm === 'sha256') {
-            $this->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_SHA256);
+            $this->append(MetricsBuilder::FLEXIBLE_CHECKSUMS_REQ_SHA256);
         }
     }
     /**
@@ -178,13 +178,13 @@ final class MetricsBuilder
      *
      * @return void
      */
-    private function appendCredentialsMetric(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials) : void
+    private function appendCredentialsMetric(CredentialsInterface $credentials) : void
     {
         $source = $credentials->toArray()['source'] ?? null;
         if (empty($source)) {
             return;
         }
-        static $credentialsMetricMapping = [\WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STATIC => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_CODE, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ENVIRONMENT => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_ENV_VARS, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ENVIRONMENT_STS_WEB_ID_TOKEN => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_ENV_VARS_STS_WEB_ID_TOKEN, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STS_ASSUME_ROLE => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_STS_ASSUME_ROLE, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STS_WEB_ID_TOKEN => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_STS_ASSUME_ROLE_WEB_ID, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_PROFILE, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::IMDS => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_IMDS, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::ECS => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_HTTP, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_STS_WEB_ID_TOKEN => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_PROFILE_STS_WEB_ID_TOKEN, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_PROCESS => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_PROFILE_PROCESS, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_SSO => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_PROFILE_SSO, \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::PROFILE_SSO_LEGACY => \WPMailSMTP\Vendor\Aws\MetricsBuilder::CREDENTIALS_PROFILE_SSO_LEGACY];
+        static $credentialsMetricMapping = [CredentialSources::STATIC => MetricsBuilder::CREDENTIALS_CODE, CredentialSources::ENVIRONMENT => MetricsBuilder::CREDENTIALS_ENV_VARS, CredentialSources::ENVIRONMENT_STS_WEB_ID_TOKEN => MetricsBuilder::CREDENTIALS_ENV_VARS_STS_WEB_ID_TOKEN, CredentialSources::STS_ASSUME_ROLE => MetricsBuilder::CREDENTIALS_STS_ASSUME_ROLE, CredentialSources::STS_WEB_ID_TOKEN => MetricsBuilder::CREDENTIALS_STS_ASSUME_ROLE_WEB_ID, CredentialSources::PROFILE => MetricsBuilder::CREDENTIALS_PROFILE, CredentialSources::IMDS => MetricsBuilder::CREDENTIALS_IMDS, CredentialSources::ECS => MetricsBuilder::CREDENTIALS_HTTP, CredentialSources::PROFILE_STS_WEB_ID_TOKEN => MetricsBuilder::CREDENTIALS_PROFILE_STS_WEB_ID_TOKEN, CredentialSources::PROFILE_PROCESS => MetricsBuilder::CREDENTIALS_PROFILE_PROCESS, CredentialSources::PROFILE_SSO => MetricsBuilder::CREDENTIALS_PROFILE_SSO, CredentialSources::PROFILE_SSO_LEGACY => MetricsBuilder::CREDENTIALS_PROFILE_SSO_LEGACY];
         if (isset($credentialsMetricMapping[$source])) {
             $this->append($credentialsMetricMapping[$source]);
         }
@@ -222,7 +222,7 @@ final class MetricsBuilder
      *
      * @return MetricsBuilder
      */
-    public static function fromCommand(\WPMailSMTP\Vendor\Aws\CommandInterface $command) : \WPMailSMTP\Vendor\Aws\MetricsBuilder
+    public static function fromCommand(CommandInterface $command) : MetricsBuilder
     {
         return $command->getMetricsBuilder();
     }
@@ -236,9 +236,9 @@ final class MetricsBuilder
      *
      * @return void
      */
-    public static function appendMetricsCaptureMiddleware(\WPMailSMTP\Vendor\Aws\HandlerList $handlerList, $metric) : void
+    public static function appendMetricsCaptureMiddleware(HandlerList $handlerList, $metric) : void
     {
-        $handlerList->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::tap(function (\WPMailSMTP\Vendor\Aws\CommandInterface $command) use($metric) {
+        $handlerList->appendBuild(Middleware::tap(function (CommandInterface $command) use($metric) {
             self::fromCommand($command)->append($metric);
         }), 'metrics-capture-' . $metric);
     }

@@ -85,7 +85,7 @@ class RulesetStandardLibrary
     public function substring($input, $start, $stop, $reverse)
     {
         if (!\is_string($input)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Input passed to `substring` must be `string`.');
+            throw new UnresolvedEndpointException('Input passed to `substring` must be `string`.');
         }
         if (\preg_match('/[^\\x00-\\x7F]/', $input)) {
             return null;
@@ -109,7 +109,7 @@ class RulesetStandardLibrary
     public function stringEquals($string1, $string2)
     {
         if (!\is_string($string1) || !\is_string($string2)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Values passed to StringEquals must be `string`.');
+            throw new UnresolvedEndpointException('Values passed to StringEquals must be `string`.');
         }
         return $string1 === $string2;
     }
@@ -222,7 +222,7 @@ class RulesetStandardLibrary
     public function partition($region)
     {
         if (!\is_string($region)) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException('Value passed to `partition` must be `string`.');
+            throw new UnresolvedEndpointException('Value passed to `partition` must be `string`.');
         }
         $partitions = $this->partitions;
         foreach ($partitions['partitions'] as $partition) {
@@ -264,11 +264,11 @@ class RulesetStandardLibrary
         if ($funcName === 'isSet') {
             $funcName = 'is_set';
         }
-        $result = \call_user_func_array([\WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary::class, $funcName], $funcArgs);
+        $result = \call_user_func_array([RulesetStandardLibrary::class, $funcName], $funcArgs);
         if (isset($funcCondition['assign'])) {
             $assign = $funcCondition['assign'];
             if (isset($inputParameters[$assign])) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException("Assignment `{$assign}` already exists in input parameters" . " or has already been assigned by an endpoint rule and cannot be overwritten.");
+                throw new UnresolvedEndpointException("Assignment `{$assign}` already exists in input parameters" . " or has already been assigned by an endpoint rule and cannot be overwritten.");
             }
             $inputParameters[$assign] = $result;
         }
@@ -311,14 +311,14 @@ class RulesetStandardLibrary
                 $resolvedValue = $inputParameters;
                 foreach ($parts as $part) {
                     if (!isset($resolvedValue[$part])) {
-                        throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException($notFoundMessage);
+                        throw new UnresolvedEndpointException($notFoundMessage);
                     }
                     $resolvedValue = $resolvedValue[$part];
                 }
                 return $resolvedValue;
             } else {
                 if (!isset($inputParameters[$parts[0]])) {
-                    throw new \WPMailSMTP\Vendor\Aws\Exception\UnresolvedEndpointException($notFoundMessage);
+                    throw new UnresolvedEndpointException($notFoundMessage);
                 }
                 return $inputParameters[$parts[0]];
             }

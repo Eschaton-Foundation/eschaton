@@ -17,7 +17,7 @@ use WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException;
  *
  * @internal
  */
-class OutpostsAccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn implements \WPMailSMTP\Vendor\Aws\Arn\AccessPointArnInterface, \WPMailSMTP\Vendor\Aws\Arn\S3\OutpostsArnInterface
+class OutpostsAccessPointArn extends BaseAccessPointArn implements AccessPointArnInterface, OutpostsArnInterface
 {
     public static function parse($string)
     {
@@ -52,26 +52,26 @@ class OutpostsAccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn i
      */
     public static function validate(array $data)
     {
-        \WPMailSMTP\Vendor\Aws\Arn\Arn::validate($data);
+        Arn::validate($data);
         if ($data['service'] !== 's3-outposts') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 3rd component of an S3 Outposts" . " access point ARN represents the service and must be" . " 's3-outposts'.");
+            throw new InvalidArnException("The 3rd component of an S3 Outposts" . " access point ARN represents the service and must be" . " 's3-outposts'.");
         }
         self::validateRegion($data, 'S3 Outposts access point ARN');
         self::validateAccountId($data, 'S3 Outposts access point ARN');
         if ($data['resource_type'] !== 'outpost') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 6th component of an S3 Outposts" . " access point ARN represents the resource type and must be" . " 'outpost'.");
+            throw new InvalidArnException("The 6th component of an S3 Outposts" . " access point ARN represents the resource type and must be" . " 'outpost'.");
         }
         if (!self::isValidHostLabel($data['outpost_id'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 7th component of an S3 Outposts" . " access point ARN is required, represents the outpost ID, and" . " must be a valid host label.");
+            throw new InvalidArnException("The 7th component of an S3 Outposts" . " access point ARN is required, represents the outpost ID, and" . " must be a valid host label.");
         }
         if ($data['accesspoint_type'] !== 'accesspoint') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 8th component of an S3 Outposts" . " access point ARN must be 'accesspoint'");
+            throw new InvalidArnException("The 8th component of an S3 Outposts" . " access point ARN must be 'accesspoint'");
         }
         if (!self::isValidHostLabel($data['accesspoint_name'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 9th component of an S3 Outposts" . " access point ARN is required, represents the accesspoint name," . " and must be a valid host label.");
+            throw new InvalidArnException("The 9th component of an S3 Outposts" . " access point ARN is required, represents the accesspoint name," . " and must be a valid host label.");
         }
         if (!empty($data['resource_extra'])) {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("An S3 Outposts access point ARN" . " should only have 9 components, delimited by the characters" . " ':' and '/'. '{$data['resource_extra']}' was found after the" . " 9th component.");
+            throw new InvalidArnException("An S3 Outposts access point ARN" . " should only have 9 components, delimited by the characters" . " ':' and '/'. '{$data['resource_extra']}' was found after the" . " 9th component.");
         }
     }
 }

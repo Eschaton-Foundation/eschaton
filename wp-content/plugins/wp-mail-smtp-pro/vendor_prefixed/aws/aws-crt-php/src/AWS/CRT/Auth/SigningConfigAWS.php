@@ -8,17 +8,17 @@ namespace WPMailSMTP\Vendor\AWS\CRT\Auth;
 
 use WPMailSMTP\Vendor\AWS\CRT\NativeResource as NativeResource;
 use WPMailSMTP\Vendor\AWS\CRT\Options as Options;
-class SigningConfigAWS extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+class SigningConfigAWS extends NativeResource
 {
     public static function defaults()
     {
-        return ['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => null, 'region' => null, 'service' => null, 'use_double_uri_encode' => \false, 'should_normalize_uri_path' => \false, 'omit_session_token' => \false, 'signed_body_value' => null, 'signed_body_header_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignedBodyHeaderType::NONE, 'expiration_in_seconds' => 0, 'date' => \time(), 'should_sign_header' => null];
+        return ['algorithm' => SigningAlgorithm::SIGv4, 'signature_type' => SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => null, 'region' => null, 'service' => null, 'use_double_uri_encode' => \false, 'should_normalize_uri_path' => \false, 'omit_session_token' => \false, 'signed_body_value' => null, 'signed_body_header_type' => SignedBodyHeaderType::NONE, 'expiration_in_seconds' => 0, 'date' => \time(), 'should_sign_header' => null];
     }
     private $options;
     public function __construct(array $options = [])
     {
         parent::__construct();
-        $this->options = $options = new \WPMailSMTP\Vendor\AWS\CRT\Options($options, self::defaults());
+        $this->options = $options = new Options($options, self::defaults());
         $sc = $this->acquire(self::$crt->signing_config_aws_new());
         self::$crt->signing_config_aws_set_algorithm($sc, $options->algorithm->asInt());
         self::$crt->signing_config_aws_set_signature_type($sc, $options->signature_type->asInt());

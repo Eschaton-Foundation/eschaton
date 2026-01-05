@@ -35,29 +35,29 @@ class ArnParser
      */
     public static function parse($string)
     {
-        $data = \WPMailSMTP\Vendor\Aws\Arn\Arn::parse($string);
+        $data = Arn::parse($string);
         if ($data['service'] === 's3-object-lambda') {
-            return new \WPMailSMTP\Vendor\Aws\Arn\ObjectLambdaAccessPointArn($string);
+            return new ObjectLambdaAccessPointArn($string);
         }
         $resource = self::explodeResourceComponent($data['resource']);
         if ($resource[0] === 'outpost') {
             if (isset($resource[2]) && $resource[2] === 'bucket') {
-                return new \WPMailSMTP\Vendor\Aws\Arn\S3\OutpostsBucketArn($string);
+                return new OutpostsBucketArn($string);
             }
             if (isset($resource[2]) && $resource[2] === 'accesspoint') {
-                return new \WPMailSMTP\Vendor\Aws\Arn\S3\OutpostsAccessPointArn($string);
+                return new OutpostsAccessPointArn($string);
             }
         }
         if (empty($data['region'])) {
-            return new \WPMailSMTP\Vendor\Aws\Arn\S3\MultiRegionAccessPointArn($string);
+            return new MultiRegionAccessPointArn($string);
         }
         if ($resource[0] === 'accesspoint') {
             if ($data['service'] === 's3') {
-                return new \WPMailSMTP\Vendor\Aws\Arn\S3\AccessPointArn($string);
+                return new S3AccessPointArn($string);
             }
-            return new \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn($string);
+            return new AccessPointArn($string);
         }
-        return new \WPMailSMTP\Vendor\Aws\Arn\Arn($data);
+        return new Arn($data);
     }
     private static function explodeResourceComponent($resource)
     {

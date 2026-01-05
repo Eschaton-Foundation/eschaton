@@ -28,7 +28,7 @@ class PartitionEndpointProvider
     public function __construct(array $partitions, $defaultPartition = 'aws', $options = [])
     {
         $this->partitions = \array_map(function (array $definition) {
-            return new \WPMailSMTP\Vendor\Aws\Endpoint\Partition($definition);
+            return new Partition($definition);
         }, \array_values($partitions));
         $this->defaultPartition = $defaultPartition;
         $this->options = $options;
@@ -98,10 +98,10 @@ class PartitionEndpointProvider
         $prefixGroups = $prefixData['prefix-groups'];
         foreach ($data["partitions"] as $index => $partition) {
             foreach ($prefixGroups as $current => $old) {
-                $serviceData = \WPMailSMTP\Vendor\JmesPath\Env::search("services.\"{$current}\"", $partition);
+                $serviceData = Env::search("services.\"{$current}\"", $partition);
                 if (!empty($serviceData)) {
                     foreach ($old as $prefix) {
-                        if (empty(\WPMailSMTP\Vendor\JmesPath\Env::search("services.\"{$prefix}\"", $partition))) {
+                        if (empty(Env::search("services.\"{$prefix}\"", $partition))) {
                             $data["partitions"][$index]["services"][$prefix] = $serviceData;
                         }
                     }

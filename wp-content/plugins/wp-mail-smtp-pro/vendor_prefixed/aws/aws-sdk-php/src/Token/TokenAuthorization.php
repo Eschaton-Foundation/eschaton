@@ -17,5 +17,5 @@ interface TokenAuthorization
      *
      * @return RequestInterface Returns the modified request.
      */
-    public function authorizeRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Token\TokenInterface $token);
+    public function authorizeRequest(RequestInterface $request, TokenInterface $token);
 }

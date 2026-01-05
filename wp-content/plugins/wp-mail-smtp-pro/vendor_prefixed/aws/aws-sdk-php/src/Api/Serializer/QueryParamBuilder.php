@@ -13,7 +13,7 @@ use WPMailSMTP\Vendor\Aws\Api\TimestampShape;
 class QueryParamBuilder
 {
     private $methods;
-    protected function queryName(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $default = null)
+    protected function queryName(Shape $shape, $default = null)
     {
         if (null !== $shape['queryName']) {
             return $shape['queryName'];
@@ -26,11 +26,11 @@ class QueryParamBuilder
         }
         return $default;
     }
-    protected function isFlat(\WPMailSMTP\Vendor\Aws\Api\Shape $shape)
+    protected function isFlat(Shape $shape)
     {
         return $shape['flattened'] === \true;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, array $params)
+    public function __invoke(StructureShape $shape, array $params)
     {
         if (!$this->methods) {
             $this->methods = \array_fill_keys(\get_class_methods($this), \true);
@@ -39,7 +39,7 @@ class QueryParamBuilder
         $this->format_structure($shape, $params, '', $query);
         return $query;
     }
-    protected function format(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value, $prefix, array &$query)
+    protected function format(Shape $shape, $value, $prefix, array &$query)
     {
         $type = 'format_' . $shape['type'];
         if (isset($this->methods[$type])) {
@@ -48,7 +48,7 @@ class QueryParamBuilder
             $query[$prefix] = (string) $value;
         }
     }
-    protected function format_structure(\WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, array $value, $prefix, &$query)
+    protected function format_structure(StructureShape $shape, array $value, $prefix, &$query)
     {
         if ($prefix) {
             $prefix .= '.';
@@ -60,7 +60,7 @@ class QueryParamBuilder
             }
         }
     }
-    protected function format_list(\WPMailSMTP\Vendor\Aws\Api\ListShape $shape, array $value, $prefix, &$query)
+    protected function format_list(ListShape $shape, array $value, $prefix, &$query)
     {
         // Handle empty list serialization
         if (!$value) {
@@ -80,7 +80,7 @@ class QueryParamBuilder
             $this->format($items, $v, $prefix . '.' . ($k + 1), $query);
         }
     }
-    protected function format_map(\WPMailSMTP\Vendor\Aws\Api\MapShape $shape, array $value, $prefix, array &$query)
+    protected function format_map(MapShape $shape, array $value, $prefix, array &$query)
     {
         $vals = $shape->getValue();
         $keys = $shape->getKey();
@@ -96,16 +96,16 @@ class QueryParamBuilder
             $this->format($vals, $v, \sprintf($valueName, $prefix, $i), $query);
         }
     }
-    protected function format_blob(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value, $prefix, array &$query)
+    protected function format_blob(Shape $shape, $value, $prefix, array &$query)
     {
         $query[$prefix] = \base64_encode($value);
     }
-    protected function format_timestamp(\WPMailSMTP\Vendor\Aws\Api\TimestampShape $shape, $value, $prefix, array &$query)
+    protected function format_timestamp(TimestampShape $shape, $value, $prefix, array &$query)
     {
         $timestampFormat = !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : 'iso8601';
-        $query[$prefix] = \WPMailSMTP\Vendor\Aws\Api\TimestampShape::format($value, $timestampFormat);
+        $query[$prefix] = TimestampShape::format($value, $timestampFormat);
     }
-    protected function format_boolean(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value, $prefix, array &$query)
+    protected function format_boolean(Shape $shape, $value, $prefix, array &$query)
     {
         $query[$prefix] = $value ? 'true' : 'false';
     }

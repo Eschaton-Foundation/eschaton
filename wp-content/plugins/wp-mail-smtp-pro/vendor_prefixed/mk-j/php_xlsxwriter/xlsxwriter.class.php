@@ -153,12 +153,12 @@ class XLSXWriter
         }
         $sheet_filename = $this->tempFilename();
         $sheet_xmlname = 'sheet' . (\count($this->sheets) + 1) . ".xml";
-        $this->sheets[$sheet_name] = (object) array('filename' => $sheet_filename, 'sheetname' => $sheet_name, 'xmlname' => $sheet_xmlname, 'row_count' => 0, 'file_writer' => new \WPMailSMTP\Vendor\XLSXWriter_BuffererWriter($sheet_filename), 'columns' => array(), 'merge_cells' => array(), 'max_cell_tag_start' => 0, 'max_cell_tag_end' => 0, 'auto_filter' => $auto_filter, 'freeze_rows' => $freeze_rows, 'freeze_columns' => $freeze_columns, 'finalized' => \false);
+        $this->sheets[$sheet_name] = (object) array('filename' => $sheet_filename, 'sheetname' => $sheet_name, 'xmlname' => $sheet_xmlname, 'row_count' => 0, 'file_writer' => new XLSXWriter_BuffererWriter($sheet_filename), 'columns' => array(), 'merge_cells' => array(), 'max_cell_tag_start' => 0, 'max_cell_tag_end' => 0, 'auto_filter' => $auto_filter, 'freeze_rows' => $freeze_rows, 'freeze_columns' => $freeze_columns, 'finalized' => \false);
         $rightToLeftValue = $this->isRightToLeft ? 'true' : 'false';
         $sheet =& $this->sheets[$sheet_name];
         $tabselected = \count($this->sheets) == 1 ? 'true' : 'false';
         //only first sheet is selected
-        $max_cell = \WPMailSMTP\Vendor\XLSXWriter::xlsCell(self::EXCEL_2007_MAX_ROW, self::EXCEL_2007_MAX_COL);
+        $max_cell = XLSXWriter::xlsCell(self::EXCEL_2007_MAX_ROW, self::EXCEL_2007_MAX_COL);
         //XFE1048577
         $sheet->file_writer->write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n");
         $sheet->file_writer->write('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">');
@@ -348,7 +348,7 @@ class XLSXWriter
         }
         $this->finalizeSheet($sheet_name);
     }
-    protected function writeCell(\WPMailSMTP\Vendor\XLSXWriter_BuffererWriter &$file, $row_number, $column_number, $value, $num_format_type, $cell_style_idx)
+    protected function writeCell(XLSXWriter_BuffererWriter &$file, $row_number, $column_number, $value, $num_format_type, $cell_style_idx)
     {
         $cell_name = self::xlsCell($row_number, $column_number);
         if (!\is_scalar($value) || $value === '') {
@@ -480,7 +480,7 @@ class XLSXWriter
         $borders = $r['borders'];
         $style_indexes = $r['styles'];
         $temporary_filename = $this->tempFilename();
-        $file = new \WPMailSMTP\Vendor\XLSXWriter_BuffererWriter($temporary_filename);
+        $file = new XLSXWriter_BuffererWriter($temporary_filename);
         $file->write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n");
         $file->write('<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">');
         $file->write('<numFmts count="' . \count($this->number_formats) . '">');
@@ -757,7 +757,7 @@ class XLSXWriter
     public static function xmlspecialchars($val)
     {
         //note, badchars does not include \t\n\r (\x09\x0a\x0d)
-        static $badchars = "\0\1\2\3\4\5\6\7\10\v\f\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37";
+        static $badchars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\v\f\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
         static $goodchars = "                              ";
         return \strtr(\htmlspecialchars((string) $val, \ENT_QUOTES | \ENT_XML1 | \ENT_SUBSTITUTE), $badchars, $goodchars);
         //strtr appears to be faster than str_replace
@@ -968,7 +968,7 @@ class XLSXWriter_BuffererWriter
         $this->check_utf8 = $check_utf8;
         $this->fd = \fopen($filename, $fd_fopen_flags);
         if ($this->fd === \false) {
-            \WPMailSMTP\Vendor\XLSXWriter::log("Unable to open {$filename} for writing.");
+            XLSXWriter::log("Unable to open {$filename} for writing.");
         }
     }
     public function write($string)
@@ -982,7 +982,7 @@ class XLSXWriter_BuffererWriter
     {
         if ($this->fd) {
             if ($this->check_utf8 && !self::isValidUTF8($this->buffer)) {
-                \WPMailSMTP\Vendor\XLSXWriter::log("Error, invalid UTF8 encoding detected.");
+                XLSXWriter::log("Error, invalid UTF8 encoding detected.");
                 $this->check_utf8 = \false;
             }
             \fwrite($this->fd, $this->buffer);

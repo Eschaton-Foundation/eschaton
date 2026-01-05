@@ -28,13 +28,13 @@ class ResultPaginator implements \Iterator
      * @param array              $args
      * @param array              $config
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $operation, array $args, array $config)
+    public function __construct(AwsClientInterface $client, $operation, array $args, array $config)
     {
         $this->client = $client;
         $this->operation = $operation;
         $this->args = $args;
         $this->config = $config;
-        \WPMailSMTP\Vendor\Aws\MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), \WPMailSMTP\Vendor\Aws\MetricsBuilder::PAGINATOR);
+        MetricsBuilder::appendMetricsCaptureMiddleware($this->client->getHandlerList(), MetricsBuilder::PAGINATOR);
     }
     /**
      * Runs a paginator asynchronously and uses a callback to handle results.
@@ -57,7 +57,7 @@ class ResultPaginator implements \Iterator
      */
     public function each(callable $handleResult)
     {
-        return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Coroutine::of(function () use($handleResult) {
+        return Promise\Coroutine::of(function () use($handleResult) {
             $nextToken = null;
             do {
                 $command = $this->createNextCommand($this->args, $nextToken);
@@ -65,7 +65,7 @@ class ResultPaginator implements \Iterator
                 $nextToken = $this->determineNextToken($result);
                 $retVal = $handleResult($result);
                 if ($retVal !== null) {
-                    (yield \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor($retVal));
+                    (yield Promise\Create::promiseFor($retVal));
                 }
             } while ($nextToken);
         });
@@ -81,7 +81,7 @@ class ResultPaginator implements \Iterator
     public function search($expression)
     {
         // Apply JMESPath expression on each result, but as a flat sequence.
-        return flatmap($this, function (\WPMailSMTP\Vendor\Aws\Result $result) use($expression) {
+        return flatmap($this, function (Result $result) use($expression) {
             return (array) $result->search($expression);
         });
     }
@@ -150,7 +150,7 @@ class ResultPaginator implements \Iterator
     {
         return $this->client->getCommand($this->operation, \array_merge($args, $nextToken ?: []));
     }
-    private function determineNextToken(\WPMailSMTP\Vendor\Aws\Result $result)
+    private function determineNextToken(Result $result)
     {
         if (!$this->config['output_token']) {
             return null;

@@ -13,7 +13,7 @@ use WPMailSMTP\Vendor\Aws\Exception\InvalidJsonException;
 class JsonBody
 {
     private $api;
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api)
+    public function __construct(Service $api)
     {
         $this->api = $api;
     }
@@ -24,7 +24,7 @@ class JsonBody
      *
      * @return string
      */
-    public static function getContentType(\WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public static function getContentType(Service $service)
     {
         if ($service->getMetadata('protocol') === 'rest-json') {
             return 'application/json';
@@ -44,12 +44,12 @@ class JsonBody
      *
      * @return string
      */
-    public function build(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, array $args)
+    public function build(Shape $shape, array $args)
     {
         $result = \json_encode($this->format($shape, $args));
         return $result == '[]' ? '{}' : $result;
     }
-    private function format(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function format(Shape $shape, $value)
     {
         switch ($shape['type']) {
             case 'structure':
@@ -86,7 +86,7 @@ class JsonBody
                 return \base64_encode($value);
             case 'timestamp':
                 $timestampFormat = !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : 'unixTimestamp';
-                return \WPMailSMTP\Vendor\Aws\Api\TimestampShape::format($value, $timestampFormat);
+                return TimestampShape::format($value, $timestampFormat);
             default:
                 return $value;
         }

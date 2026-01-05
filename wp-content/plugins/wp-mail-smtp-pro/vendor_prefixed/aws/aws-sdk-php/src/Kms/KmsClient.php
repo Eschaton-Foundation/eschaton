@@ -113,6 +113,6 @@ use WPMailSMTP\Vendor\Aws\AwsClient;
  * @method \Aws\Result verifyMac(array $args = [])
  * @method \GuzzleHttp\Promise\Promise verifyMacAsync(array $args = [])
  */
-class KmsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
+class KmsClient extends AwsClient
 {
 }

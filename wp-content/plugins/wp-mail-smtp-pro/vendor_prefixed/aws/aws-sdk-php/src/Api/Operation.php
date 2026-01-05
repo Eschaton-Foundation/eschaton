@@ -5,7 +5,7 @@ namespace WPMailSMTP\Vendor\Aws\Api;
 /**
  * Represents an API operation.
  */
-class Operation extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
+class Operation extends AbstractModel
 {
     private $input;
     private $output;
@@ -13,7 +13,7 @@ class Operation extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
     private $staticContextParams = [];
     private $contextParams;
     private $operationContextParams = [];
-    public function __construct(array $definition, \WPMailSMTP\Vendor\Aws\Api\ShapeMap $shapeMap)
+    public function __construct(array $definition, ShapeMap $shapeMap)
     {
         $definition['type'] = 'structure';
         if (!isset($definition['http']['method'])) {
@@ -54,7 +54,7 @@ class Operation extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
             if ($input = $this['input']) {
                 $this->input = $this->shapeFor($input);
             } else {
-                $this->input = new \WPMailSMTP\Vendor\Aws\Api\StructureShape([], $this->shapeMap);
+                $this->input = new StructureShape([], $this->shapeMap);
             }
         }
         return $this->input;
@@ -70,7 +70,7 @@ class Operation extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
             if ($output = $this['output']) {
                 $this->output = $this->shapeFor($output);
             } else {
-                $this->output = new \WPMailSMTP\Vendor\Aws\Api\StructureShape([], $this->shapeMap);
+                $this->output = new StructureShape([], $this->shapeMap);
             }
         }
         return $this->output;

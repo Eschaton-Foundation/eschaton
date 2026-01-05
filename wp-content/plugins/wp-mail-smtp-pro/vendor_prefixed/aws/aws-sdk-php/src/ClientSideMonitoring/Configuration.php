@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Vendor\Aws\ClientSideMonitoring;
 
-class Configuration implements \WPMailSMTP\Vendor\Aws\ClientSideMonitoring\ConfigurationInterface
+class Configuration implements ConfigurationInterface
 {
     private $clientId;
     private $enabled;

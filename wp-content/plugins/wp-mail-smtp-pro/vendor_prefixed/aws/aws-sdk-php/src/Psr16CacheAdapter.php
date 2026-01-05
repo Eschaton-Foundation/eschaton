@@ -3,11 +3,11 @@
 namespace WPMailSMTP\Vendor\Aws;
 
 use WPMailSMTP\Vendor\Psr\SimpleCache\CacheInterface as SimpleCacheInterface;
-class Psr16CacheAdapter implements \WPMailSMTP\Vendor\Aws\CacheInterface
+class Psr16CacheAdapter implements CacheInterface
 {
     /** @var SimpleCacheInterface */
     private $cache;
-    public function __construct(\WPMailSMTP\Vendor\Psr\SimpleCache\CacheInterface $cache)
+    public function __construct(SimpleCacheInterface $cache)
     {
         $this->cache = $cache;
     }

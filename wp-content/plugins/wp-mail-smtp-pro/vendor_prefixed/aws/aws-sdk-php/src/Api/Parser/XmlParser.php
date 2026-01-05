@@ -13,7 +13,7 @@ use WPMailSMTP\Vendor\Aws\Api\StructureShape;
  */
 class XmlParser
 {
-    public function parse(\WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, \SimpleXMLElement $value)
+    public function parse(StructureShape $shape, \SimpleXMLElement $value)
     {
         return $this->dispatch($shape, $value);
     }
@@ -26,7 +26,7 @@ class XmlParser
         }
         return (string) $value;
     }
-    private function parse_structure(\WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, \SimpleXMLElement $value)
+    private function parse_structure(StructureShape $shape, \SimpleXMLElement $value)
     {
         $target = [];
         foreach ($shape->getMembers() as $name => $member) {
@@ -49,17 +49,17 @@ class XmlParser
         }
         return $target;
     }
-    private function memberKey(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $name)
+    private function memberKey(Shape $shape, $name)
     {
         if (null !== $shape['locationName']) {
             return $shape['locationName'];
         }
-        if ($shape instanceof \WPMailSMTP\Vendor\Aws\Api\ListShape && $shape['flattened']) {
+        if ($shape instanceof ListShape && $shape['flattened']) {
             return $shape->getMember()['locationName'] ?: $name;
         }
         return $name;
     }
-    private function parse_list(\WPMailSMTP\Vendor\Aws\Api\ListShape $shape, \SimpleXMLElement $value)
+    private function parse_list(ListShape $shape, \SimpleXMLElement $value)
     {
         $target = [];
         $member = $shape->getMember();
@@ -71,7 +71,7 @@ class XmlParser
         }
         return $target;
     }
-    private function parse_map(\WPMailSMTP\Vendor\Aws\Api\MapShape $shape, \SimpleXMLElement $value)
+    private function parse_map(MapShape $shape, \SimpleXMLElement $value)
     {
         $target = [];
         if (!$shape['flattened']) {
@@ -88,30 +88,30 @@ class XmlParser
         }
         return $target;
     }
-    private function parse_blob(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function parse_blob(Shape $shape, $value)
     {
         return \base64_decode((string) $value);
     }
-    private function parse_float(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function parse_float(Shape $shape, $value)
     {
         return (float) (string) $value;
     }
-    private function parse_integer(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function parse_integer(Shape $shape, $value)
     {
         return (int) (string) $value;
     }
-    private function parse_boolean(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function parse_boolean(Shape $shape, $value)
     {
         return $value == 'true';
     }
-    private function parse_timestamp(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    private function parse_timestamp(Shape $shape, $value)
     {
         if (\is_string($value) || \is_int($value) || \is_object($value) && \method_exists($value, '__toString')) {
-            return \WPMailSMTP\Vendor\Aws\Api\DateTimeResult::fromTimestamp((string) $value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
+            return DateTimeResult::fromTimestamp((string) $value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
         }
-        throw new \WPMailSMTP\Vendor\Aws\Api\Parser\Exception\ParserException('Invalid timestamp value passed to XmlParser::parse_timestamp');
+        throw new ParserException('Invalid timestamp value passed to XmlParser::parse_timestamp');
     }
-    private function parse_xml_attribute(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, \WPMailSMTP\Vendor\Aws\Api\Shape $memberShape, $value)
+    private function parse_xml_attribute(Shape $shape, Shape $memberShape, $value)
     {
         $namespace = $shape['xmlNamespace']['uri'] ? $shape['xmlNamespace']['uri'] : '';
         $prefix = $shape['xmlNamespace']['prefix'] ? $shape['xmlNamespace']['prefix'] : '';

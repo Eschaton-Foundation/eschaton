@@ -7,7 +7,7 @@
 namespace WPMailSMTP\Vendor\AWS\CRT\IO;
 
 use WPMailSMTP\Vendor\AWS\CRT\NativeResource as NativeResource;
-final class InputStream extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+final class InputStream extends NativeResource
 {
     private $stream = null;
     const SEEK_BEGIN = 0;

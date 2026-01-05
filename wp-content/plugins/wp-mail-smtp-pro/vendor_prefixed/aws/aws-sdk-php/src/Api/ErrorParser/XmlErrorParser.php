@@ -11,16 +11,16 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 /**
  * Parses XML errors.
  */
-class XmlErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\AbstractErrorParser
+class XmlErrorParser extends AbstractErrorParser
 {
     use PayloadParserTrait;
     protected $parser;
-    public function __construct(?\WPMailSMTP\Vendor\Aws\Api\Service $api = null, ?\WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $parser = null)
+    public function __construct(?Service $api = null, ?XmlParser $parser = null)
     {
         parent::__construct($api);
-        $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser();
+        $this->parser = $parser ?: new XmlParser();
     }
-    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, ?\WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
+    public function __invoke(ResponseInterface $response, ?CommandInterface $command = null)
     {
         $code = (string) $response->getStatusCode();
         $data = ['type' => $code[0] == '4' ? 'client' : 'server', 'request_id' => null, 'code' => null, 'message' => null, 'parsed' => null];
@@ -33,7 +33,7 @@ class XmlErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\AbstractErro
         $this->populateShape($data, $response, $command);
         return $data;
     }
-    private function parseHeaders(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, array &$data)
+    private function parseHeaders(ResponseInterface $response, array &$data)
     {
         if ($response->getStatusCode() == '404') {
             $data['code'] = 'NotFound';
@@ -70,7 +70,7 @@ class XmlErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\AbstractErro
         $element->registerXPathNamespace('ns', $namespaces['']);
         return 'ns:';
     }
-    protected function payload(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, \WPMailSMTP\Vendor\Aws\Api\StructureShape $member)
+    protected function payload(ResponseInterface $response, StructureShape $member)
     {
         $xmlBody = $this->parseXml($response->getBody(), $response);
         $prefix = $this->registerNamespacePrefix($xmlBody);

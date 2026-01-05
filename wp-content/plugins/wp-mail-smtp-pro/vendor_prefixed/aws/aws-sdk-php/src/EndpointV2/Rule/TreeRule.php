@@ -3,7 +3,7 @@
 namespace WPMailSMTP\Vendor\Aws\EndpointV2\Rule;
 
 use WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary;
-class TreeRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
+class TreeRule extends AbstractRule
 {
     /** @var array */
     private $rules;
@@ -27,7 +27,7 @@ class TreeRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
      *
      * @return mixed
      */
-    public function evaluate(array $inputParameters, \WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetStandardLibrary $standardLibrary)
+    public function evaluate(array $inputParameters, RulesetStandardLibrary $standardLibrary)
     {
         if ($this->evaluateConditions($inputParameters, $standardLibrary)) {
             foreach ($this->rules as $rule) {
@@ -44,7 +44,7 @@ class TreeRule extends \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\AbstractRule
     {
         $rulesList = [];
         foreach ($rules as $rule) {
-            $ruleType = \WPMailSMTP\Vendor\Aws\EndpointV2\Rule\RuleCreator::create($rule['type'], $rule);
+            $ruleType = RuleCreator::create($rule['type'], $rule);
             $rulesList[] = $ruleType;
         }
         return $rulesList;

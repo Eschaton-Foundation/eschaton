@@ -43,7 +43,7 @@ class ByteArray extends \SplFixedArray
                 }
             }
             $size = \count($arr);
-        } elseif ($size instanceof \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray) {
+        } elseif ($size instanceof ByteArray) {
             $arr = $size->toArray();
             $size = $size->count();
         } elseif (!\is_int($size)) {
@@ -70,13 +70,13 @@ class ByteArray extends \SplFixedArray
      */
     public static function enc32be($num)
     {
-        return new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray(\pack('N', $num));
+        return new ByteArray(\pack('N', $num));
     }
     /**
      * @param ByteArray $other
      * @return bool
      */
-    public function equals(\WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray $other)
+    public function equals(ByteArray $other)
     {
         if ($this->count() !== $other->count()) {
             return \false;
@@ -91,7 +91,7 @@ class ByteArray extends \SplFixedArray
      * @param ByteArray $array
      * @return ByteArray
      */
-    public function exclusiveOr(\WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray $array)
+    public function exclusiveOr(ByteArray $array)
     {
         self::needs($this->count() === $array->count(), 'Both ByteArrays must be equal size for exclusiveOr()');
         $out = clone $this;
@@ -156,7 +156,7 @@ class ByteArray extends \SplFixedArray
      * @param ByteArray $right
      * @return ByteArray
      */
-    public static function select($select, \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray $left, \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray $right)
+    public static function select($select, ByteArray $left, ByteArray $right)
     {
         self::needs($left->count() === $right->count(), 'Both ByteArrays must be equal size for select()');
         $rightLength = $right->count();
@@ -178,7 +178,7 @@ class ByteArray extends \SplFixedArray
      * @param int|null $length
      * @return self
      */
-    public function set(\WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray $input, $offset = 0, $length = null)
+    public function set(ByteArray $input, $offset = 0, $length = null)
     {
         self::needs(\is_int($offset) && $offset >= 0, 'Offset must be a positive integer or zero');
         if (\is_null($length)) {
@@ -202,7 +202,7 @@ class ByteArray extends \SplFixedArray
      */
     public function slice($start = 0, $length = null)
     {
-        return new \WPMailSMTP\Vendor\Aws\Crypto\Polyfill\ByteArray(\array_slice($this->toArray(), $start, $length));
+        return new ByteArray(\array_slice($this->toArray(), $start, $length));
     }
     /**
      * Mutates the current state and sets all values to zero.

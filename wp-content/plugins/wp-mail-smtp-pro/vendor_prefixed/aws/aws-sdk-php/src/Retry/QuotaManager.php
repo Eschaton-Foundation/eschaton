@@ -27,7 +27,7 @@ class QuotaManager
     }
     public function hasRetryQuota($result)
     {
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException && $result->isConnectionError()) {
+        if ($result instanceof AwsException && $result->isConnectionError()) {
             $this->capacityAmount = $this->timeoutRetryCost;
         } else {
             $this->capacityAmount = $this->retryCost;
@@ -40,9 +40,9 @@ class QuotaManager
     }
     public function releaseToQuota($result)
     {
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if ($result instanceof AwsException) {
             $statusCode = (int) $result->getStatusCode();
-        } elseif ($result instanceof \WPMailSMTP\Vendor\Aws\ResultInterface) {
+        } elseif ($result instanceof ResultInterface) {
             $statusCode = isset($result['@metadata']['statusCode']) ? (int) $result['@metadata']['statusCode'] : null;
         }
         if (!empty($statusCode) && $statusCode >= 200 && $statusCode < 300) {

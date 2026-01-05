@@ -5,7 +5,7 @@ namespace WPMailSMTP\Vendor\Aws\Token;
 /**
  * Token that comes from the SSO provider
  */
-class SsoToken extends \WPMailSMTP\Vendor\Aws\Token\Token
+class SsoToken extends Token
 {
     private $refreshToken;
     private $clientId;
@@ -95,8 +95,8 @@ class SsoToken extends \WPMailSMTP\Vendor\Aws\Token\Token
      *
      * @return SsoToken
      */
-    public static function fromTokenData($tokenData) : \WPMailSMTP\Vendor\Aws\Token\SsoToken
+    public static function fromTokenData($tokenData) : SsoToken
     {
-        return new \WPMailSMTP\Vendor\Aws\Token\SsoToken($tokenData['accessToken'], \strtotime($tokenData['expiresAt']), isset($tokenData['refreshToken']) ? $tokenData['refreshToken'] : null, isset($tokenData['clientId']) ? $tokenData['clientId'] : null, isset($tokenData['clientSecret']) ? $tokenData['clientSecret'] : null, isset($tokenData['registrationExpiresAt']) ? $tokenData['registrationExpiresAt'] : null, isset($tokenData['region']) ? $tokenData['region'] : null, isset($tokenData['startUrl']) ? $tokenData['startUrl'] : null);
+        return new SsoToken($tokenData['accessToken'], \strtotime($tokenData['expiresAt']), isset($tokenData['refreshToken']) ? $tokenData['refreshToken'] : null, isset($tokenData['clientId']) ? $tokenData['clientId'] : null, isset($tokenData['clientSecret']) ? $tokenData['clientSecret'] : null, isset($tokenData['registrationExpiresAt']) ? $tokenData['registrationExpiresAt'] : null, isset($tokenData['region']) ? $tokenData['region'] : null, isset($tokenData['startUrl']) ? $tokenData['startUrl'] : null);
     }
 }

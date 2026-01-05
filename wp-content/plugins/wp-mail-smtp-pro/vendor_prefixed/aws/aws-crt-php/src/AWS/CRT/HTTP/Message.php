@@ -8,7 +8,7 @@ namespace WPMailSMTP\Vendor\AWS\CRT\HTTP;
 
 use WPMailSMTP\Vendor\AWS\CRT\NativeResource;
 use WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding;
-abstract class Message extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+abstract class Message extends NativeResource
 {
     private $method;
     private $path;
@@ -20,7 +20,7 @@ abstract class Message extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
         $this->method = $method;
         $this->path = $path;
         $this->query = $query;
-        $this->headers = new \WPMailSMTP\Vendor\AWS\CRT\HTTP\Headers($headers);
+        $this->headers = new Headers($headers);
         $this->acquire(self::$crt->http_message_new_from_blob(self::marshall($this)));
     }
     public function __destruct()
@@ -35,19 +35,19 @@ abstract class Message extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
     protected static function marshall($msg)
     {
         $buf = "";
-        $buf .= \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::encodeString($msg->method);
-        $buf .= \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::encodeString($msg->pathAndQuery());
-        $buf .= \WPMailSMTP\Vendor\AWS\CRT\HTTP\Headers::marshall($msg->headers);
+        $buf .= Encoding::encodeString($msg->method);
+        $buf .= Encoding::encodeString($msg->pathAndQuery());
+        $buf .= Headers::marshall($msg->headers);
         return $buf;
     }
-    protected static function _unmarshall($buf, $class = \WPMailSMTP\Vendor\AWS\CRT\HTTP\Message::class)
+    protected static function _unmarshall($buf, $class = Message::class)
     {
-        $method = \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::readString($buf);
-        $path_and_query = \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::readString($buf);
+        $method = Encoding::readString($buf);
+        $path_and_query = Encoding::readString($buf);
         $parts = \explode("?", $path_and_query, 2);
         $path = isset($parts[0]) ? $parts[0] : "";
         $query = isset($parts[1]) ? $parts[1] : "";
-        $headers = \WPMailSMTP\Vendor\AWS\CRT\HTTP\Headers::unmarshall($buf);
+        $headers = Headers::unmarshall($buf);
         // Turn query params back into a dictionary
         if (\strlen($query)) {
             $query = \rawurldecode($query);

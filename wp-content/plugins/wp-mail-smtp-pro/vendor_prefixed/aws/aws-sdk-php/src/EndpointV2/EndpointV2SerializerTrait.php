@@ -22,12 +22,12 @@ trait EndpointV2SerializerTrait
      *
      * @return void
      */
-    private function setEndpointV2RequestOptions(\WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint $endpoint, array &$headers) : void
+    private function setEndpointV2RequestOptions(RulesetEndpoint $endpoint, array &$headers) : void
     {
         $this->applyHeaders($endpoint, $headers);
         $resolvedUrl = $endpoint->getUrl();
         $this->applyScheme($resolvedUrl);
-        $this->endpoint = $this instanceof \WPMailSMTP\Vendor\Aws\Api\Serializer\RestSerializer ? new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($resolvedUrl) : $resolvedUrl;
+        $this->endpoint = $this instanceof RestSerializer ? new Uri($resolvedUrl) : $resolvedUrl;
     }
     /**
      * Combines modeled headers and headers resolved from an endpoint object.
@@ -36,7 +36,7 @@ trait EndpointV2SerializerTrait
      * @param $headers
      * @return void
      */
-    private function applyHeaders(\WPMailSMTP\Vendor\Aws\EndpointV2\Ruleset\RulesetEndpoint $endpoint, array &$headers) : void
+    private function applyHeaders(RulesetEndpoint $endpoint, array &$headers) : void
     {
         if (!\is_null($endpoint->getHeaders())) {
             $headers = \array_merge($headers, $endpoint->getHeaders());
@@ -51,7 +51,7 @@ trait EndpointV2SerializerTrait
     private function applyScheme(&$resolvedUrl) : void
     {
         $resolvedEndpointScheme = \parse_url($resolvedUrl, \PHP_URL_SCHEME);
-        $scheme = $this->endpoint instanceof \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri ? $this->endpoint->getScheme() : \parse_url($this->endpoint, \PHP_URL_SCHEME);
+        $scheme = $this->endpoint instanceof Uri ? $this->endpoint->getScheme() : \parse_url($this->endpoint, \PHP_URL_SCHEME);
         if (!empty($scheme) && $scheme !== $resolvedEndpointScheme) {
             $resolvedUrl = \str_replace($resolvedEndpointScheme, $scheme, $resolvedUrl);
         }

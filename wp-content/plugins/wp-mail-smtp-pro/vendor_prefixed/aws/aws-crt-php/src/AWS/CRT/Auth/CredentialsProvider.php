@@ -10,7 +10,7 @@ use WPMailSMTP\Vendor\AWS\CRT\NativeResource as NativeResource;
 /**
  * Base class for credentials providers
  */
-abstract class CredentialsProvider extends \WPMailSMTP\Vendor\AWS\CRT\NativeResource
+abstract class CredentialsProvider extends NativeResource
 {
     function __construct(array $options = [])
     {

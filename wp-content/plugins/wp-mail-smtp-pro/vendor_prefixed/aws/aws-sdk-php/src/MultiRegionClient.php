@@ -6,7 +6,7 @@ use WPMailSMTP\Vendor\Aws\Endpoint\PartitionEndpointProvider;
 use WPMailSMTP\Vendor\Aws\Endpoint\PartitionInterface;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
 use WPMailSMTP\Vendor\Aws\EndpointV2\EndpointDefinitionProvider;
-class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
+class MultiRegionClient implements AwsClientInterface
 {
     use AwsClientTrait;
     /** @var AwsClientInterface[] A pool of clients keyed by region. */
@@ -27,7 +27,7 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     private $customHandler;
     public static function getArguments()
     {
-        $args = \array_intersect_key(\WPMailSMTP\Vendor\Aws\ClientResolver::getDefaultArguments(), ['service' => \true, 'region' => \true]);
+        $args = \array_intersect_key(ClientResolver::getDefaultArguments(), ['service' => \true, 'region' => \true]);
         $args['region']['required'] = \false;
         unset($args['region']['fn']);
         unset($args['region']['default']);
@@ -41,19 +41,19 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
                 }
                 return new $klass($args);
             };
-        }], 'partition' => ['type' => 'config', 'valid' => ['string', \WPMailSMTP\Vendor\Aws\Endpoint\PartitionInterface::class], 'doc' => 'AWS partition to connect to. Valid partitions' . ' include "aws," "aws-cn," and "aws-us-gov." Used to' . ' restrict the scope of the mapRegions method.', 'default' => function (array $args) {
+        }], 'partition' => ['type' => 'config', 'valid' => ['string', PartitionInterface::class], 'doc' => 'AWS partition to connect to. Valid partitions' . ' include "aws," "aws-cn," and "aws-us-gov." Used to' . ' restrict the scope of the mapRegions method.', 'default' => function (array $args) {
             $region = isset($args['region']) ? $args['region'] : '';
-            return \WPMailSMTP\Vendor\Aws\Endpoint\PartitionEndpointProvider::defaultProvider()->getPartition($region, $args['service']);
+            return PartitionEndpointProvider::defaultProvider()->getPartition($region, $args['service']);
         }, 'fn' => function ($value, array &$args) {
             if (\is_string($value)) {
-                $value = \WPMailSMTP\Vendor\Aws\Endpoint\PartitionEndpointProvider::defaultProvider()->getPartitionByName($value);
+                $value = PartitionEndpointProvider::defaultProvider()->getPartitionByName($value);
             }
-            if (!$value instanceof \WPMailSMTP\Vendor\Aws\Endpoint\PartitionInterface) {
+            if (!$value instanceof PartitionInterface) {
                 throw new \InvalidArgumentException('No valid partition' . ' was provided. Provide a concrete partition or' . ' the name of a partition (e.g., "aws," "aws-cn,"' . ' or "aws-us-gov").');
             }
-            $ruleset = \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointDefinitionProvider::getEndpointRuleset($args['service'], isset($args['version']) ? $args['version'] : 'latest');
-            $partitions = \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointDefinitionProvider::getPartitions();
-            $args['endpoint_provider'] = new \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2($ruleset, $partitions);
+            $ruleset = EndpointDefinitionProvider::getEndpointRuleset($args['service'], isset($args['version']) ? $args['version'] : 'latest');
+            $partitions = EndpointDefinitionProvider::getPartitions();
+            $args['endpoint_provider'] = new EndpointProviderV2($ruleset, $partitions);
         }]];
     }
     /**
@@ -75,7 +75,7 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         if (!isset($args['service'])) {
             $args['service'] = $this->parseClass();
         }
-        $this->handlerList = new \WPMailSMTP\Vendor\Aws\HandlerList(function (\WPMailSMTP\Vendor\Aws\CommandInterface $command) {
+        $this->handlerList = new HandlerList(function (CommandInterface $command) {
             list($region, $args) = $this->getRegionFromArgs($command->toArray());
             $command = $this->getClientFromPool($region)->getCommand($command->getName(), $args);
             if ($this->isUseCustomHandler()) {
@@ -84,7 +84,7 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
             return $this->executeAsync($command);
         });
         $argDefinitions = static::getArguments();
-        $resolver = new \WPMailSMTP\Vendor\Aws\ClientResolver($argDefinitions);
+        $resolver = new ClientResolver($argDefinitions);
         $args = $resolver->resolve($args, $this->handlerList);
         $this->config = $args['config'];
         $this->factory = $args['client_factory'];
@@ -121,7 +121,7 @@ class MultiRegionClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
      */
     public function getCommand($name, array $args = [])
     {
-        return new \WPMailSMTP\Vendor\Aws\Command($name, $args, clone $this->getHandlerList());
+        return new Command($name, $args, clone $this->getHandlerList());
     }
     public function getConfig($option = null)
     {

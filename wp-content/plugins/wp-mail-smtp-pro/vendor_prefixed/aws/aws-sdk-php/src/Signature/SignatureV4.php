@@ -19,7 +19,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
  * Signature Version 4
  * @link http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
  */
-class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
+class SignatureV4 implements SignatureInterface
 {
     use SignatureTrait;
     const ISO8601_BASIC = 'Ymd\THis\Z';
@@ -61,7 +61,7 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
     /**
      * {@inheritdoc}
      */
-    public function signRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $signingService = null)
+    public function signRequest(RequestInterface $request, CredentialsInterface $credentials, $signingService = null)
     {
         $ldt = \gmdate(self::ISO8601_BASIC);
         $sdt = \substr($ldt, 0, 8);
@@ -108,7 +108,7 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
     /**
      * {@inheritdoc}
      */
-    public function presign(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $expires, array $options = [])
+    public function presign(RequestInterface $request, CredentialsInterface $credentials, $expires, array $options = [])
     {
         $startTimestamp = isset($options['start_time']) ? $this->convertToTimestamp($options['start_time'], null) : \time();
         $expiresTimestamp = $this->convertToTimestamp($expires, $startTimestamp);
@@ -146,12 +146,12 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
      * @return RequestInterface
      * @throws \InvalidArgumentException if the method is not POST
      */
-    public static function convertPostToGet(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $additionalQueryParams = "")
+    public static function convertPostToGet(RequestInterface $request, $additionalQueryParams = "")
     {
         if ($request->getMethod() !== 'POST') {
             throw new \InvalidArgumentException('Expected a POST request but ' . 'received a ' . $request->getMethod() . ' request.');
         }
-        $sr = $request->withMethod('GET')->withBody(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor(''))->withoutHeader('Content-Type')->withoutHeader('Content-Length');
+        $sr = $request->withMethod('GET')->withBody(Psr7\Utils::streamFor(''))->withoutHeader('Content-Type')->withoutHeader('Content-Length');
         // Move POST fields to the query if they are present
         if ($request->getHeaderLine('Content-Type') === 'application/x-www-form-urlencoded') {
             $body = (string) $request->getBody() . $additionalQueryParams;
@@ -159,7 +159,7 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
         }
         return $sr;
     }
-    protected function getPayload(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    protected function getPayload(RequestInterface $request)
     {
         if ($this->unsigned && $request->getUri()->getScheme() == 'https') {
             return self::UNSIGNED_PAYLOAD;
@@ -170,15 +170,15 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
             return $request->getHeaderLine(self::AMZ_CONTENT_SHA256_HEADER);
         }
         if (!$request->getBody()->isSeekable()) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CouldNotCreateChecksumException('sha256');
+            throw new CouldNotCreateChecksumException('sha256');
         }
         try {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::hash($request->getBody(), 'sha256');
+            return Psr7\Utils::hash($request->getBody(), 'sha256');
         } catch (\Exception $e) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CouldNotCreateChecksumException('sha256', $e);
+            throw new CouldNotCreateChecksumException('sha256', $e);
         }
     }
-    protected function getPresignedPayload(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    protected function getPresignedPayload(RequestInterface $request)
     {
         return $this->getPayload($request);
     }
@@ -192,7 +192,7 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
         $hash = \hash('sha256', $creq);
         return "AWS4-HMAC-SHA256\n{$longDate}\n{$credentialScope}\n{$hash}";
     }
-    private function createPresignedRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials)
+    private function createPresignedRequest(RequestInterface $request, CredentialsInterface $credentials)
     {
         $parsedRequest = $this->parseRequest($request);
         // Make sure to handle temporary credentials
@@ -289,30 +289,30 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
         }
         return $parsedRequest;
     }
-    private function parseRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    private function parseRequest(RequestInterface $request)
     {
         // Clean up any previously set headers.
         /** @var RequestInterface $request */
         $request = $request->withoutHeader('X-Amz-Date')->withoutHeader('Date')->withoutHeader('Authorization');
         $uri = $request->getUri();
-        return ['method' => $request->getMethod(), 'path' => $uri->getPath(), 'query' => \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Query::parse($uri->getQuery()), 'uri' => $uri, 'headers' => $request->getHeaders(), 'body' => $request->getBody(), 'version' => $request->getProtocolVersion()];
+        return ['method' => $request->getMethod(), 'path' => $uri->getPath(), 'query' => Psr7\Query::parse($uri->getQuery()), 'uri' => $uri, 'headers' => $request->getHeaders(), 'body' => $request->getBody(), 'version' => $request->getProtocolVersion()];
     }
     private function buildRequest(array $req)
     {
         if ($req['query']) {
-            $req['uri'] = $req['uri']->withQuery(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Query::build($req['query']));
+            $req['uri'] = $req['uri']->withQuery(Psr7\Query::build($req['query']));
         }
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Request($req['method'], $req['uri'], $req['headers'], $req['body'], $req['version']);
+        return new Psr7\Request($req['method'], $req['uri'], $req['headers'], $req['body'], $req['version']);
     }
     protected function verifyCRTLoaded()
     {
         if (!\extension_loaded('awscrt')) {
-            throw new \WPMailSMTP\Vendor\Aws\Exception\CommonRuntimeException("AWS Common Runtime for PHP is required to use Signature V4A" . ".  Please install it using the instructions found at" . " https://github.com/aws/aws-sdk-php/blob/master/CRT_INSTRUCTIONS.md");
+            throw new CommonRuntimeException("AWS Common Runtime for PHP is required to use Signature V4A" . ".  Please install it using the instructions found at" . " https://github.com/aws/aws-sdk-php/blob/master/CRT_INSTRUCTIONS.md");
         }
     }
     protected function createCRTStaticCredentialsProvider($credentials)
     {
-        return new \WPMailSMTP\Vendor\AWS\CRT\Auth\StaticCredentialsProvider(['access_key_id' => $credentials->getAccessKeyId(), 'secret_access_key' => $credentials->getSecretKey(), 'session_token' => $credentials->getSecurityToken()]);
+        return new StaticCredentialsProvider(['access_key_id' => $credentials->getAccessKeyId(), 'secret_access_key' => $credentials->getSecretKey(), 'session_token' => $credentials->getSecurityToken()]);
     }
     private function removeIllegalV4aHeaders(&$request)
     {
@@ -328,7 +328,7 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
     }
     private function CRTRequestFromGuzzleRequest($request)
     {
-        return new \WPMailSMTP\Vendor\AWS\CRT\HTTP\Request(
+        return new Request(
             $request->getMethod(),
             (string) $request->getUri(),
             [],
@@ -345,13 +345,13 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
      * @param SigningConfigAWS|null $signingConfig
      * @return RequestInterface
      */
-    protected function signWithV4a(\WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, $signingService, ?\WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS $signingConfig = null)
+    protected function signWithV4a(CredentialsInterface $credentials, RequestInterface $request, $signingService, ?SigningConfigAWS $signingConfig = null)
     {
         $this->verifyCRTLoaded();
-        $signingConfig = $signingConfig ?? new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $this->createCRTStaticCredentialsProvider($credentials), 'signed_body_value' => $this->getPayload($request), 'should_normalize_uri_path' => \true, 'use_double_uri_encode' => \true, 'region' => $this->region, 'service' => $signingService, 'date' => \time()]);
+        $signingConfig = $signingConfig ?? new SigningConfigAWS(['algorithm' => SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => SignatureType::HTTP_REQUEST_HEADERS, 'credentials_provider' => $this->createCRTStaticCredentialsProvider($credentials), 'signed_body_value' => $this->getPayload($request), 'should_normalize_uri_path' => \true, 'use_double_uri_encode' => \true, 'region' => $this->region, 'service' => $signingService, 'date' => \time()]);
         $removedIllegalHeaders = $this->removeIllegalV4aHeaders($request);
         $http_request = $this->CRTRequestFromGuzzleRequest($request);
-        \WPMailSMTP\Vendor\AWS\CRT\Auth\Signing::signRequestAws(\WPMailSMTP\Vendor\AWS\CRT\Auth\Signable::fromHttpRequest($http_request), $signingConfig, function ($signing_result, $error_code) use(&$http_request) {
+        Signing::signRequestAws(Signable::fromHttpRequest($http_request), $signingConfig, function ($signing_result, $error_code) use(&$http_request) {
             $signing_result->applyToHttpRequest($http_request);
         });
         foreach ($removedIllegalHeaders as $header => $value) {
@@ -363,11 +363,11 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
         }
         return $request;
     }
-    protected function presignWithV4a(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $expires)
+    protected function presignWithV4a(RequestInterface $request, CredentialsInterface $credentials, $expires)
     {
         $this->verifyCRTLoaded();
         $credentials_provider = $this->createCRTStaticCredentialsProvider($credentials);
-        $signingConfig = new \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningConfigAWS(['algorithm' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => \WPMailSMTP\Vendor\AWS\CRT\Auth\SignatureType::HTTP_REQUEST_QUERY_PARAMS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPresignedPayload($request), 'region' => "*", 'service' => $this->service, 'date' => \time(), 'expiration_in_seconds' => $expires]);
+        $signingConfig = new SigningConfigAWS(['algorithm' => SigningAlgorithm::SIGv4_ASYMMETRIC, 'signature_type' => SignatureType::HTTP_REQUEST_QUERY_PARAMS, 'credentials_provider' => $credentials_provider, 'signed_body_value' => $this->getPresignedPayload($request), 'region' => "*", 'service' => $this->service, 'date' => \time(), 'expiration_in_seconds' => $expires]);
         $this->removeIllegalV4aHeaders($request);
         foreach ($this->getHeaderBlacklist() as $headerName => $headerValue) {
             if ($request->hasHeader($headerName)) {
@@ -375,9 +375,9 @@ class SignatureV4 implements \WPMailSMTP\Vendor\Aws\Signature\SignatureInterface
             }
         }
         $http_request = $this->CRTRequestFromGuzzleRequest($request);
-        \WPMailSMTP\Vendor\AWS\CRT\Auth\Signing::signRequestAws(\WPMailSMTP\Vendor\AWS\CRT\Auth\Signable::fromHttpRequest($http_request), $signingConfig, function ($signing_result, $error_code) use(&$http_request) {
+        Signing::signRequestAws(Signable::fromHttpRequest($http_request), $signingConfig, function ($signing_result, $error_code) use(&$http_request) {
             $signing_result->applyToHttpRequest($http_request);
         });
-        return $request->withUri(new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($http_request->pathAndQuery()));
+        return $request->withUri(new Psr7\Uri($http_request->pathAndQuery()));
     }
 }

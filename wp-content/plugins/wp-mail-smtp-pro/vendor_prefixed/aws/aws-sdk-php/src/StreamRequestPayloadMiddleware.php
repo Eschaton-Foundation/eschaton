@@ -18,18 +18,18 @@ class StreamRequestPayloadMiddleware
      * @param Service $service
      * @return \Closure
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public static function wrap(Service $service)
     {
         return function (callable $handler) use($service) {
             return new self($handler, $service);
         };
     }
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public function __construct(callable $nextHandler, Service $service)
     {
         $this->nextHandler = $nextHandler;
         $this->service = $service;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request)
+    public function __invoke(CommandInterface $command, RequestInterface $request)
     {
         $nextHandler = $this->nextHandler;
         $operation = $this->service->getOperation($command->getName());
@@ -56,7 +56,7 @@ class StreamRequestPayloadMiddleware
                 if (empty($contentLength)) {
                     $size = $request->getBody()->getSize();
                     if (\is_null($size)) {
-                        throw new \WPMailSMTP\Vendor\Aws\Exception\IncalculablePayloadException('Payload' . ' content length is required and can not be' . ' calculated.');
+                        throw new IncalculablePayloadException('Payload' . ' content length is required and can not be' . ' calculated.');
                     }
                     $request = $request->withHeader('content-length', $size);
                 }

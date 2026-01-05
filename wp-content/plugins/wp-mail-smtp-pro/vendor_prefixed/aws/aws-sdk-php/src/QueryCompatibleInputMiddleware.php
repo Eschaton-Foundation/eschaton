@@ -29,18 +29,18 @@ class QueryCompatibleInputMiddleware
      * @param Service $service
      * @return Closure
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\Api\Service $service) : \Closure
+    public static function wrap(Service $service) : Closure
     {
         return static function (callable $handler) use($service) {
             return new self($handler, $service);
         };
     }
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\Api\Service $service)
+    public function __construct(callable $nextHandler, Service $service)
     {
         $this->service = $service;
         $this->nextHandler = $nextHandler;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd)
+    public function __invoke(CommandInterface $cmd)
     {
         $this->command = $cmd;
         $nextHandler = $this->nextHandler;
@@ -88,7 +88,7 @@ class QueryCompatibleInputMiddleware
      *
      * @return void
      */
-    private function processStructure(array $input, \WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, array $path) : void
+    private function processStructure(array $input, StructureShape $shape, array $path) : void
     {
         foreach ($input as $param => $value) {
             if ($shape->hasMember($param)) {
@@ -104,7 +104,7 @@ class QueryCompatibleInputMiddleware
      *
      * @return void
      */
-    private function processList(array $input, \WPMailSMTP\Vendor\Aws\Api\ListShape $shape, array $path) : void
+    private function processList(array $input, ListShape $shape, array $path) : void
     {
         foreach ($input as $param => $value) {
             $memberPath = \array_merge($path, [$param]);
@@ -118,7 +118,7 @@ class QueryCompatibleInputMiddleware
      *
      * @return void
      */
-    private function processMap(array $input, \WPMailSMTP\Vendor\Aws\Api\MapShape $shape, array $path) : void
+    private function processMap(array $input, MapShape $shape, array $path) : void
     {
         foreach ($input as $param => $value) {
             $memberPath = \array_merge($path, [$param]);
@@ -132,7 +132,7 @@ class QueryCompatibleInputMiddleware
      *
      * @return void
      */
-    private function processScalar($input, \WPMailSMTP\Vendor\Aws\Api\Shape $shape, array $path) : void
+    private function processScalar($input, Shape $shape, array $path) : void
     {
         $expectedType = $shape->getType();
         if (!$this->isModeledType($input, $expectedType)) {

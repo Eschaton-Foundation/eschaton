@@ -16,7 +16,7 @@ final class Extension
     function __construct()
     {
         if (!\extension_loaded('awscrt')) {
-            throw new \RuntimeException('awscrt extension is not loaded');
+            throw new RuntimeException('awscrt extension is not loaded');
         }
     }
     /**

@@ -30,7 +30,7 @@ use WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationProvider;
  * @method \Aws\Result getSessionToken(array $args = [])
  * @method \GuzzleHttp\Promise\Promise getSessionTokenAsync(array $args = [])
  */
-class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
+class StsClient extends AwsClient
 {
     /**
      * {@inheritdoc}
@@ -53,8 +53,8 @@ class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
      */
     public function __construct(array $args)
     {
-        if (!isset($args['sts_regional_endpoints']) || $args['sts_regional_endpoints'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
-            $args['sts_regional_endpoints'] = \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationProvider::defaultProvider($args);
+        if (!isset($args['sts_regional_endpoints']) || $args['sts_regional_endpoints'] instanceof CacheInterface) {
+            $args['sts_regional_endpoints'] = ConfigurationProvider::defaultProvider($args);
         }
         $this->addBuiltIns($args);
         parent::__construct($args);
@@ -67,22 +67,22 @@ class StsClient extends \WPMailSMTP\Vendor\Aws\AwsClient
      * @return Credentials
      * @throws \InvalidArgumentException if the result contains no credentials
      */
-    public function createCredentials(\WPMailSMTP\Vendor\Aws\Result $result, $source = null)
+    public function createCredentials(Result $result, $source = null)
     {
         if (!$result->hasKey('Credentials')) {
             throw new \InvalidArgumentException('Result contains no credentials');
         }
         $accountId = null;
         if ($result->hasKey('AssumedRoleUser')) {
-            $parsedArn = \WPMailSMTP\Vendor\Aws\Arn\ArnParser::parse($result->get('AssumedRoleUser')['Arn']);
+            $parsedArn = ArnParser::parse($result->get('AssumedRoleUser')['Arn']);
             $accountId = $parsedArn->getAccountId();
         } elseif ($result->hasKey('FederatedUser')) {
-            $parsedArn = \WPMailSMTP\Vendor\Aws\Arn\ArnParser::parse($result->get('FederatedUser')['Arn']);
+            $parsedArn = ArnParser::parse($result->get('FederatedUser')['Arn']);
             $accountId = $parsedArn->getAccountId();
         }
         $credentials = $result['Credentials'];
         $expiration = isset($credentials['Expiration']) && $credentials['Expiration'] instanceof \DateTimeInterface ? (int) $credentials['Expiration']->format('U') : null;
-        return new \WPMailSMTP\Vendor\Aws\Credentials\Credentials($credentials['AccessKeyId'], $credentials['SecretAccessKey'], isset($credentials['SessionToken']) ? $credentials['SessionToken'] : null, $expiration, $accountId, $source);
+        return new Credentials($credentials['AccessKeyId'], $credentials['SecretAccessKey'], isset($credentials['SessionToken']) ? $credentials['SessionToken'] : null, $expiration, $accountId, $source);
     }
     /**
      * Adds service-specific client built-in value

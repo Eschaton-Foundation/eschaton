@@ -5,7 +5,7 @@ namespace WPMailSMTP\Vendor\Aws\Api;
 /**
  * Represents a web service API model.
  */
-class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
+class Service extends AbstractModel
 {
     /** @var callable */
     private $apiProvider;
@@ -36,7 +36,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
         $definition['metadata'] += $defaultMeta;
         $this->definition = $definition;
         $this->apiProvider = $provider;
-        parent::__construct($definition, new \WPMailSMTP\Vendor\Aws\Api\ShapeMap($definition['shapes']));
+        parent::__construct($definition, new ShapeMap($definition['shapes']));
         if (isset($definition['metadata']['serviceIdentifier'])) {
             $this->serviceName = $this->getServiceName();
         } else {
@@ -56,15 +56,15 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
      * @return callable
      * @throws \UnexpectedValueException
      */
-    public static function createSerializer(\WPMailSMTP\Vendor\Aws\Api\Service $api, $endpoint)
+    public static function createSerializer(Service $api, $endpoint)
     {
-        static $mapping = ['json' => \WPMailSMTP\Vendor\Aws\Api\Serializer\JsonRpcSerializer::class, 'query' => \WPMailSMTP\Vendor\Aws\Api\Serializer\QuerySerializer::class, 'rest-json' => \WPMailSMTP\Vendor\Aws\Api\Serializer\RestJsonSerializer::class, 'rest-xml' => \WPMailSMTP\Vendor\Aws\Api\Serializer\RestXmlSerializer::class];
+        static $mapping = ['json' => Serializer\JsonRpcSerializer::class, 'query' => Serializer\QuerySerializer::class, 'rest-json' => Serializer\RestJsonSerializer::class, 'rest-xml' => Serializer\RestXmlSerializer::class];
         $proto = $api->getProtocol();
         if (isset($mapping[$proto])) {
             return new $mapping[$proto]($api, $endpoint);
         }
         if ($proto == 'ec2') {
-            return new \WPMailSMTP\Vendor\Aws\Api\Serializer\QuerySerializer($api, $endpoint, new \WPMailSMTP\Vendor\Aws\Api\Serializer\Ec2ParamBuilder());
+            return new Serializer\QuerySerializer($api, $endpoint, new Serializer\Ec2ParamBuilder());
         }
         throw new \UnexpectedValueException('Unknown protocol: ' . $api->getProtocol());
     }
@@ -78,9 +78,9 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
      * @return callable
      * @throws \UnexpectedValueException
      */
-    public static function createErrorParser($protocol, ?\WPMailSMTP\Vendor\Aws\Api\Service $api = null)
+    public static function createErrorParser($protocol, ?Service $api = null)
     {
-        static $mapping = ['json' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\JsonRpcErrorParser::class, 'query' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class, 'rest-json' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\RestJsonErrorParser::class, 'rest-xml' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class, 'ec2' => \WPMailSMTP\Vendor\Aws\Api\ErrorParser\XmlErrorParser::class];
+        static $mapping = ['json' => ErrorParser\JsonRpcErrorParser::class, 'query' => ErrorParser\XmlErrorParser::class, 'rest-json' => ErrorParser\RestJsonErrorParser::class, 'rest-xml' => ErrorParser\XmlErrorParser::class, 'ec2' => ErrorParser\XmlErrorParser::class];
         if (isset($mapping[$protocol])) {
             return new $mapping[$protocol]($api);
         }
@@ -93,15 +93,15 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
      * @return callable
      * @throws \UnexpectedValueException
      */
-    public static function createParser(\WPMailSMTP\Vendor\Aws\Api\Service $api)
+    public static function createParser(Service $api)
     {
-        static $mapping = ['json' => \WPMailSMTP\Vendor\Aws\Api\Parser\JsonRpcParser::class, 'query' => \WPMailSMTP\Vendor\Aws\Api\Parser\QueryParser::class, 'rest-json' => \WPMailSMTP\Vendor\Aws\Api\Parser\RestJsonParser::class, 'rest-xml' => \WPMailSMTP\Vendor\Aws\Api\Parser\RestXmlParser::class];
+        static $mapping = ['json' => Parser\JsonRpcParser::class, 'query' => Parser\QueryParser::class, 'rest-json' => Parser\RestJsonParser::class, 'rest-xml' => Parser\RestXmlParser::class];
         $proto = $api->getProtocol();
         if (isset($mapping[$proto])) {
             return new $mapping[$proto]($api);
         }
         if ($proto == 'ec2') {
-            return new \WPMailSMTP\Vendor\Aws\Api\Parser\QueryParser($api, null, \false);
+            return new Parser\QueryParser($api, null, \false);
         }
         throw new \UnexpectedValueException('Unknown protocol: ' . $api->getProtocol());
     }
@@ -213,9 +213,9 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
             if (!isset($this->definition['operations'][$name])) {
                 throw new \InvalidArgumentException("Unknown operation: {$name}");
             }
-            $this->operations[$name] = new \WPMailSMTP\Vendor\Aws\Api\Operation($this->definition['operations'][$name], $this->shapeMap);
+            $this->operations[$name] = new Operation($this->definition['operations'][$name], $this->shapeMap);
         } elseif ($this->modifiedModel) {
-            $this->operations[$name] = new \WPMailSMTP\Vendor\Aws\Api\Operation($this->definition['operations'][$name], $this->shapeMap);
+            $this->operations[$name] = new Operation($this->definition['operations'][$name], $this->shapeMap);
         }
         return $this->operations[$name];
     }
@@ -243,7 +243,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
         foreach ($this->definition['shapes'] as $name => $definition) {
             if (!empty($definition['exception'])) {
                 $definition['name'] = $name;
-                $result[] = new \WPMailSMTP\Vendor\Aws\Api\StructureShape($definition, $this->getShapeMap());
+                $result[] = new StructureShape($definition, $this->getShapeMap());
             }
         }
         return $result;
@@ -398,7 +398,7 @@ class Service extends \WPMailSMTP\Vendor\Aws\Api\AbstractModel
     public function setDefinition($definition)
     {
         $this->definition = $definition;
-        $this->shapeMap = new \WPMailSMTP\Vendor\Aws\Api\ShapeMap($definition['shapes']);
+        $this->shapeMap = new ShapeMap($definition['shapes']);
         $this->modifiedModel = \true;
     }
     /**

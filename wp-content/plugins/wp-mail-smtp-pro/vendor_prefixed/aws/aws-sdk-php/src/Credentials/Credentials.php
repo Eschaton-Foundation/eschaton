@@ -7,7 +7,7 @@ use WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity;
  * Basic implementation of the AWS Credentials interface that allows callers to
  * pass in the AWS Access Key and AWS Secret Access Key in the constructor.
  */
-class Credentials extends \WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity implements \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface, \Serializable
+class Credentials extends AwsCredentialIdentity implements CredentialsInterface, \Serializable
 {
     private $key;
     private $secret;
@@ -24,14 +24,14 @@ class Credentials extends \WPMailSMTP\Vendor\Aws\Identity\AwsCredentialIdentity 
      * @param string $token   Security token to use
      * @param int    $expires UNIX timestamp for when credentials expire
      */
-    public function __construct($key, $secret, $token = null, $expires = null, $accountId = null, $source = \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STATIC)
+    public function __construct($key, $secret, $token = null, $expires = null, $accountId = null, $source = CredentialSources::STATIC)
     {
         $this->key = \trim((string) $key);
         $this->secret = \trim((string) $secret);
         $this->token = $token;
         $this->expires = $expires;
         $this->accountId = $accountId;
-        $this->source = $source ?? \WPMailSMTP\Vendor\Aws\Credentials\CredentialSources::STATIC;
+        $this->source = $source ?? CredentialSources::STATIC;
     }
     public static function __set_state(array $state)
     {

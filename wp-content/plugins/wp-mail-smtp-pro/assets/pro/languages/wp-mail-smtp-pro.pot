@@ -1,13 +1,13 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Mail SMTP 4.6.0\n"
+"Project-Id-Version: WP Mail SMTP 4.7.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-mail-smtp-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-26T10:45:38+00:00\n"
+"POT-Creation-Date: 2025-11-25T19:32:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-mail-smtp-pro\n"
@@ -22,7 +22,7 @@ msgid "https://wpmailsmtp.com/"
 msgstr ""
 
 #. Description of the plugin
-msgid "Reconfigures the <code>wp_mail()</code> function to use Gmail/Mailgun/SendGrid/SMTP instead of the default <code>mail()</code> and creates an options page to manage the settings."
+msgid "Send WordPress emails reliably via SMTP or API using SendLayer, Brevo, SMTP.com, Gmail, Outlook, or another email service of your choice."
 msgstr ""
 
 #. Author of the plugin
@@ -55,7 +55,7 @@ msgstr ""
 #: src/Pro/Emails/Logs/Resend.php:101
 #: src/Pro/Emails/Logs/Webhooks/Webhooks.php:369
 #: src/Pro/Emails/Logs/Webhooks/Webhooks.php:416
-#: src/Pro/Multisite.php:888
+#: src/Pro/Multisite.php:913
 msgid "You don't have the capability to perform this action."
 msgstr ""
 
@@ -1724,15 +1724,15 @@ msgstr ""
 msgid "The email failed to be delivered. No specific reason was provided by the API."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:98
+#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:102
 msgid "Unable to find email."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:107
+#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:111
 msgid "Invalid mailer."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:125
+#: src/Pro/Emails/Logs/DeliveryVerification/DeliveryVerification.php:129
 msgid "Invalid verifier."
 msgstr ""
 
@@ -2299,7 +2299,7 @@ msgid "Subscription removed successfully."
 msgstr ""
 
 #. translators: %1$s - error message; %2$s - error code.
-#: src/Pro/Emails/Logs/Webhooks/Webhooks.php:517
+#: src/Pro/Emails/Logs/Webhooks/Webhooks.php:518
 msgid "Seems that the REST API on your website is disabled. For correct work of email deliverability status verification via webhooks, REST API must be enabled. Please enable your REST API or whitelist \"/wp-mail-smtp/v1\" endpoint. The REST API request failed due to an error: %1$s (%2$s)."
 msgstr ""
 
@@ -2479,11 +2479,11 @@ msgstr ""
 msgid "Sorry, you are not allowed to access the WP Mail SMTP settings for individual network subsite. The network-wide setting is enabled, so the plugin settings are only accessible in the network admin dashboard. Please contact your network admin: %s."
 msgstr ""
 
-#: src/Pro/Multisite.php:685
+#: src/Pro/Multisite.php:710
 msgid "Clear these errors"
 msgstr ""
 
-#: src/Pro/Multisite.php:759
+#: src/Pro/Multisite.php:784
 msgid "Site"
 msgstr ""
 
@@ -2511,82 +2511,82 @@ msgstr ""
 msgid "Docs"
 msgstr ""
 
-#: src/Pro/Pro.php:760
+#: src/Pro/Pro.php:761
 msgid "There was an error while processing the authentication request. The connection was not found. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:768
+#: src/Pro/Pro.php:769
 msgid "There was an error while processing the authentication request. The authorization code is missing. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:776
+#: src/Pro/Pro.php:777
 msgid "There was an error while processing the authentication request. The nonce is invalid. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:783
+#: src/Pro/Pro.php:784
 msgid "There was an error while processing the authentication request. Please recheck your Client ID and Client Secret and try again."
 msgstr ""
 
-#: src/Pro/Pro.php:790
+#: src/Pro/Pro.php:791
 msgid "There was an error while processing the authentication request. Please make sure that you have Client ID and Client Secret both valid and saved."
 msgstr ""
 
 #. translators: %s - error code, returned by Zoho API.
-#: src/Pro/Pro.php:798
+#: src/Pro/Pro.php:799
 msgid "There was an error while processing the authentication request: %s. Please try again."
 msgstr ""
 
-#: src/Pro/Pro.php:805
+#: src/Pro/Pro.php:806
 msgid "There was an error while processing the authentication request. Please recheck your Region, Client ID and Client Secret and try again."
 msgstr ""
 
-#: src/Pro/Pro.php:813
+#: src/Pro/Pro.php:814
 msgid "There was an error while processing the authentication request."
 msgstr ""
 
-#: src/Pro/Pro.php:822
+#: src/Pro/Pro.php:823
 msgid "You have successfully linked the current site with your Microsoft API project. Now you can start sending emails through Outlook."
 msgstr ""
 
-#: src/Pro/Pro.php:829
+#: src/Pro/Pro.php:830
 msgid "You have successfully linked the current site with your Zoho Mail API project. Now you can start sending emails through Zoho Mail."
 msgstr ""
 
-#: src/Pro/Pro.php:836
+#: src/Pro/Pro.php:837
 msgid "You have successfully connected your site with your Gmail account. This site will now send emails via your Gmail account."
 msgstr ""
 
-#: src/Pro/Pro.php:843
+#: src/Pro/Pro.php:844
 msgid "You have successfully connected your site with your Outlook account. This site will now send emails via your Outlook account."
 msgstr ""
 
-#: src/Pro/Pro.php:873
+#: src/Pro/Pro.php:874
 msgid "Auto-updates are not available."
 msgstr ""
 
-#: src/Pro/Pro.php:1136
+#: src/Pro/Pro.php:1137
 #: src/Pro/Providers/Providers.php:323
 #: src/Pro/Providers/Providers.php:367
 msgid "Please provide a valid email address."
 msgstr ""
 
-#: src/Pro/Pro.php:1138
+#: src/Pro/Pro.php:1139
 msgid "Please provide a domain."
 msgstr ""
 
-#: src/Pro/Pro.php:1218
+#: src/Pro/Pro.php:1219
 msgid "You don't have the permission to perform this action."
 msgstr ""
 
-#: src/Pro/Pro.php:1224
+#: src/Pro/Pro.php:1225
 msgid "Please enter a valid license key!"
 msgstr ""
 
-#: src/Pro/Pro.php:1234
+#: src/Pro/Pro.php:1235
 msgid "License functionality missing!"
 msgstr ""
 
-#: src/Pro/Pro.php:1297
+#: src/Pro/Pro.php:1298
 msgid "Inactive &mdash; You are already using WP Mail SMTP Pro"
 msgstr ""
 

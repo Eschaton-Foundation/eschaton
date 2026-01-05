@@ -17,7 +17,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface;
 /**
  * Default AWS client implementation
  */
-class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
+class AwsClient implements AwsClientInterface
 {
     use AwsClientTrait;
     /** @var array */
@@ -59,7 +59,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
      */
     public static function getArguments()
     {
-        return \WPMailSMTP\Vendor\Aws\ClientResolver::getDefaultArguments();
+        return ClientResolver::getDefaultArguments();
     }
     /**
      * The client constructor accepts the following options:
@@ -226,13 +226,13 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         if (!isset($args['exception_class'])) {
             $args['exception_class'] = $exceptionClass;
         }
-        $this->handlerList = new \WPMailSMTP\Vendor\Aws\HandlerList();
-        $resolver = new \WPMailSMTP\Vendor\Aws\ClientResolver(static::getArguments());
+        $this->handlerList = new HandlerList();
+        $resolver = new ClientResolver(static::getArguments());
         $config = $resolver->resolve($args, $this->handlerList);
         $this->api = $config['api'];
         $this->signatureProvider = $config['signature_provider'];
         $this->authSchemeResolver = $config['auth_scheme_resolver'];
-        $this->endpoint = new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Uri($config['endpoint']);
+        $this->endpoint = new Uri($config['endpoint']);
         $this->credentialProvider = $config['credentials'];
         $this->tokenProvider = $config['token'];
         $this->region = $config['region'] ?? null;
@@ -303,7 +303,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         } else {
             $args['@http'] += $this->defaultRequestOptions;
         }
-        return new \WPMailSMTP\Vendor\Aws\Command($name, $args, clone $this->getHandlerList());
+        return new Command($name, $args, clone $this->getHandlerList());
     }
     public function getEndpointProvider()
     {
@@ -352,7 +352,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     {
         $klass = \get_class($this);
         if ($klass === __CLASS__) {
-            return ['', \WPMailSMTP\Vendor\Aws\Exception\AwsException::class];
+            return ['', AwsException::class];
         }
         $service = \substr($klass, \strrpos($klass, '\\') + 1, -6);
         return [\strtolower($service), "WPMailSMTP\\Vendor\\Aws\\{$service}\\Exception\\{$service}Exception"];
@@ -361,14 +361,14 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     {
         if (empty($args['disable_host_prefix_injection'])) {
             $list = $this->getHandlerList();
-            $list->appendBuild(\WPMailSMTP\Vendor\Aws\EndpointParameterMiddleware::wrap($this->api), 'endpoint_parameter');
+            $list->appendBuild(EndpointParameterMiddleware::wrap($this->api), 'endpoint_parameter');
         }
     }
     private function addEndpointDiscoveryMiddleware($config, $args)
     {
         $list = $this->getHandlerList();
         if (!isset($args['endpoint'])) {
-            $list->appendBuild(\WPMailSMTP\Vendor\Aws\EndpointDiscovery\EndpointDiscoveryMiddleware::wrap($this, $args, $config['endpoint_discovery']), 'EndpointDiscoveryMiddleware');
+            $list->appendBuild(EndpointDiscoveryMiddleware::wrap($this, $args, $config['endpoint_discovery']), 'EndpointDiscoveryMiddleware');
         }
     }
     private function addSignatureMiddleware(array $args)
@@ -384,7 +384,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
         } else {
             $configuredSignatureVersion = \false;
         }
-        $resolver = static function (\WPMailSMTP\Vendor\Aws\CommandInterface $command) use($api, $provider, $name, $region, $signatureVersion, $configuredSignatureVersion, $signingRegionSet) {
+        $resolver = static function (CommandInterface $command) use($api, $provider, $name, $region, $signatureVersion, $configuredSignatureVersion, $signingRegionSet) {
             if (!$configuredSignatureVersion) {
                 if (!empty($command['@context']['signing_region'])) {
                     $region = $command['@context']['signing_region'];
@@ -414,33 +414,33 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
             }
             // Capture signature metric
             $command->getMetricsBuilder()->identifyMetricByValueAndAppend('signature', $signatureVersion);
-            return \WPMailSMTP\Vendor\Aws\Signature\SignatureProvider::resolve($provider, $signatureVersion, $name, $region);
+            return SignatureProvider::resolve($provider, $signatureVersion, $name, $region);
         };
-        $this->handlerList->appendSign(\WPMailSMTP\Vendor\Aws\Middleware::signer($this->credentialProvider, $resolver, $this->tokenProvider, $this->getConfig()), 'signer');
+        $this->handlerList->appendSign(Middleware::signer($this->credentialProvider, $resolver, $this->tokenProvider, $this->getConfig()), 'signer');
     }
     private function addRequestCompressionMiddleware($config)
     {
         if (empty($config['disable_request_compression'])) {
             $list = $this->getHandlerList();
-            $list->appendBuild(\WPMailSMTP\Vendor\Aws\RequestCompressionMiddleware::wrap($config), 'request-compression');
+            $list->appendBuild(RequestCompressionMiddleware::wrap($config), 'request-compression');
         }
     }
-    private function addQueryCompatibleInputMiddleware(\WPMailSMTP\Vendor\Aws\Api\Service $api)
+    private function addQueryCompatibleInputMiddleware(Service $api)
     {
         $list = $this->getHandlerList();
-        $list->appendValidate(\WPMailSMTP\Vendor\Aws\QueryCompatibleInputMiddleware::wrap($api), 'query-compatible-input');
+        $list->appendValidate(QueryCompatibleInputMiddleware::wrap($api), 'query-compatible-input');
     }
     private function addQueryModeHeader() : void
     {
         $list = $this->getHandlerList();
-        $list->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::mapRequest(function (\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $r) {
+        $list->appendBuild(Middleware::mapRequest(function (RequestInterface $r) {
             return $r->withHeader('x-amzn-query-mode', \true);
         }), 'x-amzn-query-mode-header');
     }
     private function addInvocationId()
     {
         // Add invocation id to each request
-        $this->handlerList->prependSign(\WPMailSMTP\Vendor\Aws\Middleware::invocationId(), 'invocation-id');
+        $this->handlerList->prependSign(Middleware::invocationId(), 'invocation-id');
     }
     private function loadAliases($file = null)
     {
@@ -458,25 +458,25 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     }
     private function addStreamRequestPayload()
     {
-        $streamRequestPayloadMiddleware = \WPMailSMTP\Vendor\Aws\StreamRequestPayloadMiddleware::wrap($this->api);
+        $streamRequestPayloadMiddleware = StreamRequestPayloadMiddleware::wrap($this->api);
         $this->handlerList->prependSign($streamRequestPayloadMiddleware, 'StreamRequestPayloadMiddleware');
     }
     private function addRecursionDetection()
     {
         // Add recursion detection header to requests
         // originating in supported Lambda runtimes
-        $this->handlerList->appendBuild(\WPMailSMTP\Vendor\Aws\Middleware::recursionDetection(), 'recursion-detection');
+        $this->handlerList->appendBuild(Middleware::recursionDetection(), 'recursion-detection');
     }
     private function addAuthSelectionMiddleware()
     {
         $list = $this->getHandlerList();
-        $list->prependBuild(\WPMailSMTP\Vendor\Aws\Auth\AuthSelectionMiddleware::wrap($this->authSchemeResolver, $this->getApi()), 'auth-selection');
+        $list->prependBuild(AuthSelectionMiddleware::wrap($this->authSchemeResolver, $this->getApi()), 'auth-selection');
     }
     private function addEndpointV2Middleware()
     {
         $list = $this->getHandlerList();
         $endpointArgs = $this->getEndpointProviderArgs();
-        $list->prependBuild(\WPMailSMTP\Vendor\Aws\EndpointV2\EndpointV2Middleware::wrap($this->endpointProvider, $this->getApi(), $endpointArgs, $this->credentialProvider), 'endpoint-resolution');
+        $list->prependBuild(EndpointV2Middleware::wrap($this->endpointProvider, $this->getApi(), $endpointArgs, $this->credentialProvider), 'endpoint-resolution');
     }
     /**
      * Appends the user agent middleware.
@@ -490,7 +490,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
      */
     private function addUserAgentMiddleware($args)
     {
-        $this->getHandlerList()->appendSign(\WPMailSMTP\Vendor\Aws\UserAgentMiddleware::wrap($args), 'user-agent');
+        $this->getHandlerList()->appendSign(UserAgentMiddleware::wrap($args), 'user-agent');
     }
     /**
      * Retrieves client context param definition from service model,
@@ -569,7 +569,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
     }
     protected function isUseEndpointV2()
     {
-        return $this->endpointProvider instanceof \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2;
+        return $this->endpointProvider instanceof EndpointProviderV2;
     }
     public static function emitDeprecationWarning()
     {
@@ -606,7 +606,7 @@ class AwsClient implements \WPMailSMTP\Vendor\Aws\AwsClientInterface
             }
         }
         \ksort($api['operations']);
-        return [new \WPMailSMTP\Vendor\Aws\Api\Service($api, \WPMailSMTP\Vendor\Aws\Api\ApiProvider::defaultProvider()), new \WPMailSMTP\Vendor\Aws\Api\DocModel($docs)];
+        return [new Service($api, ApiProvider::defaultProvider()), new DocModel($docs)];
     }
     /**
      * @deprecated

@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface;
 /**
  * @internal Parses query (XML) responses (e.g., EC2, SQS, and many others)
  */
-class QueryParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
+class QueryParser extends AbstractParser
 {
     use PayloadParserTrait;
     /** @var bool */
@@ -23,22 +23,22 @@ class QueryParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
      *                                      back of result wrappers from the
      *                                      output structure.
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\Api\Service $api, ?\WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser $xmlParser = null, $honorResultWrapper = \true)
+    public function __construct(Service $api, ?XmlParser $xmlParser = null, $honorResultWrapper = \true)
     {
         parent::__construct($api);
-        $this->parser = $xmlParser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\XmlParser();
+        $this->parser = $xmlParser ?: new XmlParser();
         $this->honorResultWrapper = $honorResultWrapper;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response)
+    public function __invoke(CommandInterface $command, ResponseInterface $response)
     {
         $output = $this->api->getOperation($command->getName())->getOutput();
         $xml = $this->parseXml($response->getBody(), $response);
         if ($this->honorResultWrapper && $output['resultWrapper']) {
             $xml = $xml->{$output['resultWrapper']};
         }
-        return new \WPMailSMTP\Vendor\Aws\Result($this->parser->parse($output, $xml));
+        return new Result($this->parser->parse($output, $xml));
     }
-    public function parseMemberFromStream(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream, \WPMailSMTP\Vendor\Aws\Api\StructureShape $member, $response)
+    public function parseMemberFromStream(StreamInterface $stream, StructureShape $member, $response)
     {
         $xml = $this->parseXml($stream, $response);
         return $this->parser->parse($member, $xml);

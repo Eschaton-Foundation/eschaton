@@ -20,7 +20,7 @@ interface SignatureInterface
      *
      * @return RequestInterface Returns the modified request.
      */
-    public function signRequest(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials);
+    public function signRequest(RequestInterface $request, CredentialsInterface $credentials);
     /**
      * Create a pre-signed request.
      *
@@ -32,5 +32,5 @@ interface SignatureInterface
      *
      * @return RequestInterface
      */
-    public function presign(\WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $request, \WPMailSMTP\Vendor\Aws\Credentials\CredentialsInterface $credentials, $expires, array $options = []);
+    public function presign(RequestInterface $request, CredentialsInterface $credentials, $expires, array $options = []);
 }

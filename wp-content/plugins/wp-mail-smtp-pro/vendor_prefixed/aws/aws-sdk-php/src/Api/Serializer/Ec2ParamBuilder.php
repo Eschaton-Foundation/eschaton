@@ -7,17 +7,17 @@ use WPMailSMTP\Vendor\Aws\Api\ListShape;
 /**
  * @internal
  */
-class Ec2ParamBuilder extends \WPMailSMTP\Vendor\Aws\Api\Serializer\QueryParamBuilder
+class Ec2ParamBuilder extends QueryParamBuilder
 {
-    protected function queryName(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $default = null)
+    protected function queryName(Shape $shape, $default = null)
     {
         return ($shape['queryName'] ?: \ucfirst(@$shape['locationName'] ?: "")) ?: $default;
     }
-    protected function isFlat(\WPMailSMTP\Vendor\Aws\Api\Shape $shape)
+    protected function isFlat(Shape $shape)
     {
         return \false;
     }
-    protected function format_list(\WPMailSMTP\Vendor\Aws\Api\ListShape $shape, array $value, $prefix, &$query)
+    protected function format_list(ListShape $shape, array $value, $prefix, &$query)
     {
         // Handle empty list serialization
         if (!empty($value)) {

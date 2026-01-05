@@ -5,7 +5,7 @@ namespace WPMailSMTP\Vendor\Aws;
 /**
  * Incremental hashing using PHP's hash functions.
  */
-class PhpHash implements \WPMailSMTP\Vendor\Aws\HashInterface
+class PhpHash implements HashInterface
 {
     /** @var resource|\HashContext */
     private $context;

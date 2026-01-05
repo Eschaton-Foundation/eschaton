@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\EachPromise;
  * The pool will read command objects from an iterator until it is cancelled or
  * until the iterator is consumed.
  */
-class CommandPool implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInterface
+class CommandPool implements PromisorInterface
 {
     /** @var EachPromise */
     private $each;
@@ -41,7 +41,7 @@ class CommandPool implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInter
      * @param array|\Iterator    $commands Iterable that yields commands.
      * @param array              $config   Associative array of options.
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $commands, array $config = [])
+    public function __construct(AwsClientInterface $client, $commands, array $config = [])
     {
         if (!isset($config['concurrency'])) {
             $config['concurrency'] = 25;
@@ -49,7 +49,7 @@ class CommandPool implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInter
         $before = $this->getBefore($config);
         $mapFn = function ($commands) use($client, $before, $config) {
             foreach ($commands as $key => $command) {
-                if (!$command instanceof \WPMailSMTP\Vendor\Aws\CommandInterface) {
+                if (!$command instanceof CommandInterface) {
                     throw new \InvalidArgumentException('Each value yielded by ' . 'the iterator must be an Aws\\CommandInterface.');
                 }
                 if ($before) {
@@ -62,12 +62,12 @@ class CommandPool implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInter
                 }
             }
         };
-        $this->each = new \WPMailSMTP\Vendor\GuzzleHttp\Promise\EachPromise($mapFn($commands), $config);
+        $this->each = new EachPromise($mapFn($commands), $config);
     }
     /**
      * @return PromiseInterface
      */
-    public function promise() : \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface
+    public function promise() : PromiseInterface
     {
         return $this->each->promise();
     }
@@ -82,7 +82,7 @@ class CommandPool implements \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromisorInter
      * @return array
      * @see \Aws\CommandPool::__construct for available configuration options.
      */
-    public static function batch(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $commands, array $config = [])
+    public static function batch(AwsClientInterface $client, $commands, array $config = [])
     {
         $results = [];
         self::cmpCallback($config, 'fulfilled', $results);

@@ -42,7 +42,7 @@ trait EncryptionTrait
      *
      * @internal
      */
-    public function encrypt(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Stream $plaintext, array $cipherOptions, \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProvider $provider, \WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope)
+    public function encrypt(Stream $plaintext, array $cipherOptions, MaterialsProvider $provider, MetadataEnvelope $envelope)
     {
         $materialsDescription = $provider->getMaterialsDescription();
         $cipherOptions = \array_intersect_key($cipherOptions, self::$allowedOptions);
@@ -58,22 +58,22 @@ trait EncryptionTrait
         if (!\is_int($cipherOptions['KeySize'])) {
             throw new \InvalidArgumentException('The cipher "KeySize" must be' . ' an integer.');
         }
-        if (!\WPMailSMTP\Vendor\Aws\Crypto\MaterialsProvider::isSupportedKeySize($cipherOptions['KeySize'])) {
+        if (!MaterialsProvider::isSupportedKeySize($cipherOptions['KeySize'])) {
             throw new \InvalidArgumentException('The cipher "KeySize" requested' . ' is not supported by AES (128, 192, or 256).');
         }
         $cipherOptions['Iv'] = $provider->generateIv($this->getCipherOpenSslName($cipherOptions['Cipher'], $cipherOptions['KeySize']));
         $cek = $provider->generateCek($cipherOptions['KeySize']);
         list($encryptingStream, $aesName) = $this->getEncryptingStream($plaintext, $cek, $cipherOptions);
         // Populate envelope data
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CONTENT_KEY_V2_HEADER] = $provider->encryptCek($cek, $materialsDescription);
+        $envelope[MetadataEnvelope::CONTENT_KEY_V2_HEADER] = $provider->encryptCek($cek, $materialsDescription);
         unset($cek);
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::IV_HEADER] = \base64_encode($cipherOptions['Iv']);
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::KEY_WRAP_ALGORITHM_HEADER] = $provider->getWrapAlgorithmName();
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CONTENT_CRYPTO_SCHEME_HEADER] = $aesName;
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::UNENCRYPTED_CONTENT_LENGTH_HEADER] = \strlen($plaintext);
-        $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER] = \json_encode($materialsDescription);
+        $envelope[MetadataEnvelope::IV_HEADER] = \base64_encode($cipherOptions['Iv']);
+        $envelope[MetadataEnvelope::KEY_WRAP_ALGORITHM_HEADER] = $provider->getWrapAlgorithmName();
+        $envelope[MetadataEnvelope::CONTENT_CRYPTO_SCHEME_HEADER] = $aesName;
+        $envelope[MetadataEnvelope::UNENCRYPTED_CONTENT_LENGTH_HEADER] = \strlen($plaintext);
+        $envelope[MetadataEnvelope::MATERIALS_DESCRIPTION_HEADER] = \json_encode($materialsDescription);
         if (!empty($cipherOptions['Tag'])) {
-            $envelope[\WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope::CRYPTO_TAG_LENGTH_HEADER] = \strlen($cipherOptions['Tag']) * 8;
+            $envelope[MetadataEnvelope::CRYPTO_TAG_LENGTH_HEADER] = \strlen($cipherOptions['Tag']) * 8;
         }
         return $encryptingStream;
     }
@@ -92,22 +92,22 @@ trait EncryptionTrait
      *
      * @internal
      */
-    protected function getEncryptingStream(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Stream $plaintext, $cek, &$cipherOptions)
+    protected function getEncryptingStream(Stream $plaintext, $cek, &$cipherOptions)
     {
         switch ($cipherOptions['Cipher']) {
             case 'gcm':
                 $cipherOptions['TagLength'] = 16;
-                $cipherTextStream = new \WPMailSMTP\Vendor\Aws\Crypto\AesGcmEncryptingStream($plaintext, $cek, $cipherOptions['Iv'], $cipherOptions['Aad'] = isset($cipherOptions['Aad']) ? $cipherOptions['Aad'] : '', $cipherOptions['TagLength'], $cipherOptions['KeySize']);
+                $cipherTextStream = new AesGcmEncryptingStream($plaintext, $cek, $cipherOptions['Iv'], $cipherOptions['Aad'] = isset($cipherOptions['Aad']) ? $cipherOptions['Aad'] : '', $cipherOptions['TagLength'], $cipherOptions['KeySize']);
                 if (!empty($cipherOptions['Aad'])) {
                     \trigger_error("'Aad' has been supplied for content encryption" . " with " . $cipherTextStream->getAesName() . ". The" . " PHP SDK encryption client can decrypt an object" . " encrypted in this way, but other AWS SDKs may not be" . " able to.", \E_USER_WARNING);
                 }
-                $appendStream = new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\AppendStream([$cipherTextStream->createStream()]);
+                $appendStream = new AppendStream([$cipherTextStream->createStream()]);
                 $cipherOptions['Tag'] = $cipherTextStream->getTag();
-                $appendStream->addStream(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($cipherOptions['Tag']));
+                $appendStream->addStream(Psr7\Utils::streamFor($cipherOptions['Tag']));
                 return [$appendStream, $cipherTextStream->getAesName()];
             default:
                 $cipherMethod = $this->buildCipherMethod($cipherOptions['Cipher'], $cipherOptions['Iv'], $cipherOptions['KeySize']);
-                $cipherTextStream = new \WPMailSMTP\Vendor\Aws\Crypto\AesEncryptingStream($plaintext, $cek, $cipherMethod);
+                $cipherTextStream = new AesEncryptingStream($plaintext, $cek, $cipherMethod);
                 return [$cipherTextStream, $cipherTextStream->getAesName()];
         }
     }

@@ -43,7 +43,7 @@ class EndpointV2Middleware
      *
      * @return Closure
      */
-    public static function wrap(\WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2 $endpointProvider, \WPMailSMTP\Vendor\Aws\Api\Service $api, array $args, callable $credentialProvider) : \Closure
+    public static function wrap(EndpointProviderV2 $endpointProvider, Service $api, array $args, callable $credentialProvider) : Closure
     {
         return function (callable $handler) use($endpointProvider, $api, $args, $credentialProvider) {
             return new self($handler, $endpointProvider, $api, $args, $credentialProvider);
@@ -55,7 +55,7 @@ class EndpointV2Middleware
      * @param Service $api
      * @param array $args
      */
-    public function __construct(callable $nextHandler, \WPMailSMTP\Vendor\Aws\EndpointV2\EndpointProviderV2 $endpointProvider, \WPMailSMTP\Vendor\Aws\Api\Service $api, array $args, ?callable $credentialProvider = null)
+    public function __construct(callable $nextHandler, EndpointProviderV2 $endpointProvider, Service $api, array $args, ?callable $credentialProvider = null)
     {
         $this->nextHandler = $nextHandler;
         $this->endpointProvider = $endpointProvider;
@@ -68,14 +68,14 @@ class EndpointV2Middleware
      *
      * @return Promise
      */
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command)
+    public function __invoke(CommandInterface $command)
     {
         $nextHandler = $this->nextHandler;
         $operation = $this->api->getOperation($command->getName());
         $commandArgs = $command->toArray();
         $providerArgs = $this->resolveArgs($commandArgs, $operation);
         if (!empty($providerArgs[self::ACCOUNT_ID_PARAM])) {
-            $command->getMetricsBuilder()->append(\WPMailSMTP\Vendor\Aws\MetricsBuilder::RESOLVED_ACCOUNT_ID);
+            $command->getMetricsBuilder()->append(MetricsBuilder::RESOLVED_ACCOUNT_ID);
         }
         $endpoint = $this->endpointProvider->resolveEndpoint($providerArgs);
         if (!empty($authSchemes = $endpoint->getProperty('authSchemes'))) {
@@ -92,7 +92,7 @@ class EndpointV2Middleware
      *
      * @return array
      */
-    private function resolveArgs(array $commandArgs, \WPMailSMTP\Vendor\Aws\Api\Operation $operation) : array
+    private function resolveArgs(array $commandArgs, Operation $operation) : array
     {
         $rulesetParams = $this->endpointProvider->getRuleset()->getParameters();
         if (isset($rulesetParams[self::ACCOUNT_ID_PARAM]) && isset($rulesetParams[self::ACCOUNT_ID_ENDPOINT_MODE_PARAM])) {
@@ -181,7 +181,7 @@ class EndpointV2Middleware
     {
         $scopedParams = [];
         foreach ($operationContextParams as $name => $spec) {
-            $scopedValue = \WPMailSMTP\Vendor\JmesPath\search($spec['path'], $commandArgs);
+            $scopedValue = search($spec['path'], $commandArgs);
             if ($scopedValue) {
                 $scopedParams[$name] = $scopedValue;
             }
@@ -196,7 +196,7 @@ class EndpointV2Middleware
      *
      * @return void
      */
-    private function applyAuthScheme(array $authSchemes, \WPMailSMTP\Vendor\Aws\CommandInterface $command) : void
+    private function applyAuthScheme(array $authSchemes, CommandInterface $command) : void
     {
         $authScheme = $this->resolveAuthScheme($authSchemes);
         $command['@context']['signature_version'] = $authScheme['version'];
@@ -228,7 +228,7 @@ class EndpointV2Middleware
         }
         $invalidAuthSchemesString = '`' . \implode('`, `', \array_keys($invalidAuthSchemes)) . '`';
         $validAuthSchemesString = '`' . \implode('`, `', \array_keys(\array_diff_key(self::$validAuthSchemes, $invalidAuthSchemes))) . '`';
-        throw new \WPMailSMTP\Vendor\Aws\Auth\Exception\UnresolvedAuthSchemeException("This operation requests {$invalidAuthSchemesString}" . " auth schemes, but the client currently supports {$validAuthSchemesString}.");
+        throw new UnresolvedAuthSchemeException("This operation requests {$invalidAuthSchemesString}" . " auth schemes, but the client currently supports {$validAuthSchemesString}.");
     }
     /**
      * Normalizes an auth scheme's name, signing region or signing region set

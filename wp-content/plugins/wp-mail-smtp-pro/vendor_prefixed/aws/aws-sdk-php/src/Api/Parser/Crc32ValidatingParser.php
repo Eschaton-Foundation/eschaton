@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Psr7;
 /**
  * @internal Decorates a parser and validates the x-amz-crc32 header.
  */
-class Crc32ValidatingParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser
+class Crc32ValidatingParser extends AbstractParser
 {
     /**
      * @param callable $parser Parser to wrap.
@@ -20,18 +20,18 @@ class Crc32ValidatingParser extends \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractPa
     {
         $this->parser = $parser;
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $command, \WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response)
+    public function __invoke(CommandInterface $command, ResponseInterface $response)
     {
         if ($expected = $response->getHeaderLine('x-amz-crc32')) {
-            $hash = \hexdec(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::hash($response->getBody(), 'crc32b'));
+            $hash = \hexdec(Psr7\Utils::hash($response->getBody(), 'crc32b'));
             if ($expected != $hash) {
-                throw new \WPMailSMTP\Vendor\Aws\Exception\AwsException("crc32 mismatch. Expected {$expected}, found {$hash}.", $command, ['code' => 'ClientChecksumMismatch', 'connection_error' => \true, 'response' => $response]);
+                throw new AwsException("crc32 mismatch. Expected {$expected}, found {$hash}.", $command, ['code' => 'ClientChecksumMismatch', 'connection_error' => \true, 'response' => $response]);
             }
         }
         $fn = $this->parser;
         return $fn($command, $response);
     }
-    public function parseMemberFromStream(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream, \WPMailSMTP\Vendor\Aws\Api\StructureShape $member, $response)
+    public function parseMemberFromStream(StreamInterface $stream, StructureShape $member, $response)
     {
         return $this->parser->parseMemberFromStream($stream, $member, $response);
     }

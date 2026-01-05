@@ -15,7 +15,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Psr7\Stream;
 abstract class AbstractCryptoClient
 {
     public static $supportedCiphers = ['cbc', 'gcm'];
-    public static $supportedKeyWraps = [\WPMailSMTP\Vendor\Aws\Crypto\KmsMaterialsProvider::WRAP_ALGORITHM_NAME];
+    public static $supportedKeyWraps = [KmsMaterialsProvider::WRAP_ALGORITHM_NAME];
     /**
      * Returns if the passed cipher name is supported for encryption by the SDK.
      *
@@ -81,7 +81,7 @@ abstract class AbstractCryptoClient
      *
      * @internal
      */
-    public abstract function encrypt(\WPMailSMTP\Vendor\GuzzleHttp\Psr7\Stream $plaintext, array $cipherOptions, \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProvider $provider, \WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope);
+    public abstract function encrypt(Stream $plaintext, array $cipherOptions, MaterialsProvider $provider, MetadataEnvelope $envelope);
     /**
      * Dependency to provide an interface for building a decryption stream for
      * cipher text given metadata and materials to do so.
@@ -98,5 +98,5 @@ abstract class AbstractCryptoClient
      *
      * @internal
      */
-    public abstract function decrypt($cipherText, \WPMailSMTP\Vendor\Aws\Crypto\MaterialsProviderInterface $provider, \WPMailSMTP\Vendor\Aws\Crypto\MetadataEnvelope $envelope, array $cipherOptions = []);
+    public abstract function decrypt($cipherText, MaterialsProviderInterface $provider, MetadataEnvelope $envelope, array $cipherOptions = []);
 }

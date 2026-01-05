@@ -9,7 +9,7 @@ use WPMailSMTP\Vendor\Aws\Crypto\Cipher\CipherMethod;
 /**
  * @internal Represents a stream of data to be decrypted with passed cipher.
  */
-class AesDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInterface
+class AesDecryptingStream implements AesStreamInterface
 {
     const BLOCK_SIZE = 16;
     // 128 bits
@@ -35,7 +35,7 @@ class AesDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInte
      * @param string $key
      * @param CipherMethod $cipherMethod
      */
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $cipherText, $key, \WPMailSMTP\Vendor\Aws\Crypto\Cipher\CipherMethod $cipherMethod)
+    public function __construct(StreamInterface $cipherText, $key, CipherMethod $cipherMethod)
     {
         $this->stream = $cipherText;
         $this->key = $key;
@@ -85,7 +85,7 @@ class AesDecryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInte
             $this->cipherMethod->seek(0, \SEEK_SET);
             $this->stream->seek(0, \SEEK_SET);
         } else {
-            throw new \LogicException('AES encryption streams only support being' . ' rewound, not arbitrary seeking.');
+            throw new LogicException('AES encryption streams only support being' . ' rewound, not arbitrary seeking.');
         }
     }
     private function decryptBlock($length)

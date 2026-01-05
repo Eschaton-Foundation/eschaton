@@ -50,7 +50,7 @@ class ShapeMap
         if (isset($definition['shape'])) {
             unset($definition['shape']);
         }
-        $result = \WPMailSMTP\Vendor\Aws\Api\Shape::create($definition, $this);
+        $result = Shape::create($definition, $this);
         if ($isSimple) {
             $this->simple[$shape] = $result;
         }

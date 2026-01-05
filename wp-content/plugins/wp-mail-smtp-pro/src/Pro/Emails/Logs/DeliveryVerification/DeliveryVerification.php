@@ -10,6 +10,7 @@ use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailgun\DeliveryVerifier as 
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mailjet\DeliveryVerifier as MailjetDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Mandrill\DeliveryVerifier as MandrillDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Postmark\DeliveryVerifier as PostmarkDeliveryVerifier;
+use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Resend\DeliveryVerifier as ResendDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendinblue\DeliveryVerifier as SendinblueDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\Sendlayer\DeliveryVerifier as SendlayerDeliveryVerifier;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\SMTP2GO\DeliveryVerifier as SMTP2GODeliveryVerifier;
@@ -22,6 +23,7 @@ use WPMailSMTP\Pro\Tasks\Logs\Mailgun\VerifySentStatusTask as MailgunVerifySentS
 use WPMailSMTP\Pro\Tasks\Logs\Mailjet\VerifySentStatusTask as MailjetVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Mandrill\VerifySentStatusTask as MandrillVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Postmark\VerifySentStatusTask as PostmarkVerifySentStatusTask;
+use WPMailSMTP\Pro\Tasks\Logs\Resend\VerifySentStatusTask as ResendVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendinblue\VerifySentStatusTask as SendinblueVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\Sendlayer\VerifySentStatusTask as SendlayerVerifySentStatusTask;
 use WPMailSMTP\Pro\Tasks\Logs\SMTP2GO\VerifySentStatusTask as SMTP2GOVerifySentStatusTask;
@@ -55,6 +57,7 @@ class DeliveryVerification {
 		'mailjet'      => MailjetDeliveryVerifier::class,
 		'elasticemail' => ElasticEmailDeliveryVerifier::class,
 		'mailersend'   => MailerSendDeliveryVerifier::class,
+		'resend'       => ResendDeliveryVerifier::class,
 	];
 
 	/**
@@ -76,6 +79,7 @@ class DeliveryVerification {
 		'mailjet'      => MailjetVerifySentStatusTask::class,
 		'elasticemail' => ElasticEmailVerifySentStatusTask::class,
 		'mailersend'   => MailerSendVerifySentStatusTask::class,
+		'resend'       => ResendVerifySentStatusTask::class,
 	];
 
 	/**

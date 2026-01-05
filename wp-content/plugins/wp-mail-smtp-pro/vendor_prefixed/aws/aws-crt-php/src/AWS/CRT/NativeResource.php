@@ -19,7 +19,7 @@ abstract class NativeResource
     protected function __construct()
     {
         if (\is_null(self::$crt)) {
-            self::$crt = new \WPMailSMTP\Vendor\AWS\CRT\CRT();
+            self::$crt = new CRT();
         }
         self::$resources[\spl_object_hash($this)] = 1;
     }

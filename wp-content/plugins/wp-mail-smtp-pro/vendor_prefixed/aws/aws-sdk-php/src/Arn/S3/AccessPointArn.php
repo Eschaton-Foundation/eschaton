@@ -9,7 +9,7 @@ use WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException;
 /**
  * @internal
  */
-class AccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn implements \WPMailSMTP\Vendor\Aws\Arn\AccessPointArnInterface
+class AccessPointArn extends BaseAccessPointArn implements AccessPointArnInterface
 {
     /**
      * Validation specific to AccessPointArn
@@ -20,7 +20,7 @@ class AccessPointArn extends \WPMailSMTP\Vendor\Aws\Arn\AccessPointArn implement
     {
         parent::validate($data);
         if ($data['service'] !== 's3') {
-            throw new \WPMailSMTP\Vendor\Aws\Arn\Exception\InvalidArnException("The 3rd component of an S3 access" . " point ARN represents the region and must be 's3'.");
+            throw new InvalidArnException("The 3rd component of an S3 access" . " point ARN represents the region and must be 's3'.");
         }
     }
 }

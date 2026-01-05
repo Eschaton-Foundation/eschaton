@@ -3,7 +3,7 @@
 namespace WPMailSMTP\Vendor\Aws\DefaultsMode;
 
 use WPMailSMTP\Vendor\Aws\DefaultsMode\Exception\ConfigurationException;
-class Configuration implements \WPMailSMTP\Vendor\Aws\DefaultsMode\ConfigurationInterface
+class Configuration implements ConfigurationInterface
 {
     private $mode;
     private $retryMode;

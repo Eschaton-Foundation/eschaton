@@ -38,13 +38,13 @@ class RetryMiddlewareV2
             return new static($config, $handler, $options);
         };
     }
-    public static function createDefaultDecider(\WPMailSMTP\Vendor\Aws\Retry\QuotaManager $quotaManager, $maxAttempts = 3, $options = [])
+    public static function createDefaultDecider(QuotaManager $quotaManager, $maxAttempts = 3, $options = [])
     {
         $retryCurlErrors = [];
         if (\extension_loaded('curl')) {
             $retryCurlErrors[\CURLE_RECV_ERROR] = \true;
         }
-        return function ($attempts, \WPMailSMTP\Vendor\Aws\CommandInterface $command, $result) use($options, $quotaManager, $retryCurlErrors, $maxAttempts) {
+        return function ($attempts, CommandInterface $command, $result) use($options, $quotaManager, $retryCurlErrors, $maxAttempts) {
             // Release retry tokens back to quota on a successful result
             $quotaManager->releaseToQuota($result);
             // Allow command-level option to override this value
@@ -57,7 +57,7 @@ class RetryMiddlewareV2
                     return \false;
                 }
                 if ($attempts >= $maxAttempts) {
-                    if (!empty($result) && $result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+                    if (!empty($result) && $result instanceof AwsException) {
                         $result->setMaxRetriesExceeded();
                     }
                     return \false;
@@ -66,13 +66,13 @@ class RetryMiddlewareV2
             return $isRetryable;
         };
     }
-    public function __construct(\WPMailSMTP\Vendor\Aws\Retry\ConfigurationInterface $config, callable $handler, $options = [])
+    public function __construct(ConfigurationInterface $config, callable $handler, $options = [])
     {
         $this->options = $options;
         $this->maxAttempts = $config->getMaxAttempts();
         $this->mode = $config->getMode();
         $this->nextHandler = $handler;
-        $this->quotaManager = new \WPMailSMTP\Vendor\Aws\Retry\QuotaManager();
+        $this->quotaManager = new QuotaManager();
         $this->maxBackoff = isset($options['max_backoff']) ? $options['max_backoff'] : 20000;
         $this->collectStats = isset($options['collect_stats']) ? (bool) $options['collect_stats'] : \false;
         $this->decider = isset($options['decider']) ? $options['decider'] : self::createDefaultDecider($this->quotaManager, $this->maxAttempts, $options);
@@ -80,10 +80,10 @@ class RetryMiddlewareV2
             return $this->exponentialDelayWithJitter($attempts);
         };
         if ($this->mode === 'adaptive') {
-            $this->rateLimiter = isset($options['rate_limiter']) ? $options['rate_limiter'] : new \WPMailSMTP\Vendor\Aws\Retry\RateLimiter();
+            $this->rateLimiter = isset($options['rate_limiter']) ? $options['rate_limiter'] : new RateLimiter();
         }
     }
-    public function __invoke(\WPMailSMTP\Vendor\Aws\CommandInterface $cmd, \WPMailSMTP\Vendor\Psr\Http\Message\RequestInterface $req)
+    public function __invoke(CommandInterface $cmd, RequestInterface $req)
     {
         $decider = $this->decider;
         $delayer = $this->delayer;
@@ -97,7 +97,7 @@ class RetryMiddlewareV2
                 $this->rateLimiter->updateSendingRate($this->isThrottlingError($value));
             }
             $this->updateHttpStats($value, $requestStats);
-            if ($value instanceof \WPMailSMTP\Vendor\Aws\MonitoringEventsInterface) {
+            if ($value instanceof MonitoringEventsInterface) {
                 $reversedEvents = \array_reverse($monitoringEvents);
                 $monitoringEvents = \array_merge($monitoringEvents, $value->getMonitoringEvents());
                 foreach ($reversedEvents as $event) {
@@ -106,9 +106,9 @@ class RetryMiddlewareV2
             }
             if ($value instanceof \Exception || $value instanceof \Throwable) {
                 if (!$decider($attempts, $cmd, $value)) {
-                    return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::rejectionFor($this->bindStatsToReturn($value, $requestStats));
+                    return Promise\Create::rejectionFor($this->bindStatsToReturn($value, $requestStats));
                 }
-            } elseif ($value instanceof \WPMailSMTP\Vendor\Aws\ResultInterface && !$decider($attempts, $cmd, $value)) {
+            } elseif ($value instanceof ResultInterface && !$decider($attempts, $cmd, $value)) {
                 return $this->bindStatsToReturn($value, $requestStats);
             }
             $delayBy = $delayer($attempts++);
@@ -176,7 +176,7 @@ class RetryMiddlewareV2
             }
             return isset($statusCodes[$result['@metadata']['statusCode']]);
         }
-        if (!$result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if (!$result instanceof AwsException) {
             return \false;
         }
         if ($result->isConnectionError()) {
@@ -188,7 +188,7 @@ class RetryMiddlewareV2
         if (!empty($statusCodes[$result->getStatusCode()])) {
             return \true;
         }
-        if (\count($retryCurlErrors) && ($previous = $result->getPrevious()) && $previous instanceof \WPMailSMTP\Vendor\GuzzleHttp\Exception\RequestException) {
+        if (\count($retryCurlErrors) && ($previous = $result->getPrevious()) && $previous instanceof RequestException) {
             if (\method_exists($previous, 'getHandlerContext')) {
                 $context = $previous->getHandlerContext();
                 return !empty($context['errno']) && isset($retryCurlErrors[$context['errno']]);
@@ -211,7 +211,7 @@ class RetryMiddlewareV2
     }
     private function isThrottlingError($result)
     {
-        if ($result instanceof \WPMailSMTP\Vendor\Aws\Exception\AwsException) {
+        if ($result instanceof AwsException) {
             // Check pre-defined throttling errors
             $throttlingErrors = self::$standardThrottlingErrors;
             if (!empty($this->options['throttling_error_codes']) && \is_array($this->options['throttling_error_codes'])) {

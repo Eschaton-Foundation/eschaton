@@ -11,7 +11,7 @@ use WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface;
  * @internal Implements a decoder for a binary encoded event stream that will
  * decode, validate, and provide individual events from the stream.
  */
-class EventParsingIterator implements \Iterator
+class EventParsingIterator implements Iterator
 {
     /** @var StreamInterface */
     private $decodingIterator;
@@ -19,7 +19,7 @@ class EventParsingIterator implements \Iterator
     private $shape;
     /** @var AbstractParser */
     private $parser;
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream, \WPMailSMTP\Vendor\Aws\Api\StructureShape $shape, \WPMailSMTP\Vendor\Aws\Api\Parser\AbstractParser $parser)
+    public function __construct(StreamInterface $stream, StructureShape $shape, AbstractParser $parser)
     {
         $this->decodingIterator = $this->chooseDecodingIterator($stream);
         $this->shape = $shape;
@@ -36,9 +36,9 @@ class EventParsingIterator implements \Iterator
     private function chooseDecodingIterator($stream)
     {
         if ($stream->isSeekable()) {
-            return new \WPMailSMTP\Vendor\Aws\Api\Parser\DecodingEventStreamIterator($stream);
+            return new DecodingEventStreamIterator($stream);
         } else {
-            return new \WPMailSMTP\Vendor\Aws\Api\Parser\NonSeekableStreamDecodingEventStreamIterator($stream);
+            return new NonSeekableStreamDecodingEventStreamIterator($stream);
         }
     }
     /**
@@ -88,12 +88,12 @@ class EventParsingIterator implements \Iterator
                 return $this->parseError($event);
             }
             if ($event['headers'][':message-type'] !== 'event') {
-                throw new \WPMailSMTP\Vendor\Aws\Api\Parser\Exception\ParserException('Failed to parse unknown message type.');
+                throw new ParserException('Failed to parse unknown message type.');
             }
         }
         $eventType = $event['headers'][':event-type'] ?? null;
         if (empty($eventType)) {
-            throw new \WPMailSMTP\Vendor\Aws\Api\Parser\Exception\ParserException('Failed to parse without event type.');
+            throw new ParserException('Failed to parse without event type.');
         }
         $eventPayload = $event['payload'];
         if ($eventType === 'initial-response') {
@@ -149,7 +149,7 @@ class EventParsingIterator implements \Iterator
     }
     private function parseError(array $event)
     {
-        throw new \WPMailSMTP\Vendor\Aws\Exception\EventStreamDataException($event['headers'][':error-code'], $event['headers'][':error-message']);
+        throw new EventStreamDataException($event['headers'][':error-code'], $event['headers'][':error-message']);
     }
     private function parseInitialResponseEvent($payload) : array
     {

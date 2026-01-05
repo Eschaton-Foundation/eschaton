@@ -61,7 +61,7 @@ class Multisite {
 
 		// Change Outlook auth redirect URL for network admin (WPMS).
 		add_filter( 'wp_mail_smtp_outlook_get_plugin_auth_url', [ $this, 'change_outlook_auth_redirect_url' ] );
-		add_filter( 'wp_mail_smtp_pro_providers_outlook_one_click_auth_get_plugin_auth_url', [ $this, 'change_outlook_auth_redirect_url' ] );
+		add_filter( 'wp_mail_smtp_pro_providers_outlook_one_click_auth_get_plugin_auth_url', [ $this, 'change_outlook_oneclick_auth_redirect_url' ] );
 
 		// Remove other settings tabs if on network admin and the global settings options is disabled.
 		add_filter( 'wp_mail_smtp_admin_get_pages', [ $this, 'maybe_remove_other_setting_tabs' ] );
@@ -507,6 +507,31 @@ class Multisite {
 		}
 
 		return network_admin_url();
+	}
+
+	/**
+	 * Change the Outlook one-click auth redirect URL if this is a WP multisite and
+	 * the global network setting is enabled.
+	 *
+	 * @since 4.7.0
+	 *
+	 * @param string $url The default Outlook auth redirect URL.
+	 *
+	 * @return string
+	 */
+	public function change_outlook_oneclick_auth_redirect_url( $url ) {
+
+		if ( ! WP::use_global_plugin_settings() ) {
+			return $url;
+		}
+
+		return add_query_arg(
+			[
+				'page' => Area::SLUG,
+				'tab'  => 'auth',
+			],
+			WP::admin_url()
+		);
 	}
 
 	/**

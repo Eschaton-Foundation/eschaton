@@ -18,19 +18,19 @@ final class Headers
     {
         $buf = "";
         foreach ($headers->headers as $header => $value) {
-            $buf .= \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::encodeString($header);
-            $buf .= \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::encodeString($value);
+            $buf .= Encoding::encodeString($header);
+            $buf .= Encoding::encodeString($value);
         }
         return $buf;
     }
     public static function unmarshall($buf)
     {
-        $strings = \WPMailSMTP\Vendor\AWS\CRT\Internal\Encoding::readStrings($buf);
+        $strings = Encoding::readStrings($buf);
         $headers = [];
         for ($idx = 0; $idx < \count($strings);) {
             $headers[$strings[$idx++]] = $strings[$idx++];
         }
-        return new \WPMailSMTP\Vendor\AWS\CRT\HTTP\Headers($headers);
+        return new Headers($headers);
     }
     public function count()
     {

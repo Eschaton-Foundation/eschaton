@@ -42,15 +42,15 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const DEFAULT_ENDPOINTS_TYPE = 'legacy';
     const ENV_ENDPOINTS_TYPE = 'AWS_STS_REGIONAL_ENDPOINTS';
     const ENV_PROFILE = 'AWS_PROFILE';
     const INI_ENDPOINTS_TYPE = 'sts_regional_endpoints';
     public static $cacheKey = 'aws_sts_regional_endpoints_config';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -73,8 +73,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini();
         }
         $configProviders[] = self::fallback();
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['sts_regional_endpoints']) && $config['sts_regional_endpoints'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['sts_regional_endpoints']) && $config['sts_regional_endpoints'] instanceof CacheInterface) {
             return self::cache($memo, $config['sts_regional_endpoints'], self::$cacheKey);
         }
         return $memo;
@@ -90,7 +90,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             // Use config from environment variables, if available
             $endpointsType = \getenv(self::ENV_ENDPOINTS_TYPE);
             if (!empty($endpointsType)) {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Configuration($endpointsType));
+                return Promise\Create::promiseFor(new Configuration($endpointsType));
             }
             return self::reject('Could not find environment variable config' . ' in ' . self::ENV_ENDPOINTS_TYPE);
         };
@@ -103,7 +103,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     public static function fallback()
     {
         return function () {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Configuration(self::DEFAULT_ENDPOINTS_TYPE, \true));
+            return Promise\Create::promiseFor(new Configuration(self::DEFAULT_ENDPOINTS_TYPE, \true));
         };
     }
     /**
@@ -136,7 +136,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if (!isset($data[$profile][self::INI_ENDPOINTS_TYPE])) {
                 return self::reject("Required STS regional endpoints config values\n                    not present in INI profile '{$profile}' ({$filename})");
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Configuration($data[$profile][self::INI_ENDPOINTS_TYPE]));
+            return Promise\Create::promiseFor(new Configuration($data[$profile][self::INI_ENDPOINTS_TYPE]));
         };
     }
     /**
@@ -152,17 +152,17 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
         if (\is_callable($config)) {
             $config = $config();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
+        if ($config instanceof PromiseInterface) {
             $config = $config->wait();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\ConfigurationInterface) {
+        if ($config instanceof ConfigurationInterface) {
             return $config;
         }
         if (\is_string($config)) {
-            return new \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Configuration($config);
+            return new Configuration($config);
         }
         if (\is_array($config) && isset($config['endpoints_type'])) {
-            return new \WPMailSMTP\Vendor\Aws\Sts\RegionalEndpoints\Configuration($config['endpoints_type']);
+            return new Configuration($config['endpoints_type']);
         }
         throw new \InvalidArgumentException('Not a valid STS regional endpoints ' . 'configuration argument.');
     }

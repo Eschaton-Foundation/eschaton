@@ -5,7 +5,7 @@ namespace WPMailSMTP\Vendor\Aws;
 /**
  * AWS command object.
  */
-class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
+class Command implements CommandInterface
 {
     use HasDataTrait;
     /** @var string */
@@ -25,18 +25,18 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
      * @param array       $args           Arguments to pass to the command
      * @param HandlerList $list           Handler list
      */
-    public function __construct($name, array $args = [], ?\WPMailSMTP\Vendor\Aws\HandlerList $list = null, ?\WPMailSMTP\Vendor\Aws\MetricsBuilder $metricsBuilder = null)
+    public function __construct($name, array $args = [], ?HandlerList $list = null, ?MetricsBuilder $metricsBuilder = null)
     {
         $this->name = $name;
         $this->data = $args;
-        $this->handlerList = $list ?: new \WPMailSMTP\Vendor\Aws\HandlerList();
+        $this->handlerList = $list ?: new HandlerList();
         if (!isset($this->data['@http'])) {
             $this->data['@http'] = [];
         }
         if (!isset($this->data['@context'])) {
             $this->data['@context'] = [];
         }
-        $this->metricsBuilder = $metricsBuilder ?: new \WPMailSMTP\Vendor\Aws\MetricsBuilder();
+        $this->metricsBuilder = $metricsBuilder ?: new MetricsBuilder();
     }
     public function __clone()
     {
@@ -99,7 +99,7 @@ class Command implements \WPMailSMTP\Vendor\Aws\CommandInterface
      *
      * @return MetricsBuilder
      */
-    public function getMetricsBuilder() : \WPMailSMTP\Vendor\Aws\MetricsBuilder
+    public function getMetricsBuilder() : MetricsBuilder
     {
         return $this->metricsBuilder;
     }

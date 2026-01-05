@@ -10,16 +10,16 @@ use WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface;
 /**
  * Parses JSON-REST errors.
  */
-class RestJsonErrorParser extends \WPMailSMTP\Vendor\Aws\Api\ErrorParser\AbstractErrorParser
+class RestJsonErrorParser extends AbstractErrorParser
 {
     use JsonParserTrait;
     private $parser;
-    public function __construct(?\WPMailSMTP\Vendor\Aws\Api\Service $api = null, ?\WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser $parser = null)
+    public function __construct(?Service $api = null, ?JsonParser $parser = null)
     {
         parent::__construct($api);
-        $this->parser = $parser ?: new \WPMailSMTP\Vendor\Aws\Api\Parser\JsonParser();
+        $this->parser = $parser ?: new JsonParser();
     }
-    public function __invoke(\WPMailSMTP\Vendor\Psr\Http\Message\ResponseInterface $response, ?\WPMailSMTP\Vendor\Aws\CommandInterface $command = null)
+    public function __invoke(ResponseInterface $response, ?CommandInterface $command = null)
     {
         $data = $this->genericHandler($response);
         // Merge in error data from the JSON body

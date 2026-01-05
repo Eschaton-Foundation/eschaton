@@ -7,7 +7,7 @@ use WPMailSMTP\Vendor\Aws\Exception\AwsException;
 use WPMailSMTP\Vendor\GuzzleHttp\Psr7;
 use InvalidArgumentException as IAE;
 use WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface as Stream;
-abstract class AbstractUploader extends \WPMailSMTP\Vendor\Aws\Multipart\AbstractUploadManager
+abstract class AbstractUploader extends AbstractUploadManager
 {
     /** @var Stream Source of the data to be uploaded. */
     protected $source;
@@ -16,7 +16,7 @@ abstract class AbstractUploader extends \WPMailSMTP\Vendor\Aws\Multipart\Abstrac
      * @param mixed  $source
      * @param array  $config
      */
-    public function __construct(\WPMailSMTP\Vendor\Aws\AwsClientInterface $client, $source, array $config = [])
+    public function __construct(Client $client, $source, array $config = [])
     {
         $this->source = $this->determineSource($source);
         parent::__construct($client, $config);
@@ -29,10 +29,10 @@ abstract class AbstractUploader extends \WPMailSMTP\Vendor\Aws\Multipart\Abstrac
      *
      * @return Psr7\LimitStream
      */
-    protected function limitPartStream(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $stream)
+    protected function limitPartStream(Stream $stream)
     {
         // Limit what is read from the stream to the part size.
-        return new \WPMailSMTP\Vendor\GuzzleHttp\Psr7\LimitStream($stream, $this->state->getPartSize(), $this->source->tell());
+        return new Psr7\LimitStream($stream, $this->state->getPartSize(), $this->source->tell());
     }
     protected function getUploadCommands(callable $resultHandler)
     {
@@ -49,7 +49,7 @@ abstract class AbstractUploader extends \WPMailSMTP\Vendor\Aws\Multipart\Abstrac
                 $command->getHandlerList()->appendSign($resultHandler, 'mup');
                 $numberOfParts = $this->getNumberOfParts($this->state->getPartSize());
                 if (isset($numberOfParts) && $partNumber > $numberOfParts) {
-                    throw new $this->config['exception_class']($this->state, new \WPMailSMTP\Vendor\Aws\Exception\AwsException("Maximum part number for this job exceeded, file has likely been corrupted." . "  Please restart this upload.", $command));
+                    throw new $this->config['exception_class']($this->state, new AwsException("Maximum part number for this job exceeded, file has likely been corrupted." . "  Please restart this upload.", $command));
                 }
                 (yield $command);
                 if ($this->source->tell() > $partStartPos) {
@@ -99,12 +99,12 @@ abstract class AbstractUploader extends \WPMailSMTP\Vendor\Aws\Multipart\Abstrac
     {
         // Use the contents of a file as the data source.
         if (\is_string($source)) {
-            $source = \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::tryFopen($source, 'r');
+            $source = Psr7\Utils::tryFopen($source, 'r');
         }
         // Create a source stream.
-        $stream = \WPMailSMTP\Vendor\GuzzleHttp\Psr7\Utils::streamFor($source);
+        $stream = Psr7\Utils::streamFor($source);
         if (!$stream->isReadable()) {
-            throw new \InvalidArgumentException('Source stream must be readable.');
+            throw new IAE('Source stream must be readable.');
         }
         return $stream;
     }

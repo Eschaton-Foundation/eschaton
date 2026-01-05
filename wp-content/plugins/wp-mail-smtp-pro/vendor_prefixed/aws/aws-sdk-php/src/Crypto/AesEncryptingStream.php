@@ -9,7 +9,7 @@ use WPMailSMTP\Vendor\Aws\Crypto\Cipher\CipherMethod;
 /**
  * @internal Represents a stream of data to be encrypted with a passed cipher.
  */
-class AesEncryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInterface
+class AesEncryptingStream implements AesStreamInterface
 {
     const BLOCK_SIZE = 16;
     // 128 bits
@@ -35,7 +35,7 @@ class AesEncryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInte
      * @param string $key
      * @param CipherMethod $cipherMethod
      */
-    public function __construct(\WPMailSMTP\Vendor\Psr\Http\Message\StreamInterface $plainText, $key, \WPMailSMTP\Vendor\Aws\Crypto\Cipher\CipherMethod $cipherMethod)
+    public function __construct(StreamInterface $plainText, $key, CipherMethod $cipherMethod)
     {
         $this->stream = $plainText;
         $this->key = $key;
@@ -90,7 +90,7 @@ class AesEncryptingStream implements \WPMailSMTP\Vendor\Aws\Crypto\AesStreamInte
             $this->cipherMethod->seek($wholeBlockOffset);
             $this->read($offset - $wholeBlockOffset);
         } else {
-            throw new \LogicException('Unrecognized whence.');
+            throw new LogicException('Unrecognized whence.');
         }
     }
     private function encryptBlock($length)

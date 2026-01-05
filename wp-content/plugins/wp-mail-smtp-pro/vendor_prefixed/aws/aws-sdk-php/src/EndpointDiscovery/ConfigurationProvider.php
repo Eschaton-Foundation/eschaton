@@ -42,7 +42,7 @@ use WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface;
  * $config = $promise->wait();
  * </code>
  */
-class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfigurationProvider implements \WPMailSMTP\Vendor\Aws\ConfigurationProviderInterface
+class ConfigurationProvider extends AbstractConfigurationProvider implements ConfigurationProviderInterface
 {
     const DEFAULT_ENABLED = \false;
     const DEFAULT_CACHE_LIMIT = 1000;
@@ -50,8 +50,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
     const ENV_ENABLED_ALT = 'AWS_ENABLE_ENDPOINT_DISCOVERY';
     const ENV_PROFILE = 'AWS_PROFILE';
     public static $cacheKey = 'aws_cached_endpoint_discovery_config';
-    protected static $interfaceClass = \WPMailSMTP\Vendor\Aws\EndpointDiscovery\ConfigurationInterface::class;
-    protected static $exceptionClass = \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Exception\ConfigurationException::class;
+    protected static $interfaceClass = ConfigurationInterface::class;
+    protected static $exceptionClass = ConfigurationException::class;
     /**
      * Create a default config provider that first checks for environment
      * variables, then checks for a specified profile in the environment-defined
@@ -74,8 +74,8 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             $configProviders[] = self::ini();
         }
         $configProviders[] = self::fallback($config);
-        $memo = self::memoize(\call_user_func_array([\WPMailSMTP\Vendor\Aws\EndpointDiscovery\ConfigurationProvider::class, 'chain'], $configProviders));
-        if (isset($config['endpoint_discovery']) && $config['endpoint_discovery'] instanceof \WPMailSMTP\Vendor\Aws\CacheInterface) {
+        $memo = self::memoize(\call_user_func_array([ConfigurationProvider::class, 'chain'], $configProviders));
+        if (isset($config['endpoint_discovery']) && $config['endpoint_discovery'] instanceof CacheInterface) {
             return self::cache($memo, $config['endpoint_discovery'], self::$cacheKey);
         }
         return $memo;
@@ -95,7 +95,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
                 $enabled = \getenv(self::ENV_ENABLED_ALT);
             }
             if ($enabled !== \false && $enabled !== '') {
-                return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration($enabled, $cacheLimit));
+                return Promise\Create::promiseFor(new Configuration($enabled, $cacheLimit));
             }
             return self::reject('Could not find environment variable config' . ' in ' . self::ENV_ENABLED);
         };
@@ -124,7 +124,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             }
         }
         return function () use($enabled) {
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration($enabled, self::DEFAULT_CACHE_LIMIT));
+            return Promise\Create::promiseFor(new Configuration($enabled, self::DEFAULT_CACHE_LIMIT));
         };
     }
     /**
@@ -158,7 +158,7 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
             if (!isset($data[$profile]['endpoint_discovery_enabled'])) {
                 return self::reject("Required endpoint discovery config values\n                    not present in INI profile '{$profile}' ({$filename})");
             }
-            return \WPMailSMTP\Vendor\GuzzleHttp\Promise\Create::promiseFor(new \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration($data[$profile]['endpoint_discovery_enabled'], $cacheLimit));
+            return Promise\Create::promiseFor(new Configuration($data[$profile]['endpoint_discovery_enabled'], $cacheLimit));
         };
     }
     /**
@@ -174,16 +174,16 @@ class ConfigurationProvider extends \WPMailSMTP\Vendor\Aws\AbstractConfiguration
         if (\is_callable($config)) {
             $config = $config();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\GuzzleHttp\Promise\PromiseInterface) {
+        if ($config instanceof PromiseInterface) {
             $config = $config->wait();
         }
-        if ($config instanceof \WPMailSMTP\Vendor\Aws\EndpointDiscovery\ConfigurationInterface) {
+        if ($config instanceof ConfigurationInterface) {
             return $config;
         } elseif (\is_array($config) && isset($config['enabled'])) {
             if (isset($config['cache_limit'])) {
-                return new \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration($config['enabled'], $config['cache_limit']);
+                return new Configuration($config['enabled'], $config['cache_limit']);
             }
-            return new \WPMailSMTP\Vendor\Aws\EndpointDiscovery\Configuration($config['enabled'], self::DEFAULT_CACHE_LIMIT);
+            return new Configuration($config['enabled'], self::DEFAULT_CACHE_LIMIT);
         }
         throw new \InvalidArgumentException('Not a valid endpoint_discovery ' . 'configuration argument.');
     }

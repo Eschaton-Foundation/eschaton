@@ -485,6 +485,7 @@ class Webhooks {
 			'mailjet'    => Providers\Mailjet\Provider::class,
 			'mailersend' => Providers\MailerSend\Provider::class,
 			'mandrill'   => Providers\Mandrill\Provider::class,
+			'resend'     => Providers\Resend\Provider::class,
 		];
 
 		if ( isset( $providers[ $mailer_name ] ) ) {

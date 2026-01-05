@@ -9,7 +9,7 @@ use WPMailSMTP\Vendor\Aws\Api\Shape;
  */
 class JsonParser
 {
-    public function parse(\WPMailSMTP\Vendor\Aws\Api\Shape $shape, $value)
+    public function parse(Shape $shape, $value)
     {
         if ($value === null) {
             return $value;
@@ -47,7 +47,7 @@ class JsonParser
                 }
                 return $target;
             case 'timestamp':
-                return \WPMailSMTP\Vendor\Aws\Api\DateTimeResult::fromTimestamp($value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
+                return DateTimeResult::fromTimestamp($value, !empty($shape['timestampFormat']) ? $shape['timestampFormat'] : null);
             case 'blob':
                 return \base64_decode($value);
             default:
