@@ -3,7 +3,7 @@
  * Plugin Name:       CWP Snippets
  * Plugin URI:        https://cwpsnippets.com
  * Description:       Provides a Custom Web Publishing environment for FileMaker Data API in WordPress
- * Version:           1.6.9
+ * Version:           1.8.1
  * Requires at least: 5.2
  * Requires PHP:      7.2
  * Author:            RGC Data LLC
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 // --- Define Core Plugin Constants ---
-define( 'CWP_SNIPPETS_VERSION', '1.6.9' );
+define( 'CWP_SNIPPETS_VERSION', '1.8.1' );
 define( 'FMCWP_PLUGIN_FILE', __FILE__ ); // Useful for functions like plugin_dir_url
 define( 'FMCWP_PLUGIN_PATH', plugin_dir_path( FMCWP_PLUGIN_FILE ) );
 define( 'FMCWP_PLUGIN_URL', plugin_dir_url( FMCWP_PLUGIN_FILE ) );
@@ -40,6 +40,9 @@ require_once FMCWP_PLUGIN_PATH . 'includes/update.php';
 require_once FMCWP_PLUGIN_PATH . 'includes/constants.php';
 require_once FMCWP_PLUGIN_PATH . 'includes/snippets-functions.php';
 require_once FMCWP_PLUGIN_PATH . 'includes/shortcodes.php';
+
+// -- Load Universal Helpers and Extensions
+require_once FMCWP_PLUGIN_PATH . 'includes/functions.php';
 
 // --- Load Third-Party Libraries ---
 require_once FMCWP_PLUGIN_PATH . 'includes/libraries/parsedown/Parsedown.php';
@@ -88,7 +91,8 @@ if ( is_admin() ) {
 	require_once FMCWP_PLUGIN_PATH . 'admin/debug-log.php';
 	require_once FMCWP_PLUGIN_PATH . 'admin/admin-notices.php';
 	require_once FMCWP_PLUGIN_PATH . 'admin/documentation.php';
-	require_once FMCWP_PLUGIN_PATH . 'admin/update-checker.php';
+	require_once FMCWP_PLUGIN_PATH . 'admin/update-checker.php';	
+	require_once FMCWP_PLUGIN_PATH . 'admin/utilities.php';
 	
 }
 
@@ -99,20 +103,26 @@ if ( class_exists( 'fmCWP\\fmCWP' ) ) {
 	class_alias( 'fmCWP\\fmCWP', 'fmCWP' );
 }
 
-// --- Define Custom Cron Hook Name ---
-define( 'CWP_SNIPPETS_CRON_HOOK', 'cwp_snippets_daily_license_check_event' );
 
-// --- Custom Cron Schedules ---
-function cwp_snippets_custom_cron_schedules( $schedules ) {
-	if ( ! isset( $schedules['cwp_daily'] ) ) {
-		$schedules['cwp_daily'] = array(
-			'interval' => DAY_IN_SECONDS,
-			'display'  => __( 'Once Daily CWP', 'cwp-snippets' ),
-		);
-	}
-	return $schedules;
+// ---- Enqueue Frontend JS/CSS Universal ---
+function cwp_enqueue_universal_helpers() {
+    // Adjust paths if you move the files
+    wp_enqueue_style(
+        'cwp-universal-helper-css',
+        plugins_url('admin/css/universal-helper.css', __FILE__),
+        array(),
+        CWP_SNIPPETS_VERSION
+    );
+    wp_enqueue_script(
+        'cwp-universal-helper-js',
+        plugins_url('admin/js/universal-helper-JS.js', __FILE__),
+        array('jquery'),
+        CWP_SNIPPETS_VERSION,
+        true
+    );
 }
-add_filter( 'cron_schedules', 'cwp_snippets_custom_cron_schedules' );
+add_action('wp_enqueue_scripts', 'cwp_enqueue_universal_helpers');
+
 
 // --- Register Activation Hooks ---
 function cwp_snippets_activate_plugin() {
@@ -130,24 +140,16 @@ function cwp_snippets_activate_plugin() {
 	}
 
 	fmcwp_set_plugin_version();
-
-	// Schedule the cron event if it's not already scheduled
-	if ( ! wp_next_scheduled( CWP_SNIPPETS_CRON_HOOK ) ) {
-		wp_schedule_event( time(), 'cwp_daily', CWP_SNIPPETS_CRON_HOOK );
-	}
 }
 register_activation_hook( FMCWP_PLUGIN_FILE, 'cwp_snippets_activate_plugin' );
 
 // --- Register Deactivation Hook ---
 function cwp_snippets_deactivate_plugin() {
 	fm_cwp_deactivate();
-	// Clear the scheduled cron event
-	wp_clear_scheduled_hook( CWP_SNIPPETS_CRON_HOOK );
 }
 register_deactivation_hook( FMCWP_PLUGIN_FILE, 'cwp_snippets_deactivate_plugin' );
 
 // --- Register Update Check Hook ---
 add_action( 'plugins_loaded', 'fmcwp_update_check' );
 
-// --- Hook the cron action to its callback function (defined in license-functions.php) ---
-add_action( CWP_SNIPPETS_CRON_HOOK, 'cwp_snippets_perform_scheduled_license_check' );
+fmcwp_add_version_column(); // v1.8.0 added versioning to snippets ; this will ensure all existing snippets have the correct db table

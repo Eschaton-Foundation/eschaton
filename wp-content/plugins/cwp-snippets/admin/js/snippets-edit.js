@@ -22,7 +22,7 @@ jQuery(document).ready(function($) {
     function saveEditorState(editor, key) {
         var snippetId = $('#snippet_id').val() || 'new';
         try {
-            const historyCap = 25;
+            const historyCap = 50;
             let history = editor.codemirror.getHistory();
 
             if (history.done.length > historyCap) {
@@ -80,6 +80,7 @@ jQuery(document).ready(function($) {
     var statusHiddenInput2 = $('#snippet_status_hidden-2');
     var statusLabel = $('#status-toggle-label');
     var statusLabel2 = $('#status-toggle-label-2');
+    var version = $('#version_field');
 
     // Store initial form values
     var initialName = nameField.val();
@@ -88,6 +89,7 @@ jQuery(document).ready(function($) {
     var initialPriority = priorityField.val();
     var initialDescription = descriptionTextarea.val();
     var initialStatus = statusHiddenInput.val();
+    var initialVersion = version.val();
     var initialCode = ''; // Will be set after editor initialization
     var initialCss = ''; // Will be set after editor initialization
 
@@ -106,6 +108,7 @@ jQuery(document).ready(function($) {
         var currentStatus = statusHiddenInput.val();
         var currentCode = codeEditorInstance ? codeEditorInstance.codemirror.getValue() : '';
         var currentCss = cssEditorInstance ? cssEditorInstance.codemirror.getValue() : '';
+        var currentVersion = version.val();
 
         return (
             currentName !== initialName ||
@@ -113,7 +116,7 @@ jQuery(document).ready(function($) {
             currentLocation !== initialLocation ||
             currentPriority !== initialPriority ||
             currentDescription !== initialDescription ||
-            currentStatus !== initialStatus ||
+            currentStatus !== initialStatus || currentVersion !== initialVersion || 
             (codeEditorInstance && currentCode !== initialCode) ||
             (cssEditorInstance && currentCss !== initialCss)
         );
@@ -293,6 +296,14 @@ jQuery(document).ready(function($) {
         updateSubmitButtonState(); // Update immediately for responsiveness
         uniquenessCheckTimeout = setTimeout(performUniquenessCheck, 500);
     });
+
+    // Listener for Version field input
+    version.on('input', function() {
+        clearTimeout(uniquenessCheckTimeout);
+        updateSubmitButtonState(); // Update immediately for responsiveness
+        uniquenessCheckTimeout = setTimeout(performUniquenessCheck, 500);
+    });
+
 
     // Listener for Type selector change (immediate check)
     typeSelector.on('change', function() {

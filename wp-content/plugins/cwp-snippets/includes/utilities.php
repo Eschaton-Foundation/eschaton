@@ -35,9 +35,6 @@ function cwp_is_pro_active() {
         $current_db_expiry_date = isset( $current_option_data['expiry_date'] ) ? $current_option_data['expiry_date'] : null;
 
         if ( ! empty( $license_key_from_option ) ) {
-            if (defined('WP_DEBUG') && WP_DEBUG) { // Only log this if WP_DEBUG is on
-                error_log("CWP Snippets: cwp_is_pro_active - Transient stale, performing live server check for key: '$license_key_from_option'.");
-            }
             // A license key exists, so perform a live check.
             // fmcwp_perform_license_server_request will update the option and set the transient.
             $check_result = fmcwp_perform_license_server_request( 'verify', $license_key_from_option, $current_db_status, $current_db_expiry_date );
@@ -143,23 +140,6 @@ function fmcwp_check_code_conflicts($code, $snippet_id = 0, $location = 'everywh
             if ($wpdb->get_var($sql)) {
                 return ['conflict' => true, 'name' => $function_name, 'type' => 'function'];
             }
-
-            // Check against the live admin environment, but only if the snippet is meant to run here.
-            if (in_array($location, ['admin', 'everywhere'])) {
-                if (function_exists($function_name)) {
-                    $is_current_snippet_active = false;
-                    if ($snippet_id > 0) {
-                        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is derived from $wpdb->prefix and safe to include for table identifiers.
-                        $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM $table_name WHERE id = %d", $snippet_id));
-                        if ($current_status == 1) {
-                            $is_current_snippet_active = true;
-                        }
-                    }
-                    if (!$is_current_snippet_active) {
-                        return ['conflict' => true, 'name' => $function_name, 'type' => 'function'];
-                    }
-                }
-            }
         }
     }
 
@@ -184,23 +164,6 @@ function fmcwp_check_code_conflicts($code, $snippet_id = 0, $location = 'everywh
             );
             if ($wpdb->get_var($sql)) {
                 return ['conflict' => true, 'name' => $class_name, 'type' => 'class'];
-            }
-
-            // Check against the live admin environment, but only if the snippet is meant to run here.
-            if (in_array($location, ['admin', 'everywhere'])) {
-                if (class_exists($class_name, false)) {
-                    $is_current_snippet_active = false;
-                    if ($snippet_id > 0) {
-                        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is derived from $wpdb->prefix and safe to include for table identifiers.
-                        $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM $table_name WHERE id = %d", $snippet_id));
-                        if ($current_status == 1) {
-                            $is_current_snippet_active = true;
-                        }
-                    }
-                    if (!$is_current_snippet_active) {
-                        return ['conflict' => true, 'name' => $class_name, 'type' => 'class'];
-                    }
-                }
             }
         }
     }
@@ -254,8 +217,8 @@ function fmcwp_check_php_syntax($code, $snippet_name = null, $snippet_id = null)
             if ( $is_log_enabled ) {
                 $r = fmcwp_log_syntax_error( $cwpSyntaxResults, $errorMessage, $snippet_name, $snippet_id, $syntax_timestamp );
                 // if $r = false / 0, something is messed up with database
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "There was an error logging this syntax error to the database.  Please check your MySQL structure to ensure the CWP Snippets Log table is correct" );
+                if ( !$r ) {
+                    cwp_snippets_conditional_log('Error logging syntax error to the database. Please check your MySQL structure to ensure the CWP Snippets Log table is correct');
                 }
             }
 
@@ -322,22 +285,82 @@ function cwp_snippets_check_php_syntax($userCode) {
 }
 
 
+
 // *********************************************************************************************************************************
-// Show Formatted Response
+/**
+ * Generates a unique name for a duplicated snippet.
+ *
+ * @param string $original_name The name of the snippet being duplicated.
+ * @return string A unique name for the new snippet.
+ */
+function fmcwp_get_unique_snippet_name($original_name) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'cwp_snippets';
 
-function fmcwpShowResponse($response) {
+    $new_name = $original_name . ' - Copy';
+    $counter = 2;
 
-    echo'
-    <div style="max-width:850px; margin: 10px; overflow: hidden; padding: 10px; border-radius: 5px; background-color: black; color: white; line-height: 1.1;">
-    <pre><code style="font-family: sans-serif; background-color: black; color: white; font-size: 12px;">';
-    // Escape the printed response to avoid raw output and development-function warnings.
-    echo esc_html( print_r( $response, true ) );
-    echo '</code></pre>
-    </div>
-    
-    ';
-    
+    // Loop until we find a unique name
+    // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+    while ($wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE name = %s", $new_name))) {
+        $new_name = $original_name . ' - Copy ' . $counter;
+        $counter++;
     }
+
+    return $new_name;
+}
+
+// --- Universal Collapsible Debug Output ---
+if (!function_exists('fmcwpShowResponse')) {
+    /**
+     * Display any variable in a collapsible, styled debug block for easy debugging.
+     *
+     * Usage:
+     *   fmcwpShowResponse($data, 'Optional Title');
+     *
+     * - Only visible to users with 'manage_options' capability (admins/webmasters)
+     * - Handles arrays, objects, strings, etc.
+     * - Output is in a black, monospaced <pre> block for readability
+     * - Collapsible UI lets you hide/show long debug output
+     * - max-height is set high for large responses (e.g., Stripe, FileMaker)
+     *
+     * @param mixed $data  Data to display (array, object, string, etc.)
+     * @param string $title Optional title for the block
+     */
+    function fmcwpShowResponse($data, $title = 'Debug Output') {
+        // Only output if user is admin/webmaster
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Unique IDs for each block to avoid conflicts
+        static $cwpShowId = 0;
+        $cwpShowId++;
+        $blockId = 'cwpShowBlock_' . $cwpShowId;
+        $toggleId = 'cwpShowToggle_' . $cwpShowId;
+        ?>
+        <div style="margin:20px 0;">
+            <!-- Collapsible header with Copy button -->
+            <div id="<?php echo esc_attr($toggleId); ?>" onclick="var b=document.getElementById('<?php echo esc_js($blockId); ?>');b.style.display=(b.style.display==='none'?'block':'none');" style="cursor:pointer;background:#222;color:#fff;padding:8px 14px;border-radius:4px 4px 0 0;font-family:monospace;font-size:15px;font-weight:600;position:relative;padding-right:52px;">
+                <?php echo esc_html($title); ?> 
+                <!-- Copy button (stop propagation so it doesn't toggle collapse) -->
+                <button type="button" onclick="event.stopPropagation(); (function(){ var sel = '#<?php echo esc_js($blockId); ?>'; if (typeof cwpSetClipboardFromSelector === 'function') { cwpSetClipboardFromSelector(sel); if (typeof cwpShowToast === 'function') { cwpShowToast('Copied to clipboard', 1500, '#007cba', '#fff'); } } else if (navigator.clipboard) { navigator.clipboard.writeText(document.querySelector(sel).innerText); (typeof cwpShowToast === 'function' ? cwpShowToast('Copied to clipboard',1500,'#007cba','#fff') : alert('Copied to clipboard')); } else { var t=document.createElement('textarea'); t.value = document.querySelector(sel).innerText; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); (typeof cwpShowToast === 'function' ? cwpShowToast('Copied to clipboard',1500,'#007cba','#fff') : alert('Copied to clipboard')); } })();" onmouseenter="this.style.background='#e6e6e6';this.style.color='#000';" onmouseleave="this.style.background='#fff';this.style.color='#222';" aria-label="Copy debug output" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); padding:3px 6px; font-size:12px; line-height:1; background:#fff; color:#222; border:0; border-radius:3px; cursor:pointer; box-shadow:0 1px 1px rgba(0,0,0,0.06); transition:background-color 0.2s ease, color 0.2s ease;">Copy</button>
+                <span style="float:right;font-size:13px;opacity:0.7;margin-right:8px;">[click to collapse]</span>
+            </div>
+            <!-- Debug output -->
+            <pre id="<?php echo esc_attr($blockId); ?>" style="background:#111;color:#eee;padding:14px;border-radius:0 0 4px 4px;margin:0;font-family:monospace;font-size:13px;max-height:1000px;overflow:auto;display:block;">
+<?php
+        if (is_array($data) || is_object($data)) {
+            echo esc_html(print_r($data, true));
+        } else {
+            echo esc_html(var_export($data, true));
+        }
+?>
+            </pre>
+        </div>
+        <?php
+    }
+}
 
  // *********************************************************************************************************************************
  /**

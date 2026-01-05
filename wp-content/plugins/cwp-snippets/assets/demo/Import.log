@@ -14,3 +14,12 @@
 2025-09-29 13:55:09.174 -0500	CWP Snippets.fmp12	0	Import completed
 2025-09-29 13:55:48.505 -0500	CWP Snippets.fmp12	0	Import operations committed
 2025-09-29 13:55:48.505 -0500	CWP Snippets.fmp12	0	==================================================================
+2025-12-29 08:38:07.076 -0600	CWP Snippets.fmp12	0	Import operations started
+2025-12-29 08:38:08.678 -0600	CWP Snippets.fmp12	0	Import of fields from clipboard started
+2025-12-29 08:38:08.712 -0600	log	0	fields imported : 5
+2025-12-29 08:38:08.747 -0600	CWP Snippets.fmp12	0	Import completed
+2025-12-29 08:38:11.261 -0600	CWP Snippets.fmp12	0	Import operations committed
+2025-12-29 08:38:11.302 -0600	CWP Snippets.fmp12	0	==================================================================
+2025-12-29 08:40:21.828 -0600	CWP Snippets.fmp12	0	Import of script steps from clipboard started
+2025-12-29 08:40:21.872 -0600	Log request	0	script steps imported : 29
+2025-12-29 08:40:21.906 -0600	CWP Snippets.fmp12	0	Import completed

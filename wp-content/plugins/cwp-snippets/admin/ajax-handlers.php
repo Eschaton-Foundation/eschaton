@@ -203,6 +203,7 @@ function fmcwp_check_import_conflicts_handler() {
     }
 
     // Get and sanitize input - normalize and sanitize each incoming snippet entry immediately
+    $raw_snippets = isset($_POST['snippets']) && is_array($_POST['snippets']) ? wp_unslash($_POST['snippets']) : [];
     $snippets_to_check = array();
     foreach ( $raw_snippets as $raw ) {
         if ( is_array( $raw ) ) {
@@ -236,13 +237,18 @@ function fmcwp_check_import_conflicts_handler() {
         return;
     }
 
-    // Check each snippet individually using a prepared statement per row. This avoids building
-    // a complex dynamic placeholder string and satisfies PHPCS about unfinished prepares.
+    // Check each snippet individually to perform a case-insensitive comparison.
     $conflicting_names = array();
     foreach ( $snippets_to_check as $snippet ) {
-        $found = $wpdb->get_var( $wpdb->prepare( 'SELECT name FROM ' . $table_name . ' WHERE name = %s AND type = %s', $snippet['name'], $snippet['type'] ) );
-        if ( $found ) {
-            $conflicting_names[] = $found;
+        if ( empty( $snippet['name'] ) || empty( $snippet['type'] ) ) {
+            continue;
+        }
+        // Check for a match case-insensitively.
+        $count = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . $table_name . ' WHERE LOWER(name) = %s AND type = %s', strtolower( $snippet['name'] ), $snippet['type'] ) );
+
+        if ( $count > 0 ) {
+            // If a conflict is found, add the original name from the import file to the list.
+            $conflicting_names[] = $snippet['name'];
         }
     }
 

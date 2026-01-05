@@ -128,20 +128,53 @@ function fmcwp_render_wp_debug_log_tab() {
     } elseif ( file_exists( $log_file ) && is_readable( $log_file ) ) {
         $lines = file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
         if ( $lines !== false ) {
+            $log_entries_grouped = [];
+            $current_entry = [];
+            $current_timestamp = null;
+
             foreach ( $lines as $line ) {
-                if ( strpos( $line, 'CWP Snippets' ) !== false ) {
-                    $clean_line = preg_replace( '/^(\[.*?\])\s*(?:PHP (?:Fatal error|Warning|Notice):\s*)?CWP Snippets:?\s*/', '$1 ', $line );
-                    $cwp_log_entries[] = trim( $clean_line );
+                // Extract timestamp like [15-Dec-2025 15:39:02 UTC]
+                if ( preg_match( '/\[(\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2}:\d{2})\s+UTC\]/', $line, $matches ) ) {
+                    $timestamp = $matches[1];
+
+                    // If we hit a new timestamp AND we have a current entry...
+                    if ( $current_timestamp !== null && $timestamp !== $current_timestamp ) {
+                        // Check if 'CWP Snippets' is anywhere in this group
+                        $group_text = implode( "\n", $current_entry );
+                        if ( stripos( $group_text, 'CWP Snippets' ) !== false ) {
+                            $log_entries_grouped[] = $current_entry;
+                        }
+                        $current_entry = []; // Reset for new entry
+                    }
+
+                    $current_timestamp = $timestamp;
+                }
+
+                $current_entry[] = $line;
+            }
+
+            // Don't forget to process the last entry!
+            if ( ! empty( $current_entry ) ) {
+                $group_text = implode( "\n", $current_entry );
+                if ( stripos( $group_text, 'CWP Snippets' ) !== false ) {
+                    $log_entries_grouped[] = $current_entry;
                 }
             }
-        }
-        
-        // Reverse to show most recent first
-        if ( ! empty( $cwp_log_entries ) ) {
-            $cwp_log_entries = array_reverse( $cwp_log_entries );
-            $log_content = implode( "\n", $cwp_log_entries );
-        } else {
-            echo '<div class="notice notice-info"><p>' . esc_html__( 'No CWP Snippets specific errors found in the debug log.', 'cwp-snippets' ) . '</p></div>';
+
+            // Reverse to show most recent first
+            if ( ! empty( $log_entries_grouped ) ) {
+                $log_entries_grouped = array_reverse( $log_entries_grouped );
+                
+                // Format each group for display
+                $formatted_entries = [];
+                foreach ( $log_entries_grouped as $entry_group ) {
+                    $formatted_entries[] = implode( "\n", $entry_group );
+                }
+                
+                $log_content = implode( "\n", $formatted_entries );
+            } else {
+                echo '<div class="notice notice-info"><p>' . esc_html__( 'No CWP Snippets specific errors found in the debug log.', 'cwp-snippets' ) . '</p></div>';
+            }
         }
     } else {
         echo '<div class="notice notice-info"><p>' . esc_html__( 'The debug.log file does not exist yet. It will be created automatically when the first error occurs.', 'cwp-snippets' ) . '</p></div>';

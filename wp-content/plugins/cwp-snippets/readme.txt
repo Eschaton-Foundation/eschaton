@@ -1,10 +1,10 @@
 === CWP Snippets ===
-Contributors: rcates00
+Contributors: rcates00, agseidler
 Tags: filemaker, code snippets, php, css, javascript
 Requires at least: 5.2
 Tested up to: 6.8
 Requires PHP: 7.2
-Stable tag: 1.6.9
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,34 @@ No, you can create an unlimited number of snippets depending on your needs.
 3. Settings for connecting to a FileMaker database.
 
 == Changelog ==
+= 1.8.1 =
+* Feature: Added `cwp_toolbar()` function to provide a vertical drag-and-drop floating toolbar (Top, Bottom, Save, Preview, Undo, Redo) with keyboard shortcuts for quick snippet editing.
+* New Feature: Added Versioning to every snippet, function, script, and style for easy tracking. (defaults to 1.0.0)
+* Enhancement: Introduced universal helper utilities in `/includes/functions.php` (Admin Debug Display, Logging, Caching & Transient Management, FileMaker helper functions, WordPress helper functions, CSS utilities, and JavaScript helper functions).
+* Enhancement: Reworked `fmcwpShowResponse()` to accept additional parameters and render collapsible debug blocks with a Copy-to-Clipboard button and toast feedback.
+* Enhancement: Updated plugin documentation and individual library documentation to reflect new features and improvements.
+* Enhancement: Added additional utility functions for admin and AJAX operations.
+* Enhancement: Added JavaScript create/show/hide Spinner universal functions with optional arguements
+
+= 1.7.2 =
+* Feature: Added `cwp_do_shortcode()` function to execute shortcodes with accompanying CSS injection. Allows snippets to include other snippets while preserving all CSS styling.
+* Helper Function: Added `cwp_get_snippet_css()` to retrieve CSS for a specific shortcode tag, supporting both snippet-specific and global Style snippet CSS.
+* Fix: Resolved an issue where detecting updates to the demo database was always finding true.
+* Enhancement: Optimized license verification system by removing scheduled cron jobs and using on-demand 12-hour transient caching instead.
+* Enhancement: Simplified error logging to only capture and log errors (not success messages) for cleaner production logs.
+* Enhancement: License errors are now logged through the custom logging system for better visibility in Pro Debug Log.
+* Enhancement: Standardized and improved error logging for viewing in the debug log viewer and or the Pro logging feature.
+
+= 1.7.1 =
+* Fix: Resolved an issue where importing snippets with the same name but different casing would fail to recognize them as updates, treating them as new snippets instead.
+* Fix: Corrected a flaw in the conflict detection logic that incorrectly flagged functions and classes as duplicates during an update, by removing the unreliable `function_exists` and `class_exists` checks.
+* Enhancement: Increased the undo limit in the snippet editor to 50 changes.
+* Enhancement: Inactive snippets with function name conflicts can now be saved with a warning. They cannot be activated until the conflict is resolved.
+* Enhancement: Improved duplicate snippet naming to prevent duplicate names by appending a numbered copy suffix.
+
+= 1.7.0 =
+* Fix: Fixed a bug that prevented snippets from being imported.
+* Enhancement: Added instructions to the documentstaion for running FileMaker scripts.
 
 = 1.6.9 =
 * Fix: Made code changes to prepare for submission to WordPress Repository

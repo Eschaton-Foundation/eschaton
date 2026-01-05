@@ -57,11 +57,18 @@ function fmcwp_handle_create_snippet() {
             $shortcode = '[' . $scprefix . str_replace(' ', '-', $name_formatted) . ']';
         }
 
+        // Get Version
+        $version = !empty($_POST['new_version']) ? $_POST['new_version'] : '1.0.0';
 
         // Check for function conflicts
         $conflict_result = fmcwp_check_code_conflicts($new_code, 0, $new_location);
+        $had_conflict = $conflict_result['conflict'];
 
-        if ($conflict_result['conflict']) {
+        // Get status from the form, default to 1 (active) if not set
+        $new_status = isset($_POST['new_status']) ? intval($_POST['new_status']) : 1;
+
+        // Only block saving if the snippet is active and has a conflict
+        if ($had_conflict && $new_status == 1) {
             // --- START: Store submitted data in a transient for repopulation ---
             $conflict_data_transient_key = 'fmcwp_conflict_data_' . get_current_user_id();
             $submitted_data = array(
@@ -72,7 +79,8 @@ function fmcwp_handle_create_snippet() {
                 'description' => $description,
                 'location'    => $new_location,
                 'priority'    => $new_priority,
-                'status'      => isset($_POST['new_status']) ? intval($_POST['new_status']) : 1,
+                'status'      => $new_status,
+                'version'     => $version,
             );
             set_transient($conflict_data_transient_key, $submitted_data, 60); // Store for 60 seconds
             // --- END: Store submitted data ---
@@ -93,7 +101,6 @@ function fmcwp_handle_create_snippet() {
 
             wp_safe_redirect($redirect_url);
             exit;
-
         }
 
            if(isset($_GET['id'])) {
@@ -165,6 +172,7 @@ function fmcwp_handle_create_snippet() {
                 'location' => 'everywhere', // Default value if not overridden
                 'priority' => 10,         // Default value if not overridden
                 'description' => $description, // Added description
+                'version' => sanitize_text_field($version), // added version 1.8.0
             );
             // --- START: Define data format array ---
             $data_format = array( // <-- Keep original name $data_format
@@ -179,6 +187,7 @@ function fmcwp_handle_create_snippet() {
                 '%s', // location
                 '%d', // priority
                 '%s', // description <-- Add format for description
+                '%s', // version (varchar(20))
             );
 
 
@@ -200,10 +209,9 @@ function fmcwp_handle_create_snippet() {
                 if ( $inserted === false) {
                 // --- Database Error Handling: Redirect with notice ---
                 $notice_code = 'create_db_error';
-                 // Log the error for debugging (only when WP_DEBUG is enabled)
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'CWP Snippets DB Insert Error: ' . $wpdb->last_error . ' | Data: ' . print_r( $insert_data, true ) );
-                }
+                // Log the error for debugging
+                //cwp_snippets_conditional_log('DB Insert Error: ' . $wpdb->last_error . ' | Data: ' . print_r( $insert_data, true ));
+                cwpLog('DB Insert Error', $wpdb->last_error . ' | Data: ' . print_r( $insert_data, true ), $new_name, 0, 0);
                 $args = array(
                     'page' => 'fmcwp-snippets',
                     'action' => 'new',
@@ -224,9 +232,14 @@ function fmcwp_handle_create_snippet() {
             // Store the active editor state in a transient (still useful for immediate redirect)
             set_transient($transient_key, sanitize_text_field($active_editor_val), 15);
 
-            // Redirect to the edit form for the new snippet with a success notice code
-            // AND add a flag to trigger localStorage migration
-            $notice_code = 'create_success';
+            // Determine the notice code for the redirect.
+            $notice_code = 'create_success'; // Default success notice.
+
+            // If the snippet was saved inactive but had a conflict, we add a special notice.
+            if ($had_conflict && $new_status == 0) {
+                $notice_code = 'create_success_with_conflict_warning';
+            }
+
             $args = array(
                 'page' => 'fmcwp-snippets',
                 'action' => 'edit',
@@ -235,6 +248,13 @@ function fmcwp_handle_create_snippet() {
                 'fmcwp_notice' => $notice_code,
                 'migrate_ls' => 'new' // Add flag: migrate from 'new'
             );
+
+            // If we have the special warning, add the conflict details to the URL for the notice.
+            if ($notice_code === 'create_success_with_conflict_warning') {
+                $args['conflict_name'] = urlencode($conflict_result['name']);
+                $args['conflict_type'] = $conflict_result['type'];
+            }
+
             // --- START: Modify remove_query_arg to include migrate_ls ---
             $referer_url = admin_url('admin.php'); // Base URL for this redirect
             // Clean potential existing args from the base URL before adding new ones
@@ -291,7 +311,9 @@ function fmcwp_handle_update_snippet() {
         }
         // --- END: Retrieve Location and Priority ---
 
- 
+        // Set Version
+        $version = !empty($_POST['update_version']) ? $_POST['update_version'] : '1.0.0';
+
         // Generate shortcode (original logic)
         $shortcode = ''; // Default to empty for types that shouldn't have shortcodes
         if (in_array($update_type, ['Snippet', 'Template', 'Sample'])) {
@@ -308,10 +330,15 @@ function fmcwp_handle_update_snippet() {
 
 
 
+        // Get status from the form, default to 1 (active) if not set
+        $update_status = isset($_POST['update_status']) ? intval($_POST['update_status']) : 1;
+
         // Check for function conflicts
         $conflict_result = fmcwp_check_code_conflicts($update_code, $update_id, $update_location);
+        $had_conflict = $conflict_result['conflict'];
 
-        if ($conflict_result['conflict']) {
+        // Only block saving if the snippet is active and has a conflict
+        if ($had_conflict && $update_status == 1) {
             // --- START: Store submitted data in a transient for repopulation ---
             $conflict_data_transient_key = 'fmcwp_conflict_data_' . get_current_user_id();
             $submitted_data = array(
@@ -322,7 +349,8 @@ function fmcwp_handle_update_snippet() {
                 'description' => $description,
                 'location'    => $update_location,
                 'priority'    => $update_priority,
-                'status'      => isset($_POST['update_status']) ? intval($_POST['update_status']) : 1,
+                'status'      => $update_status,
+                'version'     => $version,
             );
             set_transient($conflict_data_transient_key, $submitted_data, 60); // Store for 60 seconds
             // --- END: Store submitted data ---
@@ -403,9 +431,7 @@ function fmcwp_handle_update_snippet() {
         }
 
             // --- Success Handling ---
-            // Get status from the form, default to 1 (active) if not set
-            $update_status = isset($_POST['update_status']) ? intval($_POST['update_status']) : 1; // <-- Add this line
-
+            // Note: $update_status was already fetched before the conflict check
             $update_data = array( // <-- Keep original name $update_data
                 'name' => sanitize_text_field($update_name),
                 'shortcode' => $shortcode,
@@ -415,6 +441,7 @@ function fmcwp_handle_update_snippet() {
                 'status' => $update_status, // <-- Add status here
                 'modified_time' => current_time('mysql'), // Add this line
                 'description' => $description, // Added description
+                'version' => sanitize_text_field($version), // added version 1.8.0
                 // Location and priority handled below
             );
             // --- START: Define data format array ---
@@ -427,6 +454,7 @@ function fmcwp_handle_update_snippet() {
                 '%d', // status <-- Add format here
                 '%s', // modified_time <-- Add this line
                 '%s', // description <-- Add format for description
+                '%s', // version (varchar(20)
             );
             // --- END: Define data format array ---
 
@@ -465,10 +493,9 @@ function fmcwp_handle_update_snippet() {
                 if ($updated === false) {
                 // --- Database Error Handling: Redirect with notice ---
                 $notice_code = 'update_db_error';
-                // Log the error for debugging (only when WP_DEBUG is enabled)
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'CWP Snippets DB Update Error: ' . $wpdb->last_error . ' | Data: ' . print_r( $update_data, true ) );
-                }
+                // Log the error for debugging
+                // cwp_snippets_conditional_log('DB Update Error: ' . $wpdb->last_error . ' | Data: ' . print_r( $update_data, true )); // legacy               
+                cwpLog('DB Update Error', $wpdb->last_error . ' | Data: ' . print_r( $update_data, true ), $update_name, $update_id, 0);
                 $args = array(
                     'page' => 'fmcwp-snippets',
                     'action' => 'edit',
@@ -491,8 +518,14 @@ function fmcwp_handle_update_snippet() {
             // Store the active editor state in a transient
             set_transient($transient_key, sanitize_text_field($active_editor_val), 15);
 
-            // Redirect back to the edit form for the same snippet with a success notice code
-            $notice_code = 'update_success';
+            // Determine the notice code for the redirect.
+            $notice_code = 'update_success'; // Default success notice.
+
+            // If the snippet was saved inactive but had a conflict, we add a special notice.
+            if ($had_conflict && $update_status == 0) {
+                $notice_code = 'update_success_with_conflict_warning';
+            }
+
             $args = array(
                 'page' => 'fmcwp-snippets',
                 'action' => 'edit',
@@ -500,8 +533,15 @@ function fmcwp_handle_update_snippet() {
                 'filter_type' => sanitize_text_field($update_type),
                 'fmcwp_notice' => $notice_code
             );
+
+            // If we have the special warning, add the conflict details to the URL for the notice.
+            if ($notice_code === 'update_success_with_conflict_warning') {
+                $args['conflict_name'] = urlencode($conflict_result['name']);
+                $args['conflict_type'] = $conflict_result['type'];
+            }
+
             $referer_url = admin_url('admin.php');
-            $base_redirect_url = remove_query_arg( 'fmcwp_notice', $referer_url );
+            $base_redirect_url = remove_query_arg( array('fmcwp_notice', 'conflict_name', 'conflict_type'), $referer_url );
             $redirect_url = add_query_arg( $args, $base_redirect_url );
 
             // Use wp_safe_redirect
@@ -794,8 +834,24 @@ function fmcwp_handle_duplicate_snippet() {
             $new_snippet_data = $original_snippet;
             unset( $new_snippet_data['id'] ); // Remove original ID
 
-            // Append " - Copy" to the name
-            $new_snippet_data['name'] = $original_snippet['name'] . ' - Copy';
+            // --- START: Generate a unique name for the new snippet ---
+            $base_name = $original_snippet['name'];
+            $base_type = $original_snippet['type'];
+            $counter = 1;
+            $new_name = $base_name . ' (copy)';
+
+            // Loop to find a unique name by checking for "Name (copy)", "Name (copy 2)", etc.
+            while (null !== $wpdb->get_var($wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                "SELECT id FROM {$table_name} WHERE name = %s AND type = %s",
+                $new_name,
+                $base_type
+            ))) {
+                $counter++;
+                $new_name = $base_name . ' (copy ' . $counter . ')';
+            }
+            $new_snippet_data['name'] = $new_name;
+            // --- END: Generate a unique name ---
 
             // Generate a new shortcode if applicable (or adjust existing)
             // This logic should mirror your create/update shortcode generation
@@ -1618,10 +1674,24 @@ function fmcwp_page_html() {
                         <td style="text-align: center;"><?php echo esc_html($row->id); ?></td>
                         <td
                             <?php // Add title attribute for description tooltip
-                            if (!empty($row->description)) {
-                                // Use wp_strip_all_tags instead of strip_tags for better coverage
-                                echo ' title="' . esc_attr( wp_strip_all_tags( $row->description ) ) . '"';
-                            }
+                                // start with title and version
+                                $toolTipFull = ' title="';
+                                if(!empty($row->version)) {
+                                    $toolTipFull .= 'Version: ' . $row->version . ' ';
+                                }
+                                // add description if it exists
+                                if (!empty($row->description)) {
+                                    // attempt a new line if description exists
+                                    $toolTipFull .= (!empty($row->version) ? "\n" : '');
+
+                                    // Use wp_strip_all_tags instead of strip_tags for better coverage
+                                    $toolTipFull .= wp_strip_all_tags( $row->description );
+                                }
+                                
+                                $toolTipFull .= '"';
+                                echo $toolTipFull;
+                                
+
                             ?>>
                             <?php echo esc_html($row->name); ?>
                         </td>
@@ -1729,7 +1799,9 @@ function fmcwp_page_html() {
 
 
     <!-- New/Edit Form -->
+
     <div id="form-container" style="display: <?php echo ($is_edit_mode || isset($_GET['action']) && $_GET['action'] === 'new') ? 'block' : 'none'; ?>;">
+        <?php if ($is_pro) { cwp_toolbar(); } ?>
         <form method="post" id="data-form">
             <?php wp_nonce_field('create_edit_snippet'); ?>
             <?php wp_nonce_field('check_snippet_uniqueness_action', 'check_snippet_uniqueness_nonce'); ?>
@@ -1823,7 +1895,17 @@ function fmcwp_page_html() {
                     <span id="status-toggle-label" style="<?php echo !$initial_status ? 'color: #bbb; font-style: italic;' : ''; ?>"><?php echo esc_html($label_text); ?></span>
                 </div>
                 <?php // --- END: Added Status Toggle HTML --- ?>
-
+                <?php // --- START: Add Version --- ?>
+                <label for="version_field" style="margin-left: auto; font-weight: bold;">Version:</label>
+                <input
+                    type="text"
+                    id="version_field"
+                    name="<?php echo $is_edit_mode ? 'update_version' : 'new_version'; ?>"
+                    value="<?php echo $repop_data ? esc_attr($repop_data['version'] ?? '') : ($is_edit_mode && isset($edit_data->version) ? esc_attr($edit_data->version) : ''); ?>"
+                    style="width: 70px; text-align: right; margin-right: 34px;"
+                    placeholder="1.0"
+                />
+                <?php // --- END: Add Version --- ?>
 
             </div>
             <?php // --- END: Modified this DIV for layout --- ?>
@@ -1886,6 +1968,7 @@ function fmcwp_page_html() {
                 <span id="status-toggle-label-2" style="<?php echo !$initial_status ? 'color: #bbb; font-style: italic;' : ''; ?>"><?php echo esc_html($label_text); ?></span>
             </div>
             <?php // --- END: Added Status Toggle HTML (Bottom) --- ?>
+        
 
             <div id="preview_message" style="display: none; color: red;"></div>
 
@@ -2273,6 +2356,24 @@ function fmcwp_display_admin_notices() {
             case 'update_success':
                 $message = __( 'Snippet updated successfully.', 'cwp-snippets' );
                 $type = 'success';
+                break;
+
+            case 'create_success_with_conflict_warning':
+            case 'update_success_with_conflict_warning':
+                $conflict_name = isset($_GET['conflict_name']) ? esc_html(urldecode($_GET['conflict_name'])) : 'unknown';
+                $conflict_type = isset($_GET['conflict_type']) ? esc_html($_GET['conflict_type']) : 'item';
+                $base_message = ($notice_code === 'create_success_with_conflict_warning')
+                    ? __( 'Snippet created successfully but is inactive.', 'cwp-snippets' )
+                    : __( 'Snippet updated successfully.', 'cwp-snippets' );
+
+                /* translators: 1: Base success message, 2: conflict type (e.g. "Function"), 3: conflict name */
+                $message = sprintf(
+                    __( '%1$s <strong>Warning:</strong> A %2$s conflict was detected for <code>%3$s</code>. The snippet cannot be activated until this conflict is resolved.', 'cwp-snippets' ),
+                    $base_message,
+                    '<strong>' . ucfirst($conflict_type) . '</strong>',
+                    $conflict_name
+                );
+                $type = 'warning';
                 break;
 
             case 'create_conflict':

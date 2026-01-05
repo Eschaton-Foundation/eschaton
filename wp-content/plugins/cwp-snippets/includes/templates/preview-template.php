@@ -100,9 +100,7 @@ if ( locate_template( 'header.php' ) !== '' ) {
                     
                 } catch (Throwable $e) {
                     $output = ob_get_clean();
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( "CWP Snippets Error: Failed to evaluate preview for snippet ID {$data_id}. Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() );
-                    }
+                    cwp_snippets_conditional_log('Failed to evaluate preview for snippet ID ' . $data_id, '', $data_id, $e->getMessage(), $e->getLine());
                     $output = esc_html($e->getMessage()) . ' in ' . esc_html($e->getFile()) . ' on line ' . esc_html($e->getLine());
                 }
 

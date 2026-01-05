@@ -75,3 +75,37 @@ $result = $fm->findRecords($params);
 // Process the result...
 ?>
 ```
+
+## Warning: Large Script Parameters
+
+Caution is advised when sending large amounts of data as script parameters, particularly if your FileMaker server is hosted on a Windows environment. This can lead to difficult-to-diagnose failures.
+
+### The Problem
+
+When a script is executed with a very large parameter, the underlying request to the FileMaker Data API can become too long. Web servers and the FileMaker Web Publishing Engine have limits on the length of URLs they will process. Exceeding this limit will not produce a clear error from FileMaker; instead, it typically results in a generic `404 Not Found` HTTP error.
+
+This can be misleading, as the script and layout names are correct, but the request is rejected before the Data API can even process it.
+
+**Example Error Response:**
+```php
+Array
+(
+    [status] => Array
+        (
+            [http_code] => 404
+        )
+
+    [result] => 
+)
+```
+
+### The Solution
+
+If you need to pass a large amount of data to a script, the recommended workaround is to avoid passing it directly in the script parameter. A more reliable method is:
+
+1.  Use the `createRecord()` method to create a new record in a designated table in your FileMaker database.
+2.  Store the large data payload in one or more fields of this new record.
+3.  Use the `script` parameter within your `createRecord()` call to trigger a script that runs *after* the record is created.
+4.  This post-creation script can then access the data from the fields of the new record and perform the required actions.
+
+This approach avoids the URL length limitation by transferring the data within the body of a `create` request and then processing it server-side within FileMaker.```

@@ -122,3 +122,38 @@ $params = [
     ]
 ];
 ```
+## Running Scripts (`script`, `script.prerequest`, `script.presort`)
+
+You can trigger FileMaker scripts to run as part of another API call, such as when you are finding, creating, or editing records. This is done by adding special script-related keys to the `$params` array.
+
+There are three types of script triggers available:
+
+*   `script`: Runs a script *after* the main action (e.g., find, create, edit) is completed.
+*   `script.prerequest`: Runs a script *before* the main action is performed.
+*   `script.presort`: Used only with `findRecords()`, this runs a script *after* the records are found but *before* they are sorted.
+
+For each trigger, you can pass a parameter by using the corresponding key with a `.param` suffix (e.g., `script.param`, `script.prerequest.param`).
+
+### Example for `findRecords()`:
+
+```php
+$params = [
+    "query" => [
+        ["Email Addresses::Address" => "==ron@rgcdata.com"]
+    ],
+
+    // Script to run BEFORE the request
+    "script.prerequest" => "Log Pre-Request",
+    "script.prerequest.param" => "Parameter for pre-request script",
+
+    // Script to run BEFORE the sort
+    "script.presort" => "Log Pre-Sort",
+    "script.presort.param" => "Parameter for pre-sort script",
+
+    // Script to run AFTER the action
+    "script" => "Log Post-Action",
+    "script.param" => "Parameter for post-action script"
+];
+
+$result = $fm->findRecords($params);
+```

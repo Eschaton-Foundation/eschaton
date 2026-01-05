@@ -56,6 +56,7 @@ function fmcwp_perform_license_server_request( $action_on_server, $license_key, 
 	$response_body = wp_remote_retrieve_body( $response );
 
 	if ( empty( $response_body ) ) {
+		cwp_snippets_conditional_log( 'License Error: Received empty response from licensing server. Action: ' . $action_on_server );
 		$return_data['message'] = __( 'Received empty response from licensing server.', 'cwp-snippets' );
 		return $return_data;
 	}
@@ -63,9 +64,7 @@ function fmcwp_perform_license_server_request( $action_on_server, $license_key, 
 	$server_data = json_decode( $response_body, true );
 
 	if ( json_last_error() !== JSON_ERROR_NONE ) {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'CWP Snippets License Request: Invalid JSON response from server. Action: ' . $action_on_server . '. Body: ' . $response_body );
-		}
+		cwp_snippets_conditional_log( 'License Error: Invalid JSON response from server. Action: ' . $action_on_server . '. Body: ' . $response_body );
 		$return_data['message'] = __( 'Invalid response from licensing server (not valid JSON).', 'cwp-snippets' );
 		return $return_data;
 	}
@@ -93,10 +92,7 @@ function fmcwp_perform_license_server_request( $action_on_server, $license_key, 
 	} else {
 		// Server response was received and successfully parsed, but it's missing the 'status' field.
 		// $return_data['final_status'] (already $current_db_status) remains unchanged.
-		// Log this, as the server should ideally always provide a status if the communication was successful.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log('CWP Snippets License Request: Server response parsed but missing "status" field. Local status (' . $return_data['final_status'] . ') remains unchanged. Action: ' . $action_on_server . '. Server data: ' . esc_html( print_r( $server_data, true ) ) );
-		}
+		cwp_snippets_conditional_log('License Error: Server response missing "status" field. Action: ' . $action_on_server );
 	}
 
 	// Determine final expiry date
@@ -130,44 +126,7 @@ function fmcwp_perform_license_server_request( $action_on_server, $license_key, 
 		'expiry_date' => $return_data['final_expiry'],
 	);
 	set_transient( $transient_key, $transient_data, 12 * HOUR_IN_SECONDS );
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'CWP Snippets License Request - Option and Transient updated. Action: ' . $action_on_server . '. Data: ' . esc_html( print_r( $license_data_to_store, true ) ) );
-	}
 
 	return $return_data;
 }
 
-/**
- * Performs the scheduled license check.
- * This function is hooked to the WP-Cron event.
- */
-function cwp_snippets_perform_scheduled_license_check() {
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'CWP Snippets: Scheduled license check started.' );
-	}
-
-	$license_data = get_option( 'cwp_snippets_license_data', array() );
-	$license_key = isset( $license_data['license_key'] ) ? $license_data['license_key'] : '';
-
-	if ( ! empty( $license_key ) ) {
-		$current_db_status = isset( $license_data['status'] ) ? $license_data['status'] : 'unknown';
-		$current_db_expiry_date = isset( $license_data['expiry_date'] ) ? $license_data['expiry_date'] : null;
-
-		// Perform the license verification
-		$result = fmcwp_perform_license_server_request( 'verify', $license_key, $current_db_status, $current_db_expiry_date );
-
-		if ( $result['comm_error'] ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'CWP Snippets: Scheduled license check - Communication error: ' . $result['message'] );
-			}
-		} else {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'CWP Snippets: Scheduled license check - Success. New status: ' . $result['final_status'] . '. Message: ' . $result['message'] );
-			}
-		}
-	} else {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'CWP Snippets: Scheduled license check - No license key found to check.' );
-		}
-	}
-}

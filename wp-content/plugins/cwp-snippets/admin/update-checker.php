@@ -96,7 +96,7 @@ function cwp_snippets_check_for_update($transient) {
                 // 'banners' => ['low' => $remote->banner_low_url, 'high' => $remote->banner_high_url]
             ];
         } else {
-             error_log('CWP Snippets Update Check: Missing download_url in remote JSON.');
+             cwp_snippets_conditional_log('Update Check Error: Missing download_url in remote JSON.');
         }
     }
 

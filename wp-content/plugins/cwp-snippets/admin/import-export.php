@@ -50,16 +50,10 @@ function fmcwp_handle_import_snippets() {
                 }
             }
         }
-    } elseif ( isset( $_FILES['snippets_import_file'] ) && isset( $_FILES['snippets_import_file']['error'] ) && $_FILES['snippets_import_file']['error'] === UPLOAD_ERR_OK && isset( $_FILES['snippets_import_file']['tmp_name'] ) ) {
-        // This is a file upload. Ensure indexes exist and tmp_name is safe to use.
-        $tmp_name = wp_unslash( $_FILES['snippets_import_file']['tmp_name'] );
-        // Prefer is_uploaded_file for uploaded files; fall back to direct read if necessary.
-        if ( is_uploaded_file( $tmp_name ) || file_exists( $tmp_name ) ) {
-            $file_content = @file_get_contents( $tmp_name );
-            $snippets_data = json_decode( $file_content, true );
-        } else {
-            $snippets_data = null;
-        }
+    } elseif (isset($_FILES['snippets_import_file']) && $_FILES['snippets_import_file']['error'] === UPLOAD_ERR_OK) {
+        // This is a file upload.
+        $file_content = file_get_contents($_FILES['snippets_import_file']['tmp_name']);
+        $snippets_data = json_decode($file_content, true);
     }
 
     if ($snippets_data !== null && is_array($snippets_data)) {
@@ -144,8 +138,7 @@ function fmcwp_handle_import_snippets() {
                             $functions_to_activate[] = $wpdb->insert_id;
                         }
                     } else {
-                        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- logged for admin debugging; acceptable here.
-                        error_log( "Failed to insert snippet with name {$name} and type {$snippet_type_from_file}" );
+                        cwp_snippets_conditional_log('Import Error: Failed to insert snippet with name ' . $name . ' and type ' . $snippet_type_from_file);
                     }
                 } else if ($existing_snippet_id && in_array($name, $snippets_to_update)) {
                     // Update existing snippet

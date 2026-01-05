@@ -299,9 +299,7 @@ function fmcwp_header() {
         require_once $header_path;
         } else {
         echo '<div class="wrap"><h2>CWP Snippets</h2></div>';
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log('CWP Snippets Error: admin-header.php view file not found.');
-        }
+        cwp_snippets_conditional_log('Admin Error: admin-header.php view file not found.');
     }
 
     // --- Call the function to display the admin notice (if applicable) ---
@@ -325,8 +323,6 @@ function fmcwp_footer() {
         require_once $footer_path;
     } else {
         // Optional: Add error logging or display a simple fallback footer
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log('CWP Snippets Error: admin-footer.php view file not found.');
-        }
+        cwp_snippets_conditional_log('Admin Error: admin-footer.php view file not found.');
     }
 }

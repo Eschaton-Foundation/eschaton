@@ -40,6 +40,7 @@ function fmcwp_install() {
         location TINYTEXT NOT NULL,
         priority INT NOT NULL DEFAULT 10,
         suppress_cache TINYINT NOT NULL DEFAULT 0,
+        version VARCHAR(20) DEFAULT 1.0,
         PRIMARY KEY  (id)
     ) $charset_collate;";
 
@@ -52,9 +53,7 @@ function fmcwp_install() {
 
     // Optionally log if dbDelta produced output (for debugging)
     if (!empty($dbdelta_output)) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'CWP Snippets Activation: dbDelta output: ' . $dbdelta_output );
-        }
+        cwp_snippets_conditional_log('Activation: dbDelta output: ' . $dbdelta_output);
     }
     // --- END: Added Output Buffering around dbDelta ---
 
@@ -106,9 +105,7 @@ function fm_cwp_create_preview_page() {
         ));
 
         if (is_wp_error($preview_page_id)) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'Failed to create preview page: ' . $preview_page_id->get_error_message() );
-            }
+            cwp_snippets_conditional_log('Activation Error: Failed to create preview page: ' . $preview_page_id->get_error_message());
         } else {
             update_option('fm_cwp_preview_page_id', $preview_page_id);
         }
@@ -122,9 +119,7 @@ function fm_cwp_create_preview_page() {
         ), true);
 
         if (is_wp_error($result)) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'Failed to restore preview page from trash: ' . $result->get_error_message() );
-            }
+            cwp_snippets_conditional_log('Activation Error: Failed to restore preview page from trash: ' . $result->get_error_message());
         }
     }
 
@@ -704,6 +699,13 @@ function fmcwp_store_all_bundled_hashes() {
             update_option('cwp_snippets_' . $type . '_hash', $hash);
         }
     }
+
+    // Store the demo database file hash
+    $demo_db_file = FMCWP_PLUGIN_PATH . 'assets/demo/CWP Snippets.fmp12';
+    if (file_exists($demo_db_file)) {
+        $demo_hash = md5_file($demo_db_file);
+        update_option('cwp_snippets_demo_db_hash', $demo_hash);
+    }
 }
 
 /**
@@ -743,8 +745,8 @@ function fmcwp_check_and_create_log_table() {
         $dbdelta_output = ob_get_clean();
 
         if (!empty($dbdelta_output)) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'CWP Snippets: Log table creation/update output: ' . $dbdelta_output );
+            if ( !empty( $dbdelta_output ) ) {
+                cwp_snippets_conditional_log('Activation: Log table creation/update output: ' . $dbdelta_output);
             }
         }
 
