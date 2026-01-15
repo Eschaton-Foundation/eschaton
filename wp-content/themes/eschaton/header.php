@@ -230,7 +230,7 @@
 				</div>
 
 				<div>
-					<a href="<?php the_field('booking_url', 'options'); ?><?php echo pll_current_language('slug'); ?>" class="button"><?php pll_e('Tickets'); ?></a>
+					<a href="<?php the_field('booking_url', 'options'); ?><?php echo pll_current_language('slug'); ?>" class="button" target="_blank"><?php pll_e('Tickets'); ?></a>
 				</div>
 			</div>
 
