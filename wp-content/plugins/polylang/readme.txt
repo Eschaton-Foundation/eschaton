@@ -3,9 +3,9 @@ Contributors: Chouby, manooweb, raaaahman, marianne38, sebastienserre, greglone,
 Donate link: https://polylang.pro
 Tags: multilingual, translate, translation, language, localization
 Requires at least: 6.2
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.2
-Stable tag: 3.7.5
+Stable tag: 3.7.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -106,7 +106,21 @@ Wherever third party code has been used, credit has been given in the code’s c
 
 == Changelog ==
 
-= 3.7.5 (2025-11-10)
+= 3.7.7 (2026-01-26) =
+
+* Pro: Add DeepL support for 70 new languages. #1793 #2871
+* Fix advanced menu properties not displayed in customizer. Props Viktor Szépe. #1722
+* Fix incorrect slug when changing the language of a term. #1790
+
+= 3.7.6 (2026-01-06) =
+
+* Pro: Add support for WP 6.9 new blocks #2790
+* Pro: Fix insertion of navigation language switcher block in WP 6.9 #2847
+* Pro: Fix current post URL in site editor for WP 6.8+ #2843
+* Pro: Fix a conflict with Sensei LMS #2845
+* Fix categories not filtered per post language in quick edit #1785
+
+= 3.7.5 (2025-11-10) =
 
 * Pro: Updated DeepL supported languages list
 * Pro: Fix a regression in cross domain login
@@ -115,7 +129,7 @@ Wherever third party code has been used, credit has been given in the code’s c
 * Pro: Fix locale fallback in WP 6.8+
 * Pro: Add `pll_enable_acf_labels_translation` filter allowing to disable the translation of ACF labels
 * Pro: Fix ACF image field not correctly translated when media translation is active
-* Pro: Fix ACF image field in reapeater not copied
+* Pro: Fix ACF image field in repeater not copied
 * Pro: Fix ACF ajax request unexpectedly filtered by language when editing a field group
 * Pro: Fix ACF blocks not translated when included inside a non-ACF block
 * Pro: Add compatibility of the duplicate tool with Divi
