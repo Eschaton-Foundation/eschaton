@@ -1,0 +1,210 @@
+# Copyright (C) 2026 PureThemes
+# This file is distributed under the GPL2.
+msgid ""
+msgstr ""
+"Project-Id-Version: AI Chat & Search Pro 1.8.6\n"
+"Report-Msgid-Bugs-To: https://purethemes.net\n"
+"POT-Creation-Date: 2026-02-06 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#. Plugin Name of the plugin
+msgid "AI Chat & Search Pro"
+msgstr ""
+
+#. Description of the plugin
+msgid "Premium features for AI Chat & Search plugin - Unlimited post types, full conversation logs, and priority support"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:71
+msgid "Request failed. Please try again."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:72
+msgid "Testing..."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:73
+#: includes/messaging/class-whatsapp-admin.php:253
+#: includes/messaging/class-whatsapp-admin.php:254
+#: includes/messaging/class-telegram-admin.php:158
+#: includes/messaging/class-telegram-admin.php:159
+msgid "Test Connection"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:74
+msgid "Connection failed"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:75
+msgid "Copied!"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:76
+#: includes/messaging/class-whatsapp-admin.php:244
+msgid "Copy"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:140
+msgid "WhatsApp Integration (via Twilio)"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:144
+msgid "When enabled, users can chat with your AI assistant via WhatsApp."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:153
+#: includes/messaging/class-telegram-admin.php:93
+msgid "Configure"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:160
+msgid "Upgrade to Pro to enable WhatsApp integration"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:192
+msgid "WhatsApp Configuration"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:203
+msgid "Create a <a href=\"https://www.twilio.com/console\" target=\"_blank\">Twilio account</a>, enable WhatsApp Sandbox (or get a production number), copy your credentials below, and paste the Webhook URL in your Twilio console. %s"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:204
+#: includes/messaging/class-telegram-admin.php:141
+msgid "Read Guide"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:211
+msgid "Account SID"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:215
+msgid "Found on your Twilio Console dashboard."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:221
+msgid "Auth Token"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:225
+msgid "Keep this secret - never share it publicly."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:231
+msgid "WhatsApp Number"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:235
+msgid "Your Twilio WhatsApp number (sandbox or production)."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:240
+msgid "Webhook URL"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:247
+msgid "Paste this URL in Twilio Console > Messaging > WhatsApp Sandbox > \"When a message comes in\"."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:265
+#: includes/messaging/class-telegram-admin.php:170
+msgid "Save Settings"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:281
+#: includes/messaging/class-telegram-admin.php:186
+msgid "Security check failed."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:285
+#: includes/messaging/class-telegram-admin.php:190
+msgid "Insufficient permissions."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:301
+#: includes/messaging/class-telegram-admin.php:238
+msgid "Settings saved successfully!"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:312
+#: includes/messaging/class-telegram-admin.php:249
+msgid "Permission denied."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:319
+msgid "Credentials not configured. Save settings first."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:340
+#. translators: %s: Twilio account friendly name
+msgid "Connected to Twilio account: %s"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:341
+msgid "Unknown"
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:345
+msgid "Invalid credentials. Check Account SID and Auth Token."
+msgstr ""
+
+#: includes/messaging/class-whatsapp-admin.php:347
+#: includes/messaging/class-telegram-admin.php:284
+#. translators: %d: HTTP status code
+msgid "API returned status code: %d"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:80
+msgid "Telegram Integration"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:84
+msgid "When enabled, users can chat with your AI assistant via Telegram."
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:100
+msgid "Upgrade to Pro to enable Telegram integration"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:129
+msgid "Telegram Configuration"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:140
+msgid "Open <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> on Telegram, use the /newbot command to create a bot, then paste the bot token below and save settings. %s"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:148
+msgid "Bot Token"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:152
+msgid "The token you received from @BotFather when creating your bot."
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:224
+#. translators: %s: error message
+msgid "Settings saved, but webhook registration failed: %s"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:233
+msgid "Settings saved and webhook registered successfully!"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:255
+msgid "Bot token not configured. Save settings first."
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:276
+#. translators: %1$s: bot name, %2$s: bot username
+msgid "Connected to bot: %1$s (%2$s)"
+msgstr ""
+
+#: includes/messaging/class-telegram-admin.php:282
+msgid "Invalid bot token. Check the token from @BotFather."
+msgstr ""

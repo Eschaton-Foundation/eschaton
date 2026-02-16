@@ -1,0 +1,135 @@
+/**
+ * AI Chat Search Pro - Chat History Chart Styles
+ *
+ * Styles for the chat history activity chart
+ *
+ * @package AI_Chat_Search_Pro
+ * @since 1.7.5
+ */
+
+/* Chart wrapper */
+.airs-chat-history-chart-wrapper {
+    margin: 25px 0;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+/* Chart header with title and legend */
+.airs-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.airs-chart-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Custom legend */
+.airs-chart-legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.airs-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.airs-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Conversations - Blue */
+.airs-legend-conversations .airs-legend-color {
+    background-color: #3b82f6;
+}
+
+/* Messages - Green */
+.airs-legend-messages .airs-legend-color {
+    background-color: #10b981;
+}
+
+/* Emails Sent - Purple */
+.airs-legend-emails .airs-legend-color {
+    background-color: #8b5cf6;
+}
+
+/* Chart container */
+.airs-chart-container {
+    position: relative;
+    height: 220px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    margin-bottom: 20px;
+}
+
+/* Ensure canvas respects container */
+.airs-chart-container canvas {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* No data state */
+.airs-chart-no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px dashed #e5e7eb;
+}
+
+.airs-chart-no-data p {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .airs-chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .airs-chart-legend {
+        gap: 15px;
+    }
+
+    .airs-legend-item {
+        font-size: 12px;
+    }
+
+    .airs-chart-container {
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .airs-chat-history-chart-wrapper {
+        padding: 15px;
+    }
+
+    .airs-chart-container {
+        height: 150px;
+    }
+}
