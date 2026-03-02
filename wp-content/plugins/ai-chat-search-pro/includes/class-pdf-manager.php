@@ -334,13 +334,8 @@ class AI_Chat_Search_Pro_PDF_Manager {
             return $post_ids;
         }
 
-        // Generate embeddings for all chunks
-        if (class_exists('Listeo_AI_Search_Database_Manager')) {
-            foreach ($post_ids as $post_id) {
-                // Queue for embedding generation
-                do_action('listeo_ai_process_listing', $post_id);
-            }
-        }
+        // Embeddings are generated via the separate batch training AJAX endpoint.
+        // This avoids PHP timeout fatals when processing many chunks in one request.
 
         return array(
             'success' => true,
@@ -683,13 +678,41 @@ class AI_Chat_Search_Pro_PDF_Manager {
         }
 
         $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
+        $offset   = isset($_POST['offset']) ? absint($_POST['offset']) : 0;
 
         if (empty($filename)) {
             wp_send_json_error(array('message' => __('No filename provided', 'ai-chat-search-pro')));
         }
 
-        // Find all chunks for this document
+        $batch_size = 10;
+
+        // Get total chunk count
         global $wpdb;
+        $total = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(p.ID) FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+             WHERE p.post_type = 'ai_pdf_document'
+             AND p.post_status = 'publish'
+             AND pm.meta_key = '_pdf_original_filename'
+             AND pm.meta_value = %s",
+            $filename
+        ));
+
+        if ($total === 0) {
+            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search-pro')));
+        }
+
+        if ($offset >= $total) {
+            wp_send_json_success(array(
+                'done'      => true,
+                'processed' => $total,
+                'total'     => $total,
+                'has_more'  => false,
+            ));
+            return;
+        }
+
+        // Fetch batch of post IDs
         $post_ids = $wpdb->get_col($wpdb->prepare(
             "SELECT p.ID FROM {$wpdb->posts} p
              INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
@@ -697,27 +720,186 @@ class AI_Chat_Search_Pro_PDF_Manager {
              AND p.post_status = 'publish'
              AND pm.meta_key = '_pdf_original_filename'
              AND pm.meta_value = %s
-             ORDER BY p.ID ASC",
-            $filename
+             ORDER BY p.ID ASC
+             LIMIT %d OFFSET %d",
+            $filename,
+            $batch_size,
+            $offset
         ));
 
         if (empty($post_ids)) {
-            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Chunks not found', 'ai-chat-search-pro')));
         }
 
-        // Queue all chunks for embedding generation
-        $queued_count = 0;
-        foreach ($post_ids as $post_id) {
-            do_action('listeo_ai_process_listing', $post_id);
-            $queued_count++;
+        // Collect content for all chunks in this batch
+        $table_name = $wpdb->prefix . 'listeo_ai_embeddings';
+        $chunks_to_embed = array(); // post_id => array('content' => ..., 'hash' => ...)
+
+        foreach ($post_ids as $pid) {
+            $content = Listeo_AI_Background_Processor::collect_content($pid);
+            if (empty($content)) {
+                continue;
+            }
+            $content_hash = md5($content);
+
+            // Skip if embedding already exists with same hash
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT content_hash FROM {$table_name} WHERE listing_id = %d",
+                $pid
+            ));
+            if ($existing === $content_hash) {
+                continue;
+            }
+
+            $chunks_to_embed[$pid] = array(
+                'content' => $content,
+                'hash'    => $content_hash,
+            );
         }
+
+        $succeeded = count($post_ids) - count($chunks_to_embed); // already-indexed count as successes
+
+        // Generate embeddings for chunks that need them
+        if (!empty($chunks_to_embed)) {
+            // --- HTTP TIMEOUT SAFETY ---
+            $php_max = (int) ini_get('max_execution_time');
+            $http_cap_filter = null;
+
+            if ($php_max > 0) {
+                $elapsed = microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'];
+                $remaining = $php_max - $elapsed;
+                $safe_http = max(5, (int) floor($remaining) - 1);
+
+                $http_cap_filter = function ($args) use ($safe_http) {
+                    if (isset($args['timeout']) && $args['timeout'] > $safe_http) {
+                        $args['timeout'] = $safe_http;
+                    }
+                    return $args;
+                };
+                add_filter('http_request_args', $http_cap_filter, 9999);
+            }
+
+            try {
+                $provider = new Listeo_AI_Provider();
+                $endpoint = $provider->get_endpoint('embeddings');
+                $headers  = $provider->get_headers();
+                $supports_batch = ($provider->get_provider_name() !== 'Google Gemini');
+
+                // Build ordered arrays of texts and post IDs
+                $texts = array();
+                $pid_order = array();
+                foreach ($chunks_to_embed as $pid => $data) {
+                    $texts[] = Listeo_AI_Search_Embedding_Manager::sanitize_utf8($data['content']);
+                    $pid_order[] = $pid;
+                }
+
+                if ($supports_batch) {
+                    // OpenAI / Mistral — single API call with array input
+                    $payload = $provider->prepare_embedding_payload($texts);
+                    $json_body = json_encode($payload);
+
+                    $response = wp_remote_post($endpoint, array(
+                        'headers' => $headers,
+                        'body'    => $json_body,
+                        'timeout' => 60,
+                    ));
+
+                    if (is_wp_error($response)) {
+                        throw new Exception($response->get_error_message());
+                    }
+
+                    $http_code = wp_remote_retrieve_response_code($response);
+                    $body = json_decode(wp_remote_retrieve_body($response), true);
+
+                    if ($http_code !== 200 || isset($body['error'])) {
+                        $err = isset($body['error']['message']) ? $body['error']['message'] : "HTTP {$http_code}";
+                        throw new Exception($err);
+                    }
+
+                    if (isset($body['data']) && is_array($body['data'])) {
+                        foreach ($body['data'] as $item) {
+                            $idx = $item['index'] ?? null;
+                            $embedding = $item['embedding'] ?? null;
+                            if ($idx === null || !$embedding || !isset($pid_order[$idx])) {
+                                continue;
+                            }
+                            $pid = $pid_order[$idx];
+                            $wpdb->replace($table_name, array(
+                                'listing_id'   => $pid,
+                                'embedding'    => Listeo_AI_Search_Database_Manager::compress_embedding_for_storage($embedding),
+                                'content_hash' => $chunks_to_embed[$pid]['hash'],
+                                'updated_at'   => current_time('mysql'),
+                            ));
+                            $succeeded++;
+                        }
+                    }
+                } else {
+                    // Gemini — one API call per chunk (no array input support)
+                    foreach ($texts as $i => $text) {
+                        $payload = $provider->prepare_embedding_payload($text);
+                        $json_body = json_encode($payload);
+
+                        $response = wp_remote_post($endpoint, array(
+                            'headers' => $headers,
+                            'body'    => $json_body,
+                            'timeout' => 60,
+                        ));
+
+                        if (is_wp_error($response)) {
+                            continue;
+                        }
+
+                        $http_code = wp_remote_retrieve_response_code($response);
+                        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+                        if ($http_code !== 200 || isset($body['error'])) {
+                            continue;
+                        }
+
+                        $embedding = $body['data'][0]['embedding'] ?? null;
+                        if (!$embedding) {
+                            continue;
+                        }
+
+                        $pid = $pid_order[$i];
+                        $wpdb->replace($table_name, array(
+                            'listing_id'   => $pid,
+                            'embedding'    => Listeo_AI_Search_Database_Manager::compress_embedding_for_storage($embedding),
+                            'content_hash' => $chunks_to_embed[$pid]['hash'],
+                            'updated_at'   => current_time('mysql'),
+                        ));
+                        $succeeded++;
+                    }
+                }
+            } catch (Exception $e) {
+                // Remove filter if still active
+                if ($http_cap_filter) {
+                    remove_filter('http_request_args', $http_cap_filter, 9999);
+                }
+
+                // API call failed — return partial progress so JS retries
+                wp_send_json_success(array(
+                    'processed' => $offset,
+                    'total'     => $total,
+                    'has_more'  => $offset < $total,
+                    'success'   => false,
+                ));
+                return;
+            }
+
+            // Remove filter after all API calls
+            if ($http_cap_filter) {
+                remove_filter('http_request_args', $http_cap_filter, 9999);
+            }
+        }
+
+        $new_offset = $offset + count($post_ids);
 
         wp_send_json_success(array(
-            'message' => sprintf(
-                __('Queued %d chunk(s) for training. Processing will begin shortly.', 'ai-chat-search-pro'),
-                $queued_count
-            ),
-            'chunks_queued' => $queued_count,
+            'processed' => $new_offset,
+            'total'     => $total,
+            'has_more'  => $new_offset < $total,
+            'success'   => true,
         ));
     }
 }

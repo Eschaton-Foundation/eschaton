@@ -369,21 +369,21 @@ class Listeo_AI_WooCommerce_Integration {
             $content .= "FULL DESCRIPTION:\n" . wp_strip_all_tags($long_desc) . "\n\n";
         }
 
-        // === PRICING ===
+        // === PRICING (tax-aware using WooCommerce display settings) ===
         $currency_symbol = get_woocommerce_currency_symbol();
-        $regular_price = $product->get_regular_price();
-        $sale_price = $product->get_sale_price();
-        $price = $product->get_price();
+        $display_price = wc_get_price_to_display($product);
+        $display_regular = wc_get_price_to_display($product, array('price' => $product->get_regular_price()));
+        $display_sale = $product->get_sale_price() ? wc_get_price_to_display($product, array('price' => $product->get_sale_price())) : 0;
 
         $content .= "PRICING:\n";
-        if ($product->is_on_sale() && $sale_price) {
-            $savings = floatval($regular_price) - floatval($sale_price);
-            $savings_percent = $regular_price > 0 ? round(($savings / floatval($regular_price)) * 100) : 0;
-            $content .= "- Regular Price: {$currency_symbol}" . number_format((float)$regular_price, 2) . "\n";
-            $content .= "- Sale Price: {$currency_symbol}" . number_format((float)$sale_price, 2) . " (SAVE {$savings_percent}%)\n";
-            $content .= "- Current Price: {$currency_symbol}" . number_format((float)$price, 2) . " - ON SALE!\n";
+        if ($product->is_on_sale() && $display_sale) {
+            $savings = $display_regular - $display_sale;
+            $savings_percent = $display_regular > 0 ? round(($savings / $display_regular) * 100) : 0;
+            $content .= "- Regular Price: {$currency_symbol}" . number_format($display_regular, 2) . "\n";
+            $content .= "- Sale Price: {$currency_symbol}" . number_format($display_sale, 2) . " (SAVE {$savings_percent}%)\n";
+            $content .= "- Current Price: {$currency_symbol}" . number_format($display_price, 2) . " - ON SALE!\n";
         } else {
-            $content .= "- Price: {$currency_symbol}" . number_format((float)$price, 2) . "\n";
+            $content .= "- Price: {$currency_symbol}" . number_format($display_price, 2) . "\n";
         }
         $content .= "\n";
 
@@ -463,8 +463,8 @@ class Listeo_AI_WooCommerce_Integration {
                             $clean_name = wc_attribute_label($clean_name);
                             $var_desc[] = "{$clean_name}: {$attr_value}";
                         }
-                        $var_price = $variation->get_price();
-                        $content .= "- " . implode(', ', $var_desc) . " - {$currency_symbol}" . number_format((float)$var_price, 2);
+                        $var_price = wc_get_price_to_display($variation);
+                        $content .= "- " . implode(', ', $var_desc) . " - {$currency_symbol}" . number_format($var_price, 2);
                         if ($variation->is_in_stock()) {
                             $content .= " (In Stock)";
                         } else {
@@ -519,15 +519,15 @@ class Listeo_AI_WooCommerce_Integration {
             return array();
         }
 
-        // Get price information
-        $regular_price = $product->get_regular_price();
-        $sale_price = $product->get_sale_price();
-        $price = $product->get_price();
+        // Get price information (tax-aware using WooCommerce display settings)
+        $currency_symbol = get_woocommerce_currency_symbol();
+        $display_price = wc_get_price_to_display($product);
+        $display_regular = wc_get_price_to_display($product, array('price' => $product->get_regular_price()));
+        $display_sale = $product->get_sale_price() ? wc_get_price_to_display($product, array('price' => $product->get_sale_price())) : 0;
 
         // Format price with currency
-        $currency_symbol = get_woocommerce_currency_symbol();
-        $formatted_price = $price ? $currency_symbol . number_format((float)$price, 2) : '';
-        $formatted_regular_price = $regular_price ? $currency_symbol . number_format((float)$regular_price, 2) : '';
+        $formatted_price = $display_price ? $currency_symbol . number_format($display_price, 2) : '';
+        $formatted_regular_price = $display_regular ? $currency_symbol . number_format($display_regular, 2) : '';
 
         // Get product image (use WooCommerce placeholder if no image)
         $featured_image = get_the_post_thumbnail_url($product_id, 'medium');
@@ -548,11 +548,11 @@ class Listeo_AI_WooCommerce_Integration {
         // Price data
         $data['price'] = array(
             'regular' => $formatted_regular_price,
-            'sale' => $sale_price ? $currency_symbol . number_format((float)$sale_price, 2) : null,
+            'sale' => $display_sale ? $currency_symbol . number_format($display_sale, 2) : null,
             'formatted' => $formatted_price,
             'currency' => get_woocommerce_currency(),
-            'raw' => (float)$price,
-            'raw_regular' => (float)$regular_price
+            'raw' => $display_price,
+            'raw_regular' => $display_regular
         );
 
         // Stock status
@@ -886,17 +886,95 @@ class Listeo_AI_WooCommerce_Integration {
         $content .= "- " . __('TOTAL', 'ai-chat-search') . ": " . $order->get_formatted_order_total() . "\n\n";
 
         // === TRACKING INFORMATION ===
-        $tracking_number = $order->get_meta('_tracking_number');
-        $tracking_provider = $order->get_meta('_tracking_provider');
-        $tracking_url = $order->get_meta('_tracking_url');
+        // Agnostic: check multiple common tracking meta keys used by various plugins
+        // First non-empty value wins for each field; if none found, section is skipped
+        $tracking_number_keys = array(
+            '_tracking_number',
+            '_shipping_tracking_number',
+        );
+        $tracking_provider_keys = array(
+            '_tracking_provider',
+            '_webexpert_order_tracking_carrier',
+        );
+        $tracking_url_keys = array(
+            '_tracking_url',
+        );
+        $parcel_id_keys = array(
+            '_boxnow_parcel_ids',
+        );
 
-        if ($tracking_number || $tracking_url) {
+        $tracking_number = '';
+        foreach ($tracking_number_keys as $meta_key) {
+            $value = $order->get_meta($meta_key);
+            if (!empty($value)) {
+                $tracking_number = sanitize_text_field($value);
+                break;
+            }
+        }
+
+        $tracking_provider = '';
+        foreach ($tracking_provider_keys as $meta_key) {
+            $value = $order->get_meta($meta_key);
+            if (!empty($value)) {
+                $tracking_provider = sanitize_text_field($value);
+                break;
+            }
+        }
+
+        $tracking_url = '';
+        foreach ($tracking_url_keys as $meta_key) {
+            $value = $order->get_meta($meta_key);
+            if (!empty($value)) {
+                $tracking_url = esc_url_raw($value);
+                break;
+            }
+        }
+
+        // Parcel IDs (may be serialized arrays)
+        $parcel_ids = '';
+        foreach ($parcel_id_keys as $meta_key) {
+            $value = $order->get_meta($meta_key);
+            if (!empty($value)) {
+                if (is_array($value)) {
+                    $parcel_ids = implode(', ', array_map('sanitize_text_field', $value));
+                } else {
+                    $parcel_ids = sanitize_text_field($value);
+                }
+                break;
+            }
+        }
+
+        /**
+         * Filter tracking meta keys to support additional plugins.
+         *
+         * Return associative array with resolved tracking data:
+         * 'tracking_number', 'tracking_provider', 'tracking_url', 'parcel_ids'
+         *
+         * @param array    $tracking_data Current resolved tracking data.
+         * @param WC_Order $order         The WooCommerce order object.
+         */
+        $tracking_data = apply_filters('listeo_ai_order_tracking_data', array(
+            'tracking_number'   => $tracking_number,
+            'tracking_provider' => $tracking_provider,
+            'tracking_url'      => $tracking_url,
+            'parcel_ids'        => $parcel_ids,
+        ), $order);
+
+        $tracking_number   = $tracking_data['tracking_number'];
+        $tracking_provider = $tracking_data['tracking_provider'];
+        $tracking_url      = $tracking_data['tracking_url'];
+        $parcel_ids        = $tracking_data['parcel_ids'];
+
+        if ($tracking_number || $tracking_url || $parcel_ids) {
             $content .= __('TRACKING INFORMATION', 'ai-chat-search') . ":\n";
             if ($tracking_provider) {
                 $content .= "- " . __('Carrier', 'ai-chat-search') . ": {$tracking_provider}\n";
             }
             if ($tracking_number) {
                 $content .= "- " . __('Tracking Number', 'ai-chat-search') . ": {$tracking_number}\n";
+            }
+            if ($parcel_ids) {
+                $content .= "- " . __('Parcel ID', 'ai-chat-search') . ": {$parcel_ids}\n";
             }
             if ($tracking_url) {
                 $content .= "- " . __('Track Package', 'ai-chat-search') . ": {$tracking_url}\n";

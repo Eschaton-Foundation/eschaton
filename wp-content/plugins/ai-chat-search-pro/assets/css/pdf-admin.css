@@ -320,6 +320,7 @@
 }
 
  #airs-add-results .loading-message .airs-spinner {top: 0;}
+.pdf-status-badge.status-training .airs-spinner { zoom: 0.7; position: relative; margin-left: -5px;}
 
 .loading-message .dashicons {
     color: #2271b1;

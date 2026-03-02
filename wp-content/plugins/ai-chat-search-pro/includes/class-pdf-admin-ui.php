@@ -141,7 +141,7 @@ class AI_Chat_Search_Pro_PDF_Admin_UI {
                     <!-- Manage Existing Documents Section -->
                     <div class="pdf-manage-section">
                         <h3 style="margin-bottom: 7px;"><?php _e('Uploaded Documents', 'ai-chat-search-pro'); ?></h3>
-                        <span><?php _e('Documents will be processed automatically, no need to click "Start Training"', 'ai-chat-search-pro'); ?></span>
+                        <span><?php _e('Click "Train Now" to generate embeddings for uploaded documents.', 'ai-chat-search-pro'); ?></span>
 
                         <div id="pdf-documents-list">
                             <p class="loading-message"><?php _e('Loading...', 'ai-chat-search-pro'); ?></p>

@@ -3,7 +3,7 @@
  * Plugin Name: AI Chat & Search Pro
  * Plugin URI: https://purethemes.net/ai-chat-search-pro/
  * Description: Premium features for AI Chat & Search plugin - Unlimited post types, full conversation logs, and priority support
- * Version: 1.8.6
+ * Version: 1.8.8
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * Requires Plugins: ai-chat-search
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Pro constants early
-define('AI_CHAT_SEARCH_PRO_VERSION', '1.8.6');
+define('AI_CHAT_SEARCH_PRO_VERSION', '1.8.8');
 define('AI_CHAT_SEARCH_PRO_FILE', __FILE__);
 define('AI_CHAT_SEARCH_PRO_DIR', plugin_dir_path(__FILE__));
 define('AI_CHAT_SEARCH_PRO_URL', plugin_dir_url(__FILE__));

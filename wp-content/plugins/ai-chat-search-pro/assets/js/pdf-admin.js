@@ -75,13 +75,11 @@
             // Upload files sequentially
             const uploadNext = function(index) {
                 if (index >= totalFiles) {
-                    // All done
-                    setTimeout(function() {
-                        $('.pdf-upload-progress').fadeOut(300);
-                        $('#pdf-file-input').val(''); // Clear input
-                        PDFAdmin.showSuccess(aiChatProPdfConfig.strings.upload_success);
-                        PDFAdmin.loadPDFList(); // Refresh list
-                    }, 1000);
+                    // All done — refresh list
+                    $('.pdf-upload-progress').fadeOut(300);
+                    $('#pdf-file-input').val('');
+                    PDFAdmin.showSuccess(aiChatProPdfConfig.strings.upload_success);
+                    PDFAdmin.loadPDFList();
                     return;
                 }
 
@@ -126,7 +124,7 @@
         /**
          * Load PDF documents list
          */
-        loadPDFList: function() {
+        loadPDFList: function(onReady) {
             $('#pdf-documents-list').html('<p class="loading-message"><span class="airs-spinner"></span> ' + aiChatProPdfConfig.strings.processing + '</p>');
 
             $.ajax({
@@ -141,6 +139,9 @@
                         PDFAdmin.renderPDFList(response.data.documents);
                     } else {
                         $('#pdf-documents-list').html('<p class="pdf-no-documents">No documents uploaded yet.</p>');
+                    }
+                    if (typeof onReady === 'function') {
+                        onReady();
                     }
                 },
                 error: function() {
@@ -171,9 +172,9 @@
                 if (isFullyIndexed) {
                     statusBadge = `<span class="pdf-status-badge status-indexed">✓ Trained (${indexedChunks}/${totalChunks})</span>`;
                 } else if (indexedChunks > 0) {
-                    statusBadge = `<span class="pdf-status-badge status-training">⏳ Training (${indexedChunks}/${totalChunks})</span>`;
+                    statusBadge = `<span class="pdf-status-badge status-partial">⏳ Partial (${indexedChunks}/${totalChunks})</span>`;
+                    showTrainButton = true;
                 } else {
-                    // No embeddings yet - show pending with Train Now button
                     statusBadge = `<span class="pdf-status-badge status-pending">Pending training</span>`;
                     showTrainButton = true;
                 }
@@ -216,37 +217,92 @@
          * Train document (queue embeddings)
          */
         trainPDF: function(filename, $btn) {
-            const originalHtml = $btn.html();
-            $btn.prop('disabled', true);
-            $btn.html('<span class="airs-spinner"></span> Training...');
+            var offset = 0;
+            var total = 0;
+            var succeeded = 0;
+            var failed = 0;
+            var retries = 0;
+            var MAX_RETRIES = 2;
 
-            $.ajax({
-                url: aiChatProPdfConfig.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'ai_chat_pro_train_pdf',
-                    nonce: aiChatProPdfConfig.nonce,
-                    filename: filename
-                },
-                success: function(response) {
-                    if (response.success) {
-                        PDFAdmin.showSuccess(response.data.message || 'Document queued for training');
-                        // Reload list after a delay to show updated status
-                        setTimeout(function() {
-                            PDFAdmin.loadPDFList();
-                        }, 2000);
-                    } else {
-                        PDFAdmin.showError(response.data.message || aiChatProPdfConfig.strings.error);
-                        $btn.prop('disabled', false);
-                        $btn.html(originalHtml);
+            // Show inline progress in the document row
+            var $item = $btn.closest('.pdf-document-item');
+            var $meta = $item.find('.pdf-document-meta');
+            $meta.html('<span class="pdf-status-badge status-training"><span class="airs-spinner"></span> Preparing...</span>');
+            $btn.hide();
+
+            function updateProgress(text) {
+                $meta.find('.pdf-status-badge').html(
+                    '<span class="airs-spinner"></span> ' + text
+                );
+            }
+
+            function processNextChunk() {
+                $.ajax({
+                    url: aiChatProPdfConfig.ajax_url,
+                    type: 'POST',
+                    timeout: 30000,
+                    data: {
+                        action: 'ai_chat_pro_train_pdf',
+                        nonce: aiChatProPdfConfig.nonce,
+                        filename: filename,
+                        offset: offset
+                    },
+                    success: function(response) {
+                        if (!response.success || !response.data) {
+                            return handleChunkError();
+                        }
+
+                        var data = response.data;
+                        total = data.total || total;
+
+                        if (data.done || !data.has_more) {
+                            return finish();
+                        }
+
+                        if (data.success === false) {
+                            return handleChunkError();
+                        }
+
+                        // Success — reset retries, advance
+                        succeeded++;
+                        retries = 0;
+                        offset = data.processed;
+                        updateProgress('Training ' + offset + '/' + total);
+                        setTimeout(processNextChunk, 300);
+                    },
+                    error: function() {
+                        handleChunkError();
                     }
-                },
-                error: function() {
-                    PDFAdmin.showError(aiChatProPdfConfig.strings.error);
-                    $btn.prop('disabled', false);
-                    $btn.html(originalHtml);
+                });
+            }
+
+            function handleChunkError() {
+                retries++;
+                if (retries <= MAX_RETRIES) {
+                    updateProgress('Training ' + offset + '/' + (total || '?') + ' (retry ' + retries + ')');
+                    setTimeout(processNextChunk, 500);
+                } else {
+                    // Give up on this batch, skip ahead
+                    failed++;
+                    retries = 0;
+                    offset += 10;
+                    updateProgress('Training ' + Math.min(offset, total || offset) + '/' + (total || '?'));
+                    setTimeout(processNextChunk, 300);
                 }
-            });
+            }
+
+            function finish() {
+                var msg = 'Training complete';
+                if (failed > 0) {
+                    msg += ' (' + failed + ' failed)';
+                }
+                $meta.html('<span class="pdf-status-badge status-indexed">' + msg + '</span>');
+                PDFAdmin.showSuccess(msg);
+
+                setTimeout(function() { PDFAdmin.loadPDFList(); }, 1500);
+            }
+
+            processNextChunk();
         },
 
         /**
