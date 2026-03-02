@@ -2223,6 +2223,14 @@ msgstr ""
 msgid "Disable auto-training for new/edited content"
 msgstr ""
 
+#: includes/admin/class-admin-interface.php
+msgid "Disable custom fields in embeddings"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "When enabled, auto-detected custom fields will be excluded from embedding content. Requires re-training after changing."
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:2912
 #: includes/admin/class-admin-interface.php:2916
 msgid "Check Embedding"
@@ -2778,8 +2786,8 @@ msgstr ""
 msgid "Enable Floating Chat Widget"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4095
-msgid "Show a floating chat button in the bottom-right corner of all pages."
+#: includes/admin/class-admin-interface.php
+msgid "Show a floating chat button on all pages."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:4103
@@ -2800,6 +2808,18 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:4140
 msgid "Short message displayed above the button on first visit."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Leave empty to disable."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Left"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Right"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:4148

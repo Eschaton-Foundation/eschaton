@@ -139,7 +139,7 @@
                 modelGroup: 'model-group-gemini',
                 label: i18n.geminiModel || 'Gemini Model',
                 help: i18n.geminiModelHelp || 'Select the Gemini model for chat responses.',
-                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview', 'gemini-3-flash-preview'],
+                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'],
                 default: 'gemini-3-flash-preview'
             },
             mistral: {
@@ -172,7 +172,7 @@
      */
     function initModelChangeHandler() {
         $('#listeo_ai_chat_model').on('change', function() {
-            if ($(this).val() === 'gemini-3-pro-preview') {
+            if ($(this).val() === 'gemini-3.1-pro-preview') {
                 $('#gemini-3-warning').show();
             } else {
                 $('#gemini-3-warning').hide();

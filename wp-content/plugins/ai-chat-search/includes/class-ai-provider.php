@@ -219,7 +219,7 @@ class Listeo_AI_Provider {
         // Valid values: high, low, medium, none
         // Gemini 3 Pro: "low" for reduced latency
         // Gemini 3 Flash: "low" for minimal thinking (fastest)
-        if (strpos($model, 'gemini-3-pro') !== false) {
+        if (strpos($model, 'gemini-3.1-pro') !== false || strpos($model, 'gemini-3-pro') !== false) {
             $payload['reasoning_effort'] = 'low';
         } elseif (strpos($model, 'gemini-3-flash') !== false) {
             $payload['reasoning_effort'] = 'low';

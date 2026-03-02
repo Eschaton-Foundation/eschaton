@@ -293,6 +293,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
         // Get color scheme for dark mode
         $color_scheme = get_option('listeo_ai_color_scheme', 'light');
 
+        // Get widget position
+        $widget_position = get_option('listeo_ai_floating_position', 'right');
+
         // Get header style settings
         $header_style = get_option('listeo_ai_floating_header_style', 'simple');
         $header_bg_id = intval(get_option('listeo_ai_floating_header_bg', 0));
@@ -347,7 +350,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
         </style>
 
         <!-- Floating Chat Widget -->
-        <div class="listeo-floating-chat-widget<?php echo $color_scheme === 'dark' ? ' dark-mode' : ''; ?>" id="listeo-floating-chat-widget">
+        <div class="listeo-floating-chat-widget<?php echo $color_scheme === 'dark' ? ' dark-mode' : ''; ?><?php echo $widget_position === 'left' ? ' position-left' : ''; ?>" id="listeo-floating-chat-widget">
         <?php if ($color_scheme === 'auto'): ?>
         <script>if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){document.getElementById('listeo-floating-chat-widget').classList.add('dark-mode');}</script>
         <?php endif; ?>

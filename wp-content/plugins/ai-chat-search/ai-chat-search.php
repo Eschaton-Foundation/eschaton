@@ -3,7 +3,7 @@
  * Plugin Name: AI Chat & Search
  * Plugin URI: https://purethemes.net/ai-chat-search-pro/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 1.8.6
+ * Version: 1.8.8
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -20,7 +20,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "1.8.6");
+define("LISTEO_AI_SEARCH_VERSION", "1.8.9");
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
 

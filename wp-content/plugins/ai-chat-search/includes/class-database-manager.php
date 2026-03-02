@@ -987,6 +987,12 @@ class Listeo_AI_Search_Database_Manager {
             return;
         }
 
+        // PDF documents are trained via the dedicated batch AJAX endpoint (Train Now button).
+        // Skip auto-training on save to avoid PHP timeout fatals with many chunks.
+        if ($post->post_type === 'ai_pdf_document') {
+            return;
+        }
+
         // Exclude listeo-booking products (hidden booking products for each listing)
         if ($post->post_type === 'product') {
             if (has_term('listeo-booking', 'product_cat', $post_id)) {

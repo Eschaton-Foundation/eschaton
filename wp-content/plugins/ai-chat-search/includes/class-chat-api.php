@@ -1745,12 +1745,12 @@ class Listeo_AI_Search_Chat_API
             $content .= "SHORT DESCRIPTION:\n" . wp_strip_all_tags($short_description) . "\n\n";
         }
 
-        // Pricing
+        // Pricing (tax-aware using WooCommerce display settings)
         $content .= "PRICING:\n";
         $content .= "- Price: " . html_entity_decode(wp_strip_all_tags($product->get_price_html()), ENT_QUOTES, 'UTF-8') . "\n";
-        $content .= "- Regular Price: " . html_entity_decode(wp_strip_all_tags(wc_price($product->get_regular_price())), ENT_QUOTES, 'UTF-8') . "\n";
+        $content .= "- Regular Price: " . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($product, array('price' => $product->get_regular_price())))), ENT_QUOTES, 'UTF-8') . "\n";
         if ($product->is_on_sale()) {
-            $content .= "- Sale Price: " . html_entity_decode(wp_strip_all_tags(wc_price($product->get_sale_price())), ENT_QUOTES, 'UTF-8') . "\n";
+            $content .= "- Sale Price: " . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($product, array('price' => $product->get_sale_price())))), ENT_QUOTES, 'UTF-8') . "\n";
             $content .= "- ON SALE: Yes\n";
         }
         $content .= "\n";
@@ -2323,7 +2323,7 @@ class Listeo_AI_Search_Chat_API
             // Add thinking configuration for Gemini 3 models
             // Uses OpenAI compatibility mode with reasoning_effort parameter
             // Valid values: high, low, medium, none
-            if (strpos($model, "gemini-3-pro") !== false) {
+            if (strpos($model, "gemini-3.1-pro") !== false || strpos($model, "gemini-3-pro") !== false) {
                 $api_payload["reasoning_effort"] = "low";
             } elseif (strpos($model, "gemini-3-flash") !== false) {
                 $api_payload["reasoning_effort"] = "low";

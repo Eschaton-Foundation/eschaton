@@ -13,6 +13,27 @@
     z-index: 999999;
 }
 
+/* === Left Position === */
+.listeo-floating-chat-widget.position-left {
+    right: auto;
+    left: 20px;
+}
+
+.listeo-floating-chat-widget.position-left .listeo-floating-chat-button {
+    right: auto;
+    left: 0;
+}
+
+.listeo-floating-chat-widget.position-left .listeo-floating-chat-popup {
+    right: auto;
+    left: 0;
+}
+
+.listeo-floating-chat-widget.position-left .listeo-floating-welcome-bubble-arrow {
+    right: auto;
+    left: 20px;
+}
+
 /* === Floating Button (60x60px circle) === */
 .listeo-floating-chat-button {
     width: 60px !important;
@@ -149,6 +170,7 @@
 
 /* Override chat wrapper height for popup */
 .listeo-floating-chat-popup .listeo-ai-chat-wrapper {
+    display: block !important;
     height: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -169,7 +191,13 @@
     .listeo-floating-chat-widget {
         bottom: 0;
         right: 0;
+        left: auto;
         width: 100%;
+    }
+
+    .listeo-floating-chat-widget.position-left {
+        left: 0;
+        right: auto;
     }
 
     .listeo-floating-chat-popup {
@@ -179,16 +207,32 @@
         right: 15px ! Important;
     }
 
+    .listeo-floating-chat-widget.position-left .listeo-floating-chat-popup {
+        right: auto !important;
+        left: 15px !important;
+    }
+
     .listeo-floating-chat-button {
         bottom: 20px;
         right: 20px;
         position: absolute;
         zoom: 0.8;
     }
+
+    .listeo-floating-chat-widget.position-left .listeo-floating-chat-button {
+        right: auto;
+        left: 20px;
+    }
     .listeo-floating-welcome-bubble {
          right: 15px;
         width: fit-content;
         float: right;
+    }
+
+    .listeo-floating-chat-widget.position-left .listeo-floating-welcome-bubble {
+        float: left;
+        right: auto;
+        left: 15px;
     }
 }
 

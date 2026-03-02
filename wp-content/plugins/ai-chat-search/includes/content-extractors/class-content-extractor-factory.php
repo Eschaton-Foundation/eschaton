@@ -99,6 +99,11 @@ class Listeo_AI_Content_Extractor_Factory {
      * @return string Formatted custom fields string or empty
      */
     public static function extract_custom_fields($post_id, $already_extracted = array()) {
+        // Check if custom fields inclusion is disabled
+        if (get_option('listeo_ai_disable_custom_fields', false)) {
+            return '';
+        }
+
         $meta = get_post_meta($post_id);
 
         if (empty($meta)) {

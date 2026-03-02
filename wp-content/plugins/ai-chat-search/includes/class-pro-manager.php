@@ -259,6 +259,92 @@ class AI_Chat_Search_Pro_Manager {
     }
 
     /**
+     * Check if Pro was ever activated on this site
+     *
+     * Returns true if any evidence of past Pro activation exists:
+     * - Pro plugin file is present
+     * - License key option was set
+     * - License validation transient exists
+     * - Trial flag was set
+     *
+     * @return bool True if Pro was ever activated
+     */
+    public static function was_pro_ever_activated() {
+        // Pro plugin file exists
+        if (file_exists(WP_PLUGIN_DIR . '/ai-chat-search-pro/ai-chat-search-pro.php')) {
+            return true;
+        }
+
+        // License key was ever set
+        if (get_option('ai_chat_search_pro_license_key', '')) {
+            return true;
+        }
+
+        // License validation transient exists
+        if (get_transient('ai_chat_search_pro_license_valid')) {
+            return true;
+        }
+
+        // Trial was ever activated
+        if (get_option('ai_chat_search_pro_is_trial', false)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get Listeo discount data from external JSON
+     *
+     * Fetches discount info from purethemes.net and caches it.
+     * Returns false if fetch fails, JSON is invalid, or discount is inactive.
+     *
+     * @return array|false Discount data array or false
+     */
+    public static function get_listeo_discount_data() {
+        $cached = get_transient('airs_listeo_discount_data');
+        if ($cached !== false) {
+            if (isset($cached['active']) && !$cached['active']) {
+                return false;
+            }
+            return $cached;
+        }
+
+        $response = wp_remote_get('https://purethemes.net/listeo-discount.json', [
+            'timeout' => 5,
+            'sslverify' => true,
+        ]);
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            // Cache failure for 1 hour to avoid hammering the server
+            set_transient('airs_listeo_discount_data', ['active' => false], HOUR_IN_SECONDS);
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!is_array($data) || empty($data['active'])) {
+            set_transient('airs_listeo_discount_data', ['active' => false], HOUR_IN_SECONDS);
+            return false;
+        }
+
+        // Sanitize the data
+        $discount_data = [
+            'active'           => true,
+            'discount_percent' => isset($data['discount_percent']) ? absint($data['discount_percent']) : 0,
+            'title'            => isset($data['title']) ? sanitize_text_field($data['title']) : '',
+            'message'          => isset($data['message']) ? sanitize_text_field($data['message']) : '',
+            'url'              => isset($data['url']) ? esc_url_raw($data['url']) : self::PRO_UPGRADE_URL,
+            'coupon_code'      => isset($data['coupon_code']) ? sanitize_text_field($data['coupon_code']) : '',
+        ];
+
+        set_transient('airs_listeo_discount_data', $discount_data, 12 * HOUR_IN_SECONDS);
+
+        return $discount_data;
+    }
+
+    /**
      * Render upgrade prompt box
      *
      * @param array $args Arguments for rendering prompt

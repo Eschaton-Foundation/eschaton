@@ -114,6 +114,9 @@
 
             // Show popup
             this.popup.fadeIn(300, () => {
+                // Trigger layout recalculation for themes with complex fixed containers
+                window.dispatchEvent(new Event('resize'));
+
                 // Scroll to bottom AFTER popup is fully visible
                 this.scrollToBottom();
             });

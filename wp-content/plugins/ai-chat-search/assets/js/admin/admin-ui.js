@@ -174,6 +174,27 @@
     }
 
     /**
+     * Initialize position toggle (left/right)
+     */
+    function initPositionToggle() {
+        var $toggle = $('.airs-position-toggle');
+        if (!$toggle.length) return;
+
+        var $buttons = $toggle.find('.airs-position-btn');
+        var $hiddenInput = $toggle.find('input[type="hidden"]');
+
+        $buttons.on('click', function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var value = $btn.data('value');
+
+            $buttons.removeClass('active');
+            $btn.addClass('active');
+            $hiddenInput.val(value);
+        });
+    }
+
+    /**
      * Initialize header style toggle (simple/image/animated)
      */
     function initHeaderStyleToggle() {
@@ -911,6 +932,7 @@
         initShortcodeGenerator();
         initVisualRadioCards();
         initThemeToggle();
+        initPositionToggle();
         initHeaderStyleToggle();
         initTranslationInstaller();
         initQualitySlider();
