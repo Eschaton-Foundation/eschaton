@@ -17,6 +17,7 @@
             this.bindEvents();
             setTimeout(() => {
                 this.updateGenerationCount();
+                this.loadAllStats();
             }, 300);
         },
 
@@ -42,8 +43,23 @@
             $('#select-verified-posts').on('click', this.selectVerifiedPosts.bind(this));
             $('#modal-search').on('keyup', this.filterPosts.bind(this));
 
-            // Individual checkbox change - update count
-            $(document).on('change', '#modal-posts-list input[type="checkbox"]', this.updateSelectionCount.bind(this));
+            // Individual checkbox change — sync to Set and update count
+            $(document).on('change', '#modal-posts-list input[type="checkbox"]', (e) => {
+                const id = parseInt($(e.target).val());
+                if ($(e.target).is(':checked')) {
+                    this._modalSelectedIds.add(id);
+                } else {
+                    this._modalSelectedIds.delete(id);
+                }
+                this.updateSelectionCount();
+            });
+
+            // Load More button
+            $(document).on('click', '.load-more-btn', () => {
+                this.syncCheckboxesToSet();
+                this.loadModalPage(this._modalCurrentPage + 1, false);
+            });
+
             $('#modal-save').on('click', this.saveSelection.bind(this));
             $('#modal-train-now').on('click', this.trainNow.bind(this));
 
@@ -78,6 +94,40 @@
 
             // Toggle content visibility with slide animation
             $content.slideToggle(300);
+
+            // Lazy-load detected custom type counts when section is expanded
+            if (targetId === 'custom-types-content' && !$content.data('stats-loaded')) {
+                $content.data('stats-loaded', true);
+                this.loadCustomTypeCounts();
+            }
+        },
+
+        /**
+         * Load counts for detected custom post types via AJAX
+         */
+        loadCustomTypeCounts: function() {
+            const self = this;
+            $('[data-custom-type]').each(function() {
+                const $el = $(this);
+                const postType = $el.data('custom-type');
+                $.ajax({
+                    url: listeoAiUniversalSettings.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'listeo_ai_get_custom_type_count',
+                        nonce: listeoAiUniversalSettings.nonce,
+                        post_type: postType
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            const count = response.data.count;
+                            $el.text(self.formatNumber(count));
+                            $el.removeClass('loading');
+                            $el.addClass(count > 0 ? 'has-content' : 'empty');
+                        }
+                    }
+                });
+            });
         },
 
         /**
@@ -408,9 +458,46 @@
         },
 
         /**
+         * Load stats for all post type cards and detected custom types on page load.
+         * Uses a concurrency limit to avoid hammering the database.
+         */
+        loadAllStats: function() {
+            const self = this;
+            const maxConcurrent = 2;
+            let running = 0;
+
+            // Collect post type cards that need stats
+            const queue = [];
+            $('.post-type-card[data-post-type]').each(function() {
+                queue.push({ type: 'card', postType: $(this).data('post-type') });
+            });
+
+            // Detected custom types are in a collapsed section and not activated
+            // — skip loading their counts until user expands the section
+
+            function processNext() {
+                if (queue.length === 0) return;
+                if (running >= maxConcurrent) return;
+
+                const item = queue.shift();
+                running++;
+
+                self.refreshStats(item.postType, function() {
+                    running--;
+                    processNext();
+                });
+            }
+
+            // Start initial batch
+            for (let i = 0; i < maxConcurrent; i++) {
+                processNext();
+            }
+        },
+
+        /**
          * Refresh post type badge count and manual selection links
          */
-        refreshStats: function(postType) {
+        refreshStats: function(postType, onComplete) {
             $.ajax({
                 url: listeoAiUniversalSettings.ajax_url,
                 type: 'POST',
@@ -429,7 +516,7 @@
                         $badge.text(this.formatNumber(stats.total));
 
                         // Update badge class
-                        $badge.removeClass('has-content empty');
+                        $badge.removeClass('has-content empty loading');
                         $badge.addClass(stats.total > 0 ? 'has-content' : 'empty');
 
                         // Update action links - Documents have special handling
@@ -471,6 +558,11 @@
                                 </a>
                             `);
                         }
+                    }
+                },
+                complete: function() {
+                    if (typeof onComplete === 'function') {
+                        onComplete();
                     }
                 }
             });
@@ -630,6 +722,17 @@
         },
 
         /**
+         * Modal state — persists across pages
+         */
+        _modalSelectedIds: new Set(),
+        _modalTotalPosts: 0,
+        _modalCurrentPage: 1,
+        _modalTotalPages: 1,
+        _modalPostType: '',
+        _modalSearch: '',
+        _searchDebounce: null,
+
+        /**
          * Open manual selection modal
          */
         openModal: function(postType) {
@@ -637,45 +740,12 @@
             $modal.data('post-type', postType);
             $modal.fadeIn(200);
 
-            // Load posts for this type
-            $.ajax({
-                url: listeoAiUniversalSettings.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'listeo_ai_get_posts_for_selection',
-                    nonce: listeoAiUniversalSettings.nonce,
-                    post_type: postType
-                },
-                success: (response) => {
-                    if (response.success) {
-                        this.renderPostsList(response.data);
-                    } else {
-                        $('#modal-posts-list').html(`<p class="error-message">${response.data}</p>`);
-                    }
-                },
-                error: () => {
-                    $('#modal-posts-list').html('<p class="error-message">Error loading posts</p>');
-                }
-            });
-        },
-
-        /**
-         * Close modal
-         */
-        closeModal: function() {
-            $('#manual-selection-modal').fadeOut(200);
+            // Reset state
+            this._modalSelectedIds = new Set();
+            this._modalCurrentPage = 1;
+            this._modalPostType = postType;
+            this._modalSearch = '';
             $('#modal-search').val('');
-        },
-
-        /**
-         * Render posts list in modal
-         */
-        renderPostsList: function(data) {
-            const posts = data.posts;
-            const selectedIds = data.selected_ids || [];
-            const postType = data.post_type;
-
-            $('#modal-title').text(`Manual Selection - ${data.post_type_label}`);
 
             // Show/hide "Select Verified Only" button based on post type
             if (postType === 'listing') {
@@ -684,89 +754,232 @@
                 $('#select-verified-posts').hide();
             }
 
-            let html = '<div class="posts-checkboxes">';
+            this.loadModalPage(1, true);
+        },
+
+        /**
+         * Load a page of posts into the modal
+         */
+        loadModalPage: function(page, isFirstLoad) {
+            const self = this;
+            const $list = $('#modal-posts-list');
+
+            if (isFirstLoad) {
+                $list.html('<p class="loading-message"><span class="airs-spinner" style="margin-right: 6px;"></span>Loading posts...</p>');
+            }
+
+            $.ajax({
+                url: listeoAiUniversalSettings.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'listeo_ai_get_posts_for_selection',
+                    nonce: listeoAiUniversalSettings.nonce,
+                    post_type: this._modalPostType,
+                    page: page,
+                    per_page: 50,
+                    search: this._modalSearch
+                },
+                success: (response) => {
+                    if (response.success) {
+                        const data = response.data;
+                        this._modalCurrentPage = data.page;
+                        this._modalTotalPages = data.total_pages;
+                        this._modalTotalPosts = data.total;
+
+                        // On first load, initialize selected IDs from saved selection
+                        if (isFirstLoad) {
+                            this._modalSelectedIds = new Set((data.selected_ids || []).map(id => parseInt(id)));
+                            $('#modal-title').text(`Manual Selection - ${data.post_type_label}`);
+                        }
+
+                        this.renderPostsPage(data.posts, isFirstLoad);
+                        this.updateSelectionCount();
+                    } else {
+                        $list.html(`<p class="error-message">${response.data}</p>`);
+                    }
+                },
+                error: () => {
+                    $list.html('<p class="error-message">Error loading posts</p>');
+                }
+            });
+        },
+
+        /**
+         * Render a page of posts into the modal
+         */
+        renderPostsPage: function(posts, replace) {
+            const $list = $('#modal-posts-list');
+            let $container;
+
+            if (replace) {
+                $list.html('<div class="posts-checkboxes"></div>');
+                $container = $list.find('.posts-checkboxes');
+            } else {
+                $container = $list.find('.posts-checkboxes');
+                // Remove existing load more button
+                $list.find('.load-more-container').remove();
+            }
+
+            let html = '';
             posts.forEach((post) => {
-                const isChecked = selectedIds.includes(parseInt(post.ID));
+                const postId = parseInt(post.ID);
+                const isChecked = this._modalSelectedIds.has(postId);
                 const hasEmbedding = parseInt(post.has_embedding) === 1;
                 const isVerified = parseInt(post.is_verified) === 1;
                 const statusClass = hasEmbedding ? 'has-embedding' : 'no-embedding';
 
                 html += `
                     <label class="post-checkbox-item ${statusClass}" data-has-embedding="${post.has_embedding}" data-is-verified="${isVerified ? '1' : '0'}">
-                        <input type="checkbox" value="${post.ID}" ${isChecked ? 'checked' : ''}>
+                        <input type="checkbox" value="${postId}" ${isChecked ? 'checked' : ''}>
                         <span class="post-title">${post.post_title}</span>
-                        <span class="post-id">ID: ${post.ID}</span>
+                        <span class="post-id">ID: ${postId}</span>
                         ${isVerified ? '<span class="post-verified-badge">✓ Verified</span>' : ''}
                         <span class="post-status">${hasEmbedding ? '✓ Indexed' : 'Pending'}</span>
                     </label>
                 `;
             });
-            html += '</div>';
+            $container.append(html);
 
-            $('#modal-posts-list').html(html);
-            this.updateSelectionCount();
+            // Add "Load More" button if there are more pages
+            if (this._modalCurrentPage < this._modalTotalPages) {
+                const showing = $container.find('.post-checkbox-item').length;
+                $list.append(`
+                    <div class="load-more-container" style="text-align: center; padding: 12px;">
+                        <button type="button" class="button load-more-btn">
+                            Load More (${showing} of ${this._modalTotalPosts})
+                        </button>
+                    </div>
+                `);
+            }
         },
 
         /**
-         * Select all posts
+         * Close modal
          */
-        selectAllPosts: function() {
-            $('#modal-posts-list input[type="checkbox"]').prop('checked', true);
-            this.updateSelectionCount();
+        closeModal: function() {
+            $('#manual-selection-modal').fadeOut(200);
+            $('#modal-search').val('');
+            this._modalSearch = '';
         },
 
         /**
-         * Deselect all posts
+         * Sync visible checkboxes → Set (call before any Set read after user interaction)
          */
-        deselectAllPosts: function() {
-            $('#modal-posts-list input[type="checkbox"]').prop('checked', false);
-            this.updateSelectionCount();
-        },
-
-        /**
-         * Select pending posts only
-         */
-        selectPendingPosts: function() {
-            $('#modal-posts-list .post-checkbox-item').each(function() {
-                const hasEmbedding = $(this).data('has-embedding') == '1';
-                $(this).find('input[type="checkbox"]').prop('checked', !hasEmbedding);
-            });
-            this.updateSelectionCount();
-        },
-
-        /**
-         * Select verified posts only
-         */
-        selectVerifiedPosts: function() {
-            $('#modal-posts-list .post-checkbox-item').each(function() {
-                const isVerified = $(this).data('is-verified') == '1';
-                $(this).find('input[type="checkbox"]').prop('checked', isVerified);
-            });
-            this.updateSelectionCount();
-        },
-
-        /**
-         * Filter posts by search term
-         */
-        filterPosts: function(e) {
-            const searchTerm = $(e.currentTarget).val().toLowerCase();
-
-            $('#modal-posts-list .post-checkbox-item').each(function() {
-                const postTitle = $(this).find('.post-title').text().toLowerCase();
-                if (postTitle.includes(searchTerm)) {
-                    $(this).show();
+        syncCheckboxesToSet: function() {
+            const self = this;
+            $('#modal-posts-list input[type="checkbox"]').each(function() {
+                const id = parseInt($(this).val());
+                if ($(this).is(':checked')) {
+                    self._modalSelectedIds.add(id);
                 } else {
-                    $(this).hide();
+                    self._modalSelectedIds.delete(id);
                 }
             });
+        },
+
+        /**
+         * Select all visible posts (only what's currently loaded/shown)
+         */
+        selectAllPosts: function() {
+            const self = this;
+            $('#modal-posts-list input[type="checkbox"]').each(function() {
+                $(this).prop('checked', true);
+                self._modalSelectedIds.add(parseInt($(this).val()));
+            });
+            this.updateSelectionCount();
+        },
+
+        /**
+         * Deselect all visible posts
+         */
+        deselectAllPosts: function() {
+            const self = this;
+            $('#modal-posts-list input[type="checkbox"]').each(function() {
+                $(this).prop('checked', false);
+                self._modalSelectedIds.delete(parseInt($(this).val()));
+            });
+            this.updateSelectionCount();
+        },
+
+        /**
+         * Select pending posts only (server-side)
+         */
+        selectPendingPosts: function() {
+            const self = this;
+            this._modalSelectedIds.clear();
+            $.ajax({
+                url: listeoAiUniversalSettings.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'listeo_ai_get_bulk_post_ids',
+                    nonce: listeoAiUniversalSettings.nonce,
+                    post_type: this._modalPostType,
+                    filter: 'pending'
+                },
+                success: (response) => {
+                    if (response.success) {
+                        response.data.ids.forEach(id => self._modalSelectedIds.add(id));
+                        // Update visible checkboxes
+                        $('#modal-posts-list .post-checkbox-item').each(function() {
+                            const id = parseInt($(this).find('input').val());
+                            $(this).find('input').prop('checked', self._modalSelectedIds.has(id));
+                        });
+                        self.updateSelectionCount();
+                    }
+                }
+            });
+        },
+
+        /**
+         * Select verified posts only (server-side)
+         */
+        selectVerifiedPosts: function() {
+            const self = this;
+            this._modalSelectedIds.clear();
+            $.ajax({
+                url: listeoAiUniversalSettings.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'listeo_ai_get_bulk_post_ids',
+                    nonce: listeoAiUniversalSettings.nonce,
+                    post_type: this._modalPostType,
+                    filter: 'verified'
+                },
+                success: (response) => {
+                    if (response.success) {
+                        response.data.ids.forEach(id => self._modalSelectedIds.add(id));
+                        $('#modal-posts-list .post-checkbox-item').each(function() {
+                            const id = parseInt($(this).find('input').val());
+                            $(this).find('input').prop('checked', self._modalSelectedIds.has(id));
+                        });
+                        self.updateSelectionCount();
+                    }
+                }
+            });
+        },
+
+        /**
+         * Filter posts by search term (server-side, debounced)
+         */
+        filterPosts: function(e) {
+            const searchTerm = $(e.currentTarget).val();
+            clearTimeout(this._searchDebounce);
+
+            this._searchDebounce = setTimeout(() => {
+                // Sync current checkbox state before reloading
+                this.syncCheckboxesToSet();
+                this._modalSearch = searchTerm;
+                this._modalCurrentPage = 1;
+                this.loadModalPage(1, true);
+            }, 300);
         },
 
         /**
          * Update selection count in modal footer
          */
         updateSelectionCount: function() {
-            const total = $('#modal-posts-list input[type="checkbox"]').length;
-            const selected = $('#modal-posts-list input[type="checkbox"]:checked').length;
+            const selected = this._modalSelectedIds.size;
+            const total = this._modalTotalPosts;
             $('#modal-selection-count').text(`${selected} of ${total} selected`);
         },
 
@@ -774,13 +987,10 @@
          * Save selection
          */
         saveSelection: function() {
+            this.syncCheckboxesToSet();
             const $modal = $('#manual-selection-modal');
             const postType = $modal.data('post-type');
-            const selectedIds = [];
-
-            $('#modal-posts-list input[type="checkbox"]:checked').each(function() {
-                selectedIds.push(parseInt($(this).val()));
-            });
+            const selectedIds = Array.from(this._modalSelectedIds);
 
             $.ajax({
                 url: listeoAiUniversalSettings.ajax_url,
@@ -808,14 +1018,11 @@
          * Train Now - Immediately generate embeddings for selected posts
          */
         trainNow: function() {
+            this.syncCheckboxesToSet();
             const $modal = $('#manual-selection-modal');
             const $button = $('#modal-train-now');
             const postType = $modal.data('post-type');
-            const selectedIds = [];
-
-            $('#modal-posts-list input[type="checkbox"]:checked').each(function() {
-                selectedIds.push(parseInt($(this).val()));
-            });
+            const selectedIds = Array.from(this._modalSelectedIds);
 
             if (selectedIds.length === 0) {
                 this.showNotice('error', 'Please select at least one item to train');

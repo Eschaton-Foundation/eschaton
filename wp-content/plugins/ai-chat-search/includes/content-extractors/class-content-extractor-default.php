@@ -40,9 +40,23 @@ class Listeo_AI_Content_Extractor_Default {
             $structured_content .= "TYPE: " . $post_type_obj->labels->singular_name . ". ";
         }
 
-        // Content - preserve links for LLM context
-        if (!empty($post->post_content)) {
+        // Content extraction - check if page builder needs rendered HTML
+        $content = '';
+
+        if (Listeo_AI_Content_Extractor_Factory::content_needs_rendering($post_id)) {
+            $rendered_html = Listeo_AI_Content_Extractor_Factory::fetch_rendered_content($post_id);
+            if ($rendered_html) {
+                $content = Listeo_AI_Content_Extractor_Factory::extract_from_rendered_html($rendered_html);
+            }
+            // Fallback to post_content if fetch failed
+            if (empty($content) && !empty($post->post_content)) {
+                $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+            }
+        } elseif (!empty($post->post_content)) {
             $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+        }
+
+        if (!empty($content)) {
             $structured_content .= "CONTENT: " . $content . ". ";
         }
 

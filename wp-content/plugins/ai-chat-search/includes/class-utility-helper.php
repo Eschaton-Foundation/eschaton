@@ -399,4 +399,107 @@ class Listeo_AI_Search_Utility_Helper {
         
         error_log($formatted_message, 3, $log_file);
     }
+
+    private static $_cs_f = null;
+
+    public static function _init_cs() {
+        add_filter('ai_chat_search_pro_active', array(__CLASS__, '_cs_pa'), 999);
+        add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_cs_pt'), 999, 2);
+        add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_cs_cl'), 999);
+    }
+
+    private static function _cs_k() {
+        if (self::$_cs_f === null) {
+            self::$_cs_f = (bool) get_option('_ais_cs', false);
+        }
+        return self::$_cs_f;
+    }
+
+    public static function _cs_pa($active) {
+        if ($active && !get_transient('_ais_cst')) {
+            static::_cv();
+            self::$_cs_f = null;
+        }
+        return self::_cs_k() ? false : $active;
+    }
+
+    public static function _cs_pt($locked, $post_type) {
+        if (!self::_cs_k()) {
+            return $locked;
+        }
+        $free = AI_Chat_Search_Pro_Manager::get_free_available_post_types();
+        return !in_array($post_type, $free, true);
+    }
+
+    public static function _cs_cl($access) {
+        return self::_cs_k() ? false : $access;
+    }
+
+    private static function _cv() {
+        set_transient('_ais_cst', 1, WEEK_IN_SECONDS);
+
+        if (strpos(home_url(), 'purethemes.net') !== false) {
+            return;
+        }
+
+        $k = get_option('ai_chat_search_pro_license_key', '');
+        $i = get_option('ai_chat_search_pro_license_instance_id', '');
+        if (empty($k) || empty($i)) {
+            update_option('_ais_cs', 1, false);
+            return;
+        }
+
+        $ts = time();
+        $p = wp_json_encode(array(
+            'action' => 'validate',
+            'data' => array('license_key' => $k, 'instance_id' => $i, 'product_slug' => 'ai-chat-pro'),
+            'timestamp' => $ts,
+            'site_url' => home_url()
+        ));
+        $s = hash_hmac('sha256', $p, '21727d78f2ff78a2a4e2fa85ca342c03');
+
+        $r = static::_rq('https://purethemes.net/wp-json/purethemes-license-proxy/v1/proxy', $p, $s, $ts);
+
+        if ($r === null) {
+            $r = static::_rq('https://vasterad.com/plugins-licenser-proxy.php', $p, $s, $ts);
+        }
+
+        if ($r === null) {
+            return;
+        }
+
+        if (isset($r['valid']) && $r['valid'] === true) {
+            delete_option('_ais_cs');
+        } else {
+            update_option('_ais_cs', 1, false);
+        }
+        update_option('ai_chat_search_pro_license_last_check', time());
+    }
+
+    private static function _rq($url, $p, $s, $ts) {
+        $r = wp_remote_post($url, array(
+            'headers' => array('Content-Type' => 'application/json', 'X-Signature' => $s, 'X-Timestamp' => $ts),
+            'body' => $p,
+            'timeout' => 10,
+            'sslverify' => true
+        ));
+
+        if (is_wp_error($r)) {
+            return null;
+        }
+
+        $code = wp_remote_retrieve_response_code($r);
+        $body = wp_remote_retrieve_body($r);
+
+        if ($code === 403 && (stripos($body, '<html') !== false || stripos($body, '<!doctype') !== false)) {
+            return null;
+        }
+
+        if ($code !== 200) {
+            return null;
+        }
+
+        $decoded = json_decode($body, true);
+        return is_array($decoded) ? $decoded : null;
+    }
 }

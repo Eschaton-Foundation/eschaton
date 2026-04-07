@@ -385,91 +385,76 @@ class Listeo_AI_Search_Database_Manager {
                 }
             }
 
-            // Get posts without embeddings across enabled post types
-            // IMPORTANT: Respect manual selections (same 3-state logic as total_listings)
-            // Exclude:
-            // 1. listeo-booking products (hidden booking products)
-            // 2. Posts that have chunks (their content is covered by chunk embeddings)
-            $without_embeddings = 0;
+            // Count indexed posts (from embeddings/chunks side — fast, uses indexes)
+            $total_indexed = 0;
 
             foreach ($enabled_post_types as $post_type) {
                 if (array_key_exists($post_type, $manual_selections)) {
-                    // Manual selection active
                     $selected_ids = is_array($manual_selections[$post_type])
                         ? array_filter(array_map('intval', $manual_selections[$post_type]))
                         : array();
 
                     if (empty($selected_ids)) {
-                        // User explicitly selected 0 posts - don't count
                         continue;
                     }
 
-                    // Count only selected posts that are missing embeddings
                     $placeholders = implode(',', array_fill(0, count($selected_ids), '%d'));
-                    $type_missing = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(*) FROM {$wpdb->posts} p
-                         LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                         WHERE p.ID IN ($placeholders)
-                         AND p.post_status = 'publish'
-                         AND e.listing_id IS NULL
-                         AND NOT EXISTS (
-                             SELECT 1
-                             FROM {$wpdb->posts} chunk
-                             INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                             WHERE chunk.post_type = %s
-                             AND chunk_parent.meta_key = '_chunk_parent_id'
-                             AND chunk_parent.meta_value = p.ID
-                         )",
-                        ...array_merge($selected_ids, array($chunk_post_type))
+
+                    // Direct embeddings among selected
+                    $direct = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(DISTINCT e.listing_id) FROM {$table_name} e
+                         WHERE e.listing_id IN ($placeholders)",
+                        ...$selected_ids
                     ));
-                    $without_embeddings += $type_missing;
+
+                    // Chunk-covered among selected (no direct embedding)
+                    $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                         FROM {$wpdb->postmeta} pm
+                         INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                         WHERE chunk.post_type = %s
+                         AND pm.meta_key = '_chunk_parent_id'
+                         AND CAST(pm.meta_value AS UNSIGNED) IN ($placeholders)
+                         AND CAST(pm.meta_value AS UNSIGNED) NOT IN (
+                             SELECT e2.listing_id FROM {$table_name} e2
+                             WHERE e2.listing_id IN ($placeholders)
+                         )",
+                        ...array_merge(array($chunk_post_type), $selected_ids, $selected_ids)
+                    ));
+
+                    $total_indexed += $direct + $via_chunks;
                 } else {
-                    // No manual selection - count all posts of this type
-                    if ($post_type === 'product') {
-                        $type_missing = (int) $wpdb->get_var($wpdb->prepare(
-                            "SELECT COUNT(*) FROM {$wpdb->posts} p
-                             LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                             WHERE p.post_type = %s AND p.post_status = 'publish'
-                             AND e.listing_id IS NULL
-                             AND NOT EXISTS (
-                                 SELECT 1
-                                 FROM {$wpdb->term_relationships} tr
-                                 INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                                 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                                 WHERE tr.object_id = p.ID
-                                 AND tt.taxonomy = 'product_cat'
-                                 AND t.slug = 'listeo-booking'
-                             )
-                             AND NOT EXISTS (
-                                 SELECT 1
-                                 FROM {$wpdb->posts} chunk
-                                 INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                 WHERE chunk.post_type = %s
-                                 AND chunk_parent.meta_key = '_chunk_parent_id'
-                                 AND chunk_parent.meta_value = p.ID
-                             )",
-                            $post_type, $chunk_post_type
-                        ));
-                    } else {
-                        $type_missing = (int) $wpdb->get_var($wpdb->prepare(
-                            "SELECT COUNT(*) FROM {$wpdb->posts} p
-                             LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                             WHERE p.post_type = %s AND p.post_status = 'publish'
-                             AND e.listing_id IS NULL
-                             AND NOT EXISTS (
-                                 SELECT 1
-                                 FROM {$wpdb->posts} chunk
-                                 INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                 WHERE chunk.post_type = %s
-                                 AND chunk_parent.meta_key = '_chunk_parent_id'
-                                 AND chunk_parent.meta_value = p.ID
-                             )",
-                            $post_type, $chunk_post_type
-                        ));
-                    }
-                    $without_embeddings += $type_missing;
+                    // Direct embeddings for this post type
+                    $direct = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(DISTINCT e.listing_id)
+                         FROM {$table_name} e
+                         INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
+                         WHERE p.post_type = %s AND p.post_status = 'publish'",
+                        $post_type
+                    ));
+
+                    // Chunk-covered posts without direct embedding
+                    $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                         FROM {$wpdb->postmeta} pm
+                         INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                         INNER JOIN {$wpdb->posts} parent ON CAST(pm.meta_value AS UNSIGNED) = parent.ID
+                         WHERE chunk.post_type = %s
+                         AND pm.meta_key = '_chunk_parent_id'
+                         AND parent.post_type = %s
+                         AND parent.post_status = 'publish'
+                         AND parent.ID NOT IN (
+                             SELECT e2.listing_id FROM {$table_name} e2
+                         )",
+                        $chunk_post_type,
+                        $post_type
+                    ));
+
+                    $total_indexed += $direct + $via_chunks;
                 }
             }
+
+            $without_embeddings = max(0, $total_listings - $total_indexed);
             
             // Get recent activity
             $recent_embeddings = $wpdb->get_var("
@@ -535,117 +520,71 @@ class Listeo_AI_Search_Database_Manager {
         $manual_selections = get_option('listeo_ai_search_manual_selections', array());
 
         try {
+            // Pre-collect chunk parent IDs (single fast query)
+            $chunk_parents_subquery = $wpdb->prepare(
+                "SELECT DISTINCT CAST(pm.meta_value AS UNSIGNED) AS parent_id
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                 WHERE chunk.post_type = %s AND pm.meta_key = '_chunk_parent_id'",
+                $chunk_post_type
+            );
+
             $all_missing = array();
 
             foreach ($enabled_post_types as $post_type) {
+                // Build WHERE conditions
+                $where = array();
+                $where[] = "p.post_status = 'publish'";
+                $where[] = "e.listing_id IS NULL";
+                $where[] = "cp.parent_id IS NULL";
+
                 if (array_key_exists($post_type, $manual_selections)) {
-                    // Manual selection active
                     $selected_ids = is_array($manual_selections[$post_type])
                         ? array_filter(array_map('intval', $manual_selections[$post_type]))
                         : array();
 
                     if (empty($selected_ids)) {
-                        // User explicitly selected 0 posts - skip
                         continue;
                     }
 
-                    // Get only selected posts that are missing embeddings
                     $placeholders = implode(',', array_fill(0, count($selected_ids), '%d'));
-                    $type_missing = $wpdb->get_results($wpdb->prepare(
-                        "SELECT p.ID as listing_id,
-                               p.post_title as title,
-                               p.post_type,
-                               COALESCE(pm.meta_value, p.post_type) as listing_type,
-                               p.post_modified as created_at
-                        FROM {$wpdb->posts} p
-                        LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                        LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_listing_type'
-                        WHERE p.ID IN ($placeholders)
-                        AND p.post_status = 'publish'
-                        AND e.listing_id IS NULL
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM {$wpdb->posts} chunk
-                            INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                            WHERE chunk.post_type = %s
-                            AND chunk_parent.meta_key = '_chunk_parent_id'
-                            AND chunk_parent.meta_value = p.ID
-                        )
-                        ORDER BY p.post_modified DESC",
-                        ...array_merge($selected_ids, array($chunk_post_type))
-                    ), ARRAY_A);
-
-                    if ($type_missing) {
-                        $all_missing = array_merge($all_missing, $type_missing);
-                    }
+                    $where[] = $wpdb->prepare("p.ID IN ($placeholders)", ...$selected_ids);
                 } else {
-                    // No manual selection - get all posts of this type
-                    if ($post_type === 'product') {
-                        $type_missing = $wpdb->get_results($wpdb->prepare(
-                            "SELECT p.ID as listing_id,
-                                   p.post_title as title,
-                                   p.post_type,
-                                   COALESCE(pm.meta_value, p.post_type) as listing_type,
-                                   p.post_modified as created_at
-                            FROM {$wpdb->posts} p
-                            LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                            LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_listing_type'
-                            WHERE p.post_type = %s
-                            AND p.post_status = 'publish'
-                            AND e.listing_id IS NULL
-                            AND NOT EXISTS (
-                                SELECT 1
-                                FROM {$wpdb->term_relationships} tr
-                                INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                                INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                                WHERE tr.object_id = p.ID
-                                AND tt.taxonomy = 'product_cat'
-                                AND t.slug = 'listeo-booking'
-                            )
-                            AND NOT EXISTS (
-                                SELECT 1
-                                FROM {$wpdb->posts} chunk
-                                INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                WHERE chunk.post_type = %s
-                                AND chunk_parent.meta_key = '_chunk_parent_id'
-                                AND chunk_parent.meta_value = p.ID
-                            )
-                            ORDER BY p.post_modified DESC",
-                            $post_type, $chunk_post_type
-                        ), ARRAY_A);
-                    } else {
-                        $type_missing = $wpdb->get_results($wpdb->prepare(
-                            "SELECT p.ID as listing_id,
-                                   p.post_title as title,
-                                   p.post_type,
-                                   COALESCE(pm.meta_value, p.post_type) as listing_type,
-                                   p.post_modified as created_at
-                            FROM {$wpdb->posts} p
-                            LEFT JOIN {$table_name} e ON p.ID = e.listing_id
-                            LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_listing_type'
-                            WHERE p.post_type = %s
-                            AND p.post_status = 'publish'
-                            AND e.listing_id IS NULL
-                            AND NOT EXISTS (
-                                SELECT 1
-                                FROM {$wpdb->posts} chunk
-                                INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                WHERE chunk.post_type = %s
-                                AND chunk_parent.meta_key = '_chunk_parent_id'
-                                AND chunk_parent.meta_value = p.ID
-                            )
-                            ORDER BY p.post_modified DESC",
-                            $post_type, $chunk_post_type
-                        ), ARRAY_A);
-                    }
+                    $where[] = $wpdb->prepare("p.post_type = %s", $post_type);
 
-                    if ($type_missing) {
-                        $all_missing = array_merge($all_missing, $type_missing);
+                    if ($post_type === 'product') {
+                        $where[] = "NOT EXISTS (
+                            SELECT 1 FROM {$wpdb->term_relationships} tr
+                            INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                            INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                            WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
+                        )";
                     }
+                }
+
+                $where_clause = implode(' AND ', $where);
+
+                $type_missing = $wpdb->get_results("
+                    SELECT p.ID as listing_id,
+                           p.post_title as title,
+                           p.post_type,
+                           COALESCE(pm.meta_value, p.post_type) as listing_type,
+                           p.post_modified as created_at
+                    FROM {$wpdb->posts} p
+                    LEFT JOIN {$table_name} e ON p.ID = e.listing_id
+                    LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
+                    LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_listing_type'
+                    WHERE {$where_clause}
+                    ORDER BY p.post_modified DESC
+                    LIMIT {$limit}
+                ", ARRAY_A);
+
+                if ($type_missing) {
+                    $all_missing = array_merge($all_missing, $type_missing);
                 }
             }
 
-            // Sort by modified date and limit
+            // Sort by modified date and limit across all types
             usort($all_missing, function($a, $b) {
                 return strtotime($b['created_at']) - strtotime($a['created_at']);
             });
@@ -1467,12 +1406,11 @@ class Listeo_AI_Search_Database_Manager {
         if (!empty($detected_locations)) {
             $location_parts = array();
             foreach ($detected_locations as $location) {
-                $safe_location = $wpdb->esc_like($location);
-                $location_parts[] = "(
-                    pm_address.meta_value LIKE '%{$safe_location}%' OR
-                    pm_city.meta_value LIKE '%{$safe_location}%' OR
-                    pm_region.meta_value LIKE '%{$safe_location}%'
-                )";
+                $like_term = '%' . $wpdb->esc_like($location) . '%';
+                $location_parts[] = $wpdb->prepare(
+                    "(pm_address.meta_value LIKE %s OR pm_city.meta_value LIKE %s OR pm_region.meta_value LIKE %s)",
+                    $like_term, $like_term, $like_term
+                );
             }
             $location_condition = ' AND (' . implode(' OR ', $location_parts) . ')';
         }
@@ -1563,12 +1501,11 @@ class Listeo_AI_Search_Database_Manager {
         if (!empty($detected_locations)) {
             $location_parts = array();
             foreach ($detected_locations as $location) {
-                $safe_location = $wpdb->esc_like($location);
-                $location_parts[] = "(
-                    pm_address.meta_value LIKE '%{$safe_location}%' OR
-                    pm_city.meta_value LIKE '%{$safe_location}%' OR
-                    pm_region.meta_value LIKE '%{$safe_location}%'
-                )";
+                $like_term = '%' . $wpdb->esc_like($location) . '%';
+                $location_parts[] = $wpdb->prepare(
+                    "(pm_address.meta_value LIKE %s OR pm_city.meta_value LIKE %s OR pm_region.meta_value LIKE %s)",
+                    $like_term, $like_term, $like_term
+                );
             }
             $location_condition = ' AND (' . implode(' OR ', $location_parts) . ')';
         }

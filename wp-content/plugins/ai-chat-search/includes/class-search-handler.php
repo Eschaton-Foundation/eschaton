@@ -399,6 +399,10 @@ class Listeo_AI_Search_Search_Handler {
                     $start_offset = intval($_POST['start_offset']) ?: 0;
                     $embedding_manager = new Listeo_AI_Search_Embedding_Manager();
                     $response = $embedding_manager->regenerate_structured_embeddings($batch_size, $start_offset);
+                    if (isset($response['error'])) {
+                        wp_send_json_error($response['error']);
+                        return;
+                    }
                     break;
                     
                 case 'clear_all':

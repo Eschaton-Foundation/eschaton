@@ -153,7 +153,7 @@ class Listeo_AI_Provider {
         } elseif ($this->provider === 'mistral') {
             return get_option('listeo_ai_chat_model', 'mistral-large-latest');
         } else {
-            return get_option('listeo_ai_chat_model', 'gpt-5.1');
+            return get_option('listeo_ai_chat_model', 'gpt-5.3-chat-latest');
         }
     }
 

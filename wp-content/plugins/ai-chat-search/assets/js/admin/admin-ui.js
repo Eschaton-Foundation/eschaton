@@ -177,7 +177,7 @@
      * Initialize position toggle (left/right)
      */
     function initPositionToggle() {
-        var $toggle = $('.airs-position-toggle');
+        var $toggle = $('.airs-position-toggle').not('.airs-offset-device-toggle');
         if (!$toggle.length) return;
 
         var $buttons = $toggle.find('.airs-position-btn');
@@ -191,6 +191,28 @@
             $buttons.removeClass('active');
             $btn.addClass('active');
             $hiddenInput.val(value);
+        });
+    }
+
+    /**
+     * Initialize offset device toggle (Desktop/Mobile)
+     */
+    function initOffsetDeviceToggle() {
+        var $toggle = $('.airs-offset-device-toggle');
+        if (!$toggle.length) return;
+
+        var $buttons = $toggle.find('.airs-position-btn');
+
+        $buttons.on('click', function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var target = $btn.data('target');
+
+            $buttons.removeClass('active');
+            $btn.addClass('active');
+
+            $('.airs-offset-panel').hide();
+            $('#' + target).show();
         });
     }
 
@@ -299,9 +321,10 @@
                 if (response.success) {
                     if (response.data.installed) {
                         $status.html('<span style="color:#46b450;">' + (i18n.translationInstalled || 'Translation already installed!') + '</span>');
+                        $installBtn.prop('disabled', false).text(i18n.update || 'Update');
                     } else if (response.data.available) {
                         $status.html('<span style="color:#0073aa;">' + (i18n.translationAvailable || 'Translation available. Click Install.') + '</span>');
-                        $installBtn.prop('disabled', false);
+                        $installBtn.prop('disabled', false).text(i18n.install || 'Install');
                     } else {
                         $status.html('<span style="color:#dc3232;">' + (i18n.translationNotAvailable || 'Translation not available for this locale.') + '</span>');
                     }
@@ -340,6 +363,34 @@
                 $installBtn.prop('disabled', false);
             });
         });
+
+        // Switch to English (remove translation)
+        var $removeBtn = $('#ai_remove_translation');
+        if ($removeBtn.length) {
+            $removeBtn.on('click', function() {
+                var locale = $(this).data('locale');
+                if (!locale) return;
+
+                $(this).prop('disabled', true).text(i18n.removing || 'Removing...');
+
+                $.post(window.ajaxurl, {
+                    action: 'ai_chat_search_remove_translation',
+                    nonce: translationNonce,
+                    locale: locale
+                }, function(response) {
+                    if (response.success) {
+                        $removeBtn.hide();
+                        $status.html('<span style="color:#46b450;">' + (response.data.message || 'Switched to English.') + '</span>');
+                    } else {
+                        $removeBtn.prop('disabled', false).text(i18n.switchToEnglish || 'Switch to English');
+                        $status.html('<span style="color:#dc3232;">' + (response.data.message || 'Failed to remove translation.') + '</span>');
+                    }
+                }).fail(function() {
+                    $removeBtn.prop('disabled', false).text(i18n.switchToEnglish || 'Switch to English');
+                    $status.html('<span style="color:#dc3232;">' + (i18n.connectionFailed || 'Connection failed.') + '</span>');
+                });
+            });
+        }
     }
 
     /**
@@ -933,6 +984,7 @@
         initVisualRadioCards();
         initThemeToggle();
         initPositionToggle();
+        initOffsetDeviceToggle();
         initHeaderStyleToggle();
         initTranslationInstaller();
         initQualitySlider();

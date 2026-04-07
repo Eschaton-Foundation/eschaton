@@ -43,8 +43,8 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Check if current page is in the exclusion list
         $excluded_pages = get_option("listeo_ai_floating_excluded_pages", []);
-        if (!empty($excluded_pages) && is_array($excluded_pages) && is_page()) {
-            $current_page_id = get_the_ID();
+        if (!empty($excluded_pages) && is_array($excluded_pages) && is_singular()) {
+            $current_page_id = get_queried_object_id();
             if (in_array($current_page_id, $excluded_pages)) {
                 return;
             }
@@ -82,17 +82,6 @@ class Listeo_AI_Search_Floating_Chat_Widget
             );
         }
 
-        // Enqueue theme switcher JS when enabled
-        if (get_option('listeo_ai_color_scheme_switcher')) {
-            wp_enqueue_script(
-                "listeo-ai-chat-theme-switcher",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chatbot-theme-switcher.js",
-                ["jquery"],
-                LISTEO_AI_SEARCH_VERSION,
-                true
-            );
-        }
-
         // Enqueue floating widget styles
         wp_enqueue_style(
             "listeo-ai-floating-chat",
@@ -101,39 +90,44 @@ class Listeo_AI_Search_Floating_Chat_Widget
             LISTEO_AI_SEARCH_VERSION,
         );
 
-        // Enqueue chat script (reuse from shortcode)
-        wp_enqueue_script(
-            "listeo-ai-chat",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chatbot-core.js",
-            ["jquery"],
-            LISTEO_AI_SEARCH_VERSION,
-            true,
-        );
+        // Lazy load mode: defer chatbot scripts until user opens the widget
+        $lazy_load = get_option('listeo_ai_chat_lazy_load', 0);
+        $is_pro = AI_Chat_Search_Pro_Manager::is_pro_active();
+        $whitelabel_enabled = $is_pro && get_option('listeo_ai_chat_whitelabel_enabled', 0);
+        $needs_silk_wave = get_option('listeo_ai_floating_header_style', 'simple') === 'animated';
 
-        // Enqueue silk wave animated background (only when needed)
-        if (get_option('listeo_ai_floating_header_style', 'simple') === 'animated') {
+        if (!$lazy_load) {
+            // Standard mode: load all scripts upfront
             wp_enqueue_script(
-                "listeo-silk-wave-bg",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js",
-                [],
+                "listeo-ai-chat",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js",
+                ["jquery"],
                 LISTEO_AI_SEARCH_VERSION,
                 true,
             );
+
+            if ($needs_silk_wave) {
+                wp_enqueue_script(
+                    "listeo-silk-wave-bg",
+                    LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js",
+                    [],
+                    LISTEO_AI_SEARCH_VERSION,
+                    true,
+                );
+            }
         }
 
-        // Enqueue floating widget script
+        // Enqueue floating widget script (deps change based on lazy load)
         wp_enqueue_script(
             "listeo-ai-floating-chat",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/floating-chat.js",
-            ["jquery", "listeo-ai-chat"],
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-floating-widget.js",
+            $lazy_load ? ["jquery"] : ["jquery", "listeo-ai-chat"],
             LISTEO_AI_SEARCH_VERSION,
             true,
         );
 
         // Load UI utilities only when badge is visible (whitelabel not enabled)
-        $is_pro = AI_Chat_Search_Pro_Manager::is_pro_active();
-        $whitelabel_enabled = $is_pro && get_option('listeo_ai_chat_whitelabel_enabled', 0);
-        if (!$whitelabel_enabled) {
+        if (!$lazy_load && !$whitelabel_enabled) {
             wp_enqueue_script(
                 "listeo-ai-chat-ui-utils",
                 LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chat-ui-utils.js",
@@ -143,9 +137,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
             );
         }
 
-        // Use shared function for chat config (eliminates duplication with shortcode)
-        // This also includes chatConfig inline, eliminating the /chat-config API call
-        wp_localize_script("listeo-ai-chat", "listeoAiChatConfig", listeo_ai_get_chat_js_config());
+        // Localize chat config on the script that's guaranteed to be enqueued
+        $config_handle = $lazy_load ? "listeo-ai-floating-chat" : "listeo-ai-chat";
+        wp_localize_script($config_handle, "listeoAiChatConfig", listeo_ai_get_chat_js_config());
 
         // Get welcome bubble message for floating widget
         $welcome_bubble_message = get_option(
@@ -153,26 +147,59 @@ class Listeo_AI_Search_Floating_Chat_Widget
             __("Hi! How can I help you?", "ai-chat-search"),
         );
 
+        // Build lazy load script URLs when enabled
+        $lazy_scripts = [];
+        if ($lazy_load) {
+            // silk-wave must load before chatbot-core (which calls ListeoSilkWave.init in showWelcome)
+            if ($needs_silk_wave) {
+                $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js";
+            }
+            $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js";
+            if (!$whitelabel_enabled) {
+                $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chat-ui-utils.js";
+            }
+            if (AI_Chat_Search_Pro_Manager::is_pro_active() && get_option('listeo_ai_chat_enable_speech', 0)) {
+                $lazy_scripts[] = defined('AI_CHAT_SEARCH_PRO_URL') ? AI_CHAT_SEARCH_PRO_URL . "assets/js/speech-to-text.js" : '';
+            }
+        }
+
         // Localize script for floating widget
+        $floating_config = [
+            "welcomeBubbleMessage" => $welcome_bubble_message,
+            "buttonIcon" => get_option(
+                "listeo_ai_floating_button_icon",
+                "fa-robot",
+            ),
+            "strings" => [
+                "openChat" => __("Open chat", "ai-chat-search"),
+                "closeChat" => __("Close chat", "ai-chat-search"),
+            ],
+        ];
+        if (!empty($lazy_scripts)) {
+            $floating_config["lazyScripts"] = $lazy_scripts;
+            $floating_config["scriptVersion"] = LISTEO_AI_SEARCH_VERSION;
+        }
         wp_localize_script(
             "listeo-ai-floating-chat",
             "listeoAiFloatingChatConfig",
-            [
-                "welcomeBubbleMessage" => $welcome_bubble_message,
-                "buttonIcon" => get_option(
-                    "listeo_ai_floating_button_icon",
-                    "fa-robot",
-                ),
-                "strings" => [
-                    "openChat" => __("Open chat", "ai-chat-search"),
-                    "closeChat" => __("Close chat", "ai-chat-search"),
-                ],
-            ],
+            $floating_config,
         );
 
-        // Speech-to-text assets hook (PRO feature)
+        // Speech-to-text assets (PRO feature)
         if (AI_Chat_Search_Pro_Manager::is_pro_active() && get_option('listeo_ai_chat_enable_speech', 0)) {
-            do_action('listeo_ai_chat_enqueue_speech_assets');
+            if ($lazy_load) {
+                // JS is deferred via lazyScripts, but CSS can load now (style handle resolves fine)
+                if (defined('AI_CHAT_SEARCH_PRO_URL')) {
+                    wp_enqueue_style(
+                        'ai-chat-search-pro-speech',
+                        AI_CHAT_SEARCH_PRO_URL . 'assets/css/speech-to-text.css',
+                        ['listeo-ai-chat'],
+                        defined('AI_CHAT_SEARCH_PRO_VERSION') ? AI_CHAT_SEARCH_PRO_VERSION : LISTEO_AI_SEARCH_VERSION
+                    );
+                }
+            } else {
+                do_action('listeo_ai_chat_enqueue_speech_assets');
+            }
         }
     }
 
@@ -241,8 +268,8 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Check if current page is in the exclusion list
         $excluded_pages = get_option("listeo_ai_floating_excluded_pages", []);
-        if (!empty($excluded_pages) && is_array($excluded_pages) && is_page()) {
-            $current_page_id = get_the_ID();
+        if (!empty($excluded_pages) && is_array($excluded_pages) && is_singular()) {
+            $current_page_id = get_queried_object_id();
             if (in_array($current_page_id, $excluded_pages)) {
                 return;
             }
@@ -329,6 +356,12 @@ class Listeo_AI_Search_Floating_Chat_Widget
             $primary_rgb[1],
             $primary_rgb[2],
         );
+
+        // Offset settings
+        $offset_desktop_h = absint(get_option('listeo_ai_floating_offset_desktop_h', 20));
+        $offset_desktop_v = absint(get_option('listeo_ai_floating_offset_desktop_v', 20));
+        $offset_mobile_h = absint(get_option('listeo_ai_floating_offset_mobile_h', 20));
+        $offset_mobile_v = absint(get_option('listeo_ai_floating_offset_mobile_v', 20));
         ?>
         <!-- Custom Button Color Styles -->
         <style>
@@ -346,6 +379,24 @@ class Listeo_AI_Search_Floating_Chat_Widget
                 --ai-chat-primary-color-light: <?php echo esc_attr(
                     $primary_color_light,
                 ); ?>;
+            }
+
+            /* Floating widget offset - desktop */
+            @media (min-width: 769px) {
+                .listeo-floating-chat-widget<?php echo $widget_position === 'left' ? '.position-left' : ''; ?> {
+                    bottom: <?php echo esc_attr($offset_desktop_v); ?>px;
+                    <?php echo $widget_position === 'left' ? 'left' : 'right'; ?>: <?php echo esc_attr($offset_desktop_h); ?>px;
+                }
+            }
+            /* Floating widget offset - mobile (horizontal applies to button only) */
+            @media (max-width: 768px) {
+                .listeo-floating-chat-widget<?php echo $widget_position === 'left' ? '.position-left' : ''; ?> .listeo-floating-chat-button {
+                    bottom: <?php echo esc_attr($offset_mobile_v); ?>px;
+                    <?php echo $widget_position === 'left' ? 'left' : 'right'; ?>: <?php echo esc_attr($offset_mobile_h); ?>px;
+                }
+                .listeo-floating-chat-widget .listeo-floating-chat-popup {
+                    bottom: <?php echo esc_attr($offset_mobile_v + 60); ?>px !important;
+                }
             }
         </style>
 
@@ -425,6 +476,12 @@ class Listeo_AI_Search_Floating_Chat_Widget
                                 ); ?></div>
                             </div>
                             <div class="listeo-ai-chat-menu">
+                                <?php if (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0)): ?>
+                                <div class="listeo-ai-chat-cart-toggle" role="button" tabindex="0" aria-label="<?php esc_attr_e('Shopping cart', 'ai-chat-search'); ?>">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                                    <span class="listeo-ai-cart-badge" style="display: none;">0</span>
+                                </div>
+                                <?php endif; ?>
                                 <?php if (get_option('listeo_ai_color_scheme_switcher')): ?>
                                 <div class="listeo-ai-chat-darkmode-toggle" role="button" tabindex="0" aria-label="<?php esc_attr_e('Toggle dark mode', 'ai-chat-search'); ?>">
                                     <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -545,8 +602,18 @@ class Listeo_AI_Search_Floating_Chat_Widget
                         ?>
 
 <?php
+                        // Pre-Chat Required Fields Form (PRO feature - rendered by Pro plugin)
+                        do_action('listeo_ai_chat_pre_chat_form');
+                        ?>
+
+<?php
                         // Contact Form Overlay (PRO feature - rendered by Pro plugin when quick buttons enabled)
                         do_action('listeo_ai_chat_contact_form_overlay');
+                        ?>
+
+                        <?php
+                        // Cart popup overlay (Pro feature — rendered by Pro plugin via hook)
+                        do_action('listeo_ai_chat_cart_popup');
                         ?>
                     </div>
                 </div>

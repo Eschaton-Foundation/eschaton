@@ -1368,7 +1368,7 @@ content: '\2713';
 
 .airs-modal-header {
     padding: 24px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e0e0e0;
     text-align: center;
     display: flex;
     align-items: center;
@@ -1425,7 +1425,7 @@ justify-content: space-between;
     display: flex;
     gap: 12px;
     justify-content: space-between;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid #e0e0e0;
 }
 
 .airs-modal-footer .airs-button {
@@ -1459,6 +1459,82 @@ justify-content: space-between;
 .airs-modal-footer .airs-button-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Knowledge Sources */
+.knowledge-source-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.knowledge-source-item .ks-label {
+    font-size: 13px;
+    color: #999;
+}
+
+.knowledge-source-item .ks-topic {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.knowledge-source-item .ks-post {
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.knowledge-source-delete {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    line-height: 1;
+}
+
+.knowledge-source-delete:hover {
+    color: #666;
+}
+
+#knowledge-sources-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#knowledge-sources-empty {
+    text-align: center;
+    padding: 15px;
+    color: #999;
+}
+
+#knowledge-sources-separator {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 16px;
+    margin-top: 16px;
+}
+
+#post-reference-results {
+    margin-top: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+#post-reference-selected-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
 }
 
 @media (max-width: 640px) {
@@ -3014,6 +3090,15 @@ body .contact-message-actions button { border-radius: 5px;}
     height: 18px;
 }
 
+/* Text-only toggle buttons (no icon) */
+.airs-theme-toggle--text .airs-theme-btn {
+    width: auto;
+    height: auto;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
 /* Theme toggle hover preview - animated with opacity */
 .airs-theme-preview {
     position: absolute;
@@ -3094,6 +3179,20 @@ body .contact-message-actions button { border-radius: 5px;}
     background: #fff;
     color: #1f2937;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* =================================================================
+   Offset Device Toggle (Desktop/Mobile)
+   ================================================================= */
+
+.airs-offset-toggle-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.airs-offset-panels {
+    flex: 1;
 }
 
 /* =================================================================

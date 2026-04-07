@@ -22,9 +22,25 @@
      * Initialize batch embedding generation
      */
     function initBatchGeneration() {
-        // Start button shows confirmation modal
+        // Start button - check API key first, then show appropriate modal
         $('#start-regeneration').on('click', function() {
+            var ajaxVars = window.listeo_ai_search_ajax || {};
+            if (!ajaxVars.has_api_key) {
+                $('#api-key-missing-modal').fadeIn(200);
+                return;
+            }
             $('#training-confirm-modal').fadeIn(200);
+        });
+
+        // API key missing modal - close
+        $('#api-key-missing-close-btn, #api-key-missing-modal .airs-modal-overlay').on('click', function() {
+            $('#api-key-missing-modal').fadeOut(200);
+        });
+
+        // API key missing modal - go to settings
+        $('#api-key-missing-settings-btn').on('click', function() {
+            var ajaxVars = window.listeo_ai_search_ajax || {};
+            window.location.href = ajaxVars.settings_url || '?page=ai-chat-search&tab=settings';
         });
 
         // Modal cancel

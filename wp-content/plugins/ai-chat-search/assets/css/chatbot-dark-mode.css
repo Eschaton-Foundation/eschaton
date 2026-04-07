@@ -430,6 +430,16 @@
     color: #f87171 !important;
 }
 
+/* ===== PRE-CHAT FORM (dark mode) ===== */
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-pre-chat-form {
+    background: var(--chat-bg-secondary) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-pre-chat-headline {
+    color: var(--chat-text) !important;
+}
+
 /* ===== SCROLLBAR ===== */
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-messages {
     scrollbar-color: var(--chat-border) var(--chat-bg);
@@ -503,4 +513,139 @@
 .dark-mode .listeo-ai-chat-loading,
 .dark-mode .listeo-ai-chat-shimmer-text {
     filter: brightness(1.4)
+}
+
+/* ===== CART TOGGLE BUTTON ===== */
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-cart-toggle {
+    color: var(--chat-text-muted) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-cart-toggle:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--chat-text) !important;
+}
+
+/* ===== PRODUCT CARD (div mode) ===== */
+.listeo-ai-chat-wrapper.dark-mode div.listeo-ai-product-card .listeo-ai-listing-title a {
+    color: inherit !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode div.listeo-ai-product-card .listeo-ai-listing-title a:hover {
+    color: var(--ai-chat-primary-color, #4da3ff) !important;
+}
+
+/* ===== ADD TO CART BUTTON ===== */
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-add-to-cart-btn {
+    color: #fff !important;
+    background: var(--ai-chat-primary-color, #0073ee) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-add-to-cart-btn:hover {
+    background: var(--ai-chat-primary-color, #4da3ff) !important;
+    color: #fff !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-add-to-cart-btn.added {
+    background: #27ae60 !important;
+    color: #fff !important;
+}
+
+/* ===== CART POPUP OVERLAY ===== */
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-overlay {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup {
+    background: var(--chat-bg-secondary) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-header {
+    border-bottom-color: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-header h3 {
+    color: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-close {
+    background: color-mix(in srgb, var(--chat-border) 70%, transparent) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-close svg {
+    stroke: var(--chat-text-muted) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-close:hover {
+    background: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-close:hover svg {
+    stroke: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-empty {
+    color: var(--chat-text-muted) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item {
+    border-bottom-color: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-title {
+    color: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-title:hover {
+    color: var(--ai-chat-primary-color, #4da3ff) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-price {
+    color: var(--chat-text-secondary) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-qty {
+    border-color: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-qty-minus,
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-qty-plus {
+    background: #303030 !important;
+    color: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-qty-minus:hover,
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-qty-plus:hover {
+    background: #404040 !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-qty-value {
+    color: var(--chat-text) !important;
+    border-color: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-remove {
+    color: var(--chat-text-muted) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-item-remove:hover {
+    color: #e74c3c !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-popup-footer {
+    border-top-color: var(--chat-border) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-subtotal-row {
+    color: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-view-btn {
+    background: #303030 !important;
+    color: var(--chat-text) !important;
+    border: none !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-cart-view-btn:hover {
+    background: #404040 !important;
 }

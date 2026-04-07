@@ -6,6 +6,7 @@
  */
 
 /* === Floating Widget Container === */
+/* bottom/right/left offsets are set via inline styles from admin settings */
 .listeo-floating-chat-widget {
     position: fixed;
     bottom: 20px;
@@ -254,4 +255,45 @@
 
 .listeo-ai-chat-terms-notice a:hover {
     text-decoration: underline;
+}
+
+/* === Lazy Load State === */
+/* Hide all chat content while scripts load, show only spinner */
+.listeo-ai-chat-lazy-state .listeo-ai-chat-container {
+    position: relative;
+}
+
+.listeo-ai-chat-lazy-state .listeo-ai-chat-header,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-messages,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-input-wrapper,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-quick-buttons,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-terms-notice,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-powered-by,
+.listeo-ai-chat-lazy-state .listeo-ai-chat-menu {
+    opacity: 0;
+}
+
+/* Spinner */
+.listeo-ai-chat-lazy-state .listeo-ai-chat-container::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #666;
+    border-radius: 50%;
+    animation: listeoLazyLoadSpin 0.7s linear infinite;
+    z-index: 1;
+}
+
+.listeo-ai-chat-lazy-state.dark-mode .listeo-ai-chat-container::after {
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top-color: #aaa;
+}
+
+@keyframes listeoLazyLoadSpin {
+    to { transform: rotate(360deg); }
 }

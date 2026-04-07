@@ -14,12 +14,6 @@ msgstr ""
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ai-chat-search\n"
 
-#. Plugin Name of the plugin
-#: ai-chat-search.php
-#: includes/admin/class-admin-interface.php:758
-#: includes/admin/class-admin-interface.php:759
-msgid "AI Chat & Search"
-msgstr ""
 
 #. Plugin URI of the plugin
 #: ai-chat-search.php
@@ -1751,9 +1745,6 @@ msgstr ""
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2000
-msgid "AI Chat & Search by Purethemes"
-msgstr ""
 
 #: includes/admin/class-admin-interface.php:2001
 msgid "An AI chatbot that searches the website database and responds like a human assistant."
@@ -1868,11 +1859,7 @@ msgid "Google Gemini API Key"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:2330
-msgid "Enter your Google Gemini API key from Google AI Studio."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:2331
-msgid "Get Gemini API Key →"
+msgid "Enter your Google Gemini API key from %1$sGoogle AI Studio%2$s. Note: %3$sfree tier has very low rate limits%4$s — we recommend a paid plan."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:2341
@@ -2030,6 +2017,54 @@ msgstr ""
 msgid "Maximum number of <strong>\"Best Match\" badge</strong> results to display in <strong>search field shortcode</strong> dropdown."
 msgstr ""
 
+#: includes/admin/class-admin-interface.php
+msgid "Conversation Context Length"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Short"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Normal"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Long"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Short, ~3 user messages, lowest cost"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Normal, ~6 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Long, ~18 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "How many previous user messages are included as context for the AI."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Short prevents context pollution and saves tokens. Longer gives the AI more memory of previous user questions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "~3 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "~6 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "~18 user messages"
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:2598
 msgid "Search Analytics"
 msgstr ""
@@ -2145,6 +2180,14 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:2766
 msgid "When enabled, detailed search information will be logged to help troubleshoot issues. Make sure WP_DEBUG_LOG is enabled in wp-config.php."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Load chatbot scripts only when the floating widget is opened"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Defers loading chatbot JavaScript until the user opens the chat. Improves page load performance. Only applies to the floating widget, not the shortcode."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:2771
@@ -2418,6 +2461,16 @@ msgstr ""
 msgid "Yes, Start Training"
 msgstr ""
 
+#. API Key Missing Modal
+#: includes/admin/class-admin-interface.php
+msgid "API Key Not Configured"
+msgstr ""
+
+#. translators: %s: AI provider name (e.g. OpenAI, Gemini, Mistral)
+#: includes/admin/class-admin-interface.php
+msgid "Please add your %s API key in the Settings tab before starting training."
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:3315
 msgid "Activity (Last 30 Days)"
 msgstr ""
@@ -2491,7 +2544,7 @@ msgid "-- Select Language --"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3591
-msgid "Install"
+msgid "Update"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3595
@@ -2878,12 +2931,24 @@ msgstr ""
 msgid "Add custom instructions about your website, business focus, special features..."
 msgstr ""
 
+#: includes/admin/class-admin-interface.php
+msgid "See the FAQ for tips"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Custom system instructions require Pro version."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Upgrade to Pro to add custom instructions"
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:4249
 msgid "Upgrade to Pro and Increase limit to 6000 characters"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:4254
-msgid "Use this to describe your website, special features, or guide the AI behavior. Your  custom instructions will be appended to the default system prompt."
+msgid "Use this to describe your website, special features, or guide the AI behavior."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:4256
@@ -3961,4 +4026,279 @@ msgstr ""
 #. translators: %d: HTTP status code
 #: ../ai-chat-search-pro/includes/class-webhook-tool.php
 msgid "Webhook returned HTTP %d. Please check your endpoint."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php
+msgid "Low PHP Memory Limit Detected"
+msgstr ""
+
+#. translators: 1: WP memory limit, 2: server memory limit, 3: total number of content items
+#: includes/admin/class-universal-settings.php
+msgid "Your site has %3$s content items to train. WordPress memory limit is <strong>%1$s</strong> and server memory limit is <strong>%2$s</strong> — we recommend at least <strong>512 MB</strong> for both. Set <code>define('WP_MEMORY_LIMIT', '512M');</code> in <code>wp-config.php</code> and increase the server limit in your hosting panel."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Server Info"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "PHP Memory Limit:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Max Execution Time:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "PHP memory limit is below 256 MB. This may cause issues with embedding generation and AI search. Please increase it in your hosting panel or php.ini."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Admin Memory Limit:"
+msgstr ""
+
+#: includes/admin/class-universal-settings.php
+msgid "Dismiss"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Fill out required fields"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Start Chat"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Enable Pre-Chat Form"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Collect visitor information before the chat starts. The submitted data will be visible in chat history."
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Form Fields"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Add the fields visitors must fill out before chatting."
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Form Headline"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "e.g., Please introduce yourself"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Leave blank for no headline."
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "e.g., Full Name, Email, Phone Number"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Remove"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "+ Add Field"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "Pre-Chat Form"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php
+msgid "User Details"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-speech-to-text.php
+msgid "Voice Input"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-speech-to-text.php
+msgid "Record voice message"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Version Mismatch:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "AI Chat & Search and AI Chat & Search Pro are running different versions. Please update both plugins to the same version to avoid compatibility issues."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Base:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Pro:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Popup Dimensions"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Widget Offset"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Width"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Height"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Horizontal"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Vertical"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Hints for AI"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Direct the AI to use a specific page or document when answering certain questions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "No hints added yet."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "When user asks about"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Add"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "e.g. shipping, delivery, returns"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Search in"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Search page or document by title..."
+msgstr ""
+
+
+#: includes/admin/class-admin-interface.php
+msgid "No results found."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Optional. Use only if needed for sensitive topics where accuracy matters most."
+msgstr ""
+
+#. WooCommerce Cart in Chatbot
+#: includes/admin/class-admin-interface.php
+msgid "Enable WooCommerce Cart in Chatbot"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Show \"Add to Cart\" buttons on product cards and a cart icon in the chat header."
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "Shopping cart"
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "Shopping Cart"
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "Your cart is empty."
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "Subtotal"
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "View Cart"
+msgstr ""
+
+#: includes/class-chat-shortcode.php
+#: includes/class-floating-chat-widget.php
+msgid "Checkout"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Add to Cart"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Select Options"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Adding..."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Added!"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Could not add to cart."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Invalid product."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Product not found."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "You cannot purchase your own product."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Invalid cart item."
+msgstr ""
+
+#: includes/admin/class-admin-chat-history.php
+msgid "%d product added"
+msgid_plural "%d products added"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-admin-chat-history.php
+msgid "Products added to cart:"
+msgstr ""
+
+#: ai-chat-search.php
+msgid "WooCommerce not available."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Could not update cart."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Upgrade to Pro to enable WooCommerce cart"
 msgstr ""

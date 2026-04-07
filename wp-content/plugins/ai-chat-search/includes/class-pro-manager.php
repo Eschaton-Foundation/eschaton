@@ -233,9 +233,12 @@ class AI_Chat_Search_Pro_Manager {
      */
     public static function get_max_system_prompt_length() {
         if (self::is_pro_active()) {
-            return 6000; // Pro: Full length
+            return 6000;
         }
-        return apply_filters('ai_chat_search_free_prompt_limit', 1000); // Free: 1000 chars
+        if (self::is_listeo_theme()) {
+            return apply_filters('ai_chat_search_free_prompt_limit', 1000);
+        }
+        return 0;
     }
 
     /**

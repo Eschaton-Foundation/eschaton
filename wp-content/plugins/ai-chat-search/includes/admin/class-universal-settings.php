@@ -46,6 +46,8 @@ class Listeo_AI_Search_Universal_Settings {
         add_action('wp_ajax_listeo_ai_get_total_count', array($this, 'ajax_get_total_count'));
         add_action('wp_ajax_listeo_ai_add_custom_post_types', array($this, 'ajax_add_custom_post_types'));
         add_action('wp_ajax_listeo_ai_remove_custom_post_type', array($this, 'ajax_remove_custom_post_type'));
+        add_action('wp_ajax_listeo_ai_get_custom_type_count', array($this, 'ajax_get_custom_type_count'));
+        add_action('wp_ajax_listeo_ai_get_bulk_post_ids', array($this, 'ajax_get_bulk_post_ids'));
     }
 
     /**
@@ -157,29 +159,24 @@ class Listeo_AI_Search_Universal_Settings {
         }
 
         // Get detected custom post types that haven't been added yet
+        // Counts are loaded lazily via AJAX to prevent timeout on large databases
         $detected_custom_types = Listeo_AI_Search_Database_Manager::get_detected_custom_post_types();
         $available_custom_types = array();
-        global $wpdb;
 
         foreach ($detected_custom_types as $custom_type) {
             if (!in_array($custom_type['name'], $custom_post_types_added)) {
-                // Get count of published posts for this type
-                $count = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
-                    $custom_type['name']
-                ));
-                $custom_type['count'] = $count;
+                $custom_type['count'] = 0; // Placeholder, loaded via JS
                 $available_custom_types[] = $custom_type;
             }
         }
 
-        // Sort by count (descending) - most populated first
-        usort($available_custom_types, function($a, $b) {
-            return $b['count'] - $a['count'];
-        });
+        // Get manual selections once (cheap option lookup, no DB queries)
+        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
 
         ?>
         <div class="listeo-ai-universal-settings">
+
+            <?php $this->maybe_render_memory_limit_notice(); ?>
 
             <!-- Post Types Grid -->
             <div class="listeo-ai-post-types-grid" style="margin-top: 0;">
@@ -190,11 +187,9 @@ class Listeo_AI_Search_Universal_Settings {
                     // PRO FEATURE CHECK: Check if post type is locked
                     $is_locked = AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type->name);
 
-                    // Get stats
-                    $stats = $this->get_post_type_stats($post_type->name);
-
-                    // Determine badge class
-                    $badge_class = $stats['total'] > 0 ? 'has-content' : 'empty';
+                    // Stats loaded lazily via AJAX to prevent timeout on large databases
+                    $has_manual_selection = array_key_exists($post_type->name, $manual_selections);
+                    $badge_class = 'loading';
                 ?>
                     <div class="post-type-card <?php echo $is_enabled ? 'enabled' : ''; ?> <?php echo $is_custom ? 'is-custom' : ''; ?> <?php echo $is_locked ? 'locked' : ''; ?>"
                          data-post-type="<?php echo esc_attr($post_type->name); ?>">
@@ -217,7 +212,7 @@ class Listeo_AI_Search_Universal_Settings {
                                         <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                                     <?php else: ?>
                                         <span class="custom-type-badge <?php echo $badge_class; ?>">
-                                            <?php echo number_format($stats['total']); ?>
+                                            <span class="airs-spinner airs-spinner--small"></span>
                                         </span>
                                     <?php endif; ?>
                                 </h3>
@@ -234,7 +229,7 @@ class Listeo_AI_Search_Universal_Settings {
                                 <?php else: ?>
                                     <!-- Manual selection link -->
                                     <div class="manual-selection-actions">
-                                        <?php if ($stats['has_manual_selection']): ?>
+                                        <?php if ($has_manual_selection): ?>
                                             <a href="#" class="manual-selection-link active" data-post-type="<?php echo esc_attr($post_type->name); ?>">
                                                 <span class="dashicons dashicons-yes"></span>
                                                 <?php _e('Manual selection active', 'ai-chat-search'); ?>
@@ -314,9 +309,7 @@ class Listeo_AI_Search_Universal_Settings {
                     <p><?php _e('Select custom post types to add to your training content. Once added, they will appear above as cards.', 'ai-chat-search'); ?></p>
 
                     <div class="custom-types-checkboxes <?php echo $custom_types_locked ? 'disabled' : ''; ?>">
-                    <?php foreach ($available_custom_types as $custom_type):
-                        $badge_class = $custom_type['count'] > 0 ? 'has-content' : 'empty';
-                    ?>
+                    <?php foreach ($available_custom_types as $custom_type): ?>
                         <label>
                             <input type="checkbox"
                                    class="custom-post-type-checkbox"
@@ -324,8 +317,8 @@ class Listeo_AI_Search_Universal_Settings {
                                    <?php disabled($custom_types_locked); ?>>
                             <span>
                                 <strong><?php echo esc_html($custom_type['label']); ?></strong>
-                                <span class="custom-type-badge <?php echo $badge_class; ?>">
-                                    <?php echo number_format($custom_type['count']); ?>
+                                <span class="custom-type-badge loading" data-custom-type="<?php echo esc_attr($custom_type['name']); ?>">
+                                    <span class="airs-spinner airs-spinner--small"></span>
                                 </span>
                                 <br>
                                 <code><?php echo esc_html($custom_type['name']); ?></code>
@@ -382,6 +375,79 @@ class Listeo_AI_Search_Universal_Settings {
                 </div>
             </div>
         </div>
+        <?php
+    }
+
+    /**
+     * Show a warning if PHP memory limit is too low for the amount of enabled content.
+     */
+    private function maybe_render_memory_limit_notice() {
+        $wp_limit     = defined('WP_MEMORY_LIMIT') ? WP_MEMORY_LIMIT : '40M';
+        $server_limit = ini_get('memory_limit');
+        $wp_bytes     = wp_convert_hr_to_bytes($wp_limit);
+        $server_bytes = wp_convert_hr_to_bytes($server_limit);
+
+        // Unlimited server memory — no warning needed
+        if ($server_bytes === -1) {
+            return;
+        }
+
+        // Effective limit is whichever is lower
+        $effective_bytes = min($wp_bytes, $server_bytes);
+
+        // Count only enabled post types, respecting manual selections
+        $enabled_post_types = get_option('listeo_ai_search_enabled_post_types', array('listing'));
+        if (!is_array($enabled_post_types) || empty($enabled_post_types)) {
+            return;
+        }
+
+        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        $total_posts = 0;
+        foreach ($enabled_post_types as $pt) {
+            if (array_key_exists($pt, $manual_selections)) {
+                $selected_ids = is_array($manual_selections[$pt])
+                    ? array_filter(array_map('intval', $manual_selections[$pt]))
+                    : array();
+                $total_posts += count($selected_ids);
+            } else {
+                $counts = wp_count_posts($pt);
+                $total_posts += isset($counts->publish) ? (int) $counts->publish : 0;
+            }
+        }
+
+        $min_bytes = 512 * 1024 * 1024; // 512 MB
+        if ($total_posts < 2500 || $effective_bytes >= $min_bytes) {
+            return;
+        }
+
+        ?>
+        <div class="airs-notice airs-notice-warning airs-memory-notice" style="margin-bottom: 16px; padding: 14px 18px; border-radius: 6px; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid #ffc107; position: relative;">
+            <span class="dashicons dashicons-warning" style="color: #856404; margin-top: 2px;"></span>
+            <div style="flex: 1;">
+                <strong><?php _e('Low PHP Memory Limit Detected', 'ai-chat-search'); ?></strong>
+                <p style="margin: 6px 0 0;">
+                    <?php
+                    printf(
+                        /* translators: 1: WP memory limit, 2: server memory limit, 3: total number of content items */
+                        __('Your site has %3$s content items to train. WordPress memory limit is <strong>%1$s</strong> and server memory limit is <strong>%2$s</strong> — we recommend at least <strong>512 MB</strong> for both. Set <code>define(\'WP_MEMORY_LIMIT\', \'512M\');</code> in <code>wp-config.php</code> and increase the server limit in your hosting panel.', 'ai-chat-search'),
+                        esc_html($wp_limit),
+                        esc_html($server_limit),
+                        '<strong>' . number_format_i18n($total_posts) . '</strong>'
+                    );
+                    ?>
+                </p>
+            </div>
+            <button type="button" class="airs-memory-notice-dismiss" style="background: none; border: none; cursor: pointer; padding: 0; margin: 0; line-height: 1; color: #856404; font-size: 18px; opacity: 0.7;" title="<?php esc_attr_e('Dismiss', 'ai-chat-search'); ?>">
+                <span class="dashicons dashicons-no-alt"></span>
+            </button>
+        </div>
+        <script>
+        jQuery(function($){
+            $('.airs-memory-notice-dismiss').on('click', function(){
+                $(this).closest('.airs-memory-notice').fadeOut(200);
+            });
+        });
+        </script>
         <?php
     }
 
@@ -619,7 +685,6 @@ class Listeo_AI_Search_Universal_Settings {
                 : array();
 
             if (empty($selected_ids)) {
-                // User explicitly selected 0 posts
                 return array(
                     'total' => 0,
                     'indexed' => 0,
@@ -628,7 +693,6 @@ class Listeo_AI_Search_Universal_Settings {
                 );
             }
 
-            // Count only selected posts
             $placeholders = implode(',', array_fill(0, count($selected_ids), '%d'));
 
             $total = (int) $wpdb->get_var($wpdb->prepare(
@@ -637,70 +701,44 @@ class Listeo_AI_Search_Universal_Settings {
                 ...$selected_ids
             ));
 
-            // Count posts with direct embedding OR chunks
-            $indexed = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT p.ID)
-                 FROM {$wpdb->posts} p
-                 WHERE p.ID IN ($placeholders)
-                 AND p.post_status = 'publish'
-                 AND (
-                     EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                     OR EXISTS (
-                         SELECT 1 FROM {$wpdb->posts} chunk
-                         INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                         WHERE chunk.post_type = %s
-                         AND chunk_parent.meta_key = '_chunk_parent_id'
-                         AND chunk_parent.meta_value = p.ID
-                     )
-                 )",
-                ...array_merge($selected_ids, array($chunk_post_type))
+            // Count indexed — query from embeddings/chunks side (fast, uses indexes)
+            // Direct embeddings among selected posts
+            $direct = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$embeddings_table} e
+                 WHERE e.listing_id IN ($placeholders)",
+                ...$selected_ids
             ));
+
+            // Chunk-covered posts among selected (no direct embedding)
+            $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                 WHERE chunk.post_type = %s
+                 AND pm.meta_key = '_chunk_parent_id'
+                 AND CAST(pm.meta_value AS UNSIGNED) IN ($placeholders)
+                 AND CAST(pm.meta_value AS UNSIGNED) NOT IN (
+                     SELECT e2.listing_id FROM {$embeddings_table} e2
+                     WHERE e2.listing_id IN ($placeholders)
+                 )",
+                ...array_merge(array($chunk_post_type), $selected_ids, $selected_ids)
+            ));
+
+            $indexed = $direct + $via_chunks;
         } else {
-            // No manual selection - count all published posts
-            // Exclude listeo-booking products (hidden booking products)
+            // No manual selection — count all published posts
             if ($post_type === 'product') {
+                // Exclude listeo-booking products
                 $total = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(DISTINCT p.ID)
-                     FROM {$wpdb->posts} p
+                    "SELECT COUNT(*) FROM {$wpdb->posts} p
                      WHERE p.post_type = %s AND p.post_status = 'publish'
                      AND NOT EXISTS (
-                         SELECT 1
-                         FROM {$wpdb->term_relationships} tr
+                         SELECT 1 FROM {$wpdb->term_relationships} tr
                          INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
                          INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                         WHERE tr.object_id = p.ID
-                         AND tt.taxonomy = 'product_cat'
-                         AND t.slug = 'listeo-booking'
+                         WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
                      )",
                     $post_type
-                ));
-
-                // Count posts with direct embedding OR chunks
-                $indexed = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(DISTINCT p.ID)
-                     FROM {$wpdb->posts} p
-                     WHERE p.post_type = %s AND p.post_status = 'publish'
-                     AND NOT EXISTS (
-                         SELECT 1
-                         FROM {$wpdb->term_relationships} tr
-                         INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                         INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                         WHERE tr.object_id = p.ID
-                         AND tt.taxonomy = 'product_cat'
-                         AND t.slug = 'listeo-booking'
-                     )
-                     AND (
-                         EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                         OR EXISTS (
-                             SELECT 1 FROM {$wpdb->posts} chunk
-                             INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                             WHERE chunk.post_type = %s
-                             AND chunk_parent.meta_key = '_chunk_parent_id'
-                             AND chunk_parent.meta_value = p.ID
-                         )
-                     )",
-                    $post_type,
-                    $chunk_post_type
                 ));
             } else {
                 $total = (int) $wpdb->get_var($wpdb->prepare(
@@ -708,26 +746,36 @@ class Listeo_AI_Search_Universal_Settings {
                      WHERE post_type = %s AND post_status = 'publish'",
                     $post_type
                 ));
-
-                // Count posts with direct embedding OR chunks
-                $indexed = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(DISTINCT p.ID)
-                     FROM {$wpdb->posts} p
-                     WHERE p.post_type = %s AND p.post_status = 'publish'
-                     AND (
-                         EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                         OR EXISTS (
-                             SELECT 1 FROM {$wpdb->posts} chunk
-                             INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                             WHERE chunk.post_type = %s
-                             AND chunk_parent.meta_key = '_chunk_parent_id'
-                             AND chunk_parent.meta_value = p.ID
-                         )
-                     )",
-                    $post_type,
-                    $chunk_post_type
-                ));
             }
+
+            // Count indexed — query from embeddings/chunks side (fast, starts from smaller tables)
+            // Posts with direct embedding
+            $direct = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT e.listing_id)
+                 FROM {$embeddings_table} e
+                 INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
+                 WHERE p.post_type = %s AND p.post_status = 'publish'",
+                $post_type
+            ));
+
+            // Posts covered by chunks but without direct embedding
+            $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                 INNER JOIN {$wpdb->posts} parent ON CAST(pm.meta_value AS UNSIGNED) = parent.ID
+                 WHERE chunk.post_type = %s
+                 AND pm.meta_key = '_chunk_parent_id'
+                 AND parent.post_type = %s
+                 AND parent.post_status = 'publish'
+                 AND parent.ID NOT IN (
+                     SELECT e2.listing_id FROM {$embeddings_table} e2
+                 )",
+                $chunk_post_type,
+                $post_type
+            ));
+
+            $indexed = $direct + $via_chunks;
         }
 
         return array(
@@ -752,6 +800,26 @@ class Listeo_AI_Search_Universal_Settings {
         $stats = $this->get_post_type_stats($post_type);
 
         wp_send_json_success($stats);
+    }
+
+    /**
+     * AJAX: Get published post count for a custom post type
+     */
+    public function ajax_get_custom_type_count() {
+        check_ajax_referer('listeo_ai_universal_settings', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        global $wpdb;
+        $post_type = sanitize_text_field($_POST['post_type']);
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
+            $post_type
+        ));
+
+        wp_send_json_success(array('count' => $count));
     }
 
     /**
@@ -817,7 +885,7 @@ class Listeo_AI_Search_Universal_Settings {
     }
 
     /**
-     * AJAX: Get posts for manual selection
+     * AJAX: Get posts for manual selection (paginated, with server-side search)
      */
     public function ajax_get_posts_for_selection() {
         check_ajax_referer('listeo_ai_universal_settings', 'nonce');
@@ -827,19 +895,21 @@ class Listeo_AI_Search_Universal_Settings {
         }
 
         $post_type = sanitize_text_field($_POST['post_type']);
+        $per_page  = isset($_POST['per_page']) ? absint($_POST['per_page']) : 50;
+        $page      = isset($_POST['page']) ? max(1, absint($_POST['page'])) : 1;
+        $search    = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $filter    = isset($_POST['filter']) ? sanitize_text_field($_POST['filter']) : ''; // 'pending', 'verified', 'indexed'
 
         // Validate post type exists
         if (!post_type_exists($post_type)) {
             wp_send_json_error('Invalid post type');
         }
 
-        // Get custom types that have been added
+        // Validate post type is allowed
         $custom_post_types_added = get_option('listeo_ai_search_custom_post_types', array());
         if (!is_array($custom_post_types_added)) {
             $custom_post_types_added = array();
         }
-
-        // Validate post type is either default or has been added as custom
         $default_types = array('listing', 'post', 'page', 'product', 'ai_pdf_document', 'ai_external_page');
         $allowed_post_types = array_merge($default_types, $custom_post_types_added);
         if (!in_array($post_type, $allowed_post_types)) {
@@ -848,98 +918,162 @@ class Listeo_AI_Search_Universal_Settings {
 
         global $wpdb;
         $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
-        $chunk_post_type = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
+        $chunk_post_type  = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
 
-        // Get all published posts with their embedding status
-        // has_embedding = 1 if post has direct embedding OR has chunks (which have embeddings)
-        // For products, exclude listeo-booking category (hidden booking products)
+        // Pre-collect chunk parent IDs (single fast query instead of per-row EXISTS)
+        $chunk_parents_subquery = $wpdb->prepare(
+            "SELECT DISTINCT CAST(pm.meta_value AS UNSIGNED) AS parent_id
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+             WHERE chunk.post_type = %s AND pm.meta_key = '_chunk_parent_id'",
+            $chunk_post_type
+        );
+
+        // Build WHERE conditions
+        $where = array();
+        $where[] = $wpdb->prepare("p.post_type = %s", $post_type);
+        $where[] = "p.post_status = 'publish'";
+
+        // Search filter
+        if (!empty($search)) {
+            $like = '%' . $wpdb->esc_like($search) . '%';
+            $where[] = $wpdb->prepare("p.post_title LIKE %s", $like);
+        }
+
+        // Product exclusion
         if ($post_type === 'product') {
-            $posts = $wpdb->get_results($wpdb->prepare("
-                SELECT p.ID, p.post_title, p.post_modified,
-                       CASE
-                           WHEN e.listing_id IS NOT NULL THEN 1
-                           WHEN EXISTS (
-                               SELECT 1 FROM {$wpdb->posts} chunk
-                               INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                               WHERE chunk.post_type = %s
-                               AND chunk_parent.meta_key = '_chunk_parent_id'
-                               AND chunk_parent.meta_value = p.ID
-                           ) THEN 1
-                           ELSE 0
-                       END as has_embedding
-                FROM {$wpdb->posts} p
-                LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
-                WHERE p.post_type = %s
-                AND p.post_status = 'publish'
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM {$wpdb->term_relationships} tr
-                    INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                    INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                    WHERE tr.object_id = p.ID
-                    AND tt.taxonomy = 'product_cat'
-                    AND t.slug = 'listeo-booking'
-                )
-                ORDER BY p.post_title ASC
-            ", $chunk_post_type, $post_type), ARRAY_A);
-        } elseif ($post_type === 'listing') {
-            // For listings, include verified status
-            $posts = $wpdb->get_results($wpdb->prepare("
-                SELECT p.ID, p.post_title, p.post_modified,
-                       CASE
-                           WHEN e.listing_id IS NOT NULL THEN 1
-                           WHEN EXISTS (
-                               SELECT 1 FROM {$wpdb->posts} chunk
-                               INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                               WHERE chunk.post_type = %s
-                               AND chunk_parent.meta_key = '_chunk_parent_id'
-                               AND chunk_parent.meta_value = p.ID
-                           ) THEN 1
-                           ELSE 0
-                       END as has_embedding,
-                       CASE WHEN pm.meta_value = 'on' THEN 1 ELSE 0 END as is_verified
-                FROM {$wpdb->posts} p
-                LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
-                LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_verified'
-                WHERE p.post_type = %s
-                AND p.post_status = 'publish'
-                ORDER BY p.post_title ASC
-            ", $chunk_post_type, $post_type), ARRAY_A);
-        } else {
-            $posts = $wpdb->get_results($wpdb->prepare("
-                SELECT p.ID, p.post_title, p.post_modified,
-                       CASE
-                           WHEN e.listing_id IS NOT NULL THEN 1
-                           WHEN EXISTS (
-                               SELECT 1 FROM {$wpdb->posts} chunk
-                               INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                               WHERE chunk.post_type = %s
-                               AND chunk_parent.meta_key = '_chunk_parent_id'
-                               AND chunk_parent.meta_value = p.ID
-                           ) THEN 1
-                           ELSE 0
-                       END as has_embedding
-                FROM {$wpdb->posts} p
-                LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
-                WHERE p.post_type = %s
-                AND p.post_status = 'publish'
-                ORDER BY p.post_title ASC
-            ", $chunk_post_type, $post_type), ARRAY_A);
+            $where[] = "NOT EXISTS (
+                SELECT 1 FROM {$wpdb->term_relationships} tr
+                INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
+            )";
         }
 
-        if (empty($posts)) {
-            wp_send_json_error(sprintf(__('No published %s found', 'ai-chat-search'), $post_type));
+        // Status filter (pending/indexed)
+        if ($filter === 'pending') {
+            $where[] = "e.listing_id IS NULL AND cp.parent_id IS NULL";
+        } elseif ($filter === 'indexed') {
+            $where[] = "(e.listing_id IS NOT NULL OR cp.parent_id IS NOT NULL)";
+        } elseif ($filter === 'verified' && $post_type === 'listing') {
+            $where[] = "pm_v.meta_value = 'on'";
         }
 
-        // Get currently selected post IDs for this post type
+        $where_clause = implode(' AND ', $where);
+        $offset = ($page - 1) * $per_page;
+
+        // Build SELECT columns
+        $extra_select = '';
+        $extra_join = '';
+        if ($post_type === 'listing') {
+            $extra_select = ", CASE WHEN pm_v.meta_value = 'on' THEN 1 ELSE 0 END as is_verified";
+            $extra_join = "LEFT JOIN {$wpdb->postmeta} pm_v ON p.ID = pm_v.post_id AND pm_v.meta_key = '_verified'";
+        }
+
+        // Get total count for pagination
+        $total_query = "SELECT COUNT(DISTINCT p.ID)
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
+            LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
+            {$extra_join}
+            WHERE {$where_clause}";
+        $total_count = (int) $wpdb->get_var($total_query);
+
+        // Get paginated posts
+        $posts = $wpdb->get_results("
+            SELECT p.ID, p.post_title, p.post_modified,
+                   CASE WHEN e.listing_id IS NOT NULL OR cp.parent_id IS NOT NULL THEN 1 ELSE 0 END as has_embedding
+                   {$extra_select}
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
+            LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
+            {$extra_join}
+            WHERE {$where_clause}
+            ORDER BY p.post_title ASC
+            LIMIT {$per_page} OFFSET {$offset}
+        ", ARRAY_A);
+
+        // Get currently selected post IDs
         $manual_selections = get_option('listeo_ai_search_manual_selections', array());
         $selected_ids = isset($manual_selections[$post_type]) ? $manual_selections[$post_type] : array();
 
         wp_send_json_success(array(
-            'posts' => $posts,
-            'post_type' => $post_type,
+            'posts'           => $posts ?: array(),
+            'post_type'       => $post_type,
             'post_type_label' => get_post_type_object($post_type)->label,
-            'selected_ids' => $selected_ids
+            'selected_ids'    => $selected_ids,
+            'page'            => $page,
+            'per_page'        => $per_page,
+            'total'           => $total_count,
+            'total_pages'     => ceil($total_count / $per_page),
+        ));
+    }
+
+    /**
+     * AJAX: Get all post IDs matching a filter (for bulk select operations)
+     */
+    public function ajax_get_bulk_post_ids() {
+        check_ajax_referer('listeo_ai_universal_settings', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $post_type = sanitize_text_field($_POST['post_type']);
+        $filter    = isset($_POST['filter']) ? sanitize_text_field($_POST['filter']) : 'all';
+
+        if (!post_type_exists($post_type)) {
+            wp_send_json_error('Invalid post type');
+        }
+
+        global $wpdb;
+        $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
+        $chunk_post_type  = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
+
+        $chunk_parents_subquery = $wpdb->prepare(
+            "SELECT DISTINCT CAST(pm.meta_value AS UNSIGNED) AS parent_id
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+             WHERE chunk.post_type = %s AND pm.meta_key = '_chunk_parent_id'",
+            $chunk_post_type
+        );
+
+        $where = array();
+        $where[] = $wpdb->prepare("p.post_type = %s", $post_type);
+        $where[] = "p.post_status = 'publish'";
+
+        if ($post_type === 'product') {
+            $where[] = "NOT EXISTS (
+                SELECT 1 FROM {$wpdb->term_relationships} tr
+                INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
+            )";
+        }
+
+        $extra_join = '';
+        if ($filter === 'pending') {
+            $where[] = "e.listing_id IS NULL AND cp.parent_id IS NULL";
+        } elseif ($filter === 'indexed') {
+            $where[] = "(e.listing_id IS NOT NULL OR cp.parent_id IS NOT NULL)";
+        } elseif ($filter === 'verified' && $post_type === 'listing') {
+            $extra_join = "LEFT JOIN {$wpdb->postmeta} pm_v ON p.ID = pm_v.post_id AND pm_v.meta_key = '_verified'";
+            $where[] = "pm_v.meta_value = 'on'";
+        }
+
+        $where_clause = implode(' AND ', $where);
+
+        $ids = $wpdb->get_col("
+            SELECT DISTINCT p.ID
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$embeddings_table} e ON p.ID = e.listing_id
+            LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
+            {$extra_join}
+            WHERE {$where_clause}
+        ");
+
+        wp_send_json_success(array(
+            'ids' => array_map('intval', $ids),
         ));
     }
 
@@ -1081,18 +1215,14 @@ class Listeo_AI_Search_Universal_Settings {
             // 3. Set to array with IDs ([123, 456]) → count those posts
 
             if (array_key_exists($post_type, $manual_selections)) {
-                // Manual selection is active for this post type
                 $selected_ids = is_array($manual_selections[$post_type])
                     ? array_filter(array_map('intval', $manual_selections[$post_type]))
                     : array();
 
                 if (empty($selected_ids)) {
-                    // User explicitly selected 0 posts - count as 0
-                    // Don't add anything to totals
                     continue;
                 }
 
-                // Count only selected posts
                 $placeholders = implode(',', array_fill(0, count($selected_ids), '%d'));
 
                 $type_total = (int) $wpdb->get_var($wpdb->prepare(
@@ -1101,29 +1231,32 @@ class Listeo_AI_Search_Universal_Settings {
                     ...$selected_ids
                 ));
 
-                // Count posts with direct embedding OR chunks
-                $type_indexed = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(DISTINCT p.ID)
-                     FROM {$wpdb->posts} p
-                     WHERE p.ID IN ($placeholders)
-                     AND p.post_status = 'publish'
-                     AND (
-                         EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                         OR EXISTS (
-                             SELECT 1 FROM {$wpdb->posts} chunk
-                             INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                             WHERE chunk.post_type = %s
-                             AND chunk_parent.meta_key = '_chunk_parent_id'
-                             AND chunk_parent.meta_value = p.ID
-                         )
-                     )",
-                    ...array_merge($selected_ids, array($chunk_post_type))
+                // Count indexed from embeddings/chunks side (fast)
+                $direct = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$embeddings_table} e
+                     WHERE e.listing_id IN ($placeholders)",
+                    ...$selected_ids
                 ));
+
+                $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                     FROM {$wpdb->postmeta} pm
+                     INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                     WHERE chunk.post_type = %s
+                     AND pm.meta_key = '_chunk_parent_id'
+                     AND CAST(pm.meta_value AS UNSIGNED) IN ($placeholders)
+                     AND CAST(pm.meta_value AS UNSIGNED) NOT IN (
+                         SELECT e2.listing_id FROM {$embeddings_table} e2
+                         WHERE e2.listing_id IN ($placeholders)
+                     )",
+                    ...array_merge(array($chunk_post_type), $selected_ids, $selected_ids)
+                ));
+
+                $type_indexed = $direct + $via_chunks;
 
                 $total += $type_total;
                 $indexed += $type_indexed;
 
-                // Store breakdown for this type
                 $post_type_obj = get_post_type_object($post_type);
                 if ($post_type_obj && $type_total > 0) {
                     $type_breakdown[] = array(
@@ -1133,51 +1266,18 @@ class Listeo_AI_Search_Universal_Settings {
                     );
                 }
             } else {
-                // No manual selection - count all published posts
-                // Exclude listeo-booking products (hidden booking products)
+                // No manual selection — count all published posts
                 if ($post_type === 'product') {
                     $type_total = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(DISTINCT p.ID)
-                         FROM {$wpdb->posts} p
+                        "SELECT COUNT(*) FROM {$wpdb->posts} p
                          WHERE p.post_type = %s AND p.post_status = 'publish'
                          AND NOT EXISTS (
-                             SELECT 1
-                             FROM {$wpdb->term_relationships} tr
+                             SELECT 1 FROM {$wpdb->term_relationships} tr
                              INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
                              INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                             WHERE tr.object_id = p.ID
-                             AND tt.taxonomy = 'product_cat'
-                             AND t.slug = 'listeo-booking'
+                             WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
                          )",
                         $post_type
-                    ));
-
-                    // Count posts with direct embedding OR chunks
-                    $type_indexed = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(DISTINCT p.ID)
-                         FROM {$wpdb->posts} p
-                         WHERE p.post_type = %s AND p.post_status = 'publish'
-                         AND NOT EXISTS (
-                             SELECT 1
-                             FROM {$wpdb->term_relationships} tr
-                             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                             INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                             WHERE tr.object_id = p.ID
-                             AND tt.taxonomy = 'product_cat'
-                             AND t.slug = 'listeo-booking'
-                         )
-                         AND (
-                             EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                             OR EXISTS (
-                                 SELECT 1 FROM {$wpdb->posts} chunk
-                                 INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                 WHERE chunk.post_type = %s
-                                 AND chunk_parent.meta_key = '_chunk_parent_id'
-                                 AND chunk_parent.meta_value = p.ID
-                             )
-                         )",
-                        $post_type,
-                        $chunk_post_type
                     ));
                 } else {
                     $type_total = (int) $wpdb->get_var($wpdb->prepare(
@@ -1185,31 +1285,38 @@ class Listeo_AI_Search_Universal_Settings {
                          WHERE post_type = %s AND post_status = 'publish'",
                         $post_type
                     ));
-
-                    // Count posts with direct embedding OR chunks
-                    $type_indexed = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(DISTINCT p.ID)
-                         FROM {$wpdb->posts} p
-                         WHERE p.post_type = %s AND p.post_status = 'publish'
-                         AND (
-                             EXISTS (SELECT 1 FROM {$embeddings_table} e WHERE e.listing_id = p.ID)
-                             OR EXISTS (
-                                 SELECT 1 FROM {$wpdb->posts} chunk
-                                 INNER JOIN {$wpdb->postmeta} chunk_parent ON chunk.ID = chunk_parent.post_id
-                                 WHERE chunk.post_type = %s
-                                 AND chunk_parent.meta_key = '_chunk_parent_id'
-                                 AND chunk_parent.meta_value = p.ID
-                             )
-                         )",
-                        $post_type,
-                        $chunk_post_type
-                    ));
                 }
+
+                // Count indexed from embeddings/chunks side (fast)
+                $direct = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(DISTINCT e.listing_id)
+                     FROM {$embeddings_table} e
+                     INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
+                     WHERE p.post_type = %s AND p.post_status = 'publish'",
+                    $post_type
+                ));
+
+                $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+                     FROM {$wpdb->postmeta} pm
+                     INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+                     INNER JOIN {$wpdb->posts} parent ON CAST(pm.meta_value AS UNSIGNED) = parent.ID
+                     WHERE chunk.post_type = %s
+                     AND pm.meta_key = '_chunk_parent_id'
+                     AND parent.post_type = %s
+                     AND parent.post_status = 'publish'
+                     AND parent.ID NOT IN (
+                         SELECT e2.listing_id FROM {$embeddings_table} e2
+                     )",
+                    $chunk_post_type,
+                    $post_type
+                ));
+
+                $type_indexed = $direct + $via_chunks;
 
                 $total += $type_total;
                 $indexed += $type_indexed;
 
-                // Store breakdown for this type
                 $post_type_obj = get_post_type_object($post_type);
                 if ($post_type_obj && $type_total > 0) {
                     $type_breakdown[] = array(

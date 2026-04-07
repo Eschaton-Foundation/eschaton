@@ -131,6 +131,7 @@ class Listeo_AI_Content_Extractor_Factory {
             '_wp_old_',      // Old slugs
             '_wp_attached',  // Attachment metadata
             'elementor',     // Elementor page builder
+            'gdlr',          // GoodLayers page builder
             'rank_math',     // Rank Math SEO
             'yoast',         // Yoast SEO
             '_genesis',      // Genesis theme
@@ -257,6 +258,8 @@ class Listeo_AI_Content_Extractor_Factory {
         $content = preg_replace('/\[\/vc_[^\]]*\]/', '', $content);
         $content = preg_replace('/\[et_pb_[^\]]*\]/', '', $content);
         $content = preg_replace('/\[\/et_pb_[^\]]*\]/', '', $content);
+        $content = preg_replace('/\[gdlr_core_[^\]]*\]/', '', $content);
+        $content = preg_replace('/\[\/gdlr_core_[^\]]*\]/', '', $content);
 
         // Remove Flavor documentation theme shortcode TAGS (keep content inside)
         $content = preg_replace('/\[lore_alert_message[^\]]*\]/', '', $content);
@@ -343,5 +346,114 @@ class Listeo_AI_Content_Extractor_Factory {
         $key = ucwords(strtolower($key));
 
         return $key;
+    }
+
+    /**
+     * Check if a post uses a page builder that stores content as shortcodes or in meta
+     *
+     * @param int $post_id Post ID
+     * @return bool True if this post needs rendered content fetching
+     */
+    public static function content_needs_rendering($post_id) {
+        // 1. Divi
+        $divi_builder = get_post_meta($post_id, '_et_pb_use_builder', true);
+        if ($divi_builder === 'on') {
+            return true;
+        }
+
+        // 2. GoodLayers
+        $gdlr_builder = get_post_meta($post_id, '_gdlr_core_page_builder', true);
+        if (!empty($gdlr_builder)) {
+            return true;
+        }
+
+        // 3. Breakdance
+        $breakdance_data = get_post_meta($post_id, '_breakdance_data', true);
+        if (!empty($breakdance_data)) {
+            return true;
+        }
+
+        // 4. WPBakery
+        $wpb_status = get_post_meta($post_id, '_wpb_vc_js_status', true);
+        if ($wpb_status === 'true') {
+            return true;
+        }
+
+        // 5. Oxygen
+        $oxygen_data = get_post_meta($post_id, 'ct_builder_shortcodes', true);
+        if (!empty($oxygen_data)) {
+            return true;
+        }
+
+        // 6. Bricks
+        $bricks_data = get_post_meta($post_id, '_bricks_page_content_2', true);
+        if (!empty($bricks_data)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Fetch rendered HTML content from a post URL
+     *
+     * @param int $post_id Post ID
+     * @return string|false Rendered HTML content or false on failure
+     */
+    public static function fetch_rendered_content($post_id) {
+        $post = get_post($post_id);
+
+        if (!$post || !empty($post->post_password) || $post->post_status !== 'publish') {
+            return false;
+        }
+
+        $url = get_permalink($post_id);
+        if (!$url) {
+            return false;
+        }
+
+        $response = wp_remote_get($url, array(
+            'timeout'     => 15,
+            'user-agent'  => 'AI-Chat-Search-Embeddings/1.0',
+            'redirection' => 3,
+        ));
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return false;
+        }
+
+        return wp_remote_retrieve_body($response);
+    }
+
+    /**
+     * Extract main content from rendered HTML
+     *
+     * @param string $html Full page HTML
+     * @return string Extracted text content
+     */
+    public static function extract_from_rendered_html($html) {
+        if (empty($html)) {
+            return '';
+        }
+
+        $content = $html;
+
+        // Try to find main content area (avoid headers/footers/sidebars)
+        $selectors = array(
+            '/<div[^>]*id=["\']main-content["\'][^>]*>(.*?)<\/div>\s*(?:<footer|<div[^>]*id=["\']footer)/is',
+            '/<article[^>]*>(.*?)<\/article>/is',
+            '/<div[^>]*class=["\'][^"\']*entry-content[^"\']*["\'][^>]*>(.*?)<\/div>/is',
+            '/<main[^>]*>(.*?)<\/main>/is',
+            '/<body[^>]*>(.*?)<\/body>/is',
+        );
+
+        foreach ($selectors as $pattern) {
+            if (preg_match($pattern, $content, $matches)) {
+                $content = $matches[1];
+                break;
+            }
+        }
+
+        return self::preserve_links_and_strip_tags($content);
     }
 }

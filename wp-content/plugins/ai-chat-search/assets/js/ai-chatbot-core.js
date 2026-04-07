@@ -222,15 +222,8 @@
     if (model.startsWith("gpt-5")) {
       payload.max_completion_tokens = chatConfig.max_tokens;
       payload.verbosity = "medium";
-      // GPT-5.1/5.2 with reasoning_effort: none for fast, intelligent responses
-      // (5.2 is mapped to 5.1 on backend due to broken tool calling)
-      if (model === "gpt-5.1" || model === "gpt-5.2") {
-        payload.reasoning_effort = "none";
-      }
-      // GPT-5-mini with reasoning_effort: minimal for speed
-      if (model === "gpt-5-mini") {
-        payload.reasoning_effort = "minimal";
-      }
+      // reasoning_effort is handled server-side per model (some GPT-5.x models
+      // don't support it with function tools in /v1/chat/completions)
     } else {
       payload.max_tokens = chatConfig.max_tokens;
       payload.temperature = chatConfig.temperature;
@@ -316,6 +309,37 @@
       "</span>"
     );
   };
+
+  /**
+   * Log cart event for chat history tracking (fire-and-forget)
+   */
+  function logCartEvent(conversationId, productId, productName, quantity) {
+    if (!conversationId || !productId || !listeoAiChatConfig.wooCartEnabled) return;
+    $.ajax({
+      url: listeoAiChatConfig.ajaxUrl,
+      method: "POST",
+      data: {
+        action: "listeo_ai_log_cart_event",
+        nonce: listeoAiChatConfig.cartNonce,
+        conversation_id: conversationId,
+        product_id: productId,
+        product_name: productName,
+        quantity: quantity || 1,
+      },
+    });
+  }
+
+  /**
+   * Escape string for safe HTML insertion
+   */
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   // Flag to ensure global handlers are only bound once
   var globalHandlersBound = false;
@@ -433,6 +457,249 @@
         },
       });
     });
+
+    // === WooCommerce Cart Handlers ===
+    if (listeoAiChatConfig.wooCartEnabled) {
+
+      // Initialize cart badge count on load
+      var initialCount = parseInt(listeoAiChatConfig.cartCount) || 0;
+      if (initialCount > 0) {
+        $(".listeo-ai-cart-badge").text(initialCount).show();
+      }
+
+      // Add to Cart button click (inside product cards)
+      $(document).on("click", ".listeo-ai-add-to-cart-btn:not(.listeo-ai-select-options-btn)", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var $btn = $(this);
+        if ($btn.hasClass("loading")) return;
+
+        var productId = $btn.data("product-id");
+        var productName = $btn.closest(".listeo-ai-listing-item").find(".listeo-ai-listing-title").text().trim();
+        var $textSpan = $btn.find(".listeo-ai-atc-text");
+        var originalText = $textSpan.text();
+
+        // Get conversation ID from closest chat wrapper
+        var $wrapper = $btn.closest(".listeo-ai-chat-wrapper");
+        var conversationId = $wrapper.length ? $wrapper.data("session-id") || "" : "";
+
+        $btn.addClass("loading");
+        $textSpan.text(listeoAiChatConfig.strings.addingToCart || "Adding...");
+
+        $.ajax({
+          url: listeoAiChatConfig.ajaxUrl,
+          method: "POST",
+          data: {
+            action: "listeo_ai_add_to_cart",
+            nonce: listeoAiChatConfig.cartNonce,
+            product_id: productId,
+            quantity: 1,
+          },
+          success: function (response) {
+            if (response.success) {
+              $textSpan.text(listeoAiChatConfig.strings.addedToCart || "Added!");
+              updateCartBadge(response.data.cart_count);
+              logCartEvent(conversationId, productId, productName, 1);
+              setTimeout(function () {
+                $textSpan.text(originalText);
+                $btn.removeClass("loading added");
+              }, 1500);
+              $btn.removeClass("loading").addClass("added");
+            } else {
+              $textSpan.text(response.data?.message || listeoAiChatConfig.strings.cartErrorAdd || "Error");
+              setTimeout(function () {
+                $textSpan.text(originalText);
+                $btn.removeClass("loading");
+              }, 2000);
+            }
+          },
+          error: function () {
+            $textSpan.text(listeoAiChatConfig.strings.cartErrorAdd || "Error");
+            setTimeout(function () {
+              $textSpan.text(originalText);
+              $btn.removeClass("loading");
+            }, 2000);
+          },
+        });
+      });
+
+      // Select Options click — navigate to product page
+      $(document).on("click", ".listeo-ai-select-options-btn", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var url = $(this).data("url");
+        if (url) {
+          window.location.href = url;
+        }
+      });
+
+      // Cart toggle button click
+      $(document).on("click", ".listeo-ai-chat-cart-toggle", function (e) {
+        e.preventDefault();
+        var $wrapper = $(this).closest(".listeo-ai-chat-wrapper, .listeo-ai-chat-container").find(".listeo-ai-cart-overlay");
+        if (!$wrapper.length) {
+          $wrapper = $(this).closest(".listeo-floating-chat-popup, .listeo-ai-chat-shortcode-wrapper").find(".listeo-ai-cart-overlay");
+        }
+        $wrapper.fadeIn(200);
+        loadCartContents($wrapper);
+      });
+
+      // Cart popup close
+      $(document).on("click", ".listeo-ai-cart-popup-close", function (e) {
+        e.preventDefault();
+        $(this).closest(".listeo-ai-cart-overlay").fadeOut(200);
+      });
+
+      // Remove cart item
+      $(document).on("click", ".listeo-ai-cart-item-remove", function (e) {
+        e.preventDefault();
+        var $item = $(this).closest(".listeo-ai-cart-item");
+        var $overlay = $(this).closest(".listeo-ai-cart-overlay");
+        var cartKey = $(this).data("cart-key");
+
+        $item.css("opacity", "0.5");
+
+        $.ajax({
+          url: listeoAiChatConfig.ajaxUrl,
+          method: "POST",
+          data: {
+            action: "listeo_ai_remove_cart_item",
+            nonce: listeoAiChatConfig.cartNonce,
+            cart_item_key: cartKey,
+          },
+          success: function (response) {
+            if (response.success) {
+              $item.slideUp(200, function () { $(this).remove(); });
+              updateCartBadge(response.data.count);
+              $overlay.find(".listeo-ai-cart-subtotal-amount").html(response.data.subtotal);
+              if (response.data.count === 0) {
+                $overlay.find(".listeo-ai-cart-popup-footer").hide();
+                $overlay.find(".listeo-ai-cart-empty").show();
+              }
+            }
+          },
+        });
+      });
+
+      // Quantity minus
+      $(document).on("click", ".listeo-ai-cart-qty-minus", function (e) {
+        e.preventDefault();
+        var $item = $(this).closest(".listeo-ai-cart-item");
+        var $overlay = $(this).closest(".listeo-ai-cart-overlay");
+        var cartKey = $item.data("cart-key");
+        var $qtyVal = $item.find(".listeo-ai-cart-qty-value");
+        var qty = parseInt($qtyVal.text()) - 1;
+
+        if (qty <= 0) {
+          $item.find(".listeo-ai-cart-item-remove").trigger("click");
+          return;
+        }
+
+        $qtyVal.text(qty);
+        updateCartItemQty($overlay, cartKey, qty);
+      });
+
+      // Quantity plus
+      $(document).on("click", ".listeo-ai-cart-qty-plus", function (e) {
+        e.preventDefault();
+        var $item = $(this).closest(".listeo-ai-cart-item");
+        var $overlay = $(this).closest(".listeo-ai-cart-overlay");
+        var cartKey = $item.data("cart-key");
+        var $qtyVal = $item.find(".listeo-ai-cart-qty-value");
+        var qty = Math.min(parseInt($qtyVal.text()) + 1, 100);
+
+        $qtyVal.text(qty);
+        updateCartItemQty($overlay, cartKey, qty);
+      });
+    }
+
+    function updateCartBadge(count) {
+      var $badges = $(".listeo-ai-cart-badge");
+      if (count > 0) {
+        $badges.text(count).show();
+      } else {
+        $badges.hide();
+      }
+    }
+
+    function updateCartItemQty($overlay, cartKey, qty) {
+      $.ajax({
+        url: listeoAiChatConfig.ajaxUrl,
+        method: "POST",
+        data: {
+          action: "listeo_ai_update_cart_qty",
+          nonce: listeoAiChatConfig.cartNonce,
+          cart_item_key: cartKey,
+          quantity: qty,
+        },
+        success: function (response) {
+          if (response.success) {
+            updateCartBadge(response.data.count);
+            $overlay.find(".listeo-ai-cart-subtotal-amount").html(response.data.subtotal);
+          }
+        },
+      });
+    }
+
+    function loadCartContents($overlay) {
+      var $items = $overlay.find(".listeo-ai-cart-items");
+      var $empty = $overlay.find(".listeo-ai-cart-empty");
+      var $footer = $overlay.find(".listeo-ai-cart-popup-footer");
+
+      $items.html('<div class="listeo-ai-cart-loading"><svg class="listeo-ai-cart-spinner" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="47" stroke-dashoffset="15" stroke-linecap="round"/></svg></div>');
+      $empty.hide();
+      $footer.hide();
+
+      $.ajax({
+        url: listeoAiChatConfig.ajaxUrl,
+        method: "POST",
+        data: {
+          action: "listeo_ai_get_cart",
+          nonce: listeoAiChatConfig.cartNonce,
+        },
+        success: function (response) {
+          if (response.success && response.data.items.length > 0) {
+            var html = "";
+            response.data.items.forEach(function (item) {
+              html += '<div class="listeo-ai-cart-item" data-cart-key="' + escHtml(item.key) + '">';
+              html += '  <div class="listeo-ai-cart-item-image">';
+              html += '    <img src="' + escHtml(item.thumbnail) + '" alt="' + escHtml(item.title) + '">';
+              html += '  </div>';
+              html += '  <div class="listeo-ai-cart-item-details">';
+              html += '    <a href="' + escHtml(item.url) + '" class="listeo-ai-cart-item-title">' + escHtml(item.title) + '</a>';
+              // price is HTML from wc_price() — intentionally rendered as HTML
+              html += '    <div class="listeo-ai-cart-item-price">' + item.price + '</div>';
+              html += '    <div class="listeo-ai-cart-item-qty">';
+              html += '      <button class="listeo-ai-cart-qty-minus">-</button>';
+              html += '      <span class="listeo-ai-cart-qty-value">' + parseInt(item.quantity) + '</span>';
+              html += '      <button class="listeo-ai-cart-qty-plus">+</button>';
+              html += '    </div>';
+              html += '  </div>';
+              html += '  <button class="listeo-ai-cart-item-remove" data-cart-key="' + escHtml(item.key) + '">';
+              html += '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+              html += '  </button>';
+              html += '</div>';
+            });
+            $items.html(html);
+            // subtotal is HTML from WC()->cart->get_cart_subtotal() — use .html() intentionally
+            $overlay.find(".listeo-ai-cart-subtotal-amount").html(response.data.subtotal);
+            $footer.show();
+            $empty.hide();
+          } else {
+            $items.html("");
+            $footer.hide();
+            $empty.show();
+          }
+          updateCartBadge(response.data.count);
+        },
+        error: function () {
+          $items.html("");
+          $empty.show();
+          $footer.hide();
+        },
+      });
+    }
   }
 
   /**
@@ -599,6 +866,8 @@
 
     // Generate unique session ID for conversation tracking
     this.sessionId = this.getOrCreateSessionId();
+    // Store on wrapper for global handlers (e.g., cart button click)
+    $wrapper.data("session-id", this.sessionId);
 
     // Read per-instance hideImages setting from data attribute (overrides global config)
     var dataHideImages = $wrapper.data("hide-images");
@@ -639,6 +908,11 @@
     this.$imageBtn = $wrapper.find(".listeo-ai-chat-image-btn");
     this.$imageInput = $wrapper.find(".listeo-ai-chat-image-input");
 
+    // Pre-chat fields state
+    this.preChatCompleted = false;
+    this.preChatData = null; // Array of { label, value } once submitted
+    this.preChatDataSent = false; // Whether header was already sent with first message
+
     this.init();
   }
 
@@ -670,6 +944,11 @@
         this.addMessage("system", listeoAiChatConfig.strings.apiNotConfigured);
       }
 
+      // Initialize pre-chat form AFTER loadConversation (which clears/restores messages)
+      if (listeoAiChatConfig.preChatFields && listeoAiChatConfig.preChatFields.length > 0) {
+        this.initPreChatForm();
+      }
+
       // Load previously loaded listing from localStorage (if any)
       this.loadPersistedListingContext();
 
@@ -690,6 +969,16 @@
         debugLog("Send button clicked");
         self.sendMessage();
       });
+
+      // Expand Style 2 chat on input focus when pre-chat form is enabled
+      // (otherwise the form is hidden in the collapsed state)
+      if (listeoAiChatConfig.preChatFields && listeoAiChatConfig.preChatFields.length > 0) {
+        this.$input.on("focus", function () {
+          if (!self.isExpanded && self.isStyle2()) {
+            self.expandChat();
+          }
+        });
+      }
 
       this.$input.on("keydown", function (e) {
         // Check isComposing for IME support (Korean, Japanese, Chinese)
@@ -1039,8 +1328,11 @@
         return t.function && (t.function.name === "search_listings" || t.function.name === "search_products");
       });
 
-      // Get valid history slice (10 for complex tools, 6 for universal-only)
-      var recentHistory = self.getValidHistorySlice(hasComplexTools ? 10 : 6);
+      // Get valid history slice, respecting admin context length setting
+      var contextMultipliers = { short: 1, normal: 2, long: 6 };
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
+      var baseLimit = hasComplexTools ? 10 : 6;
+      var recentHistory = self.getValidHistorySlice(baseLimit * ctxMul);
 
       // Build messages array (server handles system prompt injection for security)
       var messages = recentHistory.concat([
@@ -1111,7 +1403,7 @@
           method: "POST",
           headers: $.extend({}, getRequestHeaders(), {
             "X-Session-ID": self.sessionId,
-          }),
+          }, self.getPreChatHeaders()),
           data: JSON.stringify(payload),
           success: function (data) {
             // Check if response indicates an error (success: false)
@@ -1373,13 +1665,14 @@
             method: "POST",
             headers: $.extend({}, getRequestHeaders(), {
               "X-Session-ID": self.sessionId,
-            }),
+            }, self.getPreChatHeaders()),
             data: JSON.stringify({
               query: functionArgs.query,
               original_question: self.extractTextFromMessage(userMessage), // Text only, no images
               chat_history: [], // Empty history - this is a tool call, not a conversation
               top_results: functionArgs.top_results || 5, // Server uses DB setting, this is just fallback
               has_image: messageHasImage, // For chat history logging
+              post_ids: functionArgs.post_ids || null, // Specific post IDs to search within
             }),
             success: function (response) {
               if (response.success) {
@@ -1604,6 +1897,84 @@
           toolCall,
           loadingId,
         );
+      } else if (functionName === "add_to_cart") {
+        // Add product to cart via AI tool
+        debugLog("Adding to cart via AI tool", functionArgs);
+
+        $.ajax({
+          url: listeoAiChatConfig.ajaxUrl,
+          method: "POST",
+          data: {
+            action: "listeo_ai_add_to_cart",
+            nonce: listeoAiChatConfig.cartNonce,
+            product_id: functionArgs.product_id,
+            quantity: functionArgs.quantity || 1,
+          },
+          success: function (response) {
+            debugLog("Add to cart response:", response);
+
+            var toolResult;
+            if (response.success) {
+              toolResult = {
+                success: true,
+                message: "Product added to cart successfully.",
+                cart_count: response.data.cart_count,
+                cart_subtotal: response.data.cart_subtotal,
+              };
+              // Update cart badge
+              $(".listeo-ai-cart-badge").text(response.data.cart_count).show();
+              // Log cart event for chat history
+              logCartEvent(self.sessionId, functionArgs.product_id, "", functionArgs.quantity || 1);
+            } else {
+              toolResult = {
+                success: false,
+                message: response.data?.message || "Could not add to cart.",
+              };
+            }
+
+            self.$messages.find("#" + loadingId).remove();
+
+            var responseLoadingId = "loading-response-" + Date.now();
+            self.addMessage(
+              "assistant",
+              generateLoaderHTML(listeoAiChatConfig.strings.loading),
+              responseLoadingId,
+            );
+
+            self.getFinalResponse(
+              userMessage,
+              assistantMessage,
+              toolCall,
+              toolResult,
+              responseLoadingId,
+            );
+          },
+          error: function (xhr) {
+            debugError("Add to cart error:", xhr);
+
+            var toolResult = {
+              success: false,
+              message: xhr.responseJSON?.data?.message || "Could not add to cart.",
+            };
+
+            self.$messages.find("#" + loadingId).remove();
+
+            var responseLoadingId = "loading-response-" + Date.now();
+            self.addMessage(
+              "assistant",
+              generateLoaderHTML(listeoAiChatConfig.strings.loading),
+              responseLoadingId,
+            );
+
+            self.getFinalResponse(
+              userMessage,
+              assistantMessage,
+              toolCall,
+              toolResult,
+              responseLoadingId,
+            );
+          },
+        });
       } else if (functionName === "send_contact_message") {
         // Send contact message via AI
         debugLog("Sending contact message via AI tool");
@@ -1849,9 +2220,11 @@
     ) {
       var self = this;
 
-      // Build conversation history (last 3 exchanges = 6 messages)
+      // Build conversation history, respecting admin context length setting
+      var contextMultipliers = { short: 1, normal: 2, long: 6 };
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
       var recentHistory = [];
-      var historySlice = self.conversationHistory.slice(-6);
+      var historySlice = self.conversationHistory.slice(-(6 * ctxMul));
       historySlice.forEach(function (msg) {
         recentHistory.push({ role: msg.role, content: msg.content });
       });
@@ -2658,8 +3031,10 @@
     ) {
       var self = this;
 
-      // Get valid history slice
-      var recentHistory = self.getValidHistorySlice(10);
+      // Get valid history slice, respecting admin context length setting
+      var contextMultipliers = { short: 1, normal: 2, long: 6 };
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
+      var recentHistory = self.getValidHistorySlice(10 * ctxMul);
 
       // Build API payload (server handles system prompt injection for security)
       var payload = {
@@ -2777,8 +3152,10 @@
     ) {
       var self = this;
 
-      // Get valid history slice
-      var recentHistory = self.getValidHistorySlice(10);
+      // Get valid history slice, respecting admin context length setting
+      var contextMultipliers = { short: 1, normal: 2, long: 6 };
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
+      var recentHistory = self.getValidHistorySlice(10 * ctxMul);
 
       // Detect tool type to format results appropriately
       var toolName = toolCall.function.name;
@@ -2798,7 +3175,7 @@
           total: apiResult.total,
           products: apiResult.results
             ? apiResult.results.map(function (r) {
-                return {
+                var product = {
                   id: r.id,
                   title: r.title,
                   price: r.price?.formatted || "",
@@ -2806,6 +3183,21 @@
                   on_sale: r.on_sale || false,
                   url: r.url || "",
                 };
+                if (r.sku) {
+                  product.sku = r.sku;
+                }
+                if (r.product_type) {
+                  product.product_type = r.product_type;
+                }
+                // Pass through variation data so LLM can match SKU to correct price
+                if (r.variations) {
+                  product.variations = r.variations;
+                }
+                // Pass through extra pricing if present (added by third-party plugins via listeo_ai_product_extra_pricing_data filter)
+                if (r.extra_pricing) {
+                  product.extra_pricing = r.extra_pricing;
+                }
+                return product;
               })
             : [],
         };
@@ -3041,6 +3433,7 @@
     formatProductsGrid: function (results) {
       var self = this;
       var html = '<div class="listeo-ai-results-list">';
+      var cartEnabled = listeoAiChatConfig.wooCartEnabled;
 
       results.forEach(function (product, index) {
         // Use theme placeholder (matches frontend)
@@ -3056,6 +3449,8 @@
         var rating = product.rating?.average || 0;
         var ratingCount = product.rating?.count || 0;
         var url = product.url || "#";
+        var productId = product.id || 0;
+        var productType = product.product_type || "simple";
 
         // Best Match badge for first result
         var bestMatchBadge = "";
@@ -3071,29 +3466,51 @@
         // Add no-thumbnail class if thumbnail is missing
         var noThumbnailClass = (!self.hideImages && thumbnail) ? "" : " no-thumbnail";
 
-        html +=
-          '<a href="' +
-          url +
-          '" class="listeo-ai-listing-item' +
-          hiddenClass +
-          noThumbnailClass +
-          '">';
+        // When cart is enabled, use <div> wrapper instead of <a> to avoid nested interactive elements
+        if (cartEnabled) {
+          html +=
+            '<div class="listeo-ai-listing-item listeo-ai-product-card' +
+            hiddenClass +
+            noThumbnailClass +
+            '">';
+        } else {
+          html +=
+            '<a href="' +
+            url +
+            '" class="listeo-ai-listing-item' +
+            hiddenClass +
+            noThumbnailClass +
+            '">';
+        }
 
         // Only render thumbnail if hideImages is not enabled AND we have a valid thumbnail
         if (!self.hideImages && thumbnail) {
           html += '  <div class="listeo-ai-listing-thumbnail">';
-          html += '    <img src="' + thumbnail + '" alt="' + title + '">';
+          if (cartEnabled) {
+            html += '    <a href="' + url + '"><img src="' + thumbnail + '" alt="' + title + '"></a>';
+          } else {
+            html += '    <img src="' + thumbnail + '" alt="' + title + '">';
+          }
           html += "  </div>";
         }
 
         html += '  <div class="listeo-ai-listing-details">';
         html += '    <div class="listeo-ai-listing-main">';
-        html +=
-          '      <h3 class="listeo-ai-listing-title">' +
-          title +
-          " " +
-          bestMatchBadge +
-          "</h3>";
+        if (cartEnabled) {
+          html +=
+            '      <h3 class="listeo-ai-listing-title"><a href="' + url + '">' +
+            title +
+            "</a> " +
+            bestMatchBadge +
+            "</h3>";
+        } else {
+          html +=
+            '      <h3 class="listeo-ai-listing-title">' +
+            title +
+            " " +
+            bestMatchBadge +
+            "</h3>";
+        }
         if (excerpt) {
           html +=
             '      <p class="listeo-ai-listing-excerpt">' + excerpt + "</p>";
@@ -3136,9 +3553,31 @@
         }
 
         html += "      </div>";
+
+        // Add to Cart / Select Options (only when cart is enabled)
+        if (cartEnabled && productId) {
+          if (productType === "simple" && stockStatus === "instock") {
+            html +=
+              '      <div class="listeo-ai-atc-wrapper">' +
+              '        <div class="listeo-ai-add-to-cart-btn" data-product-id="' + productId + '" role="button" tabindex="0">' +
+              '          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg> ' +
+              '          <span class="listeo-ai-atc-text">' + (listeoAiChatConfig.strings.addToCart || "Add to Cart") + '</span>' +
+              "        </div>" +
+              "      </div>";
+          } else if (productType !== "simple" && stockStatus === "instock") {
+            html +=
+              '      <div class="listeo-ai-atc-wrapper">' +
+              '        <div class="listeo-ai-add-to-cart-btn listeo-ai-select-options-btn" data-url="' + url + '" role="button" tabindex="0">' +
+              '          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> ' +
+              '          <span>' + (listeoAiChatConfig.strings.selectOptions || "Select Options") + '</span>' +
+              "        </div>" +
+              "      </div>";
+          }
+        }
+
         html += "    </div>";
         html += "  </div>";
-        html += "</a>";
+        html += cartEnabled ? "</div>" : "</a>";
       });
 
       html += "</div>";
@@ -3575,6 +4014,94 @@
     },
 
     /**
+     * Initialize pre-chat required fields form
+     * Shows form below welcome message, disables send button with tooltip until fields are filled
+     */
+    initPreChatForm: function () {
+      var self = this;
+      var storageKey = "listeo_pre_chat_data_" + this.chatId;
+
+      // Check if already completed this session
+      var savedData = sessionStorage.getItem(storageKey);
+      if (savedData) {
+        try {
+          self.preChatData = JSON.parse(savedData);
+          self.preChatCompleted = true;
+          debugLog("[Pre-Chat] Already completed, data loaded from session");
+          return;
+        } catch (e) {
+          sessionStorage.removeItem(storageKey);
+        }
+      }
+
+      // Find the form and move it inside messages area (after welcome message)
+      var $form = self.$wrapper.find(".listeo-ai-pre-chat-form");
+      if (!$form.length) {
+        debugLog("[Pre-Chat] Form HTML not found in wrapper");
+        return;
+      }
+
+      $form.detach().appendTo(self.$messages).show();
+
+      // Disable send button with tooltip
+      self.$sendBtn.prop("disabled", true);
+      self.$sendBtn.attr("data-chat-tooltip", listeoAiChatConfig.strings.preChatRequired || "Fill out required fields");
+
+      // Handle form submission
+      $form.find(".listeo-ai-pre-chat-form-body").on("submit", function (e) {
+        e.preventDefault();
+
+        var $fields = $(this).find("input[data-field-label]");
+        var allFilled = true;
+        var data = [];
+
+        $fields.each(function () {
+          var val = $(this).val().trim();
+          if (!val || val.length < 2 || val.length > 200) {
+            allFilled = false;
+            $(this).css("border-color", "#dc3545");
+          } else {
+            $(this).css("border-color", "");
+            data.push({
+              label: $(this).attr("data-field-label"),
+              value: val,
+            });
+          }
+        });
+
+        if (!allFilled) return;
+
+        // Store data
+        self.preChatData = data;
+        self.preChatCompleted = true;
+        self.preChatDataSent = false;
+        sessionStorage.setItem(storageKey, JSON.stringify(data));
+
+        // Hide form
+        $form.slideUp(200);
+
+        // Enable send button
+        self.$sendBtn.prop("disabled", false);
+        self.$sendBtn.removeAttr("data-chat-tooltip");
+        self.$input.focus();
+
+        debugLog("[Pre-Chat] Form submitted:", data);
+      });
+    },
+
+    /**
+     * Get pre-chat data header for first message
+     * Returns object to merge into request headers, or empty object
+     */
+    getPreChatHeaders: function () {
+      if (this.preChatData && !this.preChatDataSent) {
+        this.preChatDataSent = true;
+        return { "X-Pre-Chat-Data": JSON.stringify(this.preChatData) };
+      }
+      return {};
+    },
+
+    /**
      * Clear conversation
      */
     clearConversation: function () {
@@ -3591,6 +4118,11 @@
 
       // Clear conversation history
       this.conversationHistory = [];
+
+      // Reset pre-chat data send flag so it gets sent with next first message
+      if (this.preChatCompleted && this.preChatData) {
+        this.preChatDataSent = false;
+      }
 
       // Clear messages and show welcome (keep session ID for analytics continuity)
       this.$messages.empty();
@@ -4113,6 +4645,11 @@
     detectAndAddProductButton: function () {
       var self = this;
 
+      // WooCommerce product support requires Pro
+      if (!this.chatConfig || !this.chatConfig.woocommerce_available) {
+        return;
+      }
+
       // Get product ID from page
       var productId = this.getCurrentProductId();
 
@@ -4526,4 +5063,40 @@
       return "";
     },
   };
+
+  // === Theme Switcher (dark/light toggle) ===
+  var THEME_STORAGE_KEY = "listeo_ai_chat_dark_mode";
+
+  function applyDarkMode(enabled) {
+    var $widget = $(".listeo-floating-chat-widget");
+    $(".listeo-ai-chat-wrapper").each(function () {
+      $(this).toggleClass("dark-mode", enabled);
+    });
+    $widget.toggleClass("dark-mode", enabled);
+    if (typeof ListeoSilkWave !== "undefined") {
+      ListeoSilkWave.setDarkMode(enabled);
+    }
+  }
+
+  $(function () {
+    // Restore saved dark mode preference
+    var saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved) {
+      applyDarkMode(saved === "dark");
+    }
+
+    // Handle toggle click
+    $(document).on("click", ".listeo-ai-chat-darkmode-toggle", function () {
+      var $wrapper = $(this).closest(".listeo-ai-chat-wrapper");
+      if (!$wrapper.length) {
+        $wrapper = $(this)
+          .closest(".listeo-ai-chat-container")
+          .closest(".listeo-ai-chat-wrapper");
+      }
+      if (!$wrapper.length) return;
+      var newMode = !$wrapper.hasClass("dark-mode");
+      applyDarkMode(newMode);
+      localStorage.setItem(THEME_STORAGE_KEY, newMode ? "dark" : "light");
+    });
+  });
 })(jQuery);

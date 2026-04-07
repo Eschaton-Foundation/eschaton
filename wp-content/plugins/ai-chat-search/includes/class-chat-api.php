@@ -52,12 +52,32 @@ class Listeo_AI_Search_Chat_API
     public function __construct()
     {
         add_action("rest_api_init", [$this, "register_routes"]);
+        add_action("rest_api_init", [$this, "raise_memory_for_ai_routes"]);
         add_filter(
             "rest_post_dispatch",
             [$this, "add_no_cache_headers"],
             99999,
             3,
         ); // Run last to override any caching
+    }
+
+    /**
+     * Raise PHP memory limit for AI search REST API requests.
+     *
+     * WordPress frontend defaults to WP_MEMORY_LIMIT (often 40M),
+     * which is too low for embedding lookups and RAG processing.
+     */
+    public function raise_memory_for_ai_routes()
+    {
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        if (strpos($request_uri, '/listeo/v1/') === false) {
+            return;
+        }
+
+        add_filter('wp_memory_limit', function () {
+            return '512M';
+        });
+        wp_raise_memory_limit();
     }
 
     /**
@@ -1063,15 +1083,32 @@ class Listeo_AI_Search_Chat_API
         }
 
         // SECURITY: Limit message history to prevent input token abuse
-        // 12 messages when listing/product enabled (~3 tool-calling exchanges)
-        // 6 messages when only universal search (3 user + 3 assistant)
+        // Base: 12 messages when listing/product enabled, 6 otherwise
+        // Multiplied by context length setting: short=1x, normal=2x, long=6x
         $enabled_types = class_exists("Listeo_AI_Search_Database_Manager")
             ? Listeo_AI_Search_Database_Manager::get_enabled_post_types()
             : [];
         $has_complex_tools = in_array("listing", $enabled_types) || in_array("product", $enabled_types);
-        $max_messages = $has_complex_tools ? 12 : 6;
+        $base_messages = $has_complex_tools ? 12 : 6;
+        $context_multipliers = array('short' => 1, 'normal' => 2, 'long' => 6);
+        $context_length = get_option('listeo_ai_chat_context_length', 'normal');
+        $multiplier = isset($context_multipliers[$context_length]) ? $context_multipliers[$context_length] : 1;
+        $max_messages = $base_messages * $multiplier;
         if (count($messages) > $max_messages) {
             $messages = array_slice($messages, -$max_messages);
+        }
+
+        // Remove orphaned tool messages after slicing to prevent API errors
+        // A tool response without its preceding assistant+tool_calls is invalid
+        while (!empty($messages) && $messages[0]['role'] === 'tool') {
+            array_shift($messages);
+        }
+        // An assistant with tool_calls at the end without tool responses is invalid
+        if (!empty($messages)) {
+            $last = end($messages);
+            if ($last['role'] === 'assistant' && isset($last['tool_calls'])) {
+                array_pop($messages);
+            }
         }
 
         // Check if the LAST user message contains an image (not history, just current message)
@@ -1257,11 +1294,22 @@ class Listeo_AI_Search_Chat_API
 
         // Allow only non-cost-affecting params from frontend
         // parallel_tool_calls: false prevents GPT-5.2 from chaining tool calls
-        $safe_params = ["verbosity", "reasoning_effort", "parallel_tool_calls"];
+        // reasoning_effort is NOT passed from frontend — handled server-side per model
+        $safe_params = ["verbosity", "parallel_tool_calls"];
         foreach ($safe_params as $param) {
             $value = $request->get_param($param);
             if ($value !== null) {
                 $payload[$param] = $value;
+            }
+        }
+
+        // Server-side reasoning_effort per GPT-5 model
+        // Note: gpt-5.3+ don't support reasoning_effort with function tools in /v1/chat/completions
+        if (isset($payload["model"])) {
+            if ($payload["model"] === "gpt-5.1") {
+                $payload["reasoning_effort"] = "none";
+            } elseif ($payload["model"] === "gpt-5-mini") {
+                $payload["reasoning_effort"] = "low";
             }
         }
 
@@ -1753,6 +1801,21 @@ class Listeo_AI_Search_Chat_API
             $content .= "- Sale Price: " . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($product, array('price' => $product->get_sale_price())))), ENT_QUOTES, 'UTF-8') . "\n";
             $content .= "- ON SALE: Yes\n";
         }
+        /**
+         * Extra pricing info from third-party plugins (e.g. quantity tiers, bulk discounts).
+         *
+         * Hooked text is appended to the PRICING section of structured content
+         * sent to the LLM via the get_product_details tool.
+         * Return a string with newline-separated lines, each prefixed with "- ".
+         *
+         * @param string      $extra_pricing  Default empty string.
+         * @param WC_Product  $product        WooCommerce product object.
+         * @param int         $product_id     Product post ID.
+         */
+        $extra_pricing = apply_filters('listeo_ai_product_extra_pricing', '', $product, $product->get_id());
+        if (!empty($extra_pricing)) {
+            $content .= wp_strip_all_tags(trim($extra_pricing)) . "\n";
+        }
         $content .= "\n";
 
         // Stock status
@@ -1896,9 +1959,11 @@ class Listeo_AI_Search_Chat_API
 
         $chat_history = $request->get_param("chat_history") ?: [];
 
-        // Limit chat history to reduce token usage
-        // RAG is only used when no listing/product tools, so keep it lean
-        $max_history = 6;
+        // Limit chat history to reduce token usage, respecting context length setting
+        $context_multipliers = array('short' => 1, 'normal' => 2, 'long' => 6);
+        $context_length = get_option('listeo_ai_chat_context_length', 'normal');
+        $multiplier = isset($context_multipliers[$context_length]) ? $context_multipliers[$context_length] : 2;
+        $max_history = 6 * $multiplier;
         if (count($chat_history) > $max_history) {
             $chat_history = array_slice($chat_history, -$max_history);
         }
@@ -1967,6 +2032,85 @@ class Listeo_AI_Search_Chat_API
         }
 
         try {
+            // ===== POST IDS DIRECT CONTENT BRANCH =====
+            // When post_ids are provided, skip embedding search entirely
+            // and fetch content directly from the specified posts
+            $post_ids_param = $request->get_param('post_ids');
+            $direct_post_ids = array();
+
+            if (!empty($post_ids_param) && is_array($post_ids_param)) {
+                // Validate: max 2 post IDs, must be published posts
+                $post_ids_param = array_slice($post_ids_param, 0, 2);
+                foreach ($post_ids_param as $pid) {
+                    $pid = intval($pid);
+                    if ($pid > 0) {
+                        $post_obj = get_post($pid);
+                        if ($post_obj && $post_obj->post_status === 'publish') {
+                            $direct_post_ids[] = $pid;
+                        }
+                    }
+                }
+            }
+
+            // ===== PINNED POSTS: Direct content fetch (if post_ids provided) =====
+            $context_content = "";
+            $sources = [];
+            $source_index = 0;
+            $pinned_time = 0;
+
+            if (!empty($direct_post_ids)) {
+                $pinned_start = microtime(true);
+                $max_chars_per_pinned = 20000; // Higher limit for pinned/hint posts (~3k words)
+
+                foreach ($direct_post_ids as $post_id) {
+                    $post = get_post($post_id);
+                    if (!$post) {
+                        continue;
+                    }
+
+                    $source_index++;
+
+                    // Bypass extractor (which truncates at 8000) — read raw content with higher limit
+                    $structured_content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+
+                    if (empty($structured_content)) {
+                        continue;
+                    }
+
+                    // Truncate to pinned post limit
+                    if (mb_strlen($structured_content) > $max_chars_per_pinned) {
+                        $structured_content = mb_substr($structured_content, 0, $max_chars_per_pinned);
+                    }
+
+                    $source_url = ($post->post_type === 'ai_external_page')
+                        ? get_post_meta($post_id, '_external_url', true)
+                        : get_permalink($post_id);
+
+                    $context_content .=
+                        "\n\n=== SOURCE " . $source_index . " (PINNED): " . html_entity_decode(wp_strip_all_tags(get_the_title($post_id)), ENT_QUOTES, 'UTF-8') . " ===\n";
+                    $context_content .= "URL: " . $source_url . "\n";
+                    $context_content .= "Type: " . ucfirst($post->post_type) . "\n";
+                    $context_content .= "\nCONTENT:\n" . $structured_content . "\n";
+                    $context_content .= "=== END SOURCE " . $source_index . " ===\n";
+
+                    $sources[] = [
+                        "id" => $post_id,
+                        "title" => html_entity_decode(wp_strip_all_tags(get_the_title($post_id)), ENT_QUOTES, 'UTF-8'),
+                        "url" => esc_url($source_url),
+                        "type" => $post->post_type,
+                        "excerpt" => html_entity_decode(wp_strip_all_tags(get_the_excerpt($post_id)), ENT_QUOTES, 'UTF-8'),
+                        "is_chunked" => false,
+                    ];
+                }
+
+                $pinned_time = round((microtime(true) - $pinned_start) * 1000, 2);
+
+                if ($debug) {
+                    error_log("RAG: Pinned posts fetched: " . count($sources) . " in " . $pinned_time . "ms");
+                    error_log("RAG: Pinned IDs: " . implode(", ", $direct_post_ids));
+                }
+            }
+
             // ===== STEP 1: SEARCH WITH EMBEDDINGS =====
             $search_start = microtime(true);
 
@@ -2007,8 +2151,7 @@ class Listeo_AI_Search_Chat_API
             $embedding_manager = new Listeo_AI_Search_Embedding_Manager(
                 $api_key,
             );
-            $context_content = "";
-            $sources = [];
+            // $context_content and $sources already initialized (may contain pinned posts)
 
             // Get chunk mapping from search results (if available)
             $chunk_mapping = isset($search_results["chunk_mapping"])
@@ -2020,6 +2163,11 @@ class Listeo_AI_Search_Chat_API
 
             foreach ($search_results["listings"] as $result) {
                 $post_id = $result["id"];
+
+                // Skip posts already included as pinned sources
+                if (in_array($post_id, $direct_post_ids)) {
+                    continue;
+                }
 
                 if (isset($chunk_mapping[$post_id]) && !empty($chunk_mapping[$post_id])) {
                     // Chunked post: add each chunk as separate item
@@ -2069,8 +2217,7 @@ class Listeo_AI_Search_Chat_API
                 }
             }
 
-            // Build context content
-            $source_index = 0;
+            // Build context content (source_index continues from pinned sources)
             foreach ($grouped_items as $post_id => $item_data) {
                 $post = get_post($post_id);
                 if (!$post) {
@@ -2311,9 +2458,9 @@ class Listeo_AI_Search_Chat_API
                 if ($model === "gpt-5.1") {
                     $api_payload["reasoning_effort"] = "none";
                 }
-                // GPT-5-mini with reasoning_effort: minimal for speed
+                // GPT-5-mini with reasoning_effort: low for speed
                 if ($model === "gpt-5-mini") {
-                    $api_payload["reasoning_effort"] = "minimal";
+                    $api_payload["reasoning_effort"] = "low";
                 }
             } else {
                 $api_payload["max_tokens"] = $config["max_tokens"];
@@ -2927,7 +3074,10 @@ ANSWERING RULE:
             } // search_listings + get_listing_details
             if ($has_woocommerce) {
                 $tool_count += 3;
-            } // search_products + get_product_details + check_order_status
+                if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+                    $tool_count += 1; // add_to_cart
+                }
+            } // search_products + get_product_details + check_order_status (+ add_to_cart)
 
             $tool_word =
                 $tool_count === 1
@@ -2981,6 +3131,11 @@ DECISION LOGIC:
 - Question about products to BUY/SHOP → use search_products()
 - Question about specific product from results → use get_product_details()
 - Question about ORDER STATUS/TRACKING/DELIVERY → use check_order_status()";
+
+                if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+                    $default_prompt .= "
+- User wants to ADD TO CART/BUY a product from results → use add_to_cart()";
+                }
             }
 
             // ========================================
@@ -3130,13 +3285,26 @@ TOOLS:
 
                 $default_prompt .= "
 {$wc_order_number}. check_order_status(order_number, billing_email) - For checking WooCommerce order status and tracking
-   Examples: \"What's the status of my order #12345?\", \"Where is order 678?\", \"Track my order\"
+   Examples: \"What's the status of my order #X\", \"Where is order X\", \"Track my order\"
    - Use the order number/ID provided by the customer (can include # symbol or not)
    - If user is NOT logged in OR if order verification fails, ask for billing_email
    - Returns: order status, items ordered, payment info, shipping details, tracking information, delivery estimates
    - IMPORTANT: Present order status clearly with emojis (✅ Completed, 📦 Shipped, 🔄 Processing, etc.)
 
 ";
+
+                if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+                    $cart_tool_number = $wc_order_number + 1;
+                    $default_prompt .= "
+{$cart_tool_number}. add_to_cart(product_id, quantity) - Add a product to the shopping cart
+   Examples: \"add that to my cart\", \"I want to buy this\", \"add 2 of those\"
+   - Use the EXACT product_id from previous search_products() results
+   - Only works for simple in-stock products; for variable products, direct user to the product page to select options
+   - Default quantity is 1 unless user specifies otherwise
+   - After adding, confirm what was added and mention the cart icon to view/checkout
+
+";
+                }
             }
             // ========================================
             // RESPONSE GUIDELINES (for all tools)
@@ -3180,9 +3348,28 @@ ADDITIONAL NOTES:
         // Admin can add additional instructions via WordPress settings
         // ========================================
         $custom_prompt = get_option("listeo_ai_chat_system_prompt", "");
+        $max_length = AI_Chat_Search_Pro_Manager::get_max_system_prompt_length();
 
-        if (!empty($custom_prompt)) {
-            return $default_prompt . "\n\n" . $custom_prompt;
+        if (!empty($custom_prompt) && $max_length > 0) {
+            $custom_prompt = mb_substr($custom_prompt, 0, $max_length);
+            $custom_prompt = str_replace('[time]', current_time('H:i'), $custom_prompt);
+
+            $default_prompt .= "\n\n" . $custom_prompt;
+        }
+
+        // ========================================
+        // KNOWLEDGE SOURCES (Pro feature)
+        // Pinned posts that AI should reference for specific topics
+        // ========================================
+        $knowledge_sources = get_option('listeo_ai_knowledge_sources', array());
+        if (!empty($knowledge_sources) && is_array($knowledge_sources)) {
+            $default_prompt .= "\n\n========================================\nADDITIONAL SOURCES:\nFor the topics below, add the corresponding post_ids to your search_universal_content call alongside your normal query.\n";
+            foreach ($knowledge_sources as $source) {
+                if (!empty($source['topic']) && !empty($source['post_id'])) {
+                    $default_prompt .= '- ' . $source['topic'] . ' → post ID ' . intval($source['post_id']) . ' ("' . $source['post_title'] . '")' . "\n";
+                }
+            }
+            $default_prompt .= "========================================";
         }
 
         return $default_prompt;
@@ -3210,13 +3397,23 @@ ADDITIONAL NOTES:
         $provider = new Listeo_AI_Provider();
         $api_configured = !empty($provider->get_api_key());
 
+        // Check if WooCommerce product support is available (Pro feature)
+        $has_woocommerce = class_exists("WooCommerce");
+        if ($has_woocommerce && class_exists("Listeo_AI_Search_Database_Manager")) {
+            $enabled_types = Listeo_AI_Search_Database_Manager::get_enabled_post_types();
+            $has_woocommerce = in_array("product", $enabled_types);
+        } else {
+            $has_woocommerce = false;
+        }
+
         $config = [
             "enabled" => get_option("listeo_ai_chat_enabled", 0),
-            "model" => get_option("listeo_ai_chat_model", "gpt-5.1"),
+            "model" => get_option("listeo_ai_chat_model", "gpt-5.3-chat-latest"),
             "max_tokens" => 3000, // Hardcoded
             "temperature" => 0.6, // Hardcoded
             "system_prompt" => self::get_system_prompt(),
             "listeo_available" => $has_listeo, // Frontend can use this to conditionally show Listeo tools
+            "woocommerce_available" => $has_woocommerce, // Frontend: show product features only when Pro + product enabled
             "tools" => self::get_listeo_tools(), // Always return tools (at minimum search_universal_content)
             "api_configured" => $api_configured, // Flag for frontend to show notification if not configured
         ];
@@ -3294,6 +3491,13 @@ ADDITIONAL NOTES:
                                 "description" =>
                                     "Number of results to return (default: 5, max: 10)",
                                 "default" => 5,
+                            ],
+                            "post_ids" => [
+                                "type" => "array",
+                                "items" => ["type" => "integer"],
+                                "maxItems" => 2,
+                                "description" =>
+                                    "Specific post/page IDs to search within. Use ONLY when custom instructions explicitly tell you to search specific post IDs for certain topics.",
                             ],
                         ],
                         "required" => ["query"],
@@ -3475,6 +3679,35 @@ ADDITIONAL NOTES:
                             ],
                         ],
                         "required" => ["order_number"],
+                    ],
+                ],
+            ];
+        }
+
+        // Add to cart tool (only when WooCommerce cart is enabled in chatbot settings)
+        if ($has_woocommerce && get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+            $tools[] = [
+                "type" => "function",
+                "function" => [
+                    "name" => "add_to_cart",
+                    "description" =>
+                        "Add a product to the shopping cart. Use when user explicitly asks to add a product to cart, buy it, or says 'I want it'. Only works for simple products that are in stock. For variable products, tell the user to select options on the product page.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "product_id" => [
+                                "type" => "integer",
+                                "description" =>
+                                    "The product ID from previous search_products results.",
+                            ],
+                            "quantity" => [
+                                "type" => "integer",
+                                "description" =>
+                                    "Quantity to add. Default 1.",
+                                "default" => 1,
+                            ],
+                        ],
+                        "required" => ["product_id"],
                     ],
                 ],
             ];

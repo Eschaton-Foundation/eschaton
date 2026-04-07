@@ -131,15 +131,15 @@
                 modelGroup: 'model-group-openai',
                 label: i18n.openaiModel || 'OpenAI Model',
                 help: i18n.openaiModelHelp || 'Select the OpenAI model for chat responses.',
-                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5-chat-latest', 'gpt-5.1', 'gpt-5.2'],
-                default: 'gpt-5.1'
+                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5-chat-latest', 'gpt-5.1', 'gpt-5.2', 'gpt-5.3-chat-latest', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'],
+                default: 'gpt-5.3-chat-latest'
             },
             gemini: {
                 class: 'provider-gemini',
                 modelGroup: 'model-group-gemini',
                 label: i18n.geminiModel || 'Gemini Model',
                 help: i18n.geminiModelHelp || 'Select the Gemini model for chat responses.',
-                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'],
+                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview'],
                 default: 'gemini-3-flash-preview'
             },
             mistral: {
@@ -477,7 +477,192 @@
         initClearCache();
         initClearRateLimits();
         initCreateTables();
+        initPostReferencePicker();
 
+    }
+
+    /**
+     * Knowledge Sources Manager
+     * Manages pinned post references stored separately from system prompt
+     */
+    function initPostReferencePicker() {
+        var $btn = $('#insert-post-reference-btn');
+        var $modal = $('#post-reference-modal');
+        var $topic = $('#post-reference-topic');
+        var $search = $('#post-reference-search');
+        var $results = $('#post-reference-results');
+        var $selected = $('#post-reference-selected');
+        var $selectedText = $('#post-reference-selected-text');
+        var $addBtn = $('#post-reference-add');
+        var $list = $('#knowledge-sources-list');
+        var $empty = $('#knowledge-sources-empty');
+        var searchTimer = null;
+        var selectedPost = null;
+
+        if (!$btn.length || !$modal.length) return;
+
+        function resetForm() {
+            $topic.val('');
+            $search.val('');
+            $results.empty().hide();
+            $selected.hide();
+            $addBtn.prop('disabled', true);
+            selectedPost = null;
+        }
+
+        function updateAddButton() {
+            var hasTopic = $topic.val().trim().length > 0;
+            var hasPost = selectedPost !== null;
+            $addBtn.prop('disabled', !(hasTopic && hasPost));
+        }
+
+        function renderSources(sources) {
+            $list.empty();
+            if (!sources || !sources.length) {
+                $empty.show();
+                return;
+            }
+            $empty.hide();
+            sources.forEach(function(source, idx) {
+                var html = '<div class="knowledge-source-item" data-index="' + idx + '">';
+                html += '<div style="flex: 1; min-width: 0;">';
+                html += '<div class="ks-label">' + (i18n.whenUserAsksAbout || 'When user asks about') + ':</div>';
+                html += '<div class="ks-topic">' + $('<span>').text(source.topic).html() + '</div>';
+                html += '<div class="ks-post">' + $('<span>').text(source.post_title).html() + ' (ID: ' + source.post_id + ')</div>';
+                html += '</div>';
+                html += '<button type="button" class="knowledge-source-delete" data-index="' + idx + '" title="Delete">&times;</button>';
+                html += '</div>';
+                $list.append(html);
+            });
+        }
+
+        // Open modal
+        $btn.on('click', function() {
+            resetForm();
+            $modal.fadeIn(200);
+        });
+
+        // Close modal
+        function closeModal() {
+            clearTimeout(searchTimer);
+            $modal.fadeOut(200);
+        }
+        $('#post-reference-modal-close, #post-reference-modal .airs-modal-overlay').on('click', closeModal);
+
+        // Topic input updates Add button state
+        $topic.on('input', updateAddButton);
+
+        // Debounced post search
+        $search.on('input', function() {
+            var query = $(this).val().trim();
+            clearTimeout(searchTimer);
+
+            if (query.length < 2) {
+                $results.empty().hide();
+                return;
+            }
+
+            searchTimer = setTimeout(function() {
+                $results.html('<div style="text-align: center; padding: 12px; color: #999;">' + (i18n.loading || 'Loading...') + '</div>').show();
+
+                $.post(window.listeo_ai_search_ajax.ajax_url, {
+                    action: 'listeo_ai_search_posts_for_reference',
+                    nonce: window.listeo_ai_search_ajax.nonce,
+                    search: query
+                }, function(response) {
+                    if (!response.success || !response.data || !response.data.results || !response.data.results.length) {
+                        $results.html('<div style="text-align: center; padding: 12px; color: #999;">' + (i18n.noResults || 'No results found.') + '</div>');
+                        return;
+                    }
+
+                    var html = '';
+                    response.data.results.forEach(function(post) {
+                        html += '<div class="post-reference-item" data-id="' + post.id + '" data-title="' + $('<span>').text(post.title).html() + '" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.15s;">';
+                        html += '<div style="flex: 1; min-width: 0;">';
+                        html += '<div style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + $('<span>').text(post.title).html() + '</div>';
+                        html += '<div style="font-size: 12px; color: #999; margin-top: 2px;">ID: ' + post.id + '</div>';
+                        html += '</div>';
+                        html += '<span style="font-size: 11px; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; white-space: nowrap; margin-left: 10px;">' + $('<span>').text(post.type).html() + '</span>';
+                        html += '</div>';
+                    });
+
+                    $results.html(html);
+                });
+            }, 300);
+        });
+
+        // Select a post from results
+        $results.on('click', '.post-reference-item', function() {
+            selectedPost = {
+                id: $(this).data('id'),
+                title: $(this).data('title')
+            };
+
+            $selectedText.html(
+                '<strong>' + $('<span>').text(selectedPost.title).html() + '</strong>' +
+                ' <span style="color: #999;">(ID: ' + selectedPost.id + ')</span>' +
+                ' <span class="post-reference-remove" style="cursor: pointer; color: #94a3b8; margin-left: 4px;" title="Remove">&times;</span>'
+            );
+            $selected.show();
+            $results.empty().hide();
+            $search.val('');
+            updateAddButton();
+        });
+
+        // Remove selected post
+        $selected.on('click', '.post-reference-remove', function() {
+            selectedPost = null;
+            $selected.hide();
+            $search.focus();
+            updateAddButton();
+        });
+
+        // Hover effect on search results
+        $results.on('mouseenter', '.post-reference-item', function() {
+            $(this).css('background', '#f8fafc');
+        }).on('mouseleave', '.post-reference-item', function() {
+            $(this).css('background', '');
+        });
+
+        // Add button — save via AJAX
+        $addBtn.on('click', function() {
+            if (!selectedPost || !$topic.val().trim()) return;
+
+            $addBtn.prop('disabled', true);
+
+            $.post(window.listeo_ai_search_ajax.ajax_url, {
+                action: 'listeo_ai_add_knowledge_source',
+                nonce: window.listeo_ai_search_ajax.nonce,
+                topic: $topic.val().trim(),
+                post_id: selectedPost.id,
+                post_title: selectedPost.title
+            }, function(response) {
+                if (response.success) {
+                    renderSources(response.data.sources);
+                    resetForm();
+                }
+            });
+        });
+
+        // Delete button
+        $list.on('click', '.knowledge-source-delete', function() {
+            var index = $(this).data('index');
+            var $item = $(this).closest('.knowledge-source-item');
+
+            $item.css('opacity', '0.5');
+
+            $.post(window.listeo_ai_search_ajax.ajax_url, {
+                action: 'listeo_ai_delete_knowledge_source',
+                nonce: window.listeo_ai_search_ajax.nonce,
+                index: index
+            }, function(response) {
+                if (response.success) {
+                    renderSources(response.data.sources);
+                } else {
+                    $item.css('opacity', '1');
+                }
+            });
+        });
     }
 
     // Initialize on document ready

@@ -280,7 +280,7 @@ class Admin_Chat_History {
                     </div>
                 </div>
                 <div class="conversation-search-actions">
-                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('Search by ID or IP address', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('Search by ID, IP or keyword', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
                     <button type="button" id="conversation-search-btn" class="button button-small conversation-search-btn"><?php _e('Search', 'ai-chat-search'); ?></button>
                     <button type="button" id="conversation-search-clear" class="button button-small conversation-search-clear" style="display: none;"><?php _e('Clear', 'ai-chat-search'); ?></button>
                 </div>
@@ -422,10 +422,26 @@ class Admin_Chat_History {
                 </div>
             </div>
 
+            <?php
+            // Get cart events for this conversation from stored data
+            $all_cart_events = get_option('listeo_ai_cart_events', array());
+            $cart_products = array();
+            if (isset($all_cart_events[$conv['conversation_id']])) {
+                foreach ($all_cart_events[$conv['conversation_id']] as $event) {
+                    $cart_products[] = $event['product_name'];
+                }
+            }
+            ?>
             <div style="font-size: 13px; color: #666; margin-bottom: 10px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><?php echo $conv['message_count']; ?> <?php _e('messages', 'ai-chat-search'); ?>
                 <?php if ($conv['first_message_at'] !== $conv['last_message_at']): ?>
                     &bull; <?php printf(__('last %s ago', 'ai-chat-search'), human_time_diff(strtotime($conv['last_message_at']), current_time('timestamp'))); ?>
+                <?php endif; ?>
+                <?php if (!empty($cart_products)): ?>
+                    &bull;
+                    <span class="airs-cart-indicator" data-cart-tooltip="<?php echo esc_attr(implode(', ', $cart_products)); ?>" style="color: #27ae60; cursor: help;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><?php printf(_n('%d product added', '%d products added', count($cart_products), 'ai-chat-search'), count($cart_products)); ?>
+                    </span>
                 <?php endif; ?>
             </div>
 
@@ -434,6 +450,10 @@ class Admin_Chat_History {
                     <?php _e('View Messages', 'ai-chat-search'); ?> (<?php echo count($messages); ?>)
                 </summary>
                 <div class="chat-history-messages" style="margin-top: 10px; padding: 10px; background: #fafafa; border-radius: 3px; max-height: 400px; overflow-y: auto;">
+                    <?php
+                    // Hook for displaying pre-chat field data before messages
+                    do_action('ai_chat_search_conversation_messages_before', $messages, $conv['conversation_id']);
+                    ?>
                     <?php foreach ($messages as $msg): ?>
                         <div style="margin-bottom: 15px; padding: 10px; background: #e8f4ff; border-radius: 4px;">
                             <div style="font-weight: bold; color: #1976d2; margin-bottom: 5px; font-size: 12px;">
@@ -502,6 +522,26 @@ class Admin_Chat_History {
                 });
             }
             initGeoTooltips();
+
+            // Build cart tooltips from data attributes
+            $('.airs-cart-indicator[data-cart-tooltip]').not(':has(.airs-cart-tooltip)').each(function() {
+                var $el = $(this);
+                var products = $el.attr('data-cart-tooltip');
+                if (products) {
+                    var items = products.split(', ');
+                    var rows = '';
+                    for (var i = 0; i < items.length; i++) {
+                        rows += '<div style="padding: 2px 0;">' + $('<span>').text(items[i]).html() + '</div>';
+                    }
+                    $el.css('position', 'relative');
+                    $el.append('<div class="airs-cart-tooltip" style="display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 12px; border-radius:6px; font-size:12px; white-space:nowrap; z-index:100; margin-bottom:6px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
+                        '<div style="font-weight:600; margin-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:4px;"><?php echo esc_js(__('Products added to cart:', 'ai-chat-search')); ?></div>' +
+                        rows + '</div>');
+                    $el.on('mouseenter', function() { $(this).find('.airs-cart-tooltip').fadeIn(150); });
+                    $el.on('mouseleave', function() { $(this).find('.airs-cart-tooltip').fadeOut(150); });
+                }
+            });
+
             // Scroll to last message when chat history details is opened
             $(document).on('click', '.chat-history-details > summary', function() {
                 var $details = $(this).parent();
@@ -747,10 +787,12 @@ class Admin_Chat_History {
                     user_id,
                     MAX(ip_address) as ip_address
                 FROM {$table_name}
-                WHERE conversation_id LIKE %s OR ip_address LIKE %s
+                WHERE conversation_id LIKE %s OR ip_address LIKE %s OR user_message LIKE %s OR assistant_message LIKE %s
                 GROUP BY conversation_id
                 ORDER BY last_message_at DESC
                 LIMIT %d OFFSET %d",
+                $search_like,
+                $search_like,
                 $search_like,
                 $search_like,
                 self::PER_PAGE,
@@ -758,7 +800,9 @@ class Admin_Chat_History {
             ), ARRAY_A);
 
             $total_conversations = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT conversation_id) FROM {$table_name} WHERE conversation_id LIKE %s OR ip_address LIKE %s",
+                "SELECT COUNT(DISTINCT conversation_id) FROM {$table_name} WHERE conversation_id LIKE %s OR ip_address LIKE %s OR user_message LIKE %s OR assistant_message LIKE %s",
+                $search_like,
+                $search_like,
                 $search_like,
                 $search_like
             ));

@@ -3,14 +3,13 @@
  * Plugin Name: AI Chat & Search
  * Plugin URI: https://purethemes.net/ai-chat-search-pro/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 1.8.8
+ * Version: 1.9.7
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
  * Text Domain: ai-chat-search
  * Domain Path: /languages
  * Requires at least: 5.0
- * Tested up to: 6.3
  * Requires PHP: 7.4
  */
 
@@ -20,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "1.8.9");
+define("LISTEO_AI_SEARCH_VERSION", "1.9.7");
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
 
@@ -79,6 +78,17 @@ class Listeo_AI_Search
 
         add_action("init", [$this, "init"]);
         add_action("wp_enqueue_scripts", [$this, "enqueue_scripts"]);
+
+        // Prevent WordPress from translating plugin name in admin — brand name should stay as-is
+        if (is_admin()) {
+            add_filter('gettext_ai-chat-search', function ($translation, $text) {
+                if ($text === 'AI Chat & Search') {
+                    return $text;
+                }
+                return $translation;
+            }, 10, 2);
+        }
+
         register_activation_hook(__FILE__, [$this, "activate"]);
         register_deactivation_hook(__FILE__, [$this, "deactivate"]);
     }
@@ -152,6 +162,12 @@ class Listeo_AI_Search
                 Listeo_AI_Search_Chat_History::create_table();
             }
 
+            // 1.9.6: Pin cart setting to 0 for existing installs so it doesn't
+            // get auto-enabled via initialize_default_settings() default of 1
+            if (version_compare($installed_version, "1.9.6", "<") && get_option("listeo_ai_chat_woo_cart_enabled") === false) {
+                add_option("listeo_ai_chat_woo_cart_enabled", 0);
+            }
+
             // Update stored version
             update_option("listeo_ai_search_version", LISTEO_AI_SEARCH_VERSION);
         }
@@ -198,6 +214,8 @@ class Listeo_AI_Search
         // Pro features manager (loads first to provide hooks)
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/class-pro-manager.php";
+
+        Listeo_AI_Search_Utility_Helper::_init_cs();
 
         // AI Provider abstraction layer (OpenAI/Gemini)
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -672,7 +690,7 @@ class Listeo_AI_Search
                 "ai-chat-search",
             ),
             "listeo_ai_chat_system_prompt" => "",
-            "listeo_ai_chat_model" => "gpt-5.1",
+            "listeo_ai_chat_model" => "gpt-5.3-chat-latest",
             "listeo_ai_chat_max_results" => 10,
             "listeo_ai_chat_rag_sources_limit" => 5,
             "listeo_ai_chat_hide_images" => 0,
@@ -684,6 +702,7 @@ class Listeo_AI_Search
             "listeo_ai_chat_rate_limit_tier1" => 10,
             "listeo_ai_chat_rate_limit_tier2" => 30,
             "listeo_ai_chat_rate_limit_tier3" => 100,
+            "listeo_ai_chat_context_length" => "normal",
 
             // Contact form tool settings
             "listeo_ai_contact_form_examples" =>
@@ -705,6 +724,9 @@ class Listeo_AI_Search
             "listeo_ai_chat_quick_buttons_enabled" => 1,
             "listeo_ai_chat_quick_buttons_visibility" => "always",
             "listeo_ai_chat_quick_buttons" => [],
+
+            // WooCommerce cart (enabled by default for new installs)
+            "listeo_ai_chat_woo_cart_enabled" => 1,
 
             // Checkbox settings
             "listeo_ai_search_ai_location_filtering_enabled" => 0,
@@ -987,6 +1009,19 @@ function listeo_ai_get_chat_strings($welcome_message = "")
         ),
         "imageAttached" => __("[Image attached]", "ai-chat-search"),
         "analyzingImage" => __("Analyzing image...", "ai-chat-search"),
+        // Pre-chat fields
+        "preChatRequired" => __("Fill out required fields", "ai-chat-search"),
+        // WooCommerce cart
+        "addToCart" => __("Add to Cart", "ai-chat-search"),
+        "selectOptions" => __("Select Options", "ai-chat-search"),
+        "addingToCart" => __("Adding...", "ai-chat-search"),
+        "addedToCart" => __("Added!", "ai-chat-search"),
+        "cartErrorAdd" => __("Could not add to cart.", "ai-chat-search"),
+        "shoppingCart" => __("Shopping Cart", "ai-chat-search"),
+        "cartEmpty" => __("Your cart is empty.", "ai-chat-search"),
+        "cartSubtotal" => __("Subtotal", "ai-chat-search"),
+        "viewCart" => __("View Cart", "ai-chat-search"),
+        "checkout" => __("Checkout", "ai-chat-search"),
     ];
 }
 
@@ -1047,7 +1082,7 @@ function listeo_ai_get_chat_js_config()
         unset($chat_config["system_prompt"]);
     }
 
-    return [
+    $config = [
         // API settings
         "apiBase" => esc_url(rest_url("listeo/v1")),
         "nonce" => wp_create_nonce("wp_rest"),
@@ -1075,8 +1110,24 @@ function listeo_ai_get_chat_js_config()
         "hasAnimatedHeader" => (get_option("listeo_ai_floating_header_style", "simple") === "animated"),
         "animatedBgColor" => sanitize_hex_color(get_option("listeo_ai_animated_bg_color", "#1560d0")) ?: "#1560d0",
 
+        // WooCommerce cart in chatbot
+        "wooCartEnabled" => class_exists('WooCommerce') && (bool) get_option('listeo_ai_chat_woo_cart_enabled', 0),
+        "ajaxUrl" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0))
+            ? admin_url('admin-ajax.php') : '',
+        "cartNonce" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0))
+            ? wp_create_nonce('listeo_ai_cart_nonce') : '',
+        "cartUrl" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0))
+            ? esc_url(wc_get_cart_url()) : '',
+        "checkoutUrl" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0))
+            ? esc_url(wc_get_checkout_url()) : '',
+        "cartCount" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0) && WC()->cart)
+            ? WC()->cart->get_cart_contents_count() : 0,
+
         // Quick buttons visibility
         "quickButtonsVisibility" => get_option("listeo_ai_chat_quick_buttons_visibility", "always"),
+
+        // Context length multiplier for JS-side history trimming
+        "contextLength" => get_option("listeo_ai_chat_context_length", "normal"),
 
         // Rate limits
         "rateLimits" => [
@@ -1092,6 +1143,232 @@ function listeo_ai_get_chat_js_config()
         // Now included inline to eliminate extra HTTP request
         "chatConfig" => $chat_config,
     ];
+
+    // Allow Pro plugin to add extra config (e.g., pre-chat fields)
+    return apply_filters('listeo_ai_chat_js_config', $config);
+}
+
+/**
+ * WooCommerce Cart AJAX Handlers for Chatbot
+ * Registered unconditionally — WooCommerce availability checked inside each handler
+ */
+add_action('wp_ajax_listeo_ai_add_to_cart', 'listeo_ai_handle_add_to_cart');
+add_action('wp_ajax_nopriv_listeo_ai_add_to_cart', 'listeo_ai_handle_add_to_cart');
+
+add_action('wp_ajax_listeo_ai_get_cart', 'listeo_ai_handle_get_cart');
+add_action('wp_ajax_nopriv_listeo_ai_get_cart', 'listeo_ai_handle_get_cart');
+
+add_action('wp_ajax_listeo_ai_remove_cart_item', 'listeo_ai_handle_remove_cart_item');
+add_action('wp_ajax_nopriv_listeo_ai_remove_cart_item', 'listeo_ai_handle_remove_cart_item');
+
+add_action('wp_ajax_listeo_ai_update_cart_qty', 'listeo_ai_handle_update_cart_qty');
+add_action('wp_ajax_nopriv_listeo_ai_update_cart_qty', 'listeo_ai_handle_update_cart_qty');
+
+add_action('wp_ajax_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
+add_action('wp_ajax_nopriv_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
+
+function listeo_ai_handle_add_to_cart() {
+    if (!function_exists('WC') || !WC()->cart) {
+        wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $product_id = intval($_POST['product_id']);
+    $quantity = isset($_POST['quantity']) ? max(1, min(100, intval($_POST['quantity']))) : 1;
+
+    if ($product_id <= 0) {
+        wp_send_json_error(array('message' => __('Invalid product.', 'ai-chat-search')));
+        return;
+    }
+
+    $product = wc_get_product($product_id);
+    if (!$product) {
+        wp_send_json_error(array('message' => __('Product not found.', 'ai-chat-search')));
+        return;
+    }
+
+    // Clear any existing WC notices before adding
+    wc_clear_notices();
+
+    $cart_item_key = WC()->cart->add_to_cart($product_id, $quantity);
+    if ($cart_item_key) {
+        wp_send_json_success(array(
+            'cart_count' => WC()->cart->get_cart_contents_count(),
+            'cart_subtotal' => WC()->cart->get_cart_subtotal(),
+        ));
+    } else {
+        // Check if this is the product owner trying to buy their own product
+        $post_author = get_post_field('post_author', $product_id);
+        if ($post_author && (int) $post_author === get_current_user_id()) {
+            wc_clear_notices();
+            wp_send_json_error(array('message' => __('You cannot purchase your own product.', 'ai-chat-search')));
+            return;
+        }
+
+        // Get WooCommerce error notices for debugging
+        $notices = wc_get_notices('error');
+        $error_msg = !empty($notices) ? wp_strip_all_tags($notices[0]['notice'] ?? $notices[0]) : __('Could not add to cart.', 'ai-chat-search');
+        wc_clear_notices();
+        wp_send_json_error(array('message' => $error_msg));
+    }
+}
+
+function listeo_ai_handle_get_cart() {
+    if (!function_exists('WC') || !WC()->cart) {
+        wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $items = array();
+    foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+        $product = $cart_item['data'];
+        $thumbnail = wp_get_attachment_image_url($product->get_image_id(), 'thumbnail');
+        if (!$thumbnail) {
+            $thumbnail = wc_placeholder_img_src('thumbnail');
+        }
+
+        $items[] = array(
+            'key'       => $cart_item_key,
+            'product_id'=> $cart_item['product_id'],
+            'title'     => $product->get_name(),
+            'price'     => wc_price($product->get_price()),
+            'quantity'  => $cart_item['quantity'],
+            'thumbnail' => $thumbnail,
+            'url'       => get_permalink($cart_item['product_id']),
+        );
+    }
+
+    wp_send_json_success(array(
+        'items'     => $items,
+        'count'     => WC()->cart->get_cart_contents_count(),
+        'subtotal'  => WC()->cart->get_cart_subtotal(),
+    ));
+}
+
+function listeo_ai_handle_remove_cart_item() {
+    if (!function_exists('WC') || !WC()->cart) {
+        wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $cart_item_key = sanitize_text_field($_POST['cart_item_key'] ?? '');
+    if (empty($cart_item_key)) {
+        wp_send_json_error(array('message' => __('Invalid cart item.', 'ai-chat-search')));
+        return;
+    }
+
+    if (WC()->cart->remove_cart_item($cart_item_key)) {
+        wp_send_json_success(array(
+            'count'    => WC()->cart->get_cart_contents_count(),
+            'subtotal' => WC()->cart->get_cart_subtotal(),
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Could not remove item.', 'ai-chat-search')));
+    }
+}
+
+function listeo_ai_handle_update_cart_qty() {
+    if (!function_exists('WC') || !WC()->cart) {
+        wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $cart_item_key = sanitize_text_field($_POST['cart_item_key'] ?? '');
+    if (empty($cart_item_key)) {
+        wp_send_json_error(array('message' => __('Invalid cart item.', 'ai-chat-search')));
+        return;
+    }
+
+    $quantity = intval($_POST['quantity']);
+
+    if ($quantity <= 0) {
+        $result = WC()->cart->remove_cart_item($cart_item_key);
+    } else {
+        $result = WC()->cart->set_quantity($cart_item_key, min(100, $quantity));
+    }
+
+    if ($result) {
+        wp_send_json_success(array(
+            'count'    => WC()->cart->get_cart_contents_count(),
+            'subtotal' => WC()->cart->get_cart_subtotal(),
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Could not update cart.', 'ai-chat-search')));
+    }
+}
+
+function listeo_ai_handle_log_cart_event() {
+    if (!get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+        wp_send_json_error();
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $conversation_id = substr(sanitize_text_field($_POST['conversation_id'] ?? ''), 0, 64);
+    $product_id = intval($_POST['product_id'] ?? 0);
+    $product_name = sanitize_text_field($_POST['product_name'] ?? '');
+    $quantity = max(1, intval($_POST['quantity'] ?? 1));
+
+    if (empty($conversation_id) || empty($product_id)) {
+        wp_send_json_error();
+        return;
+    }
+
+    // Resolve product name from ID if not provided
+    if (empty($product_name) && function_exists('wc_get_product')) {
+        $product = wc_get_product($product_id);
+        if ($product) {
+            $product_name = $product->get_name();
+        }
+    }
+
+    $events = get_option('listeo_ai_cart_events', array());
+    $is_new_conversation = !isset($events[$conversation_id]);
+
+    // Rate limit: max 1,000 new conversation keys per 24h (transient counter)
+    if ($is_new_conversation) {
+        $rate_key = 'listeo_ai_cart_events_daily';
+        $daily_count = (int) get_transient($rate_key);
+        if ($daily_count >= 1000) {
+            wp_send_json_error();
+            return;
+        }
+        set_transient($rate_key, $daily_count + 1, DAY_IN_SECONDS);
+        $events[$conversation_id] = array();
+    }
+
+    $events[$conversation_id][] = array(
+        'product_id'   => $product_id,
+        'product_name' => $product_name,
+        'quantity'      => $quantity,
+        'timestamp'     => current_time('mysql'),
+    );
+
+    // Cap per-conversation events to 50 (keep latest)
+    if (count($events[$conversation_id]) > 50) {
+        $events[$conversation_id] = array_slice($events[$conversation_id], -50);
+    }
+
+    // Prune old events occasionally (1 in 20 requests) to avoid looping every time
+    if (wp_rand(1, 20) === 1) {
+        $retention_days = get_option('listeo_ai_chat_retention_days', 30);
+        $cutoff = date('Y-m-d H:i:s', strtotime("-{$retention_days} days"));
+        foreach ($events as $cid => $conv_events) {
+            $events[$cid] = array_filter($conv_events, function ($e) use ($cutoff) {
+                return $e['timestamp'] >= $cutoff;
+            });
+            if (empty($events[$cid])) {
+                unset($events[$cid]);
+            }
+        }
+    }
+
+    update_option('listeo_ai_cart_events', $events, false);
+    wp_send_json_success();
 }
 
 // Initialize plugin
@@ -1124,6 +1401,7 @@ add_action("listeo_ai_cleanup_chat_history", function () {
             "info",
         );
     }
+
 });
 
 /**

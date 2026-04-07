@@ -22,7 +22,7 @@ class Listeo_AI_Search_Chat_Shortcode
         // Register shortcodes (both old and new for backward compatibility)
         add_shortcode("listeo_ai_chat", [$this, "render_chat"]); // Legacy shortcode
         add_shortcode("ai_chat", [$this, "render_chat"]); // New shortcode
-        add_action("wp_enqueue_scripts", [$this, "enqueue_chat_assets"]);
+        // Assets are enqueued in render_chat() only when shortcode is actually used
     }
 
     /**
@@ -57,17 +57,6 @@ class Listeo_AI_Search_Chat_Shortcode
             );
         }
 
-        // Enqueue theme switcher JS when enabled
-        if (get_option('listeo_ai_color_scheme_switcher')) {
-            wp_enqueue_script(
-                "listeo-ai-chat-theme-switcher",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chatbot-theme-switcher.js",
-                ["jquery"],
-                LISTEO_AI_SEARCH_VERSION,
-                true
-            );
-        }
-
         // Add inline CSS for primary color variables
         $primary_color = sanitize_hex_color(
             get_option("listeo_ai_primary_color", "#0073ee"),
@@ -95,7 +84,7 @@ class Listeo_AI_Search_Chat_Shortcode
         // Enqueue chat script
         wp_enqueue_script(
             "listeo-ai-chat",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chatbot-core.js",
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js",
             ["jquery"],
             LISTEO_AI_SEARCH_VERSION,
             true,
@@ -132,6 +121,9 @@ class Listeo_AI_Search_Chat_Shortcode
      */
     public function render_chat($atts)
     {
+        // Enqueue assets only when shortcode is actually used on the page
+        $this->enqueue_chat_assets();
+
         // Parse attributes (use 'ai_chat' as the tag name for shortcode_atts)
         $atts = shortcode_atts(
             [
@@ -254,6 +246,12 @@ class Listeo_AI_Search_Chat_Shortcode
                 .elementor-chat-style .listeo-ai-chat-wrapper:not(.expanded) .listeo-ai-chat-menu-shortcode { display: none; }
                 </style>
                 <div class="listeo-ai-chat-menu listeo-ai-chat-menu-shortcode">
+                    <?php if (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0)): ?>
+                    <div class="listeo-ai-chat-cart-toggle" role="button" tabindex="0" aria-label="<?php esc_attr_e('Shopping cart', 'ai-chat-search'); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        <span class="listeo-ai-cart-badge" style="display: none;">0</span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (get_option('listeo_ai_color_scheme_switcher')): ?>
                     <div class="listeo-ai-chat-darkmode-toggle" role="button" tabindex="0" aria-label="<?php esc_attr_e('Toggle dark mode', 'ai-chat-search'); ?>">
                         <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -359,8 +357,18 @@ class Listeo_AI_Search_Chat_Shortcode
                 ?>
 
 <?php
+                // Pre-Chat Required Fields Form (PRO feature - rendered by Pro plugin)
+                do_action('listeo_ai_chat_pre_chat_form');
+                ?>
+
+<?php
                 // Contact Form Overlay (PRO feature - rendered by Pro plugin when quick buttons enabled)
                 do_action('listeo_ai_chat_contact_form_overlay');
+                ?>
+
+                <?php
+                // Cart popup overlay (Pro feature — rendered by Pro plugin via hook)
+                do_action('listeo_ai_chat_cart_popup');
                 ?>
             </div>
         </div>
