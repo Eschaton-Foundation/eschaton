@@ -68,96 +68,6 @@ class AI_Chat_Search_Pro_Content_Extractors {
 class AI_Chat_Search_Pro_Content_Extractor_Page {
 
     /**
-     * Check if a specific page uses DIVI builder
-     *
-     * @param int $post_id Page ID
-     * @return bool True if this page uses DIVI builder
-     */
-    private function page_uses_divi($post_id) {
-        // Check if this page has DIVI builder meta set
-        $use_builder = get_post_meta($post_id, '_et_pb_use_builder', true);
-        return $use_builder === 'on';
-    }
-
-    /**
-     * Fetch rendered HTML content from a page URL
-     *
-     * Used for page builders like DIVI that store content as shortcodes.
-     * Fetching the rendered page gives us the actual visible content.
-     *
-     * @param int $post_id Post ID
-     * @return string|false Rendered HTML content or false on failure
-     */
-    private function fetch_rendered_content($post_id) {
-        $post = get_post($post_id);
-
-        // Don't fetch password-protected pages
-        if (!empty($post->post_password)) {
-            return false;
-        }
-
-        // Only fetch published pages
-        if ($post->post_status !== 'publish') {
-            return false;
-        }
-
-        $url = get_permalink($post_id);
-
-        if (!$url) {
-            return false;
-        }
-
-        $response = wp_remote_get($url, array(
-            'timeout'     => 15,
-            'user-agent'  => 'AI-Chat-Search-Embeddings/1.0',
-            'redirection' => 3,
-        ));
-
-        if (is_wp_error($response)) {
-            return false;
-        }
-
-        $status_code = wp_remote_retrieve_response_code($response);
-        if ($status_code !== 200) {
-            return false;
-        }
-
-        return wp_remote_retrieve_body($response);
-    }
-
-    /**
-     * Extract main content from rendered HTML
-     *
-     * @param string $html Full page HTML
-     * @return string Extracted text content
-     */
-    private function extract_from_rendered_html($html) {
-        if (empty($html)) {
-            return '';
-        }
-
-        $content = $html;
-
-        // Try to find main content area (avoid headers/footers/sidebars)
-        $selectors = array(
-            '/<div[^>]*id=["\']main-content["\'][^>]*>(.*?)<\/div>\s*(?:<footer|<div[^>]*id=["\']footer)/is',
-            '/<article[^>]*>(.*?)<\/article>/is',
-            '/<div[^>]*class=["\'][^"\']*entry-content[^"\']*["\'][^>]*>(.*?)<\/div>/is',
-            '/<main[^>]*>(.*?)<\/main>/is',
-            '/<body[^>]*>(.*?)<\/body>/is',
-        );
-
-        foreach ($selectors as $pattern) {
-            if (preg_match($pattern, $content, $matches)) {
-                $content = $matches[1];
-                break;
-            }
-        }
-
-        return $this->clean_page_content($content);
-    }
-
-    /**
      * Clean page content by removing scripts, styles, and page builder artifacts
      *
      * Pages often contain inline CSS/JS from page builders (Elementor, WPBakery, etc.)
@@ -192,6 +102,8 @@ class AI_Chat_Search_Pro_Content_Extractor_Page {
         $content = preg_replace('/\[\/vc_[^\]]*\]/', '', $content);
         $content = preg_replace('/\[et_pb_[^\]]*\]/', '', $content);
         $content = preg_replace('/\[\/et_pb_[^\]]*\]/', '', $content);
+        $content = preg_replace('/\[gdlr_core_[^\]]*\]/', '', $content);
+        $content = preg_replace('/\[\/gdlr_core_[^\]]*\]/', '', $content);
 
         // Use Factory method to preserve links and strip remaining tags
         if (class_exists('Listeo_AI_Content_Extractor_Factory')) {
@@ -225,11 +137,11 @@ class AI_Chat_Search_Pro_Content_Extractor_Page {
         // Content extraction
         $content = '';
 
-        if ($this->page_uses_divi($post_id)) {
-            // DIVI stores content as shortcodes - fetch rendered HTML instead
-            $rendered_html = $this->fetch_rendered_content($post_id);
+        if (Listeo_AI_Content_Extractor_Factory::content_needs_rendering($post_id)) {
+            // Page builder detected - fetch rendered HTML instead of parsing shortcodes
+            $rendered_html = Listeo_AI_Content_Extractor_Factory::fetch_rendered_content($post_id);
             if ($rendered_html) {
-                $content = $this->extract_from_rendered_html($rendered_html);
+                $content = Listeo_AI_Content_Extractor_Factory::extract_from_rendered_html($rendered_html);
             }
             // Fallback to post_content if fetch failed
             if (empty($content) && !empty($post->post_content)) {
@@ -429,6 +341,21 @@ class AI_Chat_Search_Pro_Content_Extractor_Product {
             }
         }
 
+        /**
+         * Extra pricing info from third-party plugins (e.g. quantity tiers, bulk discounts).
+         *
+         * Hooked text is appended after the PRICE line in embedding training content.
+         * Keep it concise — the total content is capped at 8k chars.
+         *
+         * @param string      $extra_pricing  Default empty string.
+         * @param WC_Product  $product        WooCommerce product object.
+         * @param int         $product_id     Product post ID.
+         */
+        $extra_pricing = apply_filters('listeo_ai_product_extra_pricing', '', $product, $post_id);
+        if (!empty($extra_pricing)) {
+            $structured_content .= "QUANTITY_PRICING: " . wp_strip_all_tags(trim($extra_pricing)) . ". ";
+        }
+
         // Categories
         $categories = wp_get_post_terms($post_id, 'product_cat', array('fields' => 'names'));
         if (!is_wp_error($categories) && !empty($categories)) {
@@ -460,6 +387,36 @@ class AI_Chat_Search_Pro_Content_Extractor_Product {
             }
             if (!empty($attr_strings)) {
                 $structured_content .= "ATTRIBUTES: " . implode('; ', $attr_strings) . ". ";
+            }
+        }
+
+        // Variation SKUs and prices (for variable products - critical for SKU-based searches)
+        if ($product->is_type('variable')) {
+            $available_variations = $product->get_available_variations();
+            if (!empty($available_variations)) {
+                $var_parts = array();
+                // Cap at 30 variations to avoid dominating the 8k embedding budget
+                foreach (array_slice($available_variations, 0, 30) as $variation_data) {
+                    $variation = wc_get_product($variation_data['variation_id']);
+                    if (!$variation) {
+                        continue;
+                    }
+                    $var_sku = $variation->get_sku();
+                    if ($var_sku) {
+                        $var_price = $variation->get_price();
+                        $var_attrs = array();
+                        foreach ($variation->get_attributes() as $attr_name => $attr_value) {
+                            if (!empty($attr_value)) {
+                                $var_attrs[] = wc_attribute_label($attr_name) . ': ' . $attr_value;
+                            }
+                        }
+                        $var_desc = !empty($var_attrs) ? implode(', ', $var_attrs) : '';
+                        $var_parts[] = "SKU {$var_sku}" . ($var_desc ? " ({$var_desc})" : '') . " - {$var_price}";
+                    }
+                }
+                if (!empty($var_parts)) {
+                    $structured_content .= "VARIATION_SKUS: " . implode('; ', $var_parts) . ". ";
+                }
             }
         }
 
@@ -496,6 +453,8 @@ class AI_Chat_Search_Pro_Content_Extractor_Product {
                 '_ywbc_barcode_display_value', '_wepos_barcode',
                 'ean', 'gtin', 'barcode', 'upc', '_upc',
                 'isbn', '_isbn', 'mpn', '_mpn',
+                // WPC Price by Quantity (serialized data, handled via listeo_ai_product_extra_pricing filter)
+                'wpcpq_enable', 'wpcpq_prices',
             );
             $custom_fields_content = Listeo_AI_Content_Extractor_Factory::extract_custom_fields($post_id, $already_extracted);
             if (!empty($custom_fields_content)) {

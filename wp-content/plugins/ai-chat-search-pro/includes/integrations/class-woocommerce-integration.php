@@ -14,12 +14,28 @@ if (!defined('ABSPATH')) exit;
 class Listeo_AI_WooCommerce_Integration {
 
     /**
+     * Whether third-party pricing filters have already been registered.
+     * Prevents duplicate callbacks when the class is instantiated more than once.
+     *
+     * @var bool
+     */
+    private static $pricing_filters_registered = false;
+
+    /**
      * Constructor - Registers REST API routes
      */
     public function __construct() {
         // Only register routes if WooCommerce is available
         if (class_exists('WooCommerce')) {
             add_action('rest_api_init', array($this, 'register_woocommerce_routes'));
+        }
+
+        // WPC Price by Quantity — append quantity tiers to AI pricing context.
+        // Guarded: this class is new'd in several places; register the filters only once.
+        if (!self::$pricing_filters_registered) {
+            add_filter('listeo_ai_product_extra_pricing', array($this, 'wpcpq_extra_pricing_text'), 10, 3);
+            add_filter('listeo_ai_product_extra_pricing_data', array($this, 'wpcpq_extra_pricing_data'), 10, 3);
+            self::$pricing_filters_registered = true;
         }
     }
 
@@ -385,6 +401,21 @@ class Listeo_AI_WooCommerce_Integration {
         } else {
             $content .= "- Price: {$currency_symbol}" . number_format($display_price, 2) . "\n";
         }
+        /**
+         * Extra pricing info from third-party plugins (e.g. quantity tiers, bulk discounts).
+         *
+         * Hooked text is appended to the PRICING section of structured content
+         * sent to the LLM via the get_product_details tool.
+         * Return a string with newline-separated lines, each prefixed with "- ".
+         *
+         * @param string      $extra_pricing  Default empty string.
+         * @param WC_Product  $product        WooCommerce product object.
+         * @param int         $product_id     Product post ID.
+         */
+        $extra_pricing = apply_filters('listeo_ai_product_extra_pricing', '', $product, $product_id);
+        if (!empty($extra_pricing)) {
+            $content .= wp_strip_all_tags(trim($extra_pricing)) . "\n";
+        }
         $content .= "\n";
 
         // === STOCK STATUS ===
@@ -463,8 +494,13 @@ class Listeo_AI_WooCommerce_Integration {
                             $clean_name = wc_attribute_label($clean_name);
                             $var_desc[] = "{$clean_name}: {$attr_value}";
                         }
+                        $var_sku = $variation->get_sku();
                         $var_price = wc_get_price_to_display($variation);
-                        $content .= "- " . implode(', ', $var_desc) . " - {$currency_symbol}" . number_format($var_price, 2);
+                        $content .= "- " . implode(', ', $var_desc);
+                        if ($var_sku) {
+                            $content .= " (SKU: {$var_sku})";
+                        }
+                        $content .= " - {$currency_symbol}" . number_format($var_price, 2);
                         if ($variation->is_in_stock()) {
                             $content .= " (In Stock)";
                         } else {
@@ -555,9 +591,61 @@ class Listeo_AI_WooCommerce_Integration {
             'raw_regular' => $display_regular
         );
 
+        /**
+         * Extra pricing data from third-party plugins (e.g. quantity tiers, bulk discounts).
+         *
+         * Hooked into the structured array returned by the product search tool.
+         * Return an associative array (e.g. quantity tiers) or empty array to skip.
+         *
+         * @param array       $extra_pricing  Default empty array.
+         * @param WC_Product  $product        WooCommerce product object.
+         * @param int         $product_id     Product post ID.
+         */
+        $extra_pricing_data = apply_filters('listeo_ai_product_extra_pricing_data', array(), $product, $product_id);
+        if (!empty($extra_pricing_data)) {
+            $data['extra_pricing'] = $extra_pricing_data;
+        }
+
+        // SKU and product type
+        $data['sku'] = $product->get_sku() ?: null;
+        $data['product_type'] = $product->get_type();
+
         // Stock status
         $data['stock_status'] = $product->get_stock_status();
         $data['on_sale'] = $product->is_on_sale();
+
+        // Variation data for variable products (so LLM can match SKU to correct price)
+        if ($product->is_type('variable')) {
+            $available_variations = $product->get_available_variations();
+            if (!empty($available_variations)) {
+                $variations_data = array();
+                foreach (array_slice($available_variations, 0, 30) as $variation_data) {
+                    $variation = wc_get_product($variation_data['variation_id']);
+                    if (!$variation) {
+                        continue;
+                    }
+                    $var_sku = $variation->get_sku();
+                    if (!$var_sku) {
+                        continue;
+                    }
+                    $var_display_price = wc_get_price_to_display($variation);
+                    $var_attrs = array();
+                    foreach ($variation_data['attributes'] as $attr_name => $attr_value) {
+                        $clean_name = str_replace('attribute_', '', $attr_name);
+                        $var_attrs[wc_attribute_label($clean_name)] = $attr_value;
+                    }
+                    $variations_data[] = array(
+                        'sku' => $var_sku,
+                        'price' => $currency_symbol . number_format($var_display_price, 2),
+                        'attributes' => $var_attrs,
+                        'in_stock' => $variation->is_in_stock(),
+                    );
+                }
+                if (!empty($variations_data)) {
+                    $data['variations'] = $variations_data;
+                }
+            }
+        }
 
         // Rating
         $average_rating = $product->get_average_rating();
@@ -608,11 +696,9 @@ class Listeo_AI_WooCommerce_Integration {
             }
         }
 
-        // Stock status filter
-        if ($in_stock === true) {
-            if (!isset($product['stock_status']) || $product['stock_status'] !== 'instock') {
-                return false;
-            }
+        // Stock status filter - always exclude out-of-stock products
+        if (!isset($product['stock_status']) || $product['stock_status'] !== 'instock') {
+            return false;
         }
 
         // On sale filter
@@ -827,11 +913,16 @@ class Listeo_AI_WooCommerce_Integration {
         $status_label = isset($status_labels[$status]) ? $status_labels[$status] : strtoupper($status);
         $content .= __('STATUS', 'ai-chat-search') . ": " . $status_label . "\n";
 
-        $content .= __('ORDER DATE', 'ai-chat-search') . ": " . $order->get_date_created()->date_i18n('F j, Y') . "\n";
+        $content .= __('ORDER DATE', 'ai-chat-search') . ": " . $order->get_date_created()->date_i18n('F j, Y g:i A') . "\n";
 
         // Payment status (generic - no method details)
         if ($order->is_paid()) {
-            $content .= __('PAYMENT STATUS', 'ai-chat-search') . ": " . __('PAID', 'ai-chat-search') . "\n";
+            $content .= __('PAYMENT STATUS', 'ai-chat-search') . ": " . __('PAID', 'ai-chat-search');
+            $date_paid = $order->get_date_paid();
+            if ($date_paid) {
+                $content .= " (" . __('paid on', 'ai-chat-search') . " " . $date_paid->date_i18n('F j, Y g:i A') . ")";
+            }
+            $content .= "\n";
         } else {
             $content .= __('PAYMENT STATUS', 'ai-chat-search') . ": " . __('NOT PAID', 'ai-chat-search') . "\n";
         }
@@ -944,6 +1035,23 @@ class Listeo_AI_WooCommerce_Integration {
             }
         }
 
+        // WooCommerce Germanized / Shiptastic integration
+        // Shipments are stored in a custom table, not as order meta — query them via the API
+        if (empty($tracking_number) && empty($tracking_url) && function_exists('wc_stc_get_shipments_by_order')) {
+            $shipments = wc_stc_get_shipments_by_order($order);
+            foreach ($shipments as $shipment) {
+                if ($shipment->get_tracking_id()) {
+                    $tracking_number = sanitize_text_field($shipment->get_tracking_id());
+                    $tracking_url    = esc_url_raw($shipment->get_tracking_url());
+                    $provider        = $shipment->get_shipping_provider();
+                    if ($provider && is_callable(array($provider, 'get_title'))) {
+                        $tracking_provider = sanitize_text_field($provider->get_title());
+                    }
+                    break; // Use the first shipment with tracking
+                }
+            }
+        }
+
         /**
          * Filter tracking meta keys to support additional plugins.
          *
@@ -992,7 +1100,7 @@ class Listeo_AI_WooCommerce_Integration {
         if ($status === 'completed') {
             $content .= "✅ " . __('Order completed and delivered.', 'ai-chat-search') . "\n";
             if ($order->get_date_completed()) {
-                $content .= __('Completed on', 'ai-chat-search') . ": " . $order->get_date_completed()->date_i18n('F j, Y') . "\n";
+                $content .= __('Completed on', 'ai-chat-search') . ": " . $order->get_date_completed()->date_i18n('F j, Y g:i A') . "\n";
             }
         } elseif ($status === 'processing') {
             $content .= "🔄 " . __('Order is being processed and will be shipped soon.', 'ai-chat-search') . "\n";
@@ -1009,5 +1117,149 @@ class Listeo_AI_WooCommerce_Integration {
         }
 
         return $content;
+    }
+
+    // =========================================================================
+    // WPC Price by Quantity integration
+    //
+    // Feeds quantity-based pricing tiers into the AI so the chatbot can answer
+    // "how much for 50 units?" accurately. Only runs when WPC Price by Quantity
+    // for WooCommerce (by WPClever) is active — otherwise returns early.
+    //
+    // Plugin: https://wordpress.org/plugins/wpc-price-by-quantity/
+    // Helper class: Wpcpq_Helper (provided by WPC plugin)
+    // =========================================================================
+
+    /**
+     * Append human-readable quantity tiers to the PRICING section sent to the LLM.
+     *
+     * Hooked into: listeo_ai_product_extra_pricing
+     * Used by: embeddings content extractor, get_product_details tool, base chat API.
+     *
+     * @param string     $extra      Existing extra pricing text.
+     * @param WC_Product $product    WooCommerce product object.
+     * @param int        $product_id Product post ID.
+     * @return string
+     */
+    public function wpcpq_extra_pricing_text($extra, $product, $product_id) {
+        if (!class_exists('Wpcpq_Helper')) {
+            return $extra;
+        }
+
+        $pricing = Wpcpq_Helper::get_pricing($product_id);
+        if (empty($pricing) || empty($pricing['tiers'])) {
+            return $extra;
+        }
+
+        $tiers      = Wpcpq_Helper::sort_tiers($pricing['tiers']);
+        $method     = !empty($pricing['method']) ? $pricing['method'] : 'volume';
+        $base_price = (float) $product->get_price();
+
+        if ($base_price <= 0 || empty($tiers)) {
+            return $extra;
+        }
+
+        $currency = get_woocommerce_currency_symbol();
+        $lines    = array();
+
+        foreach ($tiers as $i => $tier) {
+            if (empty($tier['quantity']) || !isset($tier['price'])) {
+                continue;
+            }
+
+            $qty        = (int) $tier['quantity'];
+            $tier_price = Wpcpq_Helper::calculate_price($tier['price'], $base_price);
+
+            if ($tier_price <= 0) {
+                continue;
+            }
+
+            // Quantity range label: "1-4", "5-9", "10+"
+            if (isset($tiers[$i + 1])) {
+                $next_qty = (int) $tiers[$i + 1]['quantity'] - 1;
+                $range    = ($qty === $next_qty) ? "{$qty}" : "{$qty}-{$next_qty}";
+            } else {
+                $range = "{$qty}+";
+            }
+
+            $formatted = $currency . number_format($tier_price, 2);
+
+            $discount = Wpcpq_Helper::get_discount($base_price, $tier_price, 'percentage');
+            if ($discount > 0) {
+                $formatted .= " (" . round($discount) . "% off)";
+            }
+
+            $lines[] = "- {$range} units: {$formatted}/each";
+        }
+
+        $method_label = ($method === 'tiered')
+            ? 'tiered (each range priced separately)'
+            : 'volume (single price for entire order)';
+
+        $extra .= "QUANTITY-BASED PRICING ({$method_label}):\n";
+        $extra .= implode("\n", $lines) . "\n";
+
+        return $extra;
+    }
+
+    /**
+     * Append structured quantity-tier array to the product search API response.
+     *
+     * Hooked into: listeo_ai_product_extra_pricing_data
+     * Used by: format_product_data() in WooCommerce product search results.
+     *
+     * @param array      $data       Existing extra data.
+     * @param WC_Product $product    WooCommerce product object.
+     * @param int        $product_id Product post ID.
+     * @return array
+     */
+    public function wpcpq_extra_pricing_data($data, $product, $product_id) {
+        if (!class_exists('Wpcpq_Helper')) {
+            return $data;
+        }
+
+        $pricing = Wpcpq_Helper::get_pricing($product_id);
+        if (empty($pricing) || empty($pricing['tiers'])) {
+            return $data;
+        }
+
+        $tiers      = Wpcpq_Helper::sort_tiers($pricing['tiers']);
+        $method     = !empty($pricing['method']) ? $pricing['method'] : 'volume';
+        $base_price = (float) $product->get_price();
+
+        if ($base_price <= 0 || empty($tiers)) {
+            return $data;
+        }
+
+        $structured_tiers = array();
+
+        foreach ($tiers as $i => $tier) {
+            if (empty($tier['quantity']) || !isset($tier['price'])) {
+                continue;
+            }
+
+            $qty        = (int) $tier['quantity'];
+            $tier_price = Wpcpq_Helper::calculate_price($tier['price'], $base_price);
+
+            if ($tier_price <= 0) {
+                continue;
+            }
+
+            $max_qty = isset($tiers[$i + 1]) ? (int) $tiers[$i + 1]['quantity'] - 1 : null;
+
+            $structured_tiers[] = array(
+                'min_qty'          => $qty,
+                'max_qty'          => $max_qty,
+                'price'            => round($tier_price, 2),
+                'discount_percent' => round(Wpcpq_Helper::get_discount($base_price, $tier_price, 'percentage')),
+            );
+        }
+
+        $data['quantity_pricing'] = array(
+            'method' => $method,
+            'tiers'  => $structured_tiers,
+        );
+
+        return $data;
     }
 }

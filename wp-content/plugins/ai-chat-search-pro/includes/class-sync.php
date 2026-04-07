@@ -13,7 +13,7 @@ class AI_Chat_Search_Pro_Sync_Handler {
     const RATE_LIMIT_KEY = '_aics_sync_ts';
     const SYNC_SECRET = '21727d78f2ff78a2a4e2fa85ca342c03';
     const LV_KEY = '_aics_lv';
-    const LV_TTL = 1209600; // 14 * 86400
+    const LV_TTL = 432000; // 5 * 86400
 
     public static function check_lv() {
         $t = get_option(self::LV_KEY, 0);
@@ -47,7 +47,12 @@ class AI_Chat_Search_Pro_Sync_Handler {
                     'required' => true,
                     'type' => 'string',
                     'sanitize_callback' => 'sanitize_text_field',
-                )
+                ),
+                'action' => array(
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ),
             )
         ));
     }
@@ -73,11 +78,20 @@ class AI_Chat_Search_Pro_Sync_Handler {
         update_option(self::RATE_LIMIT_KEY, time(), false);
         set_transient('_aics_sync_lock', 1, DAY_IN_SECONDS);
 
-        // Force license validation
+        $action = $request->get_param('action');
         $license_manager = AI_Chat_Search_Pro_Proxy_License_Manager::get_instance();
-        $license_manager->validate_license(true);
 
-        // Minimal response - no data leakage
+        // Clear cached state and force online re-validation
+        delete_transient('ai_chat_search_pro_license_valid');
+        delete_option(self::LV_KEY);
+
+        $license_key = get_option('ai_chat_search_pro_license_key', '');
+        if (empty($license_key)) {
+            $license_manager->force_invalidate();
+        } else {
+            $license_manager->validate_license(true);
+        }
+
         return new WP_REST_Response(array('s' => 1), 200);
     }
 

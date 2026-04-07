@@ -208,3 +208,4 @@ msgstr ""
 #: includes/messaging/class-telegram-admin.php:282
 msgid "Invalid bot token. Check the token from @BotFather."
 msgstr ""
+

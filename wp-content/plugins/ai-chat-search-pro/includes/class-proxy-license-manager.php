@@ -157,6 +157,12 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             // Clear validation cache and set cache
             delete_transient(self::TRANSIENT_LICENSE_VALID);
             set_transient(self::TRANSIENT_LICENSE_VALID, 1, self::CACHE_DURATION);
+            delete_option('_ais_cs');
+            delete_transient('_ais_cst');
+
+            if (class_exists('AI_Chat_Search_Pro_Sync_Handler')) {
+                AI_Chat_Search_Pro_Sync_Handler::mark_lv();
+            }
 
             return array(
                 'success' => true,
@@ -292,7 +298,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         // Cache result
         set_transient(self::TRANSIENT_LICENSE_VALID, $is_valid ? 1 : 0, self::CACHE_DURATION);
 
-        if (class_exists('AI_Chat_Search_Pro_Sync_Handler')) {
+        if ($is_valid && class_exists('AI_Chat_Search_Pro_Sync_Handler')) {
             AI_Chat_Search_Pro_Sync_Handler::mark_lv();
         }
         return $is_valid;
@@ -303,6 +309,10 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
      * @return bool True if valid - required for Pro features (no bypass)
      */
     public function is_license_valid() {
+        if (class_exists('AI_Chat_Search_Pro_Sync_Handler') && !AI_Chat_Search_Pro_Sync_Handler::check_lv()) {
+            delete_transient(self::TRANSIENT_LICENSE_VALID);
+            return false;
+        }
         return $this->validate_license(false);
     }
 
@@ -412,7 +422,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
                 'X-Timestamp' => $timestamp
             ),
             'body' => $payload,
-            'timeout' => 30,
+            'timeout' => 10,
             'sslverify' => true
         ));
 
@@ -576,6 +586,14 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         }
 
         return get_option(self::OPTION_LICENSE_STATUS, 'invalid');
+    }
+
+    /**
+     * Force invalidate license locally
+     */
+    public function force_invalidate() {
+        update_option(self::OPTION_LICENSE_STATUS, 'invalid');
+        delete_transient(self::TRANSIENT_LICENSE_VALID);
     }
 
     /**

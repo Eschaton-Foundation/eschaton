@@ -202,7 +202,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                             <span class="detail-value"><?php echo esc_html(
                                 human_time_diff(
                                     $last_check,
-                                    current_time("timestamp"),
+                                    time(),
                                 ),
                             ); ?> <?php _e(
      "ago",

@@ -3,7 +3,7 @@
  * Plugin Name: AI Chat & Search Pro
  * Plugin URI: https://purethemes.net/ai-chat-search-pro/
  * Description: Premium features for AI Chat & Search plugin - Unlimited post types, full conversation logs, and priority support
- * Version: 1.8.8
+ * Version: 1.9.7
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * Requires Plugins: ai-chat-search
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Pro constants early
-define('AI_CHAT_SEARCH_PRO_VERSION', '1.8.8');
+define('AI_CHAT_SEARCH_PRO_VERSION', '1.9.7');
 define('AI_CHAT_SEARCH_PRO_FILE', __FILE__);
 define('AI_CHAT_SEARCH_PRO_DIR', plugin_dir_path(__FILE__));
 define('AI_CHAT_SEARCH_PRO_URL', plugin_dir_url(__FILE__));
@@ -182,6 +182,10 @@ class AI_Chat_Search_Pro {
         require_once AI_CHAT_SEARCH_PRO_DIR . 'includes/class-blocked-ips.php';
         new AI_Chat_Search_Pro_Blocked_IPs();
 
+        // Pre-Chat Required Fields (Pro feature)
+        require_once AI_CHAT_SEARCH_PRO_DIR . 'includes/class-pre-chat-fields.php';
+        new AI_Chat_Search_Pro_Pre_Chat_Fields();
+
         // Contact Tool for AI (Pro feature - code moved from free plugin)
         require_once AI_CHAT_SEARCH_PRO_DIR . 'includes/class-contact-tool.php';
         new AI_Chat_Search_Pro_Contact_Tool();
@@ -215,6 +219,11 @@ class AI_Chat_Search_Pro {
 
         // WooCommerce Integration (Pro feature - moved from free plugin)
         add_action('listeo_ai_woocommerce_integration', array($this, 'init_woocommerce_integration'));
+
+        // Cart popup overlay (Pro feature — shared template for shortcode & floating widget)
+        add_action('listeo_ai_chat_cart_popup', function () {
+            include AI_CHAT_SEARCH_PRO_DIR . 'includes/cart-popup-template.php';
+        });
 
         // Messaging Channels (WhatsApp, Telegram)
         require_once AI_CHAT_SEARCH_PRO_DIR . 'includes/messaging/class-messaging-migrations.php';

@@ -565,8 +565,8 @@ class AI_Chat_Search_Pro_Speech_To_Text {
         ?>
         <div
             class="listeo-ai-chat-mic-btn"
-            data-chat-tooltip="<?php esc_attr_e('Voice Input', 'ai-chat-search-pro'); ?>"
-            aria-label="<?php esc_attr_e('Record voice message', 'ai-chat-search-pro'); ?>"
+            data-chat-tooltip="<?php esc_attr_e('Voice Input', 'ai-chat-search'); ?>"
+            aria-label="<?php esc_attr_e('Record voice message', 'ai-chat-search'); ?>"
             role="button"
             tabindex="0"
         >
