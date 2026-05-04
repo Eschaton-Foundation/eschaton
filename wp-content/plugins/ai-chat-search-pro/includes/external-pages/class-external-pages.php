@@ -122,16 +122,16 @@ class AI_Chat_Search_Pro_External_Pages {
             'nonce' => wp_create_nonce('wp_rest'),
             'maxUrlsPerBatch' => self::MAX_URLS_PER_BATCH,
             'strings' => array(
-                'loading' => __('Loading...', 'ai-chat-search-pro'),
-                'validating' => __('Validating URLs...', 'ai-chat-search-pro'),
-                'processing' => __('Processing URL %d of %d...', 'ai-chat-search-pro'),
-                'confirmDelete' => __('Delete this external page?', 'ai-chat-search-pro'),
-                'noValidUrls' => __('No valid URLs to process.', 'ai-chat-search-pro'),
-                'success' => __('%d page(s) added successfully.', 'ai-chat-search-pro'),
-                'skipped' => __('%d skipped:', 'ai-chat-search-pro'),
-                'failed' => __('%d failed:', 'ai-chat-search-pro'),
-                'emptyState' => __('No external pages added yet. Click "Add Pages" to get started.', 'ai-chat-search-pro'),
-                'error' => __('An error occurred', 'ai-chat-search-pro'),
+                'loading' => __('Loading...', 'ai-chat-search'),
+                'validating' => __('Validating URLs...', 'ai-chat-search'),
+                'processing' => __('Processing URL %d of %d...', 'ai-chat-search'),
+                'confirmDelete' => __('Delete this external page?', 'ai-chat-search'),
+                'noValidUrls' => __('No valid URLs to process.', 'ai-chat-search'),
+                'success' => __('%d page(s) added successfully.', 'ai-chat-search'),
+                'skipped' => __('%d skipped:', 'ai-chat-search'),
+                'failed' => __('%d failed:', 'ai-chat-search'),
+                'emptyState' => __('No external pages added yet. Click "Add Pages" to get started.', 'ai-chat-search'),
+                'error' => __('An error occurred', 'ai-chat-search'),
             ),
         ));
     }
@@ -240,7 +240,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if (empty($urls)) {
             return new WP_Error(
                 'no_urls',
-                __('Please provide at least one URL', 'ai-chat-search-pro'),
+                __('Please provide at least one URL', 'ai-chat-search'),
                 array('status' => 400)
             );
         }
@@ -267,7 +267,7 @@ class AI_Chat_Search_Pro_External_Pages {
             if (!$this->is_safe_url($url)) {
                 $invalid[] = array(
                     'url' => $url,
-                    'error' => __('URL not allowed (internal/private)', 'ai-chat-search-pro')
+                    'error' => __('URL not allowed (internal/private)', 'ai-chat-search')
                 );
                 continue;
             }
@@ -284,7 +284,7 @@ class AI_Chat_Search_Pro_External_Pages {
             if (!empty($existing)) {
                 $invalid[] = array(
                     'url' => $url,
-                    'error' => __('Already exists', 'ai-chat-search-pro')
+                    'error' => __('Already exists', 'ai-chat-search')
                 );
                 continue;
             }
@@ -312,7 +312,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if (empty($url)) {
             return new WP_Error(
                 'no_url',
-                __('URL required', 'ai-chat-search-pro'),
+                __('URL required', 'ai-chat-search'),
                 array('status' => 400)
             );
         }
@@ -321,7 +321,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if (!$this->is_safe_url($url)) {
             return new WP_Error(
                 'unsafe_url',
-                __('URL not allowed', 'ai-chat-search-pro'),
+                __('URL not allowed', 'ai-chat-search'),
                 array('status' => 400)
             );
         }
@@ -356,7 +356,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if (!$post_id || is_wp_error($post_id)) {
             return new WP_Error(
                 'insert_failed',
-                __('Failed to create post', 'ai-chat-search-pro'),
+                __('Failed to create post', 'ai-chat-search'),
                 array('status' => 500)
             );
         }
@@ -392,7 +392,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if ($post_id <= 0) {
             return new WP_Error(
                 'invalid_id',
-                __('Invalid page ID', 'ai-chat-search-pro'),
+                __('Invalid page ID', 'ai-chat-search'),
                 array('status' => 400)
             );
         }
@@ -401,7 +401,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if (!$post || $post->post_type !== 'ai_external_page') {
             return new WP_Error(
                 'not_found',
-                __('Page not found', 'ai-chat-search-pro'),
+                __('Page not found', 'ai-chat-search'),
                 array('status' => 404)
             );
         }
@@ -439,7 +439,7 @@ class AI_Chat_Search_Pro_External_Pages {
         if ($status !== 200) {
             return new WP_Error(
                 'http_error',
-                sprintf(__('HTTP %d error', 'ai-chat-search-pro'), $status)
+                sprintf(__('HTTP %d error', 'ai-chat-search'), $status)
             );
         }
 
@@ -554,7 +554,7 @@ class AI_Chat_Search_Pro_External_Pages {
             <div class="listeo-ai-modal-overlay"></div>
             <div class="listeo-ai-modal-content external-pages-modal-content">
                 <div class="listeo-ai-modal-header">
-                    <h2><?php esc_html_e('External Pages Manager', 'ai-chat-search-pro'); ?></h2>
+                    <h2><?php esc_html_e('External Pages Manager', 'ai-chat-search'); ?></h2>
                     <button type="button" class="listeo-ai-modal-close">
                         <span class="dashicons dashicons-no-alt"></span>
                     </button>
@@ -563,9 +563,9 @@ class AI_Chat_Search_Pro_External_Pages {
                 <div class="listeo-ai-modal-body">
                     <!-- Add URLs Section -->
                     <div class="external-pages-add-section">
-                        <h3><?php esc_html_e('Add External Pages', 'ai-chat-search-pro'); ?></h3>
+                        <h3><?php esc_html_e('Add External Pages', 'ai-chat-search'); ?></h3>
                         <p class="description">
-                            <?php esc_html_e('Add external web pages to make their content searchable by AI. Pages will be automatically fetched and embedded.', 'ai-chat-search-pro'); ?>
+                            <?php esc_html_e('Add external web pages to make their content searchable by AI. Pages will be automatically fetched and embedded.', 'ai-chat-search'); ?>
                         </p>
 
                         <form id="airs-add-pages-form">
@@ -575,13 +575,13 @@ class AI_Chat_Search_Pro_External_Pages {
                             <div class="external-pages-form-row">
                                 <button type="submit" class="button button-primary" id="airs-add-pages-btn">
                                     <span class="dashicons dashicons-plus"></span>
-                                    <?php esc_html_e('Add Pages', 'ai-chat-search-pro'); ?>
+                                    <?php esc_html_e('Add Pages', 'ai-chat-search'); ?>
                                 </button>
                             </div>
                             <p class="description">
                                 <?php printf(
                                     /* translators: %d is the maximum number of URLs allowed per batch */
-                                    esc_html__('One URL per line. Maximum %d URLs per batch.', 'ai-chat-search-pro'),
+                                    esc_html__('One URL per line. Maximum %d URLs per batch.', 'ai-chat-search'),
                                     self::MAX_URLS_PER_BATCH
                                 ); ?>
                             </p>
@@ -594,17 +594,17 @@ class AI_Chat_Search_Pro_External_Pages {
 
                     <!-- Existing Pages Section -->
                     <div class="external-pages-list-section">
-                        <h3 style="margin-bottom: 7px;"><?php esc_html_e('Added Pages', 'ai-chat-search-pro'); ?></h3>
-                        <span class="description"><?php esc_html_e('Pages are automatically embedded after adding. No need to click "Start Training".', 'ai-chat-search-pro'); ?></span>
+                        <h3 style="margin-bottom: 7px;"><?php esc_html_e('Added Pages', 'ai-chat-search'); ?></h3>
+                        <span class="description"><?php esc_html_e('Pages are automatically embedded after adding. No need to click "Start Training".', 'ai-chat-search'); ?></span>
 
                         <div id="external-pages-list">
-                            <p class="loading-message"><?php esc_html_e('Loading...', 'ai-chat-search-pro'); ?></p>
+                            <p class="loading-message"><?php esc_html_e('Loading...', 'ai-chat-search'); ?></p>
                         </div>
                     </div>
                 </div>
 
                 <div class="listeo-ai-modal-footer">
-                    <button type="button" class="button" id="external-pages-modal-close"><?php esc_html_e('Close', 'ai-chat-search-pro'); ?></button>
+                    <button type="button" class="button" id="external-pages-modal-close"><?php esc_html_e('Close', 'ai-chat-search'); ?></button>
                 </div>
             </div>
         </div>

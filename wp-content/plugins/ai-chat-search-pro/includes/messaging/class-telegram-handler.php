@@ -110,16 +110,16 @@ class AI_Chat_Search_Pro_Telegram_Handler extends AI_Chat_Search_Pro_Messaging_C
      */
     public function verify_telegram_request($request) {
         if (empty($this->secret_token)) {
-            return new WP_Error('not_configured', __('Telegram integration is not configured.', 'ai-chat-search-pro'), array('status' => 503));
+            return new WP_Error('not_configured', __('Telegram integration is not configured.', 'ai-chat-search'), array('status' => 503));
         }
 
         $header_token = $request->get_header('X-Telegram-Bot-Api-Secret-Token');
         if (empty($header_token)) {
-            return new WP_Error('missing_token', __('Missing Telegram secret token.', 'ai-chat-search-pro'), array('status' => 401));
+            return new WP_Error('missing_token', __('Missing Telegram secret token.', 'ai-chat-search'), array('status' => 401));
         }
 
         if (!hash_equals($this->secret_token, $header_token)) {
-            return new WP_Error('invalid_token', __('Invalid Telegram secret token.', 'ai-chat-search-pro'), array('status' => 401));
+            return new WP_Error('invalid_token', __('Invalid Telegram secret token.', 'ai-chat-search'), array('status' => 401));
         }
 
         return true;
@@ -241,7 +241,7 @@ class AI_Chat_Search_Pro_Telegram_Handler extends AI_Chat_Search_Pro_Messaging_C
      * Handle multi-step inquiry flow
      */
     private function handle_inquiry_state($extracted, $conversation_id, $state) {
-        $response = __('Thank you for your inquiry. The listing owner has been notified.', 'ai-chat-search-pro');
+        $response = __('Thank you for your inquiry. The listing owner has been notified.', 'ai-chat-search');
         $this->send_response($extracted['sender'], $response);
         $this->clear_user_state($extracted['identifier']);
         $this->current_context = null;

@@ -125,15 +125,15 @@ class AI_Chat_Search_Pro_Webhook_Admin {
             'save_nonce'   => wp_create_nonce('webhook_settings'),
             'test_action'  => 'listeo_ai_test_webhook',
             'test_nonce'   => wp_create_nonce('listeo_ai_webhook_settings'),
-            'requestFailed'           => __('Request failed. Please try again.', 'ai-chat-search-pro'),
-            'actionName'              => __('Action Name', 'ai-chat-search-pro'),
-            'webhookLabelPlaceholder' => __('e.g., Cancel Order', 'ai-chat-search-pro'),
-            'aiInstructions'          => __('AI Instructions', 'ai-chat-search-pro'),
-            'webhookDescPlaceholder'  => __('e.g., User wants to cancel their order. Collect their name, email, and order number.', 'ai-chat-search-pro'),
-            'dataFields'              => __('Data Fields', 'ai-chat-search-pro'),
-            'webhookFieldsPlaceholder' => __('e.g., name, email, order_number, reason', 'ai-chat-search-pro'),
-            'webhookFieldsHelp'       => __('Comma-separated field names. AI will collect these from the user. Use snake_case (e.g., phone_number).', 'ai-chat-search-pro'),
-            'remove'                  => __('Remove', 'ai-chat-search-pro'),
+            'requestFailed'           => __('Request failed. Please try again.', 'ai-chat-search'),
+            'actionName'              => __('Action Name', 'ai-chat-search'),
+            'webhookLabelPlaceholder' => __('e.g., Cancel Order', 'ai-chat-search'),
+            'aiInstructions'          => __('AI Instructions', 'ai-chat-search'),
+            'webhookDescPlaceholder'  => __('e.g., User wants to cancel their order. Collect their name, email, and order number.', 'ai-chat-search'),
+            'dataFields'              => __('Data Fields', 'ai-chat-search'),
+            'webhookFieldsPlaceholder' => __('e.g., name, email, order_number, reason', 'ai-chat-search'),
+            'webhookFieldsHelp'       => __('Comma-separated field names. AI will collect these from the user. Use snake_case (e.g., phone_number).', 'ai-chat-search'),
+            'remove'                  => __('Remove', 'ai-chat-search'),
         ));
     }
 
@@ -156,12 +156,12 @@ class AI_Chat_Search_Pro_Webhook_Admin {
                     <?php if (!$is_pro): ?>
                         <?php echo AI_Chat_Search_Pro_Manager::get_lock_icon(); ?>
                     <?php endif; ?>
-                    <?php _e('Webhook Automation (e.g. N8N, Zapier, Make)', 'ai-chat-search-pro'); ?>
+                    <?php _e('Webhook Automation (e.g. N8N, Zapier, Make)', 'ai-chat-search'); ?>
                     <?php if (!$is_pro): ?>
                         <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                     <?php endif; ?>
-                    <small><?php _e('When enabled, AI can send structured data to external systems (N8N, Zapier, Make) when users explicitly request actions.', 'ai-chat-search-pro'); ?>
-                    <br><a href="https://purethemes.net/wordpress-chatbot-n8n-make-zapier-integration/" target="_blank" class="airs-guide-link"><?php _e('Read Guide', 'ai-chat-search-pro'); ?> &rarr;</a></small>
+                    <small><?php _e('When enabled, AI can send structured data to external systems (N8N, Zapier, Make) when users explicitly request actions.', 'ai-chat-search'); ?>
+                    <br><a href="https://purethemes.net/wordpress-chatbot-n8n-make-zapier-integration/" target="_blank" class="airs-guide-link"><?php _e('Read Guide', 'ai-chat-search'); ?> &rarr;</a></small>
                 </span>
             </label>
             <?php if ($is_pro): ?>
@@ -170,14 +170,14 @@ class AI_Chat_Search_Pro_Webhook_Admin {
                     <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <?php _e('Configure', 'ai-chat-search-pro'); ?>
+                <?php _e('Configure', 'ai-chat-search'); ?>
             </button>
             <?php endif; ?>
         </div>
         <?php if (!$is_pro): ?>
             <p class="airs-help-text" style="margin-left: 30px;">
                 <a href="<?php echo esc_url(AI_Chat_Search_Pro_Manager::get_upgrade_url('ai-webhook')); ?>" target="_blank" class="upgrade-link">
-                    <?php _e('Upgrade to Pro to enable webhook automations', 'ai-chat-search-pro'); ?> &rarr;
+                    <?php _e('Upgrade to Pro to enable webhook automations', 'ai-chat-search'); ?> &rarr;
                 </a>
             </p>
         <?php endif; ?>
@@ -197,7 +197,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
             <div class="airs-modal-overlay"></div>
             <div class="airs-modal-content" style="max-width: 650px;">
                 <div class="airs-modal-header" style="flex-direction: row; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0;"><?php esc_html_e('Webhook Settings', 'ai-chat-search-pro'); ?></h3>
+                    <h3 style="margin: 0;"><?php esc_html_e('Webhook Settings', 'ai-chat-search'); ?></h3>
                     <button type="button" class="listeo-ai-modal-close">
                         <span class="dashicons dashicons-no-alt"></span>
                     </button>
@@ -205,39 +205,39 @@ class AI_Chat_Search_Pro_Webhook_Admin {
                 <div class="airs-modal-body">
                     <!-- Webhook URL -->
                     <div class="airs-form-group" style="margin-bottom: 15px;">
-                        <label for="listeo_ai_webhook_url" class="airs-label"><?php esc_html_e('Webhook URL', 'ai-chat-search-pro'); ?></label>
+                        <label for="listeo_ai_webhook_url" class="airs-label"><?php esc_html_e('Webhook URL', 'ai-chat-search'); ?></label>
                         <input type="url" id="listeo_ai_webhook_url" class="airs-input" value="<?php echo esc_attr(get_option('listeo_ai_webhook_url', '')); ?>" placeholder="https://your-n8n-instance.com/webhook/..." />
                         <button type="button" id="webhook-test-btn" class="airs-button airs-button-secondary">
-                            <span class="button-text"><?php esc_html_e('Send Test', 'ai-chat-search-pro'); ?></span>
+                            <span class="button-text"><?php esc_html_e('Send Test', 'ai-chat-search'); ?></span>
                             <span class="button-spinner" style="display: none;"><span class="airs-spinner"></span></span>
                         </button>
                         <div id="webhook-test-result" class="airs-api-test-result" style="display: none; margin-top: 8px;"></div>
-                        <p class="airs-help-text"><?php _e('The endpoint URL where webhook data will be sent (e.g., N8N, Zapier, Make webhook URL).', 'ai-chat-search-pro'); ?> <strong><?php esc_html_e('HTTP method must be set to POST.', 'ai-chat-search-pro'); ?></strong></p>
+                        <p class="airs-help-text"><?php _e('The endpoint URL where webhook data will be sent (e.g., N8N, Zapier, Make webhook URL).', 'ai-chat-search'); ?> <strong><?php esc_html_e('HTTP method must be set to POST.', 'ai-chat-search'); ?></strong></p>
                     </div>
 
                     <!-- Secret Key -->
                     <div class="airs-form-group" style="margin-bottom: 20px;">
-                        <label for="listeo_ai_webhook_secret" class="airs-label"><?php esc_html_e('Secret Key', 'ai-chat-search-pro'); ?> <span style="color: #999; font-weight: normal;">(<?php esc_html_e('optional', 'ai-chat-search-pro'); ?>)</span></label>
+                        <label for="listeo_ai_webhook_secret" class="airs-label"><?php esc_html_e('Secret Key', 'ai-chat-search'); ?> <span style="color: #999; font-weight: normal;">(<?php esc_html_e('optional', 'ai-chat-search'); ?>)</span></label>
                         <input type="password" id="listeo_ai_webhook_secret" class="airs-input" value="<?php echo esc_attr(get_option('listeo_ai_webhook_secret', '')); ?>" placeholder="your-secret-key" autocomplete="off" />
-                        <p class="airs-help-text"><?php esc_html_e('If set, an X-Webhook-Signature header (HMAC SHA-256) will be sent with each request for verification.', 'ai-chat-search-pro'); ?></p>
+                        <p class="airs-help-text"><?php esc_html_e('If set, an X-Webhook-Signature header (HMAC SHA-256) will be sent with each request for verification.', 'ai-chat-search'); ?></p>
                     </div>
 
                     <!-- Webhook Tool Instructions for AI -->
                     <div class="airs-form-group" style="margin-bottom: 20px;">
-                        <label for="listeo_ai_webhook_instructions" class="airs-label"><?php esc_html_e('Webhook Tool Instructions for AI', 'ai-chat-search-pro'); ?></label>
-                        <textarea id="listeo_ai_webhook_instructions" class="airs-input" rows="5" maxlength="1000" style="font-family: monospace; font-size: 12px;" placeholder="<?php esc_attr_e("e.g., Only trigger webhook actions when the user clearly asks for one.\nAlways ask for the user's email before triggering any action.\nIf the user seems unsure, explain what each action does first.", 'ai-chat-search-pro'); ?>"><?php echo esc_textarea(get_option('listeo_ai_webhook_instructions', '')); ?></textarea>
-                        <p class="airs-help-text"><?php esc_html_e('Additional rules for when and how AI should use webhook actions. These instructions are added to the AI system prompt.', 'ai-chat-search-pro'); ?></p>
+                        <label for="listeo_ai_webhook_instructions" class="airs-label"><?php esc_html_e('Webhook Tool Instructions for AI', 'ai-chat-search'); ?></label>
+                        <textarea id="listeo_ai_webhook_instructions" class="airs-input" rows="5" maxlength="1000" style="font-family: monospace; font-size: 12px;" placeholder="<?php esc_attr_e("e.g., Only trigger webhook actions when the user clearly asks for one.\nAlways ask for the user's email before triggering any action.\nIf the user seems unsure, explain what each action does first.", 'ai-chat-search'); ?>"><?php echo esc_textarea(get_option('listeo_ai_webhook_instructions', '')); ?></textarea>
+                        <p class="airs-help-text"><?php esc_html_e('Additional rules for when and how AI should use webhook actions. These instructions are added to the AI system prompt.', 'ai-chat-search'); ?></p>
                     </div>
 
                     <!-- Actions Section -->
                     <div style="border-top: 1px solid #e0e0e0; padding-top: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <div>
-                                <strong style="font-size: 15px;"><?php esc_html_e('Webhook Actions', 'ai-chat-search-pro'); ?></strong>
-                                <p class="airs-help-text" style="margin: 3px 0 0;"><?php esc_html_e('Define actions that the AI can trigger. Each action sends data to your webhook URL.', 'ai-chat-search-pro'); ?></p>
+                                <strong style="font-size: 15px;"><?php esc_html_e('Webhook Actions', 'ai-chat-search'); ?></strong>
+                                <p class="airs-help-text" style="margin: 3px 0 0;"><?php esc_html_e('Define actions that the AI can trigger. Each action sends data to your webhook URL.', 'ai-chat-search'); ?></p>
                             </div>
                             <button type="button" id="webhook-add-action" class="airs-button airs-button-secondary" style="white-space: nowrap;">
-                                + <?php esc_html_e('Add Action', 'ai-chat-search-pro'); ?>
+                                + <?php esc_html_e('Add Action', 'ai-chat-search'); ?>
                             </button>
                         </div>
 
@@ -254,21 +254,21 @@ class AI_Chat_Search_Pro_Webhook_Admin {
                             <div class="webhook-action-row">
                                 <div class="webhook-action-header">
                                     <div>
-                                        <label class="airs-label"><?php esc_html_e('Action Name', 'ai-chat-search-pro'); ?></label>
-                                        <input type="text" class="airs-input webhook-action-label" value="<?php echo esc_attr($action_label); ?>" placeholder="<?php esc_attr_e('e.g., Cancel Order', 'ai-chat-search-pro'); ?>" />
+                                        <label class="airs-label"><?php esc_html_e('Action Name', 'ai-chat-search'); ?></label>
+                                        <input type="text" class="airs-input webhook-action-label" value="<?php echo esc_attr($action_label); ?>" placeholder="<?php esc_attr_e('e.g., Cancel Order', 'ai-chat-search'); ?>" />
                                     </div>
-                                    <button type="button" class="airs-button airs-button-secondary webhook-remove-action" title="<?php esc_attr_e('Remove', 'ai-chat-search-pro'); ?>">
+                                    <button type="button" class="airs-button airs-button-secondary webhook-remove-action" title="<?php esc_attr_e('Remove', 'ai-chat-search'); ?>">
                                         <span class="remove-icon">&times;</span>
                                     </button>
                                 </div>
                                 <div class="webhook-action-group">
-                                    <label class="airs-label"><?php esc_html_e('AI Instructions', 'ai-chat-search-pro'); ?></label>
-                                    <textarea class="airs-input webhook-action-description" rows="2" maxlength="300" placeholder="<?php esc_attr_e('e.g., User wants to cancel their order. Collect their name, email, and order number.', 'ai-chat-search-pro'); ?>"><?php echo esc_textarea($action_desc); ?></textarea>
+                                    <label class="airs-label"><?php esc_html_e('AI Instructions', 'ai-chat-search'); ?></label>
+                                    <textarea class="airs-input webhook-action-description" rows="2" maxlength="300" placeholder="<?php esc_attr_e('e.g., User wants to cancel their order. Collect their name, email, and order number.', 'ai-chat-search'); ?>"><?php echo esc_textarea($action_desc); ?></textarea>
                                 </div>
                                 <div>
-                                    <label class="airs-label"><?php esc_html_e('Data Fields', 'ai-chat-search-pro'); ?></label>
-                                    <input type="text" class="airs-input webhook-action-fields" value="<?php echo esc_attr($fields_csv); ?>" placeholder="<?php esc_attr_e('e.g., name, email, order_number, reason', 'ai-chat-search-pro'); ?>" />
-                                    <p class="airs-help-text webhook-action-fields-help"><?php esc_html_e('Comma-separated field names. AI will collect these from the user. Use snake_case (e.g., phone_number).', 'ai-chat-search-pro'); ?></p>
+                                    <label class="airs-label"><?php esc_html_e('Data Fields', 'ai-chat-search'); ?></label>
+                                    <input type="text" class="airs-input webhook-action-fields" value="<?php echo esc_attr($fields_csv); ?>" placeholder="<?php esc_attr_e('e.g., name, email, order_number, reason', 'ai-chat-search'); ?>" />
+                                    <p class="airs-help-text webhook-action-fields-help"><?php esc_html_e('Comma-separated field names. AI will collect these from the user. Use snake_case (e.g., phone_number).', 'ai-chat-search'); ?></p>
                                 </div>
                             </div>
                             <?php
@@ -279,13 +279,13 @@ class AI_Chat_Search_Pro_Webhook_Admin {
 
                         <!-- Empty state -->
                         <div id="webhook-actions-empty" style="<?php echo (!empty($webhook_actions) && is_array($webhook_actions)) ? 'display: none;' : ''; ?> text-align: center; color: #999; border: 2px dashed #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 10px; padding-bottom: 7px;">
-                            <p><?php esc_html_e('No actions configured yet. Click "Add Action" to create your first webhook action.', 'ai-chat-search-pro'); ?></p>
+                            <p><?php esc_html_e('No actions configured yet. Click "Add Action" to create your first webhook action.', 'ai-chat-search'); ?></p>
                         </div>
 
                         <!-- Example JSON Payload -->
                         <div class="airs-collapsible-section" style="margin-top: 10px;">
                             <div class="airs-collapsible-header" data-section="webhook-example-payload">
-                                <span class="airs-collapsible-title"><?php esc_html_e('Example JSON payload sent to your webhook', 'ai-chat-search-pro'); ?></span>
+                                <span class="airs-collapsible-title"><?php esc_html_e('Example JSON payload sent to your webhook', 'ai-chat-search'); ?></span>
                                 <span class="airs-collapsible-toggle">
                                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                                 </span>
@@ -307,7 +307,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
     "conversation_id": "abc123-def456"
   }
 }</pre>
-                                <p class="airs-help-text" style="margin-top: 6px;"><?php _e('The <code>data</code> object contains the fields you defined plus auto-captured context. The "Send Test" button sends a payload with <code>"test": true</code> so you can distinguish test requests in your workflow.', 'ai-chat-search-pro'); ?></p>
+                                <p class="airs-help-text" style="margin-top: 6px;"><?php _e('The <code>data</code> object contains the fields you defined plus auto-captured context. The "Send Test" button sends a payload with <code>"test": true</code> so you can distinguish test requests in your workflow.', 'ai-chat-search'); ?></p>
                             </div>
                         </div>
                     </div>
@@ -316,7 +316,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
                 </div>
                 <div class="airs-modal-footer">
                     <button type="button" id="webhook-save-settings-btn" class="airs-button airs-button-primary">
-                        <span class="button-text"><?php esc_html_e('Save Settings', 'ai-chat-search-pro'); ?></span>
+                        <span class="button-text"><?php esc_html_e('Save Settings', 'ai-chat-search'); ?></span>
                         <span class="button-spinner" style="display: none;">
                             <span class="airs-spinner"></span>
                         </span>
@@ -332,11 +332,11 @@ class AI_Chat_Search_Pro_Webhook_Admin {
      */
     public function ajax_save_settings() {
         if (!check_ajax_referer('webhook_settings', 'nonce', false)) {
-            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search')));
         }
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search')));
         }
 
         // Sanitize and save webhook URL
@@ -345,7 +345,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
 
         // Validate URL if provided
         if (!empty($webhook_url) && !filter_var($webhook_url, FILTER_VALIDATE_URL)) {
-            wp_send_json_error(array('message' => __('Invalid webhook URL.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Invalid webhook URL.', 'ai-chat-search')));
             return;
         }
 
@@ -363,7 +363,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
         update_option('listeo_ai_webhook_instructions', $webhook_instructions);
 
         wp_send_json_success(array(
-            'message' => __('Webhook settings saved successfully!', 'ai-chat-search-pro')
+            'message' => __('Webhook settings saved successfully!', 'ai-chat-search')
         ));
     }
 
@@ -377,23 +377,23 @@ class AI_Chat_Search_Pro_Webhook_Admin {
      */
     public function ajax_test_webhook() {
         if (!check_ajax_referer('listeo_ai_webhook_settings', 'nonce', false)) {
-            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search')));
             return;
         }
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search')));
             return;
         }
 
         if (!$this->is_license_valid()) {
-            wp_send_json_error(array('message' => __('Valid Pro license required.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Valid Pro license required.', 'ai-chat-search')));
             return;
         }
 
         $webhook_url = isset($_POST['webhook_url']) ? esc_url_raw(trim(wp_unslash($_POST['webhook_url']))) : '';
         if (empty($webhook_url) || !filter_var($webhook_url, FILTER_VALIDATE_URL)) {
-            wp_send_json_error(array('message' => __('Please enter a valid webhook URL first.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Please enter a valid webhook URL first.', 'ai-chat-search')));
             return;
         }
 
@@ -436,7 +436,7 @@ class AI_Chat_Search_Pro_Webhook_Admin {
         if (is_wp_error($response)) {
             wp_send_json_error(array(
                 'message' => sprintf(
-                    __('Connection failed: %s', 'ai-chat-search-pro'),
+                    __('Connection failed: %s', 'ai-chat-search'),
                     $response->get_error_message()
                 )
             ));
@@ -448,14 +448,14 @@ class AI_Chat_Search_Pro_Webhook_Admin {
         if ($response_code >= 200 && $response_code < 300) {
             wp_send_json_success(array(
                 'message' => sprintf(
-                    __('Webhook received HTTP %d — connection successful!', 'ai-chat-search-pro'),
+                    __('Webhook received HTTP %d — connection successful!', 'ai-chat-search'),
                     $response_code
                 )
             ));
         } else {
             wp_send_json_error(array(
                 'message' => sprintf(
-                    __('Webhook returned HTTP %d. Please check your endpoint.', 'ai-chat-search-pro'),
+                    __('Webhook returned HTTP %d. Please check your endpoint.', 'ai-chat-search'),
                     $response_code
                 )
             ));

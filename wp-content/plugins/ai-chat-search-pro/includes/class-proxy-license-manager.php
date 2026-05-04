@@ -98,7 +98,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         if (empty($license_key)) {
             return array(
                 'success' => false,
-                'message' => __('License key is required.', 'ai-chat-search-pro')
+                'message' => __('License key is required.', 'ai-chat-search')
             );
         }
 
@@ -166,13 +166,13 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
 
             return array(
                 'success' => true,
-                'message' => $result['message'] ?? __('License activated successfully!', 'ai-chat-search-pro')
+                'message' => $result['message'] ?? __('License activated successfully!', 'ai-chat-search')
             );
         }
 
         return array(
             'success' => false,
-            'message' => isset($result['message']) ? $result['message'] : __('Activation failed. Please try again.', 'ai-chat-search-pro')
+            'message' => isset($result['message']) ? $result['message'] : __('Activation failed. Please try again.', 'ai-chat-search')
         );
     }
 
@@ -188,7 +188,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         if (empty($license_key)) {
             return array(
                 'success' => false,
-                'message' => __('No license key found to deactivate.', 'ai-chat-search-pro')
+                'message' => __('No license key found to deactivate.', 'ai-chat-search')
             );
         }
 
@@ -197,7 +197,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             $this->clear_license_data();
             return array(
                 'success' => true,
-                'message' => __('License data cleared locally.', 'ai-chat-search-pro')
+                'message' => __('License data cleared locally.', 'ai-chat-search')
             );
         }
 
@@ -218,7 +218,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         if (isset($result['success']) && $result['success']) {
             return array(
                 'success' => true,
-                'message' => $result['message'] ?? __('License deactivated successfully.', 'ai-chat-search-pro')
+                'message' => $result['message'] ?? __('License deactivated successfully.', 'ai-chat-search')
             );
         }
 
@@ -231,13 +231,13 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
 
             return array(
                 'success' => true, // Still success because local data is cleared
-                'message' => __('License deactivated locally. ', 'ai-chat-search-pro') . $error_message
+                'message' => __('License deactivated locally. ', 'ai-chat-search') . $error_message
             );
         }
 
         return array(
             'success' => true, // Still success because local data is cleared
-            'message' => __('License deactivated locally.', 'ai-chat-search-pro')
+            'message' => __('License deactivated locally.', 'ai-chat-search')
         );
     }
 
@@ -253,6 +253,20 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             $cached = get_transient(self::TRANSIENT_LICENSE_VALID);
             if ($cached !== false) {
                 return (bool) $cached;
+            }
+
+            // Fallback: rebuild transient from wp_options if last check is still fresh.
+            // Survives object cache flush/eviction that kills transients (e.g. unstable Redis).
+            $last_check = (int) get_option(self::OPTION_LAST_CHECK, 0);
+            if ($last_check > 0 && (time() - $last_check) < self::CACHE_DURATION) {
+                // Honor sync-driven invalidation - don't rebuild from stale option
+                if (class_exists('AI_Chat_Search_Pro_Sync_Handler') && !AI_Chat_Search_Pro_Sync_Handler::check_lv()) {
+                    // Fall through to real API call
+                } else {
+                    $is_valid = (get_option(self::OPTION_LICENSE_STATUS, 'invalid') === 'valid');
+                    set_transient(self::TRANSIENT_LICENSE_VALID, $is_valid ? 1 : 0, self::CACHE_DURATION);
+                    return $is_valid;
+                }
             }
         }
 
@@ -353,7 +367,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             if ($debug_mode) {
                 error_log('=== LICENSE PROXY: Fallback also failed ===');
             }
-            $result['message'] .= ' ' . __('(Fallback proxy also failed)', 'ai-chat-search-pro');
+            $result['message'] .= ' ' . __('(Fallback proxy also failed)', 'ai-chat-search');
         }
 
         return $result;
@@ -442,15 +456,15 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
 
             // Add specific guidance based on error type
             if (strpos($error_code, 'ssl') !== false || stripos($error_message, 'SSL') !== false || stripos($error_message, 'certificate') !== false) {
-                $guidance = __('SSL/Certificate issue - your server may not trust our certificate or has outdated CA certificates.', 'ai-chat-search-pro');
+                $guidance = __('SSL/Certificate issue - your server may not trust our certificate or has outdated CA certificates.', 'ai-chat-search');
             } elseif (strpos($error_code, 'timeout') !== false || stripos($error_message, 'timed out') !== false) {
-                $guidance = __('Connection timeout - our server may be temporarily unavailable or your firewall is blocking the connection.', 'ai-chat-search-pro');
+                $guidance = __('Connection timeout - our server may be temporarily unavailable or your firewall is blocking the connection.', 'ai-chat-search');
             } elseif (stripos($error_message, 'resolve') !== false || stripos($error_message, 'getaddrinfo') !== false) {
-                $guidance = __('DNS resolution failed - your server cannot resolve the license server domain.', 'ai-chat-search-pro');
+                $guidance = __('DNS resolution failed - your server cannot resolve the license server domain.', 'ai-chat-search');
             } elseif (stripos($error_message, 'Connection refused') !== false) {
-                $guidance = __('Connection refused - outgoing connections may be blocked by your hosting firewall.', 'ai-chat-search-pro');
+                $guidance = __('Connection refused - outgoing connections may be blocked by your hosting firewall.', 'ai-chat-search');
             } elseif (stripos($error_message, 'cURL') !== false) {
-                $guidance = __('cURL error - check your server connectivity and PHP cURL extension.', 'ai-chat-search-pro');
+                $guidance = __('cURL error - check your server connectivity and PHP cURL extension.', 'ai-chat-search');
             }
 
             return array(
@@ -493,15 +507,15 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             $guidance = '';
             $has_specific_error = isset($response_data['message']) || isset($response_data['error']);
             if ($response_code === 403 && !$has_specific_error) {
-                $guidance = __('Access denied - signature verification may have failed or request was blocked.', 'ai-chat-search-pro');
+                $guidance = __('Access denied - signature verification may have failed or request was blocked.', 'ai-chat-search');
             } elseif ($response_code === 404) {
-                $guidance = __('Endpoint not found - license server may be misconfigured.', 'ai-chat-search-pro');
+                $guidance = __('Endpoint not found - license server may be misconfigured.', 'ai-chat-search');
             } elseif ($response_code === 500) {
-                $guidance = __('Server error on license server - please try again later.', 'ai-chat-search-pro');
+                $guidance = __('Server error on license server - please try again later.', 'ai-chat-search');
             } elseif ($response_code === 502 || $response_code === 503 || $response_code === 504) {
-                $guidance = __('License server temporarily unavailable - please try again in a few minutes.', 'ai-chat-search-pro');
+                $guidance = __('License server temporarily unavailable - please try again in a few minutes.', 'ai-chat-search');
             } elseif ($response_code === 429) {
-                $guidance = __('Too many requests - please wait a moment and try again.', 'ai-chat-search-pro');
+                $guidance = __('Too many requests - please wait a moment and try again.', 'ai-chat-search');
             }
 
             // Check if response is HTML (possible WAF/firewall block)
@@ -510,7 +524,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
                 $content_type = implode(', ', $content_type);
             }
             if (strpos($content_type, 'text/html') !== false || strpos($body, '<html') !== false || strpos($body, '<!DOCTYPE') !== false) {
-                $guidance = __('Received HTML instead of JSON - request may be blocked by a firewall, WAF, or security plugin.', 'ai-chat-search-pro');
+                $guidance = __('Received HTML instead of JSON - request may be blocked by a firewall, WAF, or security plugin.', 'ai-chat-search');
             }
 
             return array(
@@ -527,8 +541,8 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         if ($json_error !== JSON_ERROR_NONE) {
             return array(
                 'error' => 'json_parse_error',
-                'message' => __('Invalid JSON response from license server', 'ai-chat-search-pro'),
-                'guidance' => __('The server returned a response that could not be parsed. This may indicate a server-side issue.', 'ai-chat-search-pro'),
+                'message' => __('Invalid JSON response from license server', 'ai-chat-search'),
+                'guidance' => __('The server returned a response that could not be parsed. This may indicate a server-side issue.', 'ai-chat-search'),
                 'debug_info' => sprintf('JSON error: %s | URL: %s | Body: %s', json_last_error_msg(), $url, substr($body, 0, 150)),
             );
         }
@@ -616,6 +630,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         delete_option(self::OPTION_IS_TRIAL);
         delete_option(self::OPTION_TRIAL_EXPIRES_AT);
         delete_transient(self::TRANSIENT_LICENSE_VALID);
+        delete_option(self::OPTION_LAST_CHECK);
     }
 
     /**
@@ -707,10 +722,10 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             ?>
             <div class="notice notice-warning">
                 <p>
-                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search-pro'); ?></strong>
-                    <?php _e('Please activate your license key to unlock Pro features.', 'ai-chat-search-pro'); ?>
+                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search'); ?></strong>
+                    <?php _e('Please activate your license key to unlock Pro features.', 'ai-chat-search'); ?>
                     <a href="<?php echo admin_url('admin.php?page=ai-chat-search&tab=license'); ?>">
-                        <?php _e('Activate License', 'ai-chat-search-pro'); ?>
+                        <?php _e('Activate License', 'ai-chat-search'); ?>
                     </a>
                 </p>
             </div>
@@ -719,10 +734,10 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             ?>
             <div class="notice notice-error">
                 <p>
-                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search-pro'); ?></strong>
-                    <?php _e('Your license is invalid or has expired. Please check your license status.', 'ai-chat-search-pro'); ?>
+                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search'); ?></strong>
+                    <?php _e('Your license is invalid or has expired. Please check your license status.', 'ai-chat-search'); ?>
                     <a href="<?php echo admin_url('admin.php?page=ai-chat-search&tab=license'); ?>">
-                        <?php _e('Check License', 'ai-chat-search-pro'); ?>
+                        <?php _e('Check License', 'ai-chat-search'); ?>
                     </a>
                 </p>
             </div>

@@ -96,7 +96,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                     <path d="M9,9V5a2,2,0,0,1,2-2h2.063A1.937,1.937,0,0,1,15,4.938h0V5" fill="none" stroke="#006aff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                 </g>
             </svg>
-            <?php _e("License", "ai-chat-search-pro"); ?>
+            <?php _e("License", "ai-chat-search"); ?>
         </a>
         <?php
     }
@@ -130,11 +130,11 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                 <div class="airs-card-header">
                     <h3><?php _e(
                         "License Status",
-                        "ai-chat-search-pro",
+                        "ai-chat-search",
                     ); ?></h3>
                     <p><?php _e(
                         "Your AI Chat & Search Pro license information.",
-                        "ai-chat-search-pro",
+                        "ai-chat-search",
                     ); ?></p>
                 </div>
                 <div class="airs-card-body">
@@ -149,11 +149,11 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="status-content">
                             <div class="status-title"><?php _e(
                                 "License Active",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                             <div class="status-message"><?php _e(
                                 "All Pro features are unlocked",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                         </div>
                     </div>
@@ -163,7 +163,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="license-detail-row">
                             <span class="detail-label"><?php _e(
                                 "Product",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></span>
                             <span class="detail-value"><?php echo esc_html(
                                 $license_data["product"]["name"],
@@ -173,7 +173,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="license-detail-row">
                             <span class="detail-label"><?php _e(
                                 "License Key",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></span>
                             <span class="detail-value"><code class="license-key-code"><?php echo esc_html(
                                 $license_key_masked,
@@ -183,7 +183,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="license-detail-row">
                             <span class="detail-label"><?php _e(
                                 "Activated On",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></span>
                             <span class="detail-value"><?php echo esc_html(
                                 date_i18n(
@@ -197,7 +197,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="license-detail-row">
                             <span class="detail-label"><?php _e(
                                 "Last Validated",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></span>
                             <span class="detail-value"><?php echo esc_html(
                                 human_time_diff(
@@ -206,7 +206,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                                 ),
                             ); ?> <?php _e(
      "ago",
-     "ai-chat-search-pro",
+     "ai-chat-search",
  ); ?></span>
                         </div>
                         <?php endif; ?>
@@ -218,14 +218,14 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                             <span class="dashicons dashicons-update"></span>
                             <?php _e(
                                 "Validate License",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>
                         </button>
                         <button type="button" class="airs-button airs-button-danger" id="deactivate-license-btn">
                             <span class="dashicons dashicons-dismiss"></span>
                             <?php _e(
                                 "Deactivate License",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>
                         </button>
                     </div>
@@ -237,7 +237,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <p>
                             <?php _e(
                                 "Need support? Contact us at",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>
                             <a href="mailto:plugins@purethemes.net">plugins@purethemes.net</a>
                         </p>
@@ -255,11 +255,11 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                 <div class="airs-card-header">
                     <h3><?php _e(
                         "Activate License",
-                        "ai-chat-search-pro",
+                        "ai-chat-search",
                     ); ?></h3>
                     <p><?php _e(
                         "Enter your license key to unlock all Pro features.",
-                        "ai-chat-search-pro",
+                        "ai-chat-search",
                     ); ?></p>
                 </div>
                 <div class="airs-card-body">
@@ -276,11 +276,11 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="status-content">
                             <div class="status-title"><?php _e(
                                 "License Invalid",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                             <div class="status-message"><?php _e(
                                 "Please activate a valid license",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                         </div>
                     </div>
@@ -296,11 +296,11 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <div class="status-content">
                             <div class="status-title"><?php _e(
                                 "No License Active",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                             <div class="status-message"><?php _e(
                                 "Activate your license to unlock Pro features",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?></div>
                         </div>
                     </div>
@@ -314,13 +314,13 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                                    class="airs-input"
                                    placeholder="<?php esc_attr_e(
                                        "Enter your license key...",
-                                       "ai-chat-search-pro",
+                                       "ai-chat-search",
                                    ); ?>"
                                    required>
                             <p class="airs-help-text">
                                 <?php _e(
                                     "You can find your license key in your purchase confirmation email or account dashboard.",
-                                    "ai-chat-search-pro",
+                                    "ai-chat-search",
                                 ); ?>
                             </p>
                         </div>
@@ -330,7 +330,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                                 <span class="dashicons dashicons-yes"></span>
                                 <?php _e(
                                     "Activate License",
-                                    "ai-chat-search-pro",
+                                    "ai-chat-search",
                                 ); ?>
                             </button>
                             <?php if ($license_status !== "inactive"): ?>
@@ -338,7 +338,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                                 <span class="dashicons dashicons-dismiss"></span>
                                 <?php _e(
                                     "Deactivate License",
-                                    "ai-chat-search-pro",
+                                    "ai-chat-search",
                                 ); ?>
                             </button>
                             <?php endif; ?>
@@ -352,7 +352,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         <p>
                             <?php _e(
                                 "Need support? Contact us at",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>
                             <a href="mailto:plugins@purethemes.net">plugins@purethemes.net</a>
                         </p>
@@ -378,14 +378,14 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                 if (!licenseKey) {
                     $message.html('<div class="notice notice-error"><p><?php _e(
                         "Please enter a license key.",
-                        "ai-chat-search-pro",
+                        "ai-chat-search",
                     ); ?></p></div>');
                     return;
                 }
 
                 $btn.prop('disabled', true).text('<?php _e(
                     "Activating...",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ); ?>');
                 $message.html('');
 
@@ -409,18 +409,18 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                             $message.html('<div class="notice notice-error"><p>' + response.data.message + '</p></div>');
                             $btn.prop('disabled', false).text('<?php _e(
                                 "Activate License",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>');
                         }
                     },
                     error: function() {
                         $message.html('<div class="notice notice-error"><p><?php _e(
                             "Connection error. Please try again.",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?></p></div>');
                         $btn.prop('disabled', false).text('<?php _e(
                             "Activate License",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?>');
                     }
                 });
@@ -430,7 +430,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
             $('#deactivate-license-btn, #deactivate-license-btn-form').on('click', function() {
                 if (!confirm('<?php _e(
                     "Are you sure you want to deactivate this license? Pro features will be locked.",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ); ?>')) {
                     return;
                 }
@@ -440,7 +440,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
 
                 $btn.prop('disabled', true).text('<?php _e(
                     "Deactivating...",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ); ?>');
                 $message.html('');
 
@@ -463,18 +463,18 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                             $message.html('<div class="notice notice-error"><p>' + response.data.message + '</p></div>');
                             $btn.prop('disabled', false).text('<?php _e(
                                 "Deactivate License",
-                                "ai-chat-search-pro",
+                                "ai-chat-search",
                             ); ?>');
                         }
                     },
                     error: function() {
                         $message.html('<div class="notice notice-error"><p><?php _e(
                             "Connection error. Please try again.",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?></p></div>');
                         $btn.prop('disabled', false).text('<?php _e(
                             "Deactivate License",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?>');
                     }
                 });
@@ -487,7 +487,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
 
                 $btn.prop('disabled', true).text('<?php _e(
                     "Validating...",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ); ?>');
                 $message.html('');
 
@@ -513,17 +513,17 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         }
                         $btn.prop('disabled', false).text('<?php _e(
                             "Validate License",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?>');
                     },
                     error: function() {
                         $message.html('<div class="notice notice-error"><p><?php _e(
                             "Connection error. Please try again.",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?></p></div>');
                         $btn.prop('disabled', false).text('<?php _e(
                             "Validate License",
-                            "ai-chat-search-pro",
+                            "ai-chat-search",
                         ); ?>');
                     }
                 });
@@ -542,7 +542,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
 
         if (!current_user_can("manage_options")) {
             wp_send_json_error([
-                "message" => __("Permission denied.", "ai-chat-search-pro"),
+                "message" => __("Permission denied.", "ai-chat-search"),
             ]);
         }
 
@@ -568,7 +568,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
 
         if (!current_user_can("manage_options")) {
             wp_send_json_error([
-                "message" => __("Permission denied.", "ai-chat-search-pro"),
+                "message" => __("Permission denied.", "ai-chat-search"),
             ]);
         }
 
@@ -590,7 +590,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
 
         if (!current_user_can("manage_options")) {
             wp_send_json_error([
-                "message" => __("Permission denied.", "ai-chat-search-pro"),
+                "message" => __("Permission denied.", "ai-chat-search"),
             ]);
         }
 
@@ -600,7 +600,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
             wp_send_json_success([
                 "message" => __(
                     "License validated successfully!",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ),
                 "reload" => false,
             ]);
@@ -608,7 +608,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
             wp_send_json_error([
                 "message" => __(
                     "License validation failed. Please check your license status.",
-                    "ai-chat-search-pro",
+                    "ai-chat-search",
                 ),
                 "reload" => true,
             ]);

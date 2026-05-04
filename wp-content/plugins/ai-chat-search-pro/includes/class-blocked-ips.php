@@ -302,10 +302,10 @@ class AI_Chat_Search_Pro_Blocked_IPs {
                 <input type="text"
                        name="listeo_ai_chat_blocked_ips[<?php echo $index; ?>][ip]"
                        value="<?php echo esc_attr($ip_value); ?>"
-                       placeholder="<?php esc_attr_e('e.g., 192.168.1.100 or 10.0.0.0/8', 'ai-chat-search-pro'); ?>"
+                       placeholder="<?php esc_attr_e('e.g., 192.168.1.100 or 10.0.0.0/8', 'ai-chat-search'); ?>"
                        class="airs-input listeo-blocked-ip-input"
                        style="flex: 1; max-width: 300px;" />
-                <button type="button" class="airs-button airs-button-secondary listeo-remove-blocked-ip" title="<?php esc_attr_e('Remove', 'ai-chat-search-pro'); ?>">
+                <button type="button" class="airs-button airs-button-secondary listeo-remove-blocked-ip" title="<?php esc_attr_e('Remove', 'ai-chat-search'); ?>">
                     <span class="remove-icon">&times;</span>
                 </button>
             </div>
@@ -313,7 +313,7 @@ class AI_Chat_Search_Pro_Blocked_IPs {
         </div>
 
         <button type="button" id="listeo-add-blocked-ip" class="airs-button airs-button-secondary">
-            <?php _e('+ Add IP Address', 'ai-chat-search-pro'); ?>
+            <?php _e('+ Add IP Address', 'ai-chat-search'); ?>
         </button>
 
         <script>
@@ -327,10 +327,10 @@ class AI_Chat_Search_Pro_Blocked_IPs {
                         <input type="text"
                                name="listeo_ai_chat_blocked_ips[${index}][ip]"
                                value=""
-                               placeholder="<?php echo esc_js(__('e.g., 192.168.1.100 or 10.0.0.0/8', 'ai-chat-search-pro')); ?>"
+                               placeholder="<?php echo esc_js(__('e.g., 192.168.1.100 or 10.0.0.0/8', 'ai-chat-search')); ?>"
                                class="airs-input listeo-blocked-ip-input"
                                style="flex: 1; max-width: 300px;" />
-                        <button type="button" class="airs-button airs-button-secondary listeo-remove-blocked-ip" title="<?php echo esc_js(__('Remove', 'ai-chat-search-pro')); ?>">
+                        <button type="button" class="airs-button airs-button-secondary listeo-remove-blocked-ip" title="<?php echo esc_js(__('Remove', 'ai-chat-search')); ?>">
                             <span class="remove-icon">&times;</span>
                         </button>
                     </div>

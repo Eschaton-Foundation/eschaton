@@ -1,0 +1,516 @@
+/**
+ * AI Chat Search Pro - Conversation Auditor admin styles
+ *
+ * Uses neutral grays throughout, no cool/slate tones.
+ */
+
+/* ============================================================
+   Per-conversation analyze button (text + sparkle icon)
+   ============================================================ */
+.ai-chat-audit-analyze-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    padding-left: 10px;
+    border: none;
+    border-radius: 5px;
+    background: #e7f1ff;
+    color: #1565c0;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ai-chat-audit-analyze-btn:hover {
+    background: #d6e5ff;
+    color: #0050d0;
+}
+.ai-chat-audit-analyze-btn.airs-audit-btn-analyzed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.ai-chat-audit-analyze-btn.airs-audit-btn-analyzed:hover {
+    background: #d2ead4;
+    color: #1b5e20;
+}
+.ai-chat-audit-analyze-btn.airs-audit-btn-analyzing {
+    background: #f5f5f5;
+    color: #666;
+    cursor: wait;
+}
+
+.airs-audit-sparkle {
+    position: relative;
+    top: -1px !important;
+}
+
+/* Loader spinner (shown during analyzing state, replaces sparkle icon) */
+.ai-chat-audit-loader {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-top-color: #444;
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: airsAuditSpin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+.ai-chat-audit-analyze-btn.airs-audit-btn-analyzing .airs-audit-sparkle {
+    display: none;
+}
+.ai-chat-audit-analyze-btn.airs-audit-btn-analyzing .ai-chat-audit-loader {
+    display: inline-block;
+}
+@keyframes airsAuditSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Bottom action bar: auto-status (left) + Configure button (right)
+   ============================================================ */
+.ai-chat-audit-bottom-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+.ai-chat-audit-auto-status {
+    font-size: 13px;
+    color: #666;
+}
+.ai-chat-audit-auto-status strong {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+.ai-chat-audit-auto-status strong.is-enabled {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.ai-chat-audit-auto-status strong.is-disabled {
+    background: #eee;
+    color: #777;
+}
+
+/* ============================================================
+   Settings modal
+   ============================================================ */
+.airs-audit-settings-modal-content {
+    max-width: 580px;
+    width: 90%;
+}
+.airs-audit-settings-modal-content .airs-modal-body {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+/* Cron status under the interval select */
+.ai-chat-audit-cron-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.ai-chat-audit-cron-status-pending {
+    background: #fff8e5;
+    color: #92400e;
+}
+.ai-chat-audit-cron-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2e7d32;
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+    animation: airsAuditPulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+@keyframes airsAuditPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+
+/* Clear All Analysis link */
+.ai-chat-audit-clear-all {
+    margin-top: 14px;
+}
+.ai-chat-audit-clear-all a {
+    font-size: 12px;
+    color: #b32d2e;
+    text-decoration: underline;
+}
+.ai-chat-audit-clear-all a:hover {
+    color: #8b1f20;
+}
+
+/* Locked select during backlog run (avoids browser disabled-chrome
+   rendering glitches with appearance:base-select custom chevrons) */
+#ai-chat-audit-backlog-range.is-locked {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* ============================================================
+   Toast notifications
+   ============================================================ */
+.airs-audit-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #111;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 100001;
+    max-width: 340px;
+}
+.airs-audit-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.airs-audit-toast.is-error {
+    background: #d63638;
+}
+
+/* ============================================================
+   Stat boxes - 3 per row override (scoped)
+   ============================================================ */
+#ai-chat-audit-stat-strip {
+    gap: 12px;
+    margin-bottom: 20px;
+}
+#ai-chat-audit-stat-strip .airs-stat-box {
+    flex: 1 1 calc(33.333% - 10px);
+    max-width: calc(33.333% - 10px);
+    min-width: 100px;
+    padding: 14px 10px;
+}
+#ai-chat-audit-stat-strip .airs-stat-number {
+    font-size: 28px;
+    line-height: 1.1;
+    margin-bottom: 6px;
+}
+#ai-chat-audit-stat-strip .airs-stat-label {
+    font-size: 14px !important;
+}
+@media (max-width: 1400px) {
+    #ai-chat-audit-stat-strip .airs-stat-box {
+        flex: 1 1 calc(50% - 10px);
+        max-width: calc(50% - 10px);
+    }
+}
+
+/* ============================================================
+   In-Configure-modal backlog section + progress bar
+   ============================================================ */
+.ai-chat-audit-backlog-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+.ai-chat-audit-backlog-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #222;
+}
+.airs-audit-backlog-progress {
+    margin-top: 10px;
+}
+.airs-audit-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.airs-audit-progress-fill {
+    height: 100%;
+    background: #444;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+.airs-audit-progress-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* ============================================================
+   List rows
+   ============================================================ */
+.airs-audit-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+.airs-audit-list .airs-audit-loading,
+.airs-audit-list .airs-audit-empty {
+    padding: 30px;
+    text-align: center;
+    color: #999;
+}
+.airs-audit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #999;
+}
+.airs-audit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.airs-audit-row:last-child {
+    border-bottom: none;
+}
+.airs-audit-row:hover {
+    background: #fbfbfb;
+}
+.airs-audit-row-main {
+    flex: 1;
+    min-width: 0;
+}
+.airs-audit-row-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.airs-audit-row-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+}
+.airs-audit-row-msgs {
+    color: #999;
+}
+.airs-audit-row-time {
+    font-size: 12px;
+    color: #999;
+    margin-left: 12px;
+    white-space: nowrap;
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.airs-audit-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    border: none !important;
+}
+.airs-audit-sent-positive {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+.airs-audit-sent-negative {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+.airs-audit-sent-neutral {
+    background: #eee;
+    color: #555;
+    border-color: #ddd;
+}
+.airs-audit-badge-gap {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+/* ============================================================
+   Empty state (minimal: just a line of text)
+   ============================================================ */
+.airs-audit-empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: #999;
+    font-size: 13px;
+}
+
+/* ============================================================
+   Detail modal
+   ============================================================ */
+.airs-audit-modal-content {
+    max-width: 620px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+#ai-chat-audit-modal-delete {
+    background: #fde8e8;
+    color: #b32d2e;
+    border-color: #f5c2c2;
+}
+#ai-chat-audit-modal-delete:hover {
+    background: #f9d5d5;
+    color: #8b1f20;
+}
+.airs-audit-modal-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    border: none;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #666;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.airs-audit-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #555;
+    margin: 20px 0 8px;
+}
+.airs-audit-summary {
+    color: #333;
+    line-height: 1.55;
+    margin: 0;
+}
+.airs-audit-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.airs-audit-chip {
+    display: inline-block;
+    background: #eee;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #555;
+}
+.airs-audit-chip em {
+    color: #999;
+    font-style: normal;
+}
+.airs-audit-gap-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.airs-audit-gap-item {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+.airs-audit-warn {
+    color: #dba617;
+    margin-right: 6px;
+}
+
+
+/* ============================================================
+   Filters
+   ============================================================ */
+.airs-audit-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+#ai-chat-audit-stat-strip .airs-stat-box {
+    position: relative;
+}
+.airs-audit-stat-info {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+    background: transparent;
+    border: 1px solid currentColor;
+    opacity: 0.55;
+    transition: opacity 0.15s;
+    user-select: none;
+}
+.airs-audit-stat-info:hover,
+.airs-audit-stat-info:focus {
+    opacity: 1;
+    outline: none;
+}
+.airs-stat-box-orange .airs-audit-stat-info { color: #e65100; }
+.airs-stat-box-green  .airs-audit-stat-info { color: #2e7d32; }
+.airs-stat-box-blue   .airs-audit-stat-info { color: #1565c0; }
+.airs-audit-overlay-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Clickable items in the aggregate gap/wp modal */
+.airs-audit-clickable-item {
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.airs-audit-clickable-item:hover {
+    background: #f5f8ff;
+    border-color: #c0d4f5;
+}

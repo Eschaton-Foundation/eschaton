@@ -78,7 +78,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('No audio file provided.', 'ai-chat-search-pro'),
+                    'message' => __('No audio file provided.', 'ai-chat-search'),
                     'type' => 'validation_error',
                     'request_id' => $request_id
                 )
@@ -104,7 +104,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Invalid audio format. Supported formats: webm, mp4, mp3, ogg, wav.', 'ai-chat-search-pro'),
+                    'message' => __('Invalid audio format. Supported formats: webm, mp4, mp3, ogg, wav.', 'ai-chat-search'),
                     'type' => 'validation_error',
                     'request_id' => $request_id
                 )
@@ -117,7 +117,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Audio file too large (max 25MB).', 'ai-chat-search-pro'),
+                    'message' => __('Audio file too large (max 25MB).', 'ai-chat-search'),
                     'type' => 'validation_error',
                     'request_id' => $request_id
                 )
@@ -132,6 +132,8 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             $api_key = get_option('listeo_ai_search_gemini_api_key');
         } elseif ($provider_name === 'mistral') {
             $api_key = get_option('listeo_ai_search_mistral_api_key');
+        } elseif ($provider_name === 'openrouter') {
+            $api_key = get_option('listeo_ai_search_openrouter_api_key');
         } else {
             $api_key = get_option('listeo_ai_search_api_key');
         }
@@ -140,7 +142,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('API key not configured.', 'ai-chat-search-pro'),
+                    'message' => __('API key not configured.', 'ai-chat-search'),
                     'type' => 'configuration_error',
                     'request_id' => $request_id
                 )
@@ -152,6 +154,8 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return $this->transcribe_with_gemini($file, $api_key, $request_id);
         } elseif ($provider_name === 'mistral') {
             return $this->transcribe_with_mistral($file, $api_key, $request_id);
+        } elseif ($provider_name === 'openrouter') {
+            return $this->transcribe_with_openrouter($file, $api_key, $request_id);
         } else {
             return $this->transcribe_with_openai($file, $api_key, $request_id);
         }
@@ -174,7 +178,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Failed to read audio file.', 'ai-chat-search-pro'),
+                    'message' => __('Failed to read audio file.', 'ai-chat-search'),
                     'type' => 'file_error',
                     'request_id' => $request_id
                 )
@@ -198,7 +202,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search'),
                     'type' => 'api_error',
                     'request_id' => $request_id
                 )
@@ -216,7 +220,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search'),
                     'type' => 'transcription_error',
                     'request_id' => $request_id
                 )
@@ -237,7 +241,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
         return new WP_REST_Response(array(
             'success' => false,
             'error' => array(
-                'message' => __('Could not transcribe audio.', 'ai-chat-search-pro'),
+                'message' => __('Could not transcribe audio.', 'ai-chat-search'),
                 'type' => 'transcription_error',
                 'request_id' => $request_id
             )
@@ -261,7 +265,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Failed to read audio file.', 'ai-chat-search-pro'),
+                    'message' => __('Failed to read audio file.', 'ai-chat-search'),
                     'type' => 'file_error',
                     'request_id' => $request_id
                 )
@@ -285,7 +289,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search'),
                     'type' => 'api_error',
                     'request_id' => $request_id
                 )
@@ -303,7 +307,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search'),
                     'type' => 'transcription_error',
                     'request_id' => $request_id
                 )
@@ -324,7 +328,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
         return new WP_REST_Response(array(
             'success' => false,
             'error' => array(
-                'message' => __('Could not transcribe audio.', 'ai-chat-search-pro'),
+                'message' => __('Could not transcribe audio.', 'ai-chat-search'),
                 'type' => 'transcription_error',
                 'request_id' => $request_id
             )
@@ -346,7 +350,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Failed to read audio file.', 'ai-chat-search-pro'),
+                    'message' => __('Failed to read audio file.', 'ai-chat-search'),
                     'type' => 'file_error',
                     'request_id' => $request_id
                 )
@@ -388,10 +392,11 @@ class AI_Chat_Search_Pro_Speech_To_Text {
         // Call Gemini native API (supports webm, mp3, wav, ogg, flac, aac)
         // Using gemini-3-flash for fast, accurate transcription
         $response = wp_remote_post(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' . $api_key,
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
             array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
+                    'x-goog-api-key' => $api_key,
                 ),
                 'body' => wp_json_encode($request_body),
                 'timeout' => 60,
@@ -405,7 +410,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search'),
                     'type' => 'api_error',
                     'request_id' => $request_id
                 )
@@ -423,7 +428,7 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search-pro'),
+                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search'),
                     'type' => 'transcription_error',
                     'request_id' => $request_id
                 )
@@ -445,7 +450,137 @@ class AI_Chat_Search_Pro_Speech_To_Text {
         return new WP_REST_Response(array(
             'success' => false,
             'error' => array(
-                'message' => __('Could not transcribe audio.', 'ai-chat-search-pro'),
+                'message' => __('Could not transcribe audio.', 'ai-chat-search'),
+                'type' => 'transcription_error',
+                'request_id' => $request_id
+            )
+        ), 500);
+    }
+
+    /**
+     * Transcribe audio using OpenRouter (via chat/completions with input_audio content type).
+     *
+     * OpenRouter does not expose a dedicated /v1/audio/transcriptions endpoint, so we POST to
+     * the standard chat/completions endpoint with a multimodal audio content block. Model is
+     * hardcoded to google/gemini-3-flash-preview — the same Gemini 3 Flash Preview model used
+     * by the native-Gemini transcription path above, routed through OpenRouter.
+     *
+     * @param array $file The uploaded file from $_FILES
+     * @param string $api_key OpenRouter API key (sk-or-v1-...)
+     * @param string $request_id Request ID for logging
+     * @return WP_REST_Response
+     */
+    private function transcribe_with_openrouter($file, $api_key, $request_id) {
+        // Read and encode audio file as base64
+        $file_content = @file_get_contents($file['tmp_name']);
+        if ($file_content === false) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'message' => __('Failed to read audio file.', 'ai-chat-search'),
+                    'type' => 'file_error',
+                    'request_id' => $request_id
+                )
+            ), 500);
+        }
+
+        $base64_audio = base64_encode($file_content);
+
+        // Map MIME type to the format string used by OpenRouter's input_audio schema.
+        // OpenRouter forwards raw bytes to the upstream provider which auto-detects from
+        // magic bytes, so the format string is effectively advisory.
+        $mime_type = $file['type'];
+        if ($mime_type === 'video/webm') {
+            $mime_type = 'audio/webm';
+        }
+        $format = $this->get_audio_format($mime_type);
+
+        // Build OpenAI-compatible chat/completions request with input_audio content block
+        $request_body = array(
+            'model' => 'google/gemini-3-flash-preview',
+            'messages' => array(
+                array(
+                    'role' => 'user',
+                    'content' => array(
+                        array(
+                            'type' => 'text',
+                            'text' => 'Transcribe this audio exactly as spoken. Output only the transcription text, nothing else. If the audio is empty or unclear, output an empty string.'
+                        ),
+                        array(
+                            'type' => 'input_audio',
+                            'input_audio' => array(
+                                'data' => $base64_audio,
+                                'format' => $format
+                            )
+                        )
+                    )
+                )
+            ),
+            'max_tokens' => 2048,
+            'temperature' => 0
+        );
+
+        // Call OpenRouter chat/completions endpoint
+        $response = wp_remote_post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $api_key,
+                    'Content-Type' => 'application/json',
+                ),
+                'body' => wp_json_encode($request_body),
+                'timeout' => 60,
+            )
+        );
+
+        if (is_wp_error($response)) {
+            if (get_option('listeo_ai_search_debug_mode', false)) {
+                error_log(sprintf('AI Chat [%s] TRANSCRIBE OpenRouter error: %s', $request_id, $response->get_error_message()));
+            }
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'message' => __('Transcription service unavailable. Please try again.', 'ai-chat-search'),
+                    'type' => 'api_error',
+                    'request_id' => $request_id
+                )
+            ), 502);
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $result = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($status_code !== 200) {
+            if (get_option('listeo_ai_search_debug_mode', false)) {
+                $error_msg = isset($result['error']['message']) ? $result['error']['message'] : wp_remote_retrieve_body($response);
+                error_log(sprintf('AI Chat [%s] TRANSCRIBE OpenRouter API error (%d): %s', $request_id, $status_code, $error_msg));
+            }
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'message' => __('Could not transcribe audio. Please try again.', 'ai-chat-search'),
+                    'type' => 'transcription_error',
+                    'request_id' => $request_id
+                )
+            ), $status_code >= 400 && $status_code < 600 ? $status_code : 500);
+        }
+
+        // Extract text from OpenAI-compatible chat/completions response
+        if (isset($result['choices'][0]['message']['content'])) {
+            $transcribed_text = sanitize_text_field(trim($result['choices'][0]['message']['content']));
+            if (get_option('listeo_ai_search_debug_mode', false)) {
+                error_log(sprintf('AI Chat [%s] TRANSCRIBE OpenRouter success: %d chars', $request_id, strlen($transcribed_text)));
+            }
+            return new WP_REST_Response(array(
+                'success' => true,
+                'text' => $transcribed_text
+            ), 200);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => false,
+            'error' => array(
+                'message' => __('Could not transcribe audio.', 'ai-chat-search'),
                 'type' => 'transcription_error',
                 'request_id' => $request_id
             )

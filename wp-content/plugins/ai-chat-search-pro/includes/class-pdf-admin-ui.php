@@ -76,13 +76,24 @@ class AI_Chat_Search_Pro_PDF_Admin_UI {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('ai_chat_pro_pdf_upload'),
             'strings' => array(
-                'uploading' => __('Uploading...', 'ai-chat-search-pro'),
-                'processing' => __('Processing document...', 'ai-chat-search-pro'),
-                'confirm_delete' => __('Are you sure you want to delete this document? All chunks and embeddings will be removed.', 'ai-chat-search-pro'),
-                'delete_success' => __('Document deleted successfully', 'ai-chat-search-pro'),
-                'upload_success' => __('Document uploaded successfully', 'ai-chat-search-pro'),
-                'train_success' => __('Document queued for training', 'ai-chat-search-pro'),
-                'error' => __('An error occurred', 'ai-chat-search-pro'),
+                'uploading' => __('Uploading...', 'ai-chat-search'),
+                'processing' => __('Processing document...', 'ai-chat-search'),
+                'confirm_delete' => __('Are you sure you want to delete this document? All chunks and embeddings will be removed.', 'ai-chat-search'),
+                'delete_success' => __('Document deleted successfully', 'ai-chat-search'),
+                'upload_success' => __('Document uploaded successfully', 'ai-chat-search'),
+                'train_success' => __('Document queued for training', 'ai-chat-search'),
+                'error' => __('An error occurred', 'ai-chat-search'),
+                'no_documents' => __('No documents uploaded yet.', 'ai-chat-search'),
+                'trained' => __('Trained', 'ai-chat-search'),
+                'partial' => __('Partial', 'ai-chat-search'),
+                'pending_training' => __('Pending training', 'ai-chat-search'),
+                'chunks' => __('Chunks', 'ai-chat-search'),
+                'uploaded' => __('Uploaded', 'ai-chat-search'),
+                'train_now' => __('Train Now', 'ai-chat-search'),
+                'delete' => __('Delete', 'ai-chat-search'),
+                'training' => __('Training', 'ai-chat-search'),
+                'training_complete' => __('Training complete', 'ai-chat-search'),
+                'retry' => __('retry', 'ai-chat-search'),
             ),
         ));
     }
@@ -105,7 +116,7 @@ class AI_Chat_Search_Pro_PDF_Admin_UI {
             <div class="listeo-ai-modal-overlay"></div>
             <div class="listeo-ai-modal-content pdf-modal-content">
                 <div class="listeo-ai-modal-header">
-                    <h2><?php _e('Document Manager', 'ai-chat-search-pro'); ?></h2>
+                    <h2><?php _e('Document Manager', 'ai-chat-search'); ?></h2>
                     <button type="button" class="listeo-ai-modal-close">
                         <span class="dashicons dashicons-no-alt"></span>
                     </button>
@@ -114,16 +125,16 @@ class AI_Chat_Search_Pro_PDF_Admin_UI {
                 <div class="listeo-ai-modal-body">
                     <!-- Upload Section -->
                     <div class="pdf-upload-section">
-                        <h3><?php _e('Upload/Manage Documents', 'ai-chat-search-pro'); ?></h3>
+                        <h3><?php _e('Upload/Manage Documents', 'ai-chat-search'); ?></h3>
                         <p class="description">
-                            <?php _e('Upload documents to make their content searchable. Supported formats: <strong>PDF</strong>, <strong>TXT</strong>, <strong>MD</strong>, <strong>XML</strong>, <strong>CSV</strong>. Files will be automatically chunked and embedded for AI search.', 'ai-chat-search-pro'); ?>
+                            <?php _e('Upload documents to make their content searchable. Supported formats: <strong>PDF</strong>, <strong>TXT</strong>, <strong>MD</strong>, <strong>XML</strong>, <strong>CSV</strong>. Files will be automatically chunked and embedded for AI search.', 'ai-chat-search'); ?>
                         </p>
 
                         <div class="pdf-upload-form">
                             <input type="file" id="pdf-file-input" accept=".pdf,.txt,.md,.xml,.csv" multiple style="display: none;">
                             <button type="button" class="button button-primary" id="pdf-select-btn">
                                 <span class="dashicons dashicons-upload"></span>
-                                <?php _e('Select Files', 'ai-chat-search-pro'); ?>
+                                <?php _e('Select Files', 'ai-chat-search'); ?>
                             </button>
                             <span class="pdf-upload-status"></span>
                         </div>
@@ -140,17 +151,17 @@ class AI_Chat_Search_Pro_PDF_Admin_UI {
 
                     <!-- Manage Existing Documents Section -->
                     <div class="pdf-manage-section">
-                        <h3 style="margin-bottom: 7px;"><?php _e('Uploaded Documents', 'ai-chat-search-pro'); ?></h3>
-                        <span><?php _e('Click "Train Now" to generate embeddings for uploaded documents.', 'ai-chat-search-pro'); ?></span>
+                        <h3 style="margin-bottom: 7px;"><?php _e('Uploaded Documents', 'ai-chat-search'); ?></h3>
+                        <span><?php _e('Click "Train Now" to generate embeddings for uploaded documents.', 'ai-chat-search'); ?></span>
 
                         <div id="pdf-documents-list">
-                            <p class="loading-message"><?php _e('Loading...', 'ai-chat-search-pro'); ?></p>
+                            <p class="loading-message"><?php _e('Loading...', 'ai-chat-search'); ?></p>
                         </div>
                     </div>
                 </div>
 
                 <div class="listeo-ai-modal-footer">
-                    <button type="button" class="button" id="pdf-modal-close"><?php _e('Close', 'ai-chat-search-pro'); ?></button>
+                    <button type="button" class="button" id="pdf-modal-close"><?php _e('Close', 'ai-chat-search'); ?></button>
                 </div>
             </div>
         </div>

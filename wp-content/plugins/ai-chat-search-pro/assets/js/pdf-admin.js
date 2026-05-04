@@ -154,8 +154,9 @@
          * Render documents list
          */
         renderPDFList: function(documents) {
+            const s = aiChatProPdfConfig.strings;
             if (documents.length === 0) {
-                $('#pdf-documents-list').html('<p class="pdf-no-documents">No documents uploaded yet.</p>');
+                $('#pdf-documents-list').html('<p class="pdf-no-documents">' + s.no_documents + '</p>');
                 return;
             }
 
@@ -170,12 +171,12 @@
                 let showTrainButton = false;
 
                 if (isFullyIndexed) {
-                    statusBadge = `<span class="pdf-status-badge status-indexed">✓ Trained (${indexedChunks}/${totalChunks})</span>`;
+                    statusBadge = `<span class="pdf-status-badge status-indexed">✓ ${s.trained} (${indexedChunks}/${totalChunks})</span>`;
                 } else if (indexedChunks > 0) {
-                    statusBadge = `<span class="pdf-status-badge status-partial">⏳ Partial (${indexedChunks}/${totalChunks})</span>`;
+                    statusBadge = `<span class="pdf-status-badge status-partial">⏳ ${s.partial} (${indexedChunks}/${totalChunks})</span>`;
                     showTrainButton = true;
                 } else {
-                    statusBadge = `<span class="pdf-status-badge status-pending">Pending training</span>`;
+                    statusBadge = `<span class="pdf-status-badge status-pending">${s.pending_training}</span>`;
                     showTrainButton = true;
                 }
 
@@ -192,18 +193,18 @@
                             </div>
                             <div class="pdf-document-meta">
                                 ${statusBadge}
-                                <span><strong>Chunks:</strong> ${totalChunks}</span>
-                                <span><strong>Uploaded:</strong> ${PDFAdmin.formatDate(doc.upload_date)}</span>
+                                <span><strong>${s.chunks}:</strong> ${totalChunks}</span>
+                                <span><strong>${s.uploaded}:</strong> ${PDFAdmin.formatDate(doc.upload_date)}</span>
                             </div>
                         </div>
                         <div class="pdf-document-actions">
                             ${showTrainButton ? `
                                 <a href="#" class="pdf-action-btn pdf-train-btn" data-filename="${PDFAdmin.escapeHtml(doc.filename)}">
-                                    <span class="dashicons dashicons-controls-play"></span> Train Now
+                                    <span class="dashicons dashicons-controls-play"></span> ${s.train_now}
                                 </a>
                             ` : ''}
                             <a href="#" class="pdf-action-btn pdf-delete-btn" data-filename="${PDFAdmin.escapeHtml(doc.filename)}">
-                                <span class="dashicons dashicons-trash"></span> Delete
+                                <span class="dashicons dashicons-trash"></span> ${s.delete}
                             </a>
                         </div>
                     </div>
@@ -267,7 +268,8 @@
                         succeeded++;
                         retries = 0;
                         offset = data.processed;
-                        updateProgress('Training ' + offset + '/' + total);
+                        const s = aiChatProPdfConfig.strings;
+                        updateProgress(s.training + ' ' + offset + '/' + total);
                         setTimeout(processNextChunk, 300);
                     },
                     error: function() {
@@ -279,20 +281,22 @@
             function handleChunkError() {
                 retries++;
                 if (retries <= MAX_RETRIES) {
-                    updateProgress('Training ' + offset + '/' + (total || '?') + ' (retry ' + retries + ')');
+                    const s = aiChatProPdfConfig.strings;
+                    updateProgress(s.training + ' ' + offset + '/' + (total || '?') + ' (' + s.retry + ' ' + retries + ')');
                     setTimeout(processNextChunk, 500);
                 } else {
                     // Give up on this batch, skip ahead
                     failed++;
                     retries = 0;
                     offset += 10;
-                    updateProgress('Training ' + Math.min(offset, total || offset) + '/' + (total || '?'));
+                    const s = aiChatProPdfConfig.strings;
+                    updateProgress(s.training + ' ' + Math.min(offset, total || offset) + '/' + (total || '?'));
                     setTimeout(processNextChunk, 300);
                 }
             }
 
             function finish() {
-                var msg = 'Training complete';
+                var msg = aiChatProPdfConfig.strings.training_complete;
                 if (failed > 0) {
                     msg += ' (' + failed + ' failed)';
                 }

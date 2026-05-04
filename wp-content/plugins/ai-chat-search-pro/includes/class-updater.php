@@ -23,7 +23,7 @@ class AI_Chat_Search_Pro_Updater {
     /**
      * Plugin slug
      */
-    private $plugin_slug = 'ai-chat-search-pro';
+    private $plugin_slug = 'ai-chat-search';
 
     /**
      * Plugin file (relative path)
@@ -239,9 +239,9 @@ class AI_Chat_Search_Pro_Updater {
         if (!$this->license_manager->is_license_valid()) {
             echo '<tr class="plugin-update-tr active"><td colspan="4" class="plugin-update colspanchange">';
             echo '<div class="update-message notice inline notice-warning notice-alt"><p>';
-            echo '<strong>' . __('License Required:', 'ai-chat-search-pro') . '</strong> ';
+            echo '<strong>' . __('License Required:', 'ai-chat-search') . '</strong> ';
             echo sprintf(
-                __('Please <a href="%s">activate your license</a> to receive automatic updates and support.', 'ai-chat-search-pro'),
+                __('Please <a href="%s">activate your license</a> to receive automatic updates and support.', 'ai-chat-search'),
                 admin_url('admin.php?page=ai-chat-search&tab=license')
             );
             echo '</p></div></td></tr>';
@@ -256,7 +256,7 @@ class AI_Chat_Search_Pro_Updater {
         check_ajax_referer('listeo_ai_search_nonce', 'nonce');
 
         if (!current_user_can('update_plugins')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search')));
         }
 
         // Delete cache to force fresh check
@@ -269,7 +269,7 @@ class AI_Chat_Search_Pro_Updater {
         $update_data = $this->fetch_update_info();
 
         if ($update_data === false) {
-            wp_send_json_error(array('message' => __('Failed to check for updates. Please try again later.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Failed to check for updates. Please try again later.', 'ai-chat-search')));
         }
 
         // Cache the fresh data
@@ -283,8 +283,8 @@ class AI_Chat_Search_Pro_Updater {
             'current_version' => $this->current_version,
             'latest_version' => $update_data->new_version,
             'message' => $update_available
-                ? sprintf(__('Update available: %s', 'ai-chat-search-pro'), $update_data->new_version)
-                : __('You have the latest version!', 'ai-chat-search-pro')
+                ? sprintf(__('Update available: %s', 'ai-chat-search'), $update_data->new_version)
+                : __('You have the latest version!', 'ai-chat-search')
         ));
     }
 

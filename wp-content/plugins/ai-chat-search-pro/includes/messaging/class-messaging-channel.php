@@ -139,13 +139,13 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
 
             if (is_wp_error($response)) {
                 error_log("[{$channel}] AI API error: " . $response->get_error_message());
-                return __('Sorry, I could not process your request. Please try again later.', 'ai-chat-search-pro');
+                return __('Sorry, I could not process your request. Please try again later.', 'ai-chat-search');
             }
 
             $assistant_msg = isset($response['choices'][0]['message']) ? $response['choices'][0]['message'] : null;
 
             if (!$assistant_msg) {
-                return __('Sorry, I could not generate a response.', 'ai-chat-search-pro');
+                return __('Sorry, I could not generate a response.', 'ai-chat-search');
             }
 
             // No tool calls — return final text
@@ -169,7 +169,7 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
             }
         }
 
-        return __('Sorry, the request was too complex. Please try a simpler question.', 'ai-chat-search-pro');
+        return __('Sorry, the request was too complex. Please try a simpler question.', 'ai-chat-search');
     }
 
     /**
@@ -195,7 +195,7 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
 
         // Rate limiting (first call only)
         if (!$skip_rate_limit && class_exists('Listeo_AI_Search_Embedding_Manager')) {
-            if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
+            if (!Listeo_AI_Search_Embedding_Manager::try_acquire_rate_limit()) {
                 return new WP_Error('rate_limit', 'Rate limit exceeded.');
             }
         }
@@ -203,17 +203,11 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
         $payload = $provider->prepare_chat_payload($messages, $tools, 'auto');
         $payload['model'] = $model;
 
-        // Token limits
+        // Normalize model-specific parameters (max_tokens key, temperature, reasoning)
         $max_tokens = intval(get_option('listeo_ai_chat_max_tokens', 2000));
-        if (strpos($model, 'gpt-5') !== false) {
-            $payload['max_completion_tokens'] = $max_tokens;
-        } else {
-            $payload['max_tokens'] = $max_tokens;
-        }
-
-        if (strpos($model, 'gpt-5') === false) {
-            $payload['temperature'] = 0.6;
-        }
+        $payload = $provider->normalize_chat_payload($payload, array(
+            'max_tokens' => $max_tokens,
+        ));
 
         $response = wp_remote_post($provider->get_endpoint('chat'), array(
             'headers'     => $provider->get_headers(),
@@ -232,11 +226,6 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
         if ($code !== 200) {
             $err_msg = isset($body['error']['message']) ? $body['error']['message'] : 'API error ' . $code;
             return new WP_Error('api_error', $err_msg);
-        }
-
-        // Increment rate counter on success
-        if (!$skip_rate_limit && class_exists('Listeo_AI_Search_Embedding_Manager')) {
-            Listeo_AI_Search_Embedding_Manager::increment_rate_limit();
         }
 
         return $body;
@@ -573,10 +562,10 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
             if (!empty($result['success'])) {
                 return array('success' => true, 'message' => $result['message']);
             }
-            return array('error' => isset($result['message']) ? $result['message'] : __('Failed to send message.', 'ai-chat-search-pro'));
+            return array('error' => isset($result['message']) ? $result['message'] : __('Failed to send message.', 'ai-chat-search'));
         }
 
-        return array('error' => __('Contact form handler not available.', 'ai-chat-search-pro'));
+        return array('error' => __('Contact form handler not available.', 'ai-chat-search'));
     }
 
     // =========================================================================
@@ -636,7 +625,7 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
                 'allowed' => false,
                 'tier'    => 'tier1',
                 'error'   => sprintf(
-                    __('Rate limit exceeded: %d messages per minute. Please wait a moment.', 'ai-chat-search-pro'),
+                    __('Rate limit exceeded: %d messages per minute. Please wait a moment.', 'ai-chat-search'),
                     $tier1_limit
                 ),
             );
@@ -647,7 +636,7 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
                 'allowed' => false,
                 'tier'    => 'tier2',
                 'error'   => sprintf(
-                    __('Rate limit exceeded: %d messages per 15 minutes. Please slow down.', 'ai-chat-search-pro'),
+                    __('Rate limit exceeded: %d messages per 15 minutes. Please slow down.', 'ai-chat-search'),
                     $tier2_limit
                 ),
             );
@@ -658,7 +647,7 @@ abstract class AI_Chat_Search_Pro_Messaging_Channel {
                 'allowed' => false,
                 'tier'    => 'tier3',
                 'error'   => sprintf(
-                    __('Daily limit reached: %d messages per day. Please try again tomorrow.', 'ai-chat-search-pro'),
+                    __('Daily limit reached: %d messages per day. Please try again tomorrow.', 'ai-chat-search'),
                     $tier3_limit
                 ),
             );

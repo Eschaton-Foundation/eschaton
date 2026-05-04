@@ -107,12 +107,12 @@ class AI_Chat_Search_Pro_WhatsApp_Handler extends AI_Chat_Search_Pro_Messaging_C
      */
     public function verify_twilio_request($request) {
         if (empty($this->auth_token)) {
-            return new WP_Error('not_configured', __('WhatsApp integration is not configured.', 'ai-chat-search-pro'), array('status' => 503));
+            return new WP_Error('not_configured', __('WhatsApp integration is not configured.', 'ai-chat-search'), array('status' => 503));
         }
 
         $signature = $request->get_header('X-Twilio-Signature');
         if (empty($signature)) {
-            return new WP_Error('missing_signature', __('Missing Twilio signature.', 'ai-chat-search-pro'), array('status' => 401));
+            return new WP_Error('missing_signature', __('Missing Twilio signature.', 'ai-chat-search'), array('status' => 401));
         }
 
         // Build URL from actual request — raw values only, no sanitization
@@ -123,7 +123,7 @@ class AI_Chat_Search_Pro_WhatsApp_Handler extends AI_Chat_Search_Pro_Messaging_C
 
         // Validate host format (never output, only used for HMAC computation)
         if (!preg_match('/^[a-zA-Z0-9.\-]+(?::\d+)?$/', $host)) {
-            return new WP_Error('invalid_host', __('Invalid host in request.', 'ai-chat-search-pro'), array('status' => 400));
+            return new WP_Error('invalid_host', __('Invalid host in request.', 'ai-chat-search'), array('status' => 400));
         }
 
         $url = $protocol . '://' . $host . $uri;
@@ -139,7 +139,7 @@ class AI_Chat_Search_Pro_WhatsApp_Handler extends AI_Chat_Search_Pro_Messaging_C
         $calculated = base64_encode(hash_hmac('sha1', $validation_string, $this->auth_token, true));
 
         if (!hash_equals($signature, $calculated)) {
-            return new WP_Error('invalid_signature', __('Invalid Twilio signature.', 'ai-chat-search-pro'), array('status' => 401));
+            return new WP_Error('invalid_signature', __('Invalid Twilio signature.', 'ai-chat-search'), array('status' => 401));
         }
 
         return true;
@@ -288,7 +288,7 @@ class AI_Chat_Search_Pro_WhatsApp_Handler extends AI_Chat_Search_Pro_Messaging_C
      * Handle multi-step inquiry flow
      */
     private function handle_inquiry_state($extracted, $conversation_id, $state) {
-        $response = __('Thank you for your inquiry. The listing owner has been notified.', 'ai-chat-search-pro');
+        $response = __('Thank you for your inquiry. The listing owner has been notified.', 'ai-chat-search');
         $this->send_response($extracted['sender'], $response);
         $this->clear_user_state($extracted['identifier']);
         $this->current_context = null;

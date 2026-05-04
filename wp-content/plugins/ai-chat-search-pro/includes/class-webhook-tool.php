@@ -37,37 +37,11 @@ class AI_Chat_Search_Pro_Webhook_Tool {
             add_filter('ai_chat_search_messaging_execute_tool', array($this, 'handle_messaging_tool_call'), 10, 4);
         }
 
-        // REST API endpoint for triggering webhooks
-        add_action('rest_api_init', array($this, 'register_rest_routes'));
-    }
+        // Handle webhook tool calls from chat proxy (server-side execution)
+        add_filter('ai_chat_search_proxy_execute_tool', array($this, 'handle_proxy_tool_call'), 10, 4);
 
-    /**
-     * Register REST API routes
-     */
-    public function register_rest_routes() {
-        register_rest_route('listeo/v1', '/webhook-trigger', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'handle_webhook_trigger'),
-            'permission_callback' => '__return_true',
-            'args' => array(
-                'action_id' => array(
-                    'required' => true,
-                    'type' => 'string',
-                    'sanitize_callback' => 'sanitize_key',
-                ),
-                'data' => array(
-                    'required' => false,
-                    'type' => 'object',
-                    'default' => array(),
-                ),
-                'conversation_id' => array(
-                    'required' => false,
-                    'type' => 'string',
-                    'default' => '',
-                    'sanitize_callback' => 'sanitize_text_field',
-                ),
-            ),
-        ));
+        // Strip sensitive tool details from frontend config
+        add_filter('ai_chat_search_frontend_tools', array($this, 'strip_frontend_tool_details'));
     }
 
     /**
@@ -109,6 +83,70 @@ class AI_Chat_Search_Pro_Webhook_Tool {
 
         $data = ($response instanceof WP_REST_Response) ? $response->get_data() : $response;
         return is_array($data) ? $data : array('success' => true);
+    }
+
+    /**
+     * Handle trigger_webhook_action calls from chat proxy.
+     *
+     * Executes the webhook server-side and returns a result for the
+     * second AI API call made by chat_proxy.
+     *
+     * @param mixed  $result        Current result (null if unhandled).
+     * @param string $function_name Tool name called by AI.
+     * @param array  $args          Tool arguments from AI.
+     * @param array  $context       Request context (request, session_id).
+     * @return array|null Result array or null to pass through.
+     */
+    public function handle_proxy_tool_call($result, $function_name, $args, $context = null) {
+        if ($function_name !== 'trigger_webhook_action') {
+            return $result;
+        }
+
+        // Build synthetic WP_REST_Request for handle_webhook_trigger
+        $request = new WP_REST_Request('POST', '/listeo/v1/webhook-trigger');
+        $request->set_param('action_id', isset($args['action_id']) ? $args['action_id'] : '');
+
+        $data = $args;
+        unset($data['action_id']);
+        $request->set_param('data', $data);
+
+        if (!empty($context['session_id'])) {
+            $request->set_param('conversation_id', sanitize_text_field($context['session_id']));
+        }
+
+        $response = $this->handle_webhook_trigger($request);
+
+        if (is_wp_error($response)) {
+            return array('success' => false, 'message' => $response->get_error_message());
+        }
+
+        $data = ($response instanceof WP_REST_Response) ? $response->get_data() : $response;
+        return is_array($data) ? $data : array('success' => true);
+    }
+
+    /**
+     * Strip sensitive details from webhook tool before sending to frontend.
+     *
+     * Keeps the tool entry so tool_choice: "auto" is sent, but removes
+     * action_id enum and descriptions to prevent unauthenticated enumeration.
+     *
+     * @param array $tools Tools array for frontend config.
+     * @return array Modified tools array.
+     */
+    public function strip_frontend_tool_details($tools) {
+        foreach ($tools as &$tool) {
+            if (isset($tool['function']['name']) && $tool['function']['name'] === 'trigger_webhook_action') {
+                $tool['function']['parameters'] = array(
+                    'type' => 'object',
+                    'properties' => array(
+                        'action_id' => array('type' => 'string'),
+                    ),
+                    'required' => array('action_id'),
+                );
+            }
+        }
+        unset($tool);
+        return $tools;
     }
 
     /**

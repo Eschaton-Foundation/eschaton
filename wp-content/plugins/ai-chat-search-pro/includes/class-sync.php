@@ -84,6 +84,7 @@ class AI_Chat_Search_Pro_Sync_Handler {
         // Clear cached state and force online re-validation
         delete_transient('ai_chat_search_pro_license_valid');
         delete_option(self::LV_KEY);
+        delete_option('ai_chat_search_pro_license_last_check');
 
         $license_key = get_option('ai_chat_search_pro_license_key', '');
         if (empty($license_key)) {

@@ -400,7 +400,7 @@
       default:
         this.$btn.attr(
           "title",
-          this.$btn.data("original-title") || "Voice input",
+          this.$btn.data("original-title") || "Voice Input",
         );
         this.$timer.text("0:00");
     }

@@ -2,7 +2,7 @@
  * AI Chat Search Pro - Chat History Chart
  *
  * Initializes and renders the chat history activity chart
- * using Chart.js library.
+ * using Chart.js library. Supports period switching (month/year).
  *
  * @package AI_Chat_Search_Pro
  * @since 1.7.5
@@ -11,34 +11,10 @@
 (function($) {
     'use strict';
 
-    // Store chart instance for resize handling
     var chatHistoryChart = null;
+    var currentPeriod = 'month';
 
-    /**
-     * Initialize the chat history chart
-     */
-    function initChatHistoryChart() {
-        var canvas = document.getElementById('airs-chat-history-chart');
-
-        if (!canvas) {
-            return;
-        }
-
-        if (typeof Chart === 'undefined') {
-            console.log('AI Chat: Chart.js not loaded');
-            return;
-        }
-
-        if (typeof aiChatHistoryChartData === 'undefined') {
-            console.log('AI Chat: Chart data not available');
-            return;
-        }
-
-        var ctx = canvas.getContext('2d');
-        var data = aiChatHistoryChartData;
-
-        // Build datasets array
-        // Colors: Conversations=Blue, Messages=Green, Emails=Purple
+    function buildDatasets(data) {
         var datasets = [
             {
                 label: data.strings.conversations,
@@ -70,7 +46,6 @@
             }
         ];
 
-        // Add emails dataset only if showEmails is true (total > 0)
         if (data.showEmails && data.emails) {
             datasets.push({
                 label: data.strings.emails,
@@ -88,12 +63,22 @@
             });
         }
 
-        // Chart configuration
+        return datasets;
+    }
+
+    function createChart(chartData) {
+        var canvas = document.getElementById('airs-chat-history-chart');
+        if (!canvas || typeof Chart === 'undefined') {
+            return;
+        }
+
+        var ctx = canvas.getContext('2d');
+
         var chartConfig = {
             type: 'line',
             data: {
-                labels: data.labels,
-                datasets: datasets
+                labels: chartData.labels,
+                datasets: buildDatasets(chartData)
             },
             options: {
                 responsive: true,
@@ -174,9 +159,7 @@
             }
         };
 
-        // Create the chart with error handling
         try {
-            // Destroy existing chart if it exists (for re-initialization)
             if (chatHistoryChart) {
                 chatHistoryChart.destroy();
             }
@@ -186,7 +169,93 @@
         }
     }
 
-    // Debounce function for resize handling
+    function updateChartWithResponse(response) {
+        if (!response.success || !response.data) {
+            return;
+        }
+
+        var d = response.data;
+        var data = $.extend({}, aiChatHistoryChartData, {
+            labels: d.labels,
+            conversations: d.conversations,
+            messages: d.messages,
+            emails: d.emails,
+            showEmails: d.showEmails
+        });
+
+        createChart(data);
+        updateLegend(data);
+    }
+
+    function updateLegend(data) {
+        var $container = $('.airs-chart-toolbar');
+        if (!$container.length) {
+            return;
+        }
+
+        var $legend = $container.find('.airs-chart-legend').empty();
+
+        var items = [
+            { cls: 'airs-legend-conversations', text: data.strings.conversations },
+            { cls: 'airs-legend-messages', text: data.strings.messages }
+        ];
+        if (data.showEmails) {
+            items.push({ cls: 'airs-legend-emails', text: data.strings.emails });
+        }
+
+        $.each(items, function(_, item) {
+            $('<span>').addClass('airs-legend-item ' + item.cls)
+                .append($('<span>').addClass('airs-legend-color'))
+                .append($('<span>').text(item.text))
+                .appendTo($legend);
+        });
+    }
+
+    function switchPeriod(period) {
+        if (period === currentPeriod) {
+            return;
+        }
+        currentPeriod = period;
+
+        $.ajax({
+            url: aiChatHistoryChartData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'listeo_ai_get_chart_data',
+                nonce: aiChatHistoryChartData.nonce,
+                period: period
+            },
+            success: function(response) {
+                updateChartWithResponse(response);
+            },
+            error: function() {
+                // Revert button state on failure
+                $('.airs-chart-period-toggle .airs-position-btn').removeClass('active');
+                $('.airs-chart-period-toggle .airs-position-btn[data-period="' + (period === 'month' ? 'year' : 'month') + '"]').addClass('active');
+                currentPeriod = period === 'month' ? 'year' : 'month';
+            }
+        });
+    }
+
+    function initChatHistoryChart() {
+        var canvas = document.getElementById('airs-chat-history-chart');
+        if (!canvas) {
+            return;
+        }
+
+        if (typeof Chart === 'undefined') {
+            console.log('AI Chat: Chart.js not loaded');
+            return;
+        }
+
+        if (typeof aiChatHistoryChartData === 'undefined') {
+            console.log('AI Chat: Chart data not available');
+            return;
+        }
+
+        createChart(aiChatHistoryChartData);
+    }
+
     function debounce(func, wait) {
         var timeout;
         return function() {
@@ -198,18 +267,27 @@
         };
     }
 
-    // Handle window resize
     var handleResize = debounce(function() {
         if (chatHistoryChart) {
             chatHistoryChart.resize();
         }
     }, 250);
 
-    // Initialize when DOM is ready
     $(document).ready(function() {
         initChatHistoryChart();
 
-        // Add resize listener
+        // Period toggle buttons
+        $(document).on('click', '.airs-chart-period-toggle .airs-position-btn', function() {
+            var period = $(this).data('period');
+            if (period === currentPeriod) {
+                return;
+            }
+
+            $(this).siblings().removeClass('active');
+            $(this).addClass('active');
+            switchPeriod(period);
+        });
+
         $(window).on('resize', handleResize);
     });
 

@@ -79,6 +79,10 @@ class Listeo_AI_WooCommerce_Integration {
                     'type' => 'number',
                     'description' => 'Minimum rating (1-5)'
                 ),
+                'sku' => array(
+                    'type' => 'string',
+                    'description' => 'Product SKU for direct lookup (pinned to top of results)'
+                ),
                 'per_page' => array(
                     'type' => 'integer',
                     'default' => 10,
@@ -126,7 +130,7 @@ class Listeo_AI_WooCommerce_Integration {
      * @return WP_REST_Response
      */
     public function search_products($request) {
-        // Rate limit check - prevent API abuse
+        // Read-only pre-filter; actual atomic quota is consumed deeper in AI_Engine → generate_embedding() / expand_query_if_enabled()
         if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
             return new WP_REST_Response(array(
                 'success' => false,
@@ -147,6 +151,8 @@ class Listeo_AI_WooCommerce_Integration {
         }
 
         $query = $request->get_param('query');
+        $source = $request->get_param('source');
+        $is_chatbot = ($source === 'chatbot');
         $has_ai = class_exists('Listeo_AI_Search_AI_Engine');
 
         $debug = get_option('listeo_ai_search_debug_mode', false);
@@ -174,6 +180,25 @@ class Listeo_AI_WooCommerce_Integration {
         $category = $request->get_param('category');
         $rating = $request->get_param('rating');
 
+        // Normalize "GPT-over-fills-every-param" defaults to null.
+        // OpenAI GPT models (unlike Claude) eagerly set every optional schema
+        // parameter to its type default — price_max: 0, price_min: 0, rating: 0,
+        // category: "" — even when the user didn't mention them. Those literal
+        // defaults would otherwise apply as real filters (e.g. price_max=0
+        // rejects every paid product). Treat 0 / "" / <0 as "not filtering".
+        if ($price_min === null || $price_min === '' || (float) $price_min <= 0) {
+            $price_min = null;
+        }
+        if ($price_max === null || $price_max === '' || (float) $price_max <= 0) {
+            $price_max = null;
+        }
+        if ($rating === null || $rating === '' || (float) $rating <= 0) {
+            $rating = null;
+        }
+        if ($category === '' || $category === null) {
+            $category = null;
+        }
+
         // Execute search
         $results = array();
 
@@ -189,8 +214,16 @@ class Listeo_AI_WooCommerce_Integration {
 
             $ai_engine = new Listeo_AI_Search_AI_Engine();
 
-            // Search using AI with 'product' post type
-            $ai_results = $ai_engine->search($query, 50, 0, 'product', $debug);
+            // When chatbot: skip threshold (LLM will re-rank), use chatbot max results limit
+            $search_limit = $is_chatbot ? intval(get_option('listeo_ai_chat_max_results', 10)) : 50;
+
+            // Auto-detect batch processing to avoid OOM on large catalogs
+            $total_embeddings = Listeo_AI_Search_Database_Manager::count_embeddings_for_search('product');
+            if ($total_embeddings > 5000) {
+                $ai_results = $ai_engine->search_with_batching($query, $search_limit, 0, 'product', $debug, 3000, $is_chatbot);
+            } else {
+                $ai_results = $ai_engine->search($query, $search_limit, 0, 'product', $debug, array(), false, $is_chatbot);
+            }
 
             // Capture notice from AI engine
             if (!empty($ai_results['notice'])) {
@@ -280,6 +313,50 @@ class Listeo_AI_WooCommerce_Integration {
                     }
                 }
                 wp_reset_postdata();
+            }
+        }
+
+        // SKU direct lookup — if matched, return ONLY that product (keyword results ignored)
+        $sku = $request->get_param('sku');
+        if (!empty($sku)) {
+            $sku_clean = trim(sanitize_text_field($sku));
+
+            // 1. Try exact match first (fast, uses WC index)
+            $sku_product_id = wc_get_product_id_by_sku($sku_clean);
+
+            // 2. Fallback: LIKE match so "123" finds "sku-123", "sku 123" finds "sku-123", etc.
+            //    Requires 2+ chars to avoid matching everything. Shortest match wins.
+            if (!$sku_product_id && strlen($sku_clean) >= 2) {
+                global $wpdb;
+                $like = '%' . $wpdb->esc_like($sku_clean) . '%';
+                $sku_product_id = (int) $wpdb->get_var($wpdb->prepare("
+                    SELECT p.ID
+                    FROM {$wpdb->posts} p
+                    INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                    WHERE pm.meta_key = '_sku'
+                      AND pm.meta_value LIKE %s
+                      AND p.post_type IN ('product', 'product_variation')
+                      AND p.post_status = 'publish'
+                    ORDER BY CHAR_LENGTH(pm.meta_value) ASC
+                    LIMIT 1
+                ", $like));
+            }
+
+            if ($sku_product_id) {
+                // If matched a variation, resolve to parent product
+                $sku_product = wc_get_product($sku_product_id);
+                if ($sku_product && $sku_product->is_type('variation')) {
+                    $sku_product_id = $sku_product->get_parent_id();
+                }
+
+                // Replace entire result set with just the SKU match — definitive lookup
+                $results = array($this->format_product_data($sku_product_id));
+
+                if ($debug) {
+                    error_log('SKU match returned as sole result: ' . $sku_clean . ' → product #' . $sku_product_id);
+                }
+            } elseif ($debug) {
+                error_log('SKU lookup no match, falling back to keyword results: ' . $sku_clean);
             }
         }
 
@@ -989,6 +1066,7 @@ class Listeo_AI_WooCommerce_Integration {
         );
         $tracking_url_keys = array(
             '_tracking_url',
+            '_wing_order_tracking_url',
         );
         $parcel_id_keys = array(
             '_boxnow_parcel_ids',
@@ -1090,12 +1168,6 @@ class Listeo_AI_WooCommerce_Integration {
             $content .= "\n";
         }
 
-        // === DELIVERY ESTIMATE ===
-        $estimated_delivery = $order->get_meta('_estimated_delivery_date');
-        if ($estimated_delivery) {
-            $content .= __('ESTIMATED DELIVERY', 'ai-chat-search') . ": " . $estimated_delivery . "\n\n";
-        }
-
         // === ORDER STATUS DETAILS ===
         if ($status === 'completed') {
             $content .= "✅ " . __('Order completed and delivered.', 'ai-chat-search') . "\n";
@@ -1116,7 +1188,13 @@ class Listeo_AI_WooCommerce_Integration {
             $content .= "💰 " . __('Order has been refunded.', 'ai-chat-search') . "\n";
         }
 
-        return $content;
+        /**
+         * Filter to inject arbitrary extra content into the order context sent to AI.
+         *
+         * @param string   $content Built order content (no PII).
+         * @param WC_Order $order   The WooCommerce order object.
+         */
+        return apply_filters('listeo_ai_order_extra_content', $content, $order);
     }
 
     // =========================================================================

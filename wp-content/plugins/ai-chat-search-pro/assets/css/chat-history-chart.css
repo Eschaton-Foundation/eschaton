@@ -69,6 +69,21 @@
     background-color: #8b5cf6;
 }
 
+/* Chart toolbar: toggle + legend row */
+.airs-chart-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.airs-chart-period-toggle .airs-position-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
 /* Chart container */
 .airs-chart-container {
     position: relative;
@@ -76,7 +91,7 @@
     width: 100%;
     max-width: 100%;
     overflow: visible;
-    margin-bottom: 20px;
+    margin-bottom: 45px;
 }
 
 /* Ensure canvas respects container */

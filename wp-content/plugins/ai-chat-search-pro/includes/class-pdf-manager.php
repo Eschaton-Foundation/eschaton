@@ -108,13 +108,13 @@ class AI_Chat_Search_Pro_PDF_Manager {
      */
     private function extract_text_from_text_file($file_path, $extension) {
         if (!file_exists($file_path)) {
-            return new WP_Error('file_not_found', __('File not found', 'ai-chat-search-pro'));
+            return new WP_Error('file_not_found', __('File not found', 'ai-chat-search'));
         }
 
         $content = file_get_contents($file_path);
 
         if ($content === false) {
-            return new WP_Error('read_failed', __('Failed to read file', 'ai-chat-search-pro'));
+            return new WP_Error('read_failed', __('Failed to read file', 'ai-chat-search'));
         }
 
         // Handle CSV files specially - convert to readable text
@@ -262,7 +262,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
      */
     public function upload_and_process_pdf($file) {
         if (empty($file['tmp_name'])) {
-            return new WP_Error('no_file', __('No file uploaded', 'ai-chat-search-pro'));
+            return new WP_Error('no_file', __('No file uploaded', 'ai-chat-search'));
         }
 
         // Get file extension
@@ -272,20 +272,20 @@ class AI_Chat_Search_Pro_PDF_Manager {
         // Validate file type
         if (!$this->is_supported_extension($extension)) {
             return new WP_Error('invalid_type', sprintf(
-                __('Unsupported file type. Allowed: %s', 'ai-chat-search-pro'),
+                __('Unsupported file type. Allowed: %s', 'ai-chat-search'),
                 implode(', ', self::SUPPORTED_EXTENSIONS)
             ));
         }
 
         // For PDF files, check if parser is available
         if ($extension === 'pdf' && !$this->is_pdf_parser_available()) {
-            return new WP_Error('no_parser', __('PDF parser library not available', 'ai-chat-search-pro'));
+            return new WP_Error('no_parser', __('PDF parser library not available', 'ai-chat-search'));
         }
 
         // Check file size (max 50MB)
         $max_size = 50 * 1024 * 1024; // 50MB
         if ($file['size'] > $max_size) {
-            return new WP_Error('file_too_large', __('File size must be less than 50MB', 'ai-chat-search-pro'));
+            return new WP_Error('file_too_large', __('File size must be less than 50MB', 'ai-chat-search'));
         }
 
         // Extract text based on file type
@@ -304,8 +304,8 @@ class AI_Chat_Search_Pro_PDF_Manager {
         // Check if text is empty
         if (empty(trim($text))) {
             $error_message = ($extension === 'pdf')
-                ? __('Could not extract text from PDF. The file may be image-based or encrypted.', 'ai-chat-search-pro')
-                : __('The file appears to be empty or contains no readable text.', 'ai-chat-search-pro');
+                ? __('Could not extract text from PDF. The file may be image-based or encrypted.', 'ai-chat-search')
+                : __('The file appears to be empty or contains no readable text.', 'ai-chat-search');
             return new WP_Error('no_text', $error_message);
         }
 
@@ -319,7 +319,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
         $display_filename = preg_replace('/\.(' . implode('|', self::SUPPORTED_EXTENSIONS) . ')$/i', '', $filename);
 
         if (!move_uploaded_file($file['tmp_name'], $file_path)) {
-            return new WP_Error('upload_failed', __('Failed to move uploaded file', 'ai-chat-search-pro'));
+            return new WP_Error('upload_failed', __('Failed to move uploaded file', 'ai-chat-search'));
         }
 
         // Chunk the text
@@ -343,7 +343,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
             'chunks' => count($chunks),
             'post_ids' => $post_ids,
             'message' => sprintf(
-                __('Document uploaded successfully. Created %d chunk(s).', 'ai-chat-search-pro'),
+                __('Document uploaded successfully. Created %d chunk(s).', 'ai-chat-search'),
                 count($chunks)
             ),
         );
@@ -357,7 +357,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
      */
     private function extract_text_from_pdf($file_path) {
         if (!$this->is_pdf_parser_available()) {
-            return new WP_Error('no_parser', __('PDF parser not available', 'ai-chat-search-pro'));
+            return new WP_Error('no_parser', __('PDF parser not available', 'ai-chat-search'));
         }
 
         try {
@@ -372,7 +372,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
             return $text;
         } catch (Exception $e) {
             return new WP_Error('extraction_failed', sprintf(
-                __('Failed to extract text from PDF: %s', 'ai-chat-search-pro'),
+                __('Failed to extract text from PDF: %s', 'ai-chat-search'),
                 $e->getMessage()
             ));
         }
@@ -513,7 +513,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
 
             // Create post title
             $title = sprintf(
-                __('%s (Part %d of %d)', 'ai-chat-search-pro'),
+                __('%s (Part %d of %d)', 'ai-chat-search'),
                 $filename,
                 $chunk_number,
                 $total_chunks
@@ -561,11 +561,11 @@ class AI_Chat_Search_Pro_PDF_Manager {
         check_ajax_referer('ai_chat_pro_pdf_upload', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search')));
         }
 
         if (empty($_FILES['pdf_file'])) {
-            wp_send_json_error(array('message' => __('No file uploaded', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('No file uploaded', 'ai-chat-search')));
         }
 
         $result = $this->upload_and_process_pdf($_FILES['pdf_file']);
@@ -584,28 +584,47 @@ class AI_Chat_Search_Pro_PDF_Manager {
         check_ajax_referer('ai_chat_pro_pdf_upload', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search')));
         }
 
         $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
 
         if (empty($filename)) {
-            wp_send_json_error(array('message' => __('No filename provided', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('No filename provided', 'ai-chat-search')));
         }
 
-        // Find all posts with this filename
+        // Find all posts with this filename.
+        //
+        // The list view in get_all_pdf_documents() groups any ai_pdf_document
+        // post whose _pdf_original_filename meta is missing or empty under the
+        // sentinel label 'Unknown'. The original lookup below could not find
+        // those orphans because it required an exact meta_value match — the
+        // user would see "Unknown" in the UI but get "Document not found" on
+        // delete. When the incoming filename is the sentinel, fall back to a
+        // LEFT JOIN that catches missing / empty meta as well.
         global $wpdb;
-        $post_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT p.ID FROM {$wpdb->posts} p
-             INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-             WHERE p.post_type = 'ai_pdf_document'
-             AND pm.meta_key = '_pdf_original_filename'
-             AND pm.meta_value = %s",
-            $filename
-        ));
+
+        if ($filename === 'Unknown') {
+            $post_ids = $wpdb->get_col(
+                "SELECT p.ID FROM {$wpdb->posts} p
+                 LEFT JOIN {$wpdb->postmeta} pm
+                     ON p.ID = pm.post_id AND pm.meta_key = '_pdf_original_filename'
+                 WHERE p.post_type = 'ai_pdf_document'
+                 AND (pm.meta_value IS NULL OR pm.meta_value = '' OR pm.meta_value = 'Unknown')"
+            );
+        } else {
+            $post_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT p.ID FROM {$wpdb->posts} p
+                 INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                 WHERE p.post_type = 'ai_pdf_document'
+                 AND pm.meta_key = '_pdf_original_filename'
+                 AND pm.meta_value = %s",
+                $filename
+            ));
+        }
 
         if (empty($post_ids)) {
-            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search')));
         }
 
         // Delete all chunks
@@ -617,7 +636,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
         }
 
         wp_send_json_success(array(
-            'message' => sprintf(__('Document "%s" deleted successfully', 'ai-chat-search-pro'), $filename),
+            'message' => sprintf(__('Document "%s" deleted successfully', 'ai-chat-search'), $filename),
         ));
     }
 
@@ -628,11 +647,11 @@ class AI_Chat_Search_Pro_PDF_Manager {
         check_ajax_referer('ai_chat_pro_pdf_upload', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search')));
         }
 
         if (!class_exists('Listeo_AI_Search_PDF_Post_Type')) {
-            wp_send_json_error(array('message' => __('Document post type not available', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Document post type not available', 'ai-chat-search')));
         }
 
         $pdf_documents = Listeo_AI_Search_PDF_Post_Type::get_all_pdf_documents();
@@ -674,14 +693,14 @@ class AI_Chat_Search_Pro_PDF_Manager {
         check_ajax_referer('ai_chat_pro_pdf_upload', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions', 'ai-chat-search')));
         }
 
         $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
         $offset   = isset($_POST['offset']) ? absint($_POST['offset']) : 0;
 
         if (empty($filename)) {
-            wp_send_json_error(array('message' => __('No filename provided', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('No filename provided', 'ai-chat-search')));
         }
 
         $batch_size = 10;
@@ -699,7 +718,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
         ));
 
         if ($total === 0) {
-            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Document not found', 'ai-chat-search')));
         }
 
         if ($offset >= $total) {
@@ -728,7 +747,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
         ));
 
         if (empty($post_ids)) {
-            wp_send_json_error(array('message' => __('Chunks not found', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Chunks not found', 'ai-chat-search')));
         }
 
         // Collect content for all chunks in this batch

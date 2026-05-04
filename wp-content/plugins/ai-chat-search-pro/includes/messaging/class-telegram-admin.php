@@ -77,12 +77,12 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                         </svg>
                     </span>
-                    <?php _e('Telegram Integration', 'ai-chat-search-pro'); ?>
+                    <?php _e('Telegram Integration', 'ai-chat-search'); ?>
                     <?php if (!$is_pro): ?>
                         <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                     <?php endif; ?>
-                    <small><?php _e('When enabled, users can chat with your AI assistant via Telegram.', 'ai-chat-search-pro'); ?>
-                    <br><a href="https://purethemes.net/wordpress-chatbot-whatsapp-telegram-integration/" target="_blank" class="airs-guide-link"><?php _e('Read Guide', 'ai-chat-search-pro'); ?> &rarr;</a></small>
+                    <small><?php _e('When enabled, users can chat with your AI assistant via Telegram.', 'ai-chat-search'); ?>
+                    <br><a href="https://purethemes.net/wordpress-chatbot-whatsapp-telegram-integration/" target="_blank" class="airs-guide-link"><?php _e('Read Guide', 'ai-chat-search'); ?> &rarr;</a></small>
                 </span>
             </label>
             <?php if ($is_pro): ?>
@@ -91,14 +91,14 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                     <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <?php _e('Configure', 'ai-chat-search-pro'); ?>
+                <?php _e('Configure', 'ai-chat-search'); ?>
             </button>
             <?php endif; ?>
         </div>
         <?php if (!$is_pro): ?>
             <p class="airs-help-text" style="margin-left: 30px;">
                 <a href="<?php echo esc_url(AI_Chat_Search_Pro_Manager::get_upgrade_url('ai-telegram')); ?>" target="_blank" class="upgrade-link">
-                    <?php _e('Upgrade to Pro to enable Telegram integration', 'ai-chat-search-pro'); ?> &rarr;
+                    <?php _e('Upgrade to Pro to enable Telegram integration', 'ai-chat-search'); ?> &rarr;
                 </a>
             </p>
         <?php endif; ?>
@@ -127,7 +127,7 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                             </svg>
                         </span>
-                        <?php esc_html_e('Telegram Configuration', 'ai-chat-search-pro'); ?>
+                        <?php esc_html_e('Telegram Configuration', 'ai-chat-search'); ?>
                     </h3>
                     <button type="button" class="listeo-ai-modal-close">
                         <span class="dashicons dashicons-no-alt"></span>
@@ -137,24 +137,24 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                 <div class="airs-modal-body">
                     <!-- Quick Setup Guide -->
                     <div class="airs-shortcode-builder-info" style="margin-bottom: 20px;">
-                        <span><?php _e('Open <a href="https://t.me/BotFather" target="_blank">@BotFather</a> on Telegram, use the /newbot command to create a bot, then paste the bot token below and save settings.', 'ai-chat-search-pro'); ?></span>
+                        <span><?php _e('Open <a href="https://t.me/BotFather" target="_blank">@BotFather</a> on Telegram, use the /newbot command to create a bot, then paste the bot token below and save settings.', 'ai-chat-search'); ?></span>
                     </div>
 
                     <!-- Bot Token -->
                     <div class="airs-form-group">
                         <label for="listeo_ai_telegram_bot_token" class="airs-label">
-                            <?php esc_html_e('Bot Token', 'ai-chat-search-pro'); ?>
+                            <?php esc_html_e('Bot Token', 'ai-chat-search'); ?>
                         </label>
                         <input type="password" id="listeo_ai_telegram_bot_token" data-field="bot_token"
                                value="<?php echo esc_attr($bot_token); ?>" class="airs-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
-                        <div class="airs-help-text"><?php esc_html_e('The token you received from @BotFather when creating your bot.', 'ai-chat-search-pro'); ?></div>
+                        <div class="airs-help-text"><?php esc_html_e('The token you received from @BotFather when creating your bot.', 'ai-chat-search'); ?></div>
                     </div>
 
                     <!-- Test Connection -->
                     <?php if ($is_configured): ?>
                     <div class="airs-form-group" style="margin-top: 16px;">
-                        <button type="button" class="airs-button airs-button-secondary" data-test-action="telegram" data-label="<?php esc_attr_e('Test Connection', 'ai-chat-search-pro'); ?>">
-                            <?php esc_html_e('Test Connection', 'ai-chat-search-pro'); ?>
+                        <button type="button" class="airs-button airs-button-secondary" data-test-action="telegram" data-label="<?php esc_attr_e('Test Connection', 'ai-chat-search'); ?>">
+                            <?php esc_html_e('Test Connection', 'ai-chat-search'); ?>
                         </button>
                         <span class="airs-test-result"></span>
                     </div>
@@ -165,7 +165,7 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                 <div class="airs-result-message" style="display: none; margin: 0 20px 15px; padding: 10px; border-radius: 4px; font-size: 13px;"></div>
                 <div class="airs-modal-footer">
                     <button type="button" class="airs-button airs-button-primary" data-save-action="telegram">
-                        <span class="button-text"><?php esc_html_e('Save Settings', 'ai-chat-search-pro'); ?></span>
+                        <span class="button-text"><?php esc_html_e('Save Settings', 'ai-chat-search'); ?></span>
                         <span class="button-spinner" style="display: none;">
                             <span class="airs-spinner"></span>
                         </span>
@@ -181,11 +181,11 @@ class AI_Chat_Search_Pro_Telegram_Admin {
      */
     public function ajax_save_settings() {
         if (!check_ajax_referer('telegram_settings', 'nonce', false)) {
-            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search')));
         }
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search')));
         }
 
         $bot_token = isset($_POST['bot_token']) ? sanitize_text_field($_POST['bot_token']) : '';
@@ -219,7 +219,7 @@ class AI_Chat_Search_Pro_Telegram_Admin {
                 $error = is_wp_error($response) ? $response->get_error_message() : (isset($tg_body['description']) ? $tg_body['description'] : 'Unknown error');
                 wp_send_json_error(array(
                     'message' => sprintf(
-                        __('Settings saved, but webhook registration failed: %s', 'ai-chat-search-pro'),
+                        __('Settings saved, but webhook registration failed: %s', 'ai-chat-search'),
                         $error
                     ),
                 ));
@@ -228,12 +228,12 @@ class AI_Chat_Search_Pro_Telegram_Admin {
             update_option('listeo_ai_telegram_secret_token', $secret_token);
 
             wp_send_json_success(array(
-                'message' => __('Settings saved and webhook registered successfully!', 'ai-chat-search-pro'),
+                'message' => __('Settings saved and webhook registered successfully!', 'ai-chat-search'),
             ));
         }
 
         wp_send_json_success(array(
-            'message' => __('Settings saved successfully!', 'ai-chat-search-pro'),
+            'message' => __('Settings saved successfully!', 'ai-chat-search'),
         ));
     }
 
@@ -244,13 +244,13 @@ class AI_Chat_Search_Pro_Telegram_Admin {
         check_ajax_referer('telegram_test', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-chat-search')));
         }
 
         $bot_token = get_option('listeo_ai_telegram_bot_token', '');
 
         if (empty($bot_token)) {
-            wp_send_json_error(array('message' => __('Bot token not configured. Save settings first.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Bot token not configured. Save settings first.', 'ai-chat-search')));
         }
 
         $response = wp_remote_get(
@@ -271,15 +271,15 @@ class AI_Chat_Search_Pro_Telegram_Admin {
             wp_send_json_success(array(
                 'message' => sprintf(
                     /* translators: %1$s: bot name, %2$s: bot username */
-                    __('Connected to bot: %1$s (%2$s)', 'ai-chat-search-pro'),
+                    __('Connected to bot: %1$s (%2$s)', 'ai-chat-search'),
                     $bot_name,
                     $bot_username
                 ),
             ));
         } elseif ($code === 401) {
-            wp_send_json_error(array('message' => __('Invalid bot token. Check the token from @BotFather.', 'ai-chat-search-pro')));
+            wp_send_json_error(array('message' => __('Invalid bot token. Check the token from @BotFather.', 'ai-chat-search')));
         } else {
-            $error_desc = isset($body['description']) ? $body['description'] : sprintf(__('API returned status code: %d', 'ai-chat-search-pro'), $code);
+            $error_desc = isset($body['description']) ? $body['description'] : sprintf(__('API returned status code: %d', 'ai-chat-search'), $code);
             wp_send_json_error(array('message' => $error_desc));
         }
     }
