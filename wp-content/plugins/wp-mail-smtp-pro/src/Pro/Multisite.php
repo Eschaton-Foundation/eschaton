@@ -359,7 +359,7 @@ class Multisite {
 			'mail'    => [
 				'from_email_force' => false,
 				'from_name_force'  => false,
-				'return_path'      => false,
+				'return_path'      => true,
 			],
 			'smtp'    => [
 				'autotls' => false,

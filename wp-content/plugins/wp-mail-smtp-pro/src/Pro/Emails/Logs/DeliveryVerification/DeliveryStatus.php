@@ -37,6 +37,15 @@ class DeliveryStatus {
 	const STATUS_UNKNOWN = 'unknown';
 
 	/**
+	 * Error code.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @var string
+	 */
+	private $error_code = '';
+
+	/**
 	 * Reason for the delivery failure.
 	 *
 	 * @since 3.9.0
@@ -117,6 +126,18 @@ class DeliveryStatus {
 	}
 
 	/**
+	 * Get the error code.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @return string
+	 */
+	public function get_error_code() {
+
+		return $this->error_code;
+	}
+
+	/**
 	 * Set the reason why the delivery failed.
 	 *
 	 * @since 3.9.0
@@ -128,5 +149,17 @@ class DeliveryStatus {
 	public function set_fail_reason( $reason ) {
 
 		$this->fail_reason = $reason;
+	}
+
+	/**
+	 * Set the error code.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @param string $code Error code.
+	 */
+	public function set_error_code( $code ) {
+
+		$this->error_code = $code;
 	}
 }

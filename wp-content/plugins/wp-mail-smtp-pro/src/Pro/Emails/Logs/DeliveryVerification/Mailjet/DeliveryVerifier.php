@@ -51,6 +51,10 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 					$delivery_status->set_fail_reason( $event['StateID'] );
 				}
 
+				if ( ! empty( $event['Status'] ) ) {
+					$delivery_status->set_error_code( $event['Status'] );
+				}
+
 				break;
 			}
 		}

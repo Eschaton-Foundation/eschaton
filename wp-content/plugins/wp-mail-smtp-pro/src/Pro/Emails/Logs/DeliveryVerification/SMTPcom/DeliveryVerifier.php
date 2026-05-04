@@ -99,6 +99,10 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 				if ( ! empty( $item['details']['delivery']['status'] ) ) {
 					$delivery_status->set_fail_reason( $item['details']['delivery']['status'] );
 				}
+
+				if ( ! empty( $item['details']['delivery']['code'] ) ) {
+					$delivery_status->set_error_code( $item['details']['delivery']['code'] );
+				}
 				break;
 			}
 		}

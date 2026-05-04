@@ -3,6 +3,7 @@
 namespace WPMailSMTP\Pro\Emails\Logs\Webhooks\Providers\Mandrill\Events;
 
 use WPMailSMTP\Pro\Emails\Logs\Webhooks\Events\Failed as FailedBase;
+use WPMailSMTP\Pro\Emails\Logs\Email;
 
 /**
  * Class Failed.
@@ -34,11 +35,25 @@ class Failed extends FailedBase {
 			}
 		}
 
-		if ( ! empty( $reason ) ) {
-			/* translators: %s - The reason the email was rejected. */
-			return sprintf( esc_html__( 'The email failed to be delivered. Reason: %s', 'wp-mail-smtp-pro' ), $reason );
+		return $reason;
+	}
+
+	/**
+	 * Get error code from event data.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @param Email $email Email object.
+	 * @param array $data  Event data.
+	 *
+	 * @return string
+	 */
+	protected function get_error_code( $email, $data ) {
+
+		if ( ! empty( $data['msg']['state'] ) ) {
+			return $data['msg']['state'];
 		}
 
-		return parent::get_error_message( $data );
+		return parent::get_error_code( $email, $data );
 	}
 }

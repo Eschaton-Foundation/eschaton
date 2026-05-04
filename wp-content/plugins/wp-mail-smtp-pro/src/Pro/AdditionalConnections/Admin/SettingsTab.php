@@ -488,8 +488,6 @@ class SettingsTab extends AdditionalConnectionsTab {
 	 */
 	public function process_post( $data ) {
 
-		$this->check_admin_referer();
-
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( ! isset( $_POST['connection_id'] ) ) {
 			wp_die( esc_html__( 'Something goes wrong. Missed connection ID parameter.', 'wp-mail-smtp-pro' ) );

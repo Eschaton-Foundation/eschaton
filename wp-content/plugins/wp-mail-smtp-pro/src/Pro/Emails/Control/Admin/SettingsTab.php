@@ -107,8 +107,6 @@ class SettingsTab extends ControlTab {
 	 */
 	public function process_post( $data ) {
 
-		$this->check_admin_referer();
-
 		$options      = Options::init();
 		$is_multisite = is_multisite();
 

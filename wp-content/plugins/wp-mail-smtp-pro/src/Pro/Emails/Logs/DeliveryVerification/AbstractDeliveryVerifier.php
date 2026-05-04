@@ -193,7 +193,12 @@ abstract class AbstractDeliveryVerifier {
 
 		$this->get_email()->set_status( Email::STATUS_UNSENT );
 
-		$error_text = empty( $fail_reason ) ? esc_html__( 'The email failed to be delivered. No specific reason was provided by the API.', 'wp-mail-smtp-pro' ) : $fail_reason;
+		if ( ! empty( $fail_reason ) ) {
+			/* translators: %s - The reason the email was rejected. */
+			$error_text = sprintf( esc_html__( 'The email failed to be delivered. Reason: %s', 'wp-mail-smtp-pro' ), $fail_reason );
+		} else {
+			$error_text = esc_html__( 'The email failed to be delivered. No specific reason was provided by the API.', 'wp-mail-smtp-pro' );
+		}
 
 		$this->get_email()->set_error_text( $error_text );
 		$this->get_email()->save();

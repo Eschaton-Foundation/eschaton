@@ -84,6 +84,10 @@ class Mailer extends MailerAbstract {
 			$this->process_response( $response );
 		} catch ( Exception $e ) {
 			$this->error_message = Helpers::format_error_message( $e->getMessage() );
+
+			if ( $e->getCode() ) {
+				$this->error_code = $e->getCode();
+			}
 		}
 
 		if ( $this->response instanceof Response ) {
@@ -157,6 +161,7 @@ class Mailer extends MailerAbstract {
 
 		if ( $response->has_errors() ) {
 			$this->error_message = Helpers::format_error_message( $this->response->get_errors()->get_error_message() );
+			$this->error_code    = $this->response->get_errors()->get_error_code();
 		} else {
 			$body = $response->get_body();
 
@@ -194,6 +199,22 @@ class Mailer extends MailerAbstract {
 
 		/** This filter is documented in src/Providers/MailerAbstract.php. */
 		return apply_filters( 'wp_mail_smtp_providers_mailer_is_email_sent', $is_sent, $this->mailer ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+	}
+
+	/**
+	 * Get the HTTP response code.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @return int
+	 */
+	public function get_response_code() {
+
+		if ( $this->response instanceof Response ) {
+			return (int) $this->response->get_status_code();
+		}
+
+		return parent::get_response_code();
 	}
 
 	/**

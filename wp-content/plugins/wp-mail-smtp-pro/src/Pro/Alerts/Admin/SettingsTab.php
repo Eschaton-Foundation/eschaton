@@ -481,8 +481,6 @@ class SettingsTab extends AlertsTab {
 	 */
 	public function process_post( $data ) {
 
-		$this->check_admin_referer();
-
 		$options = Options::init();
 
 		foreach ( $this->loader->get_options_all() as $option ) {

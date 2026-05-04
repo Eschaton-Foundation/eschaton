@@ -99,6 +99,10 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 			if ( $event['event'] === 'failed' && $event['severity'] === 'permanent' ) { // Hard bounce.
 				$delivery_status->set_status( DeliveryStatus::STATUS_FAILED );
 
+				if ( ! empty( $event['delivery-status']['enhanced-code'] ) ) {
+					$delivery_status->set_error_code( $event['delivery-status']['enhanced-code'] );
+				}
+
 				if ( ! empty( $event['delivery-status']['description'] ) ) {
 					$delivery_status->set_fail_reason( $event['delivery-status']['description'] );
 				} elseif ( ! empty( $event['delivery-status']['message'] ) ) {

@@ -60,7 +60,7 @@ class Response {
 	 */
 	public function get_status_code() {
 
-		return wp_remote_retrieve_response_code( $this->response );
+		return (int) wp_remote_retrieve_response_code( $this->response );
 	}
 
 	/**

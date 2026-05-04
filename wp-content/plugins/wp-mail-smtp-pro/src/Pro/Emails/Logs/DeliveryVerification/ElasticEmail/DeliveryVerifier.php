@@ -23,7 +23,7 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 	 *
 	 * @return DeliveryStatus
 	 */
-	protected function get_delivery_status(): DeliveryStatus {
+	protected function get_delivery_status(): DeliveryStatus {  // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded
 
 		$delivery_status = new DeliveryStatus();
 		// Delivered is an array of email addresses.
@@ -49,6 +49,12 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 
 				if ( ! empty( $event['Error'] ) ) {
 					$delivery_status->set_fail_reason( $event['Error'] );
+				}
+
+				if ( ! empty( $event['ErrorCode'] ) ) {
+					$error_code = ! empty( $event['Category'] ) ? $event['ErrorCode'] . '_' . $event['Category'] : $event['ErrorCode'];
+
+					$delivery_status->set_error_code( $error_code );
 				}
 
 				return $delivery_status;

@@ -1,13 +1,13 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Mail SMTP 4.7.1\n"
+"Project-Id-Version: WP Mail SMTP 4.8.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-mail-smtp-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-11-25T19:32:59+00:00\n"
+"POT-Creation-Date: 2026-04-15T21:03:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-mail-smtp-pro\n"
@@ -80,11 +80,11 @@ msgid "There was an error while processing your request, and connection were not
 msgstr ""
 
 #: src/Pro/AdditionalConnections/Admin/SettingsTab.php:228
-#: src/Pro/AdditionalConnections/Admin/SettingsTab.php:530
-#: src/Pro/Alerts/Admin/SettingsTab.php:517
-#: src/Pro/Emails/Control/Admin/SettingsTab.php:137
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:457
-#: src/Pro/SmartRouting/Admin/SettingsTab.php:415
+#: src/Pro/AdditionalConnections/Admin/SettingsTab.php:528
+#: src/Pro/Alerts/Admin/SettingsTab.php:515
+#: src/Pro/Emails/Control/Admin/SettingsTab.php:135
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:455
+#: src/Pro/SmartRouting/Admin/SettingsTab.php:413
 msgid "Settings were successfully saved."
 msgstr ""
 
@@ -144,7 +144,7 @@ msgstr ""
 msgid "Please use the \"Back to All Connections\" button to return to the list of all available connections."
 msgstr ""
 
-#: src/Pro/AdditionalConnections/Admin/SettingsTab.php:495
+#: src/Pro/AdditionalConnections/Admin/SettingsTab.php:493
 msgid "Something goes wrong. Missed connection ID parameter."
 msgstr ""
 
@@ -493,11 +493,11 @@ msgstr ""
 msgid "Test Alerts"
 msgstr ""
 
-#: src/Pro/Alerts/Alerts.php:290
+#: src/Pro/Alerts/Alerts.php:286
 msgid "WP Mail SMTP Alerts Test"
 msgstr ""
 
-#: src/Pro/Alerts/Alerts.php:291
+#: src/Pro/Alerts/Alerts.php:287
 msgid "This is a test error message triggered from the WP Mail SMTP Alerts settings"
 msgstr ""
 
@@ -1418,28 +1418,28 @@ msgstr ""
 msgid "The subscription was manually removed. If you want to use webhooks for email deliverability status verification, please perform the \"Subscribe\" action."
 msgstr ""
 
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:472
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:470
 msgid "1 Day"
 msgstr ""
 
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:473
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:471
 msgid "1 Week"
 msgstr ""
 
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:474
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:472
 msgid "1 Month"
 msgstr ""
 
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:475
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:473
 msgid "6 Months"
 msgstr ""
 
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:476
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:474
 msgid "1 Year"
 msgstr ""
 
 #. translators: %d - days count.
-#: src/Pro/Emails/Logs/Admin/SettingsTab.php:490
+#: src/Pro/Emails/Logs/Admin/SettingsTab.php:488
 msgid "%d Day"
 msgid_plural "%d Days"
 msgstr[0] ""
@@ -1718,9 +1718,15 @@ msgstr ""
 msgid "Unable to verify email delivery status."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/AbstractDeliveryVerifier.php:196
-#: src/Pro/Emails/Logs/Webhooks/Events/Failed.php:51
-#: src/Pro/Tasks/Logs/VerifySentStatusTaskAbstract.php:173
+#. translators: %s - The reason the email was rejected.
+#: src/Pro/Emails/Logs/DeliveryVerification/AbstractDeliveryVerifier.php:198
+#: src/Pro/Emails/Logs/Webhooks/Events/Failed.php:33
+msgid "The email failed to be delivered. Reason: %s"
+msgstr ""
+
+#: src/Pro/Emails/Logs/DeliveryVerification/AbstractDeliveryVerifier.php:200
+#: src/Pro/Emails/Logs/Webhooks/Events/Failed.php:35
+#: src/Pro/Tasks/Logs/VerifySentStatusTaskAbstract.php:188
 msgid "The email failed to be delivered. No specific reason was provided by the API."
 msgstr ""
 
@@ -1736,12 +1742,12 @@ msgstr ""
 msgid "Invalid verifier."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/MailerSend/DeliveryVerifier.php:66
-#: src/Pro/Emails/Logs/DeliveryVerification/Mandrill/DeliveryVerifier.php:73
+#: src/Pro/Emails/Logs/DeliveryVerification/MailerSend/DeliveryVerifier.php:67
+#: src/Pro/Emails/Logs/DeliveryVerification/Mandrill/DeliveryVerifier.php:74
 msgid "Message ID is missing."
 msgstr ""
 
-#: src/Pro/Emails/Logs/DeliveryVerification/MailerSend/DeliveryVerifier.php:97
+#: src/Pro/Emails/Logs/DeliveryVerification/MailerSend/DeliveryVerifier.php:98
 msgid "Invalid response structure from MailerSend API."
 msgstr ""
 
@@ -2273,11 +2279,6 @@ msgstr ""
 msgid "Mailjet webhook registration limit reached."
 msgstr ""
 
-#. translators: %s - The reason the email was rejected.
-#: src/Pro/Emails/Logs/Webhooks/Providers/Mandrill/Events/Failed.php:39
-msgid "The email failed to be delivered. Reason: %s"
-msgstr ""
-
 #: src/Pro/Emails/Logs/Webhooks/Webhooks.php:380
 msgid "The email log is disabled. Please first enable the email log."
 msgstr ""
@@ -2732,11 +2733,11 @@ msgstr ""
 msgid "An email request was sent to the Amazon SES API."
 msgstr ""
 
-#: src/Pro/Providers/AmazonSES/Mailer.php:109
+#: src/Pro/Providers/AmazonSES/Mailer.php:114
 msgid "Amazon SES request failed (empty response)."
 msgstr ""
 
-#: src/Pro/Providers/AmazonSES/Mailer.php:113
+#: src/Pro/Providers/AmazonSES/Mailer.php:118
 msgid "Something went wrong. Please try again."
 msgstr ""
 
@@ -2896,15 +2897,15 @@ msgstr ""
 msgid "An email request was sent to the Gmail API."
 msgstr ""
 
-#: src/Pro/Providers/Gmail/Mailer.php:125
+#: src/Pro/Providers/Gmail/Mailer.php:129
 msgid "One-Click Setup for Google Mailer requires authorization. Perform authorization before sending emails."
 msgstr ""
 
-#: src/Pro/Providers/Gmail/Mailer.php:143
+#: src/Pro/Providers/Gmail/Mailer.php:147
 msgid "One-Click Setup for Google Mailer requires an active license. Verify your license before sending emails."
 msgstr ""
 
-#: src/Pro/Providers/Gmail/Mailer.php:164
+#: src/Pro/Providers/Gmail/Mailer.php:169
 msgid "The email message ID is missing."
 msgstr ""
 
@@ -3460,16 +3461,16 @@ msgstr ""
 msgid "-- Select a Connection --"
 msgstr ""
 
-#: src/Pro/SmartRouting/Admin/SettingsTab.php:434
+#: src/Pro/SmartRouting/Admin/SettingsTab.php:432
 msgid "WP Core"
 msgstr ""
 
 #. translators: %s - theme name.
-#: src/Pro/SmartRouting/Admin/SettingsTab.php:441
+#: src/Pro/SmartRouting/Admin/SettingsTab.php:439
 msgid "Theme (%s)"
 msgstr ""
 
 #. translators: %d - The number of tries.
-#: src/Pro/Tasks/Logs/VerifySentStatusTaskAbstract.php:109
+#: src/Pro/Tasks/Logs/VerifySentStatusTaskAbstract.php:124
 msgid "The email sent status verification timed-out after %d tries. No information on email status (delivered/failed) was provided by the mailer API."
 msgstr ""

@@ -89,6 +89,11 @@ class Mailer extends MailerAbstract {
 			$this->process_response( $response );
 		} catch ( \Exception $e ) {
 			$this->error_message = $e->getMessage();
+
+			// Extract AWS error code if available (e.g. MessageRejected, AccessDeniedException).
+			if ( method_exists( $e, 'getAwsErrorCode' ) ) {
+				$this->error_code = $e->getAwsErrorCode();
+			}
 		}
 	}
 

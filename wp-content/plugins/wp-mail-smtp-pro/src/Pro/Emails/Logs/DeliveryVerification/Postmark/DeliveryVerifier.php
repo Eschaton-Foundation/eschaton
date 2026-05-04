@@ -86,6 +86,11 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 					if ( ! empty( $bounced_event['reason'] ) ) {
 						$delivery_status->set_fail_reason( esc_html( $bounced_event['reason'] ) );
 					}
+
+					if ( ! empty( $bounced_event['bounce_name'] ) ) {
+						$delivery_status->set_error_code( esc_html( $bounced_event['bounce_name'] ) );
+					}
+
 					break;
 				}
 			}
@@ -150,8 +155,9 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 		}
 
 		return [
-			'failed' => true,
-			'reason' => ! empty( $bounce['Description'] ) ? $bounce['Description'] : '',
+			'failed'      => true,
+			'reason'      => ! empty( $bounce['Description'] ) ? $bounce['Description'] : '',
+			'bounce_name' => ! empty( $bounce['Name'] ) ? $bounce['Name'] : '',
 		];
 	}
 }

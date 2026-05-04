@@ -43,6 +43,7 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 
 			if ( in_array( $event['state'], $failed_states, true ) ) {
 				$delivery_status->set_status( DeliveryStatus::STATUS_FAILED );
+				$delivery_status->set_error_code( $event['state'] );
 
 				if ( ! empty( $event['reject'] ) ) {
 					$delivery_status->set_fail_reason( $event['reject']['reason'] );

@@ -4,8 +4,8 @@ namespace WPMailSMTP\Pro\Tasks\Logs;
 
 use WPMailSMTP\Pro\Alerts\Alerts;
 use WPMailSMTP\Pro\Emails\Logs\DeliveryVerification\DeliveryVerification;
-use WPMailSMTP\Tasks\Meta;
 use WPMailSMTP\Pro\Emails\Logs\Email;
+use WPMailSMTP\Tasks\Meta;
 use WPMailSMTP\Tasks\Task;
 
 /**
@@ -85,7 +85,22 @@ abstract class VerifySentStatusTaskAbstract extends Task {
 		if ( is_wp_error( $delivery_status ) || ! $delivery_status->is_verified() ) {
 			$this->maybe_retry( $email_log_id, $try, new Email( $email_log_id ) );
 		} elseif ( $delivery_status->is_failed() ) {
-			$this->handle_failed_delivery_alert( $delivery_status->get_fail_reason(), $verifier->get_email() );
+			$email       = $verifier->get_email();
+			$fail_reason = $delivery_status->get_fail_reason();
+			$error_code  = ! empty( $delivery_status->get_error_code() ) ? $delivery_status->get_error_code() : 'unknown';
+
+			$this->handle_failed_delivery_alert( $fail_reason, $email );
+
+			/**
+			 * Fires when an email delivery failure is detected via delivery verification.
+			 *
+			 * @since 4.8.0
+			 *
+			 * @param string $mailer_slug   Current mailer name.
+			 * @param string $error_code    Error code.
+			 * @param string $error_message Error message.
+			 */
+			do_action( 'wp_mail_smtp_email_delivery_failed', $email->get_mailer(), $error_code, $fail_reason ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
 		}
 	}
 

@@ -262,10 +262,6 @@ class Alerts {
 	 */
 	public function process_ajax_test_alerts_data( $data ) {
 
-		if ( ! check_ajax_referer( 'wp-mail-smtp-admin', 'nonce', false ) ) {
-			return;
-		}
-
 		// Bail if no alerts channel is enabled.
 		if ( ! $this->is_enabled() ) {
 			return;

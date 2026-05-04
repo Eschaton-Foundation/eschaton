@@ -64,6 +64,7 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 			if ( in_array( $status, $failed_delivery_events, true ) ) {
 				$delivery_status->set_status( DeliveryStatus::STATUS_FAILED );
 				$delivery_status->set_fail_reason( $response );
+				$delivery_status->set_error_code( $status );
 				break;
 			}
 		}

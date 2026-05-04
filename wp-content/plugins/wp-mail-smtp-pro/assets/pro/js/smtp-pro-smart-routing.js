@@ -85,7 +85,9 @@ WPMailSMTP.Admin.SmartRouting = WPMailSMTP.Admin.SmartRouting || ( function( doc
 			e.preventDefault();
 
 			var indexes = $( '.wp-mail-smtp-smart-routing-route__connection' ).map( function() {
-				return $( this ).attr( 'name' ).match( /\[route-(\d)]/ )[ 1 ];
+				var match = $( this ).attr( 'name' ).match( /\[route-(\d+)]/ );
+
+				return match ? match[ 1 ] : 0;
 			} ).get();
 
 			var maxIndex = indexes.reduce( function( a, b ) {

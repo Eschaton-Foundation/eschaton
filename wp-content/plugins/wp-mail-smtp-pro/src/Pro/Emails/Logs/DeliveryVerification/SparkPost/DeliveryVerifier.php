@@ -103,6 +103,11 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 				if ( ! empty( $event['raw_reason'] ) ) {
 					$delivery_status->set_fail_reason( $event['raw_reason'] );
 				}
+
+				if ( ! empty( $event['bounce_class'] ) ) {
+					$delivery_status->set_error_code( 'bounce_class_' . $event['bounce_class'] );
+				}
+
 				break;
 			}
 		}

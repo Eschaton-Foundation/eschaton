@@ -44,6 +44,7 @@ class DeliveryVerifier extends AbstractDeliveryVerifier {
 
 		if ( $message_data['status'] === 'rejected' ) {
 			$delivery_status->set_status( DeliveryStatus::STATUS_FAILED );
+			$delivery_status->set_error_code( $message_data['status'] );
 		}
 
 		return $delivery_status;

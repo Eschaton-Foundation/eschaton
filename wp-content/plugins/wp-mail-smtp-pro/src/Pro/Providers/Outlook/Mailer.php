@@ -757,6 +757,26 @@ class Mailer extends MailerAbstract {
 	}
 
 	/**
+	 * Get the error code from the Microsoft Graph API response.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @return string
+	 */
+	public function get_response_error_code() {
+
+		if ( ! empty( $this->response ) ) {
+			$body = wp_remote_retrieve_body( $this->response );
+
+			if ( ! empty( $body->error->code ) ) {
+				return $body->error->code;
+			}
+		}
+
+		return parent::get_response_error_code();
+	}
+
+	/**
 	 * Get mailer debug information, that is helpful during support.
 	 *
 	 * @since 1.5.0

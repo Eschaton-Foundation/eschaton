@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.8.0] - 2026-04-16
+### Added:
+- SendLayer Quick Connect - allows connecting to SendLayer without DNS setup in 2 minutes.
+
+### Changed:
+- Improved plugin security.
+
+### Fixed:
+- Fatal TypeError on PHP 8.x when Outlook One-Click OAuth token expires.
+- JavaScript error when adding the 10th or more smart routes.
+
 ## [4.7.1] - 2025-11-26
 ### Fixed:
 - Text domain in a couple of strings.

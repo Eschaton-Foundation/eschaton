@@ -49,7 +49,10 @@ class Processor extends AbstractProcessor {
 			return false;
 		}
 
-		$event_data = $request->get_param( 'message' );
+		$event_data = [
+			'message' => $request->has_param( 'message' ) ? $request->get_param( 'message' ) : '',
+			'bounce'  => $request->has_param( 'bounce' ) ? $request->get_param( 'bounce' ) : '',
+		];
 		$event      = false;
 
 		if ( $event_type === 'delivered' ) {

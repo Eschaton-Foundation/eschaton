@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'awesomemotive/wp-mail-smtp',
-        'pretty_version' => 'dev-4.7.1-release',
-        'version' => 'dev-4.7.1-release',
+        'pretty_version' => 'dev-4.8.0-release',
+        'version' => 'dev-4.8.0-release',
         'reference' => '767b1cb94cf3266be176484806a978ae7e4e69ae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'awesomemotive/wp-mail-smtp' => array(
-            'pretty_version' => 'dev-4.7.1-release',
-            'version' => 'dev-4.7.1-release',
+            'pretty_version' => 'dev-4.8.0-release',
+            'version' => 'dev-4.8.0-release',
             'reference' => '767b1cb94cf3266be176484806a978ae7e4e69ae',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -128,9 +128,9 @@
             'dev_requirement' => false,
         ),
         'monolog/monolog' => array(
-            'pretty_version' => '2.10.0',
-            'version' => '2.10.0.0',
-            'reference' => '5cf826f2991858b54d5c3809bee745560a1042a7',
+            'pretty_version' => '2.11.0',
+            'version' => '2.11.0.0',
+            'reference' => '37308608e599f34a1a4845b16440047ec98a172a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../monolog/monolog',
             'aliases' => array(),

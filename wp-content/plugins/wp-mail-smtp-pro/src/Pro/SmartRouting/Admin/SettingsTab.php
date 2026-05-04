@@ -395,8 +395,6 @@ class SettingsTab extends SmartRoutingTab {
 	 */
 	public function process_post( $data ) {
 
-		$this->check_admin_referer();
-
 		$options = Options::init();
 		$all_opt = $options->get_all_raw();
 
