@@ -47,42 +47,80 @@ class Listeo_AI_Search_Embedding_Manager {
     }
     
     /**
-     * Check if rate limit allows API call
+     * Atomically acquire a rate limit slot before making an API call.
      *
-     * IMPORTANT: This now tracks ALL OpenAI API calls (embeddings + chat completions)
+     * Uses conditional SQL UPDATE so check + increment happen in one
+     * DB operation. No TOCTOU gap, no lost increments under burst traffic.
      *
-     * @return bool True if call is allowed
+     * @return bool True if slot acquired (caller may proceed with API call)
      */
-    public static function check_rate_limit() {
-        $rate_limit_key = 'listeo_ai_rate_limit_' . date('Y-m-d-H'); // Per hour limit
-        $current_calls = get_transient($rate_limit_key) ?: 0;
-        $max_calls_per_hour = get_option('listeo_ai_search_rate_limit_per_hour', 100); // Get from settings, default 100
+    public static function try_acquire_rate_limit() {
+        global $wpdb;
+        $rate_limit_key = 'listeo_ai_rate_limit_' . date('Y-m-d-H');
+        $max_calls = (int) get_option('listeo_ai_search_rate_limit_per_hour', 100);
 
-        if ($current_calls >= $max_calls_per_hour) {
-            error_log('Listeo AI Search: Rate limit exceeded (' . $current_calls . '/' . $max_calls_per_hour . ' per hour)');
+        // Attempt atomic increment: only succeeds if current count < limit
+        $rows = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->options}
+             SET option_value = CAST(option_value AS UNSIGNED) + 1
+             WHERE option_name = %s
+               AND CAST(option_value AS UNSIGNED) < %d",
+            $rate_limit_key,
+            $max_calls
+        ));
+
+        if ($rows === 1) {
+            wp_cache_delete($rate_limit_key, 'options');
+            return true;
+        }
+
+        // Either option doesn't exist yet, or limit is reached
+        $current = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
+            $rate_limit_key
+        ));
+
+        if ($current > 0) {
+            // Option exists but limit is reached
             return false;
         }
 
-        return true;
+        // First call this hour - bootstrap the counter
+        $inserted = $wpdb->query($wpdb->prepare(
+            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload)
+             VALUES (%s, '1', 'no')
+             ON DUPLICATE KEY UPDATE option_value = CAST(option_value AS UNSIGNED) + 1",
+            $rate_limit_key
+        ));
+
+        wp_cache_delete($rate_limit_key, 'options');
+
+        if ($inserted === false) {
+            error_log('Listeo AI Search: Rate limit bootstrap failed');
+            return true; // fail open
+        }
+
+        // Re-check after insert (another request may have won the race and hit the limit)
+        $val = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
+            $rate_limit_key
+        ));
+
+        return $val <= $max_calls;
     }
 
     /**
-     * Increment rate limit counter
-     * Call this AFTER successful API call
+     * Read-only rate limit check for UI / preflight guards.
+     * Does NOT reserve quota. Use try_acquire_rate_limit() before API calls.
      *
-     * @return int New counter value
+     * @return bool True if under limit
      */
-    public static function increment_rate_limit() {
+    public static function check_rate_limit() {
         $rate_limit_key = 'listeo_ai_rate_limit_' . date('Y-m-d-H');
-        $current_calls = get_transient($rate_limit_key) ?: 0;
-        $current_calls++;
-        set_transient($rate_limit_key, $current_calls, HOUR_IN_SECONDS);
+        $current_calls = (int) get_option($rate_limit_key, 0);
+        $max_calls_per_hour = get_option('listeo_ai_search_rate_limit_per_hour', 100);
 
-        if (get_option('listeo_ai_search_debug_mode', false)) {
-            error_log('Listeo AI Search: Rate limit counter incremented to ' . $current_calls);
-        }
-
-        return $current_calls;
+        return $current_calls < $max_calls_per_hour;
     }
     
     /**
@@ -98,8 +136,8 @@ class Listeo_AI_Search_Embedding_Manager {
             return false;
         }
 
-        // Check rate limit before making API call (unless skip is explicitly requested for batch operations)
-        if (!$skip_rate_limit && !self::check_rate_limit()) {
+        // Atomically acquire rate limit slot before API call (unless skip is explicitly requested for batch operations)
+        if (!$skip_rate_limit && !self::try_acquire_rate_limit()) {
             throw new Exception('Rate limit exceeded. Please try again later.');
         }
 
@@ -117,6 +155,17 @@ class Listeo_AI_Search_Embedding_Manager {
             $json_error = json_last_error_msg();
             error_log("Listeo AI Search: JSON encoding failed - " . $json_error);
             throw new Exception('Failed to encode content for API request: ' . $json_error . '. The content may contain invalid characters.');
+        }
+
+        // DEBUG: Log model being sent
+        if (get_option('listeo_ai_search_debug_mode', false)) {
+            error_log(sprintf(
+                "[AI Search Embedding] Provider: %s | Endpoint: %s | Model: %s | Dimensions: %d",
+                $this->provider->get_provider(),
+                $endpoint,
+                isset($payload['model']) ? $payload['model'] : 'N/A',
+                $this->provider->get_embedding_dimensions()
+            ));
         }
 
         $response = wp_remote_post($endpoint, array(
@@ -156,8 +205,11 @@ class Listeo_AI_Search_Embedding_Manager {
         // Only log successful responses in debug mode
         if (get_option('listeo_ai_search_debug_mode', false)) {
             Listeo_AI_Search_Utility_Helper::debug_log(
-                sprintf("Embedding API Response - Code: %d, Provider: %s",
-                    $response_code, $this->provider->get_provider_name()),
+                sprintf("Embedding API Response - Code: %d, Provider: %s | Model: %s | Dimensions: %d",
+                    $response_code,
+                    $this->provider->get_provider_name(),
+                    $this->provider->get_embedding_model(),
+                    $this->provider->get_embedding_dimensions()),
                 'info'
             );
         }
@@ -179,11 +231,7 @@ class Listeo_AI_Search_Embedding_Manager {
             throw new Exception($full_error);
         }
 
-        // Only increment rate limit counter for user-facing operations (search, chat)
-        // Skip incrementing for batch operations (training) to avoid blocking user queries
-        if (!$skip_rate_limit) {
-            self::increment_rate_limit();
-        }
+        // Rate limit already acquired atomically before the API call
 
         return $this->provider->parse_embedding_response($body);
     }

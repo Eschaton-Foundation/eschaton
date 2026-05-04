@@ -56,6 +56,18 @@
     position: relative;
     /* background: white;
     border: 1px solid #e0e0e0; */
+}
+
+.search-input-wrapper input[name="ai_search_hp"] {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    background: transparent;
+}
+
+.search-input-wrapper {
     border-radius: 4px;
     overflow: visible;
     /* transition: all 0.3s ease;

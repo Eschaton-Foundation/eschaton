@@ -124,7 +124,19 @@ class Listeo_AI_Search_Universal_Settings {
                 'confirm_reindex' => __('This will regenerate all embeddings for this content type. Continue?', 'ai-chat-search'),
                 'reindexing' => __('Reindexing...', 'ai-chat-search'),
                 'success' => __('Success!', 'ai-chat-search'),
-                'error' => __('Error occurred', 'ai-chat-search')
+                'error' => __('Error occurred', 'ai-chat-search'),
+                'upload_documents' => __('Upload documents', 'ai-chat-search'),
+                'add_external_pages' => __('Add external pages', 'ai-chat-search'),
+                'manual_selection_active' => __('Manual selection active', 'ai-chat-search'),
+                'clear' => __('Clear', 'ai-chat-search'),
+                'manual_selection' => __('Manual selection', 'ai-chat-search'),
+                'selected_of' => __('of', 'ai-chat-search'),
+                'selected' => __('selected', 'ai-chat-search'),
+                'indexed' => __('Indexed', 'ai-chat-search'),
+                'pending' => __('Pending', 'ai-chat-search'),
+                'verified' => __('Verified', 'ai-chat-search'),
+                'error_loading_posts' => __('Error loading posts', 'ai-chat-search'),
+                'error_loading_count' => __('Error loading content count', 'ai-chat-search'),
             )
         ));
     }
@@ -415,8 +427,24 @@ class Listeo_AI_Search_Universal_Settings {
             }
         }
 
-        $min_bytes = 512 * 1024 * 1024; // 512 MB
-        if ($total_posts < 2500 || $effective_bytes >= $min_bytes) {
+        // Tiered memory recommendations based on content size
+        $tiers = array(
+            5000  => array('limit' => 1024, 'label' => '1 GB'),
+            2500  => array('limit' => 512,  'label' => '512 MB'),
+        );
+
+        $recommended = null;
+        foreach ($tiers as $threshold => $tier) {
+            if ($total_posts >= $threshold) {
+                $min_bytes = $tier['limit'] * 1024 * 1024;
+                if ($effective_bytes < $min_bytes) {
+                    $recommended = $tier;
+                    break;
+                }
+            }
+        }
+
+        if ($recommended === null) {
             return;
         }
 
@@ -428,11 +456,12 @@ class Listeo_AI_Search_Universal_Settings {
                 <p style="margin: 6px 0 0;">
                     <?php
                     printf(
-                        /* translators: 1: WP memory limit, 2: server memory limit, 3: total number of content items */
-                        __('Your site has %3$s content items to train. WordPress memory limit is <strong>%1$s</strong> and server memory limit is <strong>%2$s</strong> — we recommend at least <strong>512 MB</strong> for both. Set <code>define(\'WP_MEMORY_LIMIT\', \'512M\');</code> in <code>wp-config.php</code> and increase the server limit in your hosting panel.', 'ai-chat-search'),
+                        /* translators: 1: WP memory limit, 2: server memory limit, 3: total number of content items, 4: recommended memory size */
+                        __('Your site has %3$s content items to train. WordPress memory limit is <strong>%1$s</strong> and server memory limit is <strong>%2$s</strong> — we recommend at least <strong>%4$s</strong> for both. Set <code>define(\'WP_MEMORY_LIMIT\', \'%4$s\');</code> in <code>wp-config.php</code> and increase the server limit in your hosting panel.', 'ai-chat-search'),
                         esc_html($wp_limit),
                         esc_html($server_limit),
-                        '<strong>' . number_format_i18n($total_posts) . '</strong>'
+                        '<strong>' . number_format_i18n($total_posts) . '</strong>',
+                        esc_html($recommended['label'])
                     );
                     ?>
                 </p>

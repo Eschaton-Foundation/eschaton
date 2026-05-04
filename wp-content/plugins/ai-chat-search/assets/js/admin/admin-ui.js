@@ -31,7 +31,7 @@
 
         // Position all sticky footers
         function positionAllFooters() {
-            $('#settings-form, #ai-chat-settings-form').each(function() {
+            $('#settings-form, #ai-chat-settings-form, #ai-search-form').each(function() {
                 positionStickyFooter($(this));
             });
         }
@@ -177,7 +177,7 @@
      * Initialize position toggle (left/right)
      */
     function initPositionToggle() {
-        var $toggle = $('.airs-position-toggle').not('.airs-offset-device-toggle');
+        var $toggle = $('.airs-position-toggle').not('.airs-offset-device-toggle').not('#ai-chat-audit-filters .airs-position-toggle');
         if (!$toggle.length) return;
 
         var $buttons = $toggle.find('.airs-position-btn');
@@ -351,10 +351,17 @@
                 locale: locale
             }, function(response) {
                 if (response.success) {
-                    $status.html('<span style="color:#46b450;">' + (i18n.translationInstalledSuccess || 'Translation installed successfully!') + '</span>');
+                    $status.html('<span style="color:#46b450;">' + (response.data && response.data.message ? response.data.message : (i18n.translationInstalledSuccess || 'Translation installed successfully!')) + '</span>');
+                    // Reload the admin page so the freshly installed strings
+                    // become visible immediately. PHP already called
+                    // unload_textdomain() so the next request will pick up
+                    // the new .mo cleanly.
+                    if (response.data && response.data.reload) {
+                        setTimeout(function() { window.location.reload(); }, 1200);
+                    }
                 } else {
                     var $errSpan2 = $('<span style="color:#dc3232;"></span>');
-                    $errSpan2.text(response.data.message || i18n.installFailed || 'Installation failed.');
+                    $errSpan2.html(response.data.message || i18n.installFailed || 'Installation failed.');
                     $status.html('').append($errSpan2);
                     $installBtn.prop('disabled', false);
                 }
@@ -741,6 +748,39 @@
             $('#contact-form-config-modal').fadeOut(200);
         });
     }
+
+    /**
+     * Manage backdrop-filter on stacked modals.
+     * When multiple modals are open, only the topmost one keeps backdrop-filter
+     * to avoid GPU-heavy double blur causing sluggish scrolling.
+     */
+    function manageModalBlur() {
+        var $visible = $('.airs-modal:visible');
+        if ($visible.length <= 1) {
+            // Single or no modal - restore blur on the one visible
+            $visible.find('.airs-modal-overlay').css('backdrop-filter', '');
+            return;
+        }
+        // Remove blur from all except the last one in DOM (topmost)
+        $visible.not(':last').find('.airs-modal-overlay').css('backdrop-filter', 'none');
+        $visible.last().find('.airs-modal-overlay').css('backdrop-filter', '');
+    }
+
+    // Watch all modal fade in/out
+    $(document).on('fadeInComplete', '.airs-modal', manageModalBlur);
+    // Also catch programmatic display changes via MutationObserver fallback
+    var modalObserver = new MutationObserver(function(mutations) {
+        var check = false;
+        mutations.forEach(function(m) {
+            if (m.target.classList && m.target.classList.contains('airs-modal')) check = true;
+        });
+        if (check) manageModalBlur();
+    });
+    $(document).ready(function() {
+        $('.airs-modal').each(function() {
+            modalObserver.observe(this, { attributes: true, attributeFilter: ['style'] });
+        });
+    });
 
     /**
      * Initialize quick button color pickers (simple swatch with iris popup)

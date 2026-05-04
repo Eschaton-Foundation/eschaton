@@ -262,7 +262,7 @@ class Listeo_AI_Search_Chat_History {
         }
 
         // Use freeipapi.com (free, HTTPS, no key required, 60 requests/minute)
-        $response = wp_remote_get("https://freeipapi.com/api/json/{$ip}", array(
+        $response = wp_remote_get("https://free.freeipapi.com/api/json/{$ip}", array(
             'timeout' => 3,
             'sslverify' => true
         ));

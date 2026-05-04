@@ -21,6 +21,20 @@ class Listeo_AI_Search_Floating_Chat_Widget
     {
         add_action("wp_footer", [$this, "render_floating_widget"]);
         add_action("wp_enqueue_scripts", [$this, "enqueue_widget_assets"]);
+        add_filter("script_loader_tag", [$this, "add_defer_to_floating_widget"], 10, 2);
+    }
+
+    /**
+     * Add defer attribute to the floating widget script (lazy mode only).
+     */
+    public function add_defer_to_floating_widget($tag, $handle)
+    {
+        if ($handle === "listeo-ai-floating-chat" && get_option("listeo_ai_chat_lazy_load", 0)) {
+            if (strpos($tag, " defer") === false) {
+                $tag = str_replace(" src=", " defer src=", $tag);
+            }
+        }
+        return $tag;
     }
 
     /**
@@ -90,6 +104,13 @@ class Listeo_AI_Search_Floating_Chat_Widget
             LISTEO_AI_SEARCH_VERSION,
         );
 
+        // User-defined custom CSS from Developer & Debug Options.
+        // Stripped of HTML tags as defense-in-depth (also sanitized on save).
+        $user_custom_css = trim((string) get_option("listeo_ai_chat_custom_css", ""));
+        if ($user_custom_css !== "") {
+            wp_add_inline_style("listeo-ai-chat", wp_strip_all_tags($user_custom_css));
+        }
+
         // Lazy load mode: defer chatbot scripts until user opens the widget
         $lazy_load = get_option('listeo_ai_chat_lazy_load', 0);
         $is_pro = AI_Chat_Search_Pro_Manager::is_pro_active();
@@ -100,7 +121,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
             // Standard mode: load all scripts upfront
             wp_enqueue_script(
                 "listeo-ai-chat",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chat-core-scripts.js",
                 ["jquery"],
                 LISTEO_AI_SEARCH_VERSION,
                 true,
@@ -117,14 +138,24 @@ class Listeo_AI_Search_Floating_Chat_Widget
             }
         }
 
-        // Enqueue floating widget script (deps change based on lazy load)
-        wp_enqueue_script(
-            "listeo-ai-floating-chat",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-floating-widget.js",
-            $lazy_load ? ["jquery"] : ["jquery", "listeo-ai-chat"],
-            LISTEO_AI_SEARCH_VERSION,
-            true,
-        );
+        // Lazy: head + defer, no deps (vanilla JS). Non-lazy: footer + original deps.
+        if ($lazy_load) {
+            wp_enqueue_script(
+                "listeo-ai-floating-chat",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-floating-chat-widget.js",
+                [], // no deps — vanilla JS
+                LISTEO_AI_SEARCH_VERSION,
+                false, // load in <head> (paired with defer filter)
+            );
+        } else {
+            wp_enqueue_script(
+                "listeo-ai-floating-chat",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-floating-chat-widget.js",
+                ["jquery", "listeo-ai-chat"],
+                LISTEO_AI_SEARCH_VERSION,
+                true,
+            );
+        }
 
         // Load UI utilities only when badge is visible (whitelabel not enabled)
         if (!$lazy_load && !$whitelabel_enabled) {
@@ -154,7 +185,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
             if ($needs_silk_wave) {
                 $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js";
             }
-            $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js";
+            $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chat-core-scripts.js";
             if (!$whitelabel_enabled) {
                 $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chat-ui-utils.js";
             }
@@ -170,6 +201,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
                 "listeo_ai_floating_button_icon",
                 "fa-robot",
             ),
+            "keepChatOpened" => get_option("listeo_ai_floating_keep_chat_opened", 0) ? true : false,
             "strings" => [
                 "openChat" => __("Open chat", "ai-chat-search"),
                 "closeChat" => __("Close chat", "ai-chat-search"),
@@ -339,6 +371,10 @@ class Listeo_AI_Search_Floating_Chat_Widget
             ? wp_get_attachment_image_url($custom_icon_id, "full")
             : "";
         $use_custom_icon = !empty($custom_icon_url);
+        $custom_icon_size = absint(get_option('listeo_ai_floating_custom_icon_size', 32));
+        if ($custom_icon_size < 1) {
+            $custom_icon_size = 32;
+        }
 
         // Get primary color from settings
         $primary_color = sanitize_hex_color(
@@ -370,6 +406,16 @@ class Listeo_AI_Search_Floating_Chat_Widget
             .listeo-ai-load-listing-btn {
                 background: <?php echo esc_attr($button_color); ?> !important;
             }
+
+            <?php if ($use_custom_icon) : ?>
+            /* Custom icon size override */
+            .listeo-floating-custom-icon {
+                width: <?php echo esc_attr($custom_icon_size); ?>px;
+                height: <?php echo esc_attr($custom_icon_size); ?>px;
+                max-width: <?php echo esc_attr($custom_icon_size); ?>px;
+                max-height: <?php echo esc_attr($custom_icon_size); ?>px;
+            }
+            <?php endif; ?>
 
             /* AI Chat Primary Color Variables */
             :root {

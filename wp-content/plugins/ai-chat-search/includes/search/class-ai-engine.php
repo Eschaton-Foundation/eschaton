@@ -2,14 +2,7 @@
 /**
  * AI Search Engine Class
  * 
- * Handles all AI-powered search functionality including embeddings, filtering, and ranking
- * 
- * PERFORMANCE IMPROVEMENTS (v1.0.6):
- * - Structured embeddings with hierarchical information priority
- * - Reduced AI filtering usage (only for ultra-specific queries)  
- * - Optimized similarity thresholds for structured data
- * - ~66% reduction in OpenAI API calls per search
- * - ~60-70% faster search response times
+ * Handles all AI-powered search functionality including embeddings
  * 
  * @package Listeo_AI_Search
  * @since 1.0.5
@@ -88,9 +81,10 @@ class Listeo_AI_Search_AI_Engine {
      * @param bool $debug Enable debug logging
      * @param array $location_filtered_ids Optional pre-filtered listing IDs from SQL location search
      * @param bool $is_rag RAG mode - uses more lenient thresholds for context retrieval
+     * @param bool $skip_threshold Skip similarity threshold filtering (return top-K raw results for LLM re-ranking)
      * @return array Search results
      */
-    public function search($query, $limit, $offset, $listing_types, $debug = false, $location_filtered_ids = array(), $is_rag = false) {
+    public function search($query, $limit, $offset, $listing_types, $debug = false, $location_filtered_ids = array(), $is_rag = false, $skip_threshold = false) {
         global $wpdb;
         
         $debug_info = array();
@@ -195,31 +189,26 @@ class Listeo_AI_Search_AI_Engine {
         $min_match_percentage = intval(get_option('listeo_ai_search_min_match_percentage', 50));
         $min_similarity_threshold = Listeo_AI_Search_Utility_Helper::percentage_to_similarity($min_match_percentage, $use_strict, null, $is_rag);
 
+        if ($skip_threshold) {
+            $min_similarity_threshold = 0;
+        }
+
         if ($debug) {
             $mode = $use_strict ? 'strict (listings/products)' : ($is_rag ? 'RAG (extra lenient)' : 'lenient (content)');
             Listeo_AI_Search_Utility_Helper::debug_log('THRESHOLD: Using admin setting ' . $min_match_percentage . '% = ' . round($min_similarity_threshold, 3) . ' raw similarity [' . $mode . ']');
         }
         
         $failed_decompressions = 0;
+
+        // Pass 1: raw similarity only (fast - no DB calls)
+        $raw_similarities = array();
         foreach ($embeddings as $embedding_row) {
-            $stored_embedding = Listeo_AI_Search_Database_Manager::decompress_embedding_from_storage($embedding_row->embedding);
-            if ($stored_embedding) {
-                $similarity = Listeo_AI_Search_Utility_Helper::calculate_cosine_similarity($query_embedding, $stored_embedding);
-
-                // Additional keyword boost for exact matches
-                $keyword_boost = $this->calculate_keyword_boost($query, $embedding_row->listing_id);
-                $adjusted_similarity = $similarity + $keyword_boost;
-
-                // Only include results above minimum threshold
-                if ($adjusted_similarity >= $min_similarity_threshold) {
-                    $similarities[$embedding_row->listing_id] = $adjusted_similarity;
-                    $similarity_scores[] = round($adjusted_similarity, 4);
-                }
+            $similarity = Listeo_AI_Search_Utility_Helper::dot_product_packed($query_embedding, $embedding_row->embedding);
+            if ($similarity !== false) {
+                $raw_similarities[$embedding_row->listing_id] = $similarity;
             } else {
-                // Decompression failed - log details
                 $failed_decompressions++;
                 if ($debug && $failed_decompressions <= 3) {
-                    // Only log first 3 failures to avoid spam
                     Listeo_AI_Search_Utility_Helper::debug_log(
                         sprintf(
                             'DECOMPRESSION FAILED for listing %d - Embedding data length: %d bytes, First 100 chars: %s',
@@ -238,6 +227,34 @@ class Listeo_AI_Search_AI_Engine {
                 "DECOMPRESSION: Failed to decompress {$failed_decompressions} out of " . count($embeddings) . " embeddings",
                 'error'
             );
+        }
+
+        // Keyword boost is first-page focused: only top 25 candidates get the expensive
+        // DB/term/meta lookups. Results 26+ keep their raw semantic score. This is
+        // intentional even when limit > 25 (RAG mode uses up to 150) because results
+        // ranked that low are already weak semantic matches.
+        arsort($raw_similarities);
+        $boost_candidates = array_slice($raw_similarities, 0, 25, true);
+
+        // Pass 2: keyword boost only on top candidates
+        $similarities = array();
+        foreach ($boost_candidates as $listing_id => $similarity) {
+            $keyword_boost = $this->calculate_keyword_boost($query, $listing_id);
+            $adjusted_similarity = $similarity + $keyword_boost;
+
+            if ($adjusted_similarity >= $min_similarity_threshold) {
+                $similarities[$listing_id] = $adjusted_similarity;
+                $similarity_scores[] = round($adjusted_similarity, 4);
+            }
+        }
+
+        // Add remaining raw results that didn't get boosted (below top 25 but above threshold)
+        // These have no keyword boost applied
+        $remaining = array_slice($raw_similarities, 25, null, true);
+        foreach ($remaining as $listing_id => $similarity) {
+            if ($similarity >= $min_similarity_threshold) {
+                $similarities[$listing_id] = $similarity;
+            }
         }
 
         // CHUNKING: Map chunk IDs back to parent post IDs
@@ -369,7 +386,6 @@ class Listeo_AI_Search_AI_Engine {
         return $result;
     }
     
-    // Note: extract_location_from_query method is defined later in this class
 
     /**
      * Perform AI-powered search with batch processing for memory efficiency
@@ -380,9 +396,10 @@ class Listeo_AI_Search_AI_Engine {
      * @param string $listing_types Comma-separated listing types or 'all'
      * @param bool $debug Enable debug logging
      * @param int $batch_size Number of embeddings per batch (default 3000, safe for 256MB PHP)
+     * @param bool $skip_threshold Skip similarity threshold filtering (return top-K raw results for LLM re-ranking)
      * @return array Search results
      */
-    public function search_with_batching($query, $limit, $offset, $listing_types, $debug = false, $batch_size = 3000) {
+    public function search_with_batching($query, $limit, $offset, $listing_types, $debug = false, $batch_size = 3000, $skip_threshold = false) {
         global $wpdb;
         
         $debug_info = array();
@@ -401,18 +418,9 @@ class Listeo_AI_Search_AI_Engine {
             Listeo_AI_Search_Utility_Helper::debug_log('BATCH SEARCH: Starting batch processing for query: "' . $query . '"');
         }
         
-        // Generate embedding for search query
-        $location_filtering_enabled = get_option('listeo_ai_search_ai_location_filtering_enabled', false);
-        
-        if ($location_filtering_enabled) {
-            $query_analysis = $this->extract_location_from_query($query, $debug);
-            $detected_locations = isset($query_analysis['locations']) ? $query_analysis['locations'] : array();
-            $has_location_intent = isset($query_analysis['has_location_intent']) ? $query_analysis['has_location_intent'] : false;
-        } else {
-            $detected_locations = array();
-            $has_location_intent = false;
-        }
-        
+        $detected_locations = array();
+        $has_location_intent = false;
+
         // Apply query expansion if enabled
         $business_query = $query;
         $expanded_query = $this->expand_query_if_enabled($business_query, $debug);
@@ -433,7 +441,7 @@ class Listeo_AI_Search_AI_Engine {
         }
         
         // BATCH PROCESSING: Get total count first
-        $apply_location_filtering = !empty($detected_locations) && $has_location_intent && $location_filtering_enabled;
+        $apply_location_filtering = false;
         $total_embeddings = Listeo_AI_Search_Database_Manager::count_embeddings_for_search($listing_types, $apply_location_filtering ? $detected_locations : array());
         
         if ($debug) {
@@ -470,6 +478,10 @@ class Listeo_AI_Search_AI_Engine {
         $min_match_percentage = intval(get_option('listeo_ai_search_min_match_percentage', 50));
         $min_similarity_threshold = Listeo_AI_Search_Utility_Helper::percentage_to_similarity($min_match_percentage, $use_strict);
 
+        if ($skip_threshold) {
+            $min_similarity_threshold = 0;
+        }
+
         if ($debug) {
             $mode = $use_strict ? 'strict (listings/products)' : 'lenient (content)';
             $debug_info['batch_size'] = $batch_size;
@@ -477,46 +489,58 @@ class Listeo_AI_Search_AI_Engine {
             Listeo_AI_Search_Utility_Helper::debug_log('BATCH SEARCH: Using admin setting ' . $min_match_percentage . '% = ' . round($min_similarity_threshold, 3) . ' raw similarity [' . $mode . ']');
         }
         
-        // Process embeddings in batches
+        // Process embeddings in batches - raw similarity only (no keyword boost)
+        $raw_similarities = array();
         $batch_offset = 0;
         while ($batch_offset < $total_embeddings) {
             $batch_embeddings = Listeo_AI_Search_Database_Manager::get_embeddings_batch(
-                $listing_types, 
-                $apply_location_filtering ? $detected_locations : array(), 
-                $batch_size, 
+                $listing_types,
+                $apply_location_filtering ? $detected_locations : array(),
+                $batch_size,
                 $batch_offset
             );
-            
+
             if ($debug) {
                 Listeo_AI_Search_Utility_Helper::debug_log('BATCH SEARCH: Processing batch ' . ($batch_offset / $batch_size + 1) . ' with ' . count($batch_embeddings) . ' embeddings');
             }
-            
-            // Process current batch
+
             foreach ($batch_embeddings as $embedding_row) {
-                $stored_embedding = Listeo_AI_Search_Database_Manager::decompress_embedding_from_storage($embedding_row->embedding);
-                if ($stored_embedding) {
-                    $similarity = Listeo_AI_Search_Utility_Helper::calculate_cosine_similarity($query_embedding, $stored_embedding);
-                    
-                    // Additional keyword boost for exact matches
-                    $keyword_boost = $this->calculate_keyword_boost($query, $embedding_row->listing_id);
-                    $adjusted_similarity = $similarity + $keyword_boost;
-                    
-                    // Only include results above minimum threshold
-                    if ($adjusted_similarity >= $min_similarity_threshold) {
-                        $similarities[$embedding_row->listing_id] = $adjusted_similarity;
-                    }
-                    
+                $similarity = Listeo_AI_Search_Utility_Helper::dot_product_packed($query_embedding, $embedding_row->embedding);
+                if ($similarity !== false) {
+                    $raw_similarities[$embedding_row->listing_id] = $similarity;
                     $processed_count++;
                 }
             }
-            
-            // Clear batch from memory
+
             unset($batch_embeddings);
-            
+
             $batch_offset += $batch_size;
-            
+
             if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('BATCH SEARCH: Processed ' . $processed_count . ' embeddings, found ' . count($similarities) . ' above threshold');
+                Listeo_AI_Search_Utility_Helper::debug_log('BATCH SEARCH: Processed ' . $processed_count . ' embeddings');
+            }
+        }
+
+        // Keyword boost is first-page focused: only top 25 candidates get the expensive
+        // DB/term/meta lookups. Results 26+ keep their raw semantic score.
+        arsort($raw_similarities);
+        $boost_candidates = array_slice($raw_similarities, 0, 25, true);
+
+        $similarities = array();
+        foreach ($boost_candidates as $listing_id => $similarity) {
+            $keyword_boost = $this->calculate_keyword_boost($query, $listing_id);
+            $adjusted_similarity = $similarity + $keyword_boost;
+
+            if ($adjusted_similarity >= $min_similarity_threshold) {
+                $similarities[$listing_id] = $adjusted_similarity;
+            }
+        }
+
+        // Add remaining raw results (no keyword boost)
+        $remaining = array_slice($raw_similarities, 25, null, true);
+        foreach ($remaining as $listing_id => $similarity) {
+            if ($similarity >= $min_similarity_threshold) {
+                $similarities[$listing_id] = $similarity;
             }
         }
 
@@ -577,279 +601,6 @@ class Listeo_AI_Search_AI_Engine {
             'debug' => $debug ? $debug_info : null
         );
     }
-
-    /**
-     * BROKEN METHOD - DO NOT USE
-     * Use GPT-4o mini to extract location entities from search query globally
-     * 
-     * @param string $query Search query
-     * @param bool $debug Enable debug logging
-     * @return array Detected locations
-     */
-    private function broken_extract_location_from_query($query, $debug = false) {
-        // This method is broken and should not be used
-        // Returning empty array to avoid errors
-        return array();
-    }
-
-    /**
-     * Fallback AI filtering using inclusive approach
-     * 
-     * @param string $query Search query
-     * @param array $results Search results to filter
-     * @param bool $debug Enable debug logging
-     * @param array $detected_locations Detected locations from query
-     * @return array Filtered results
-     */
-    private function ai_filter_results_inclusive($query, $results, $debug = false, $detected_locations = array()) {
-        if (empty($this->api_key) || empty($results)) {
-            return $results;
-        }
-        
-        // Prepare results summary for AI analysis
-        $results_summary = array();
-        foreach ($results as $index => $result) {
-            $results_summary[] = array(
-                'index' => $index,
-                'title' => $result['title'],
-                'address' => $result['address'],
-                'listing_type' => $result['listing_type'],
-                'excerpt' => substr(strip_tags($result['excerpt']), 0, 200),
-                'match_percentage' => $result['match_percentage'] ?? 0
-            );
-        }
-
-        // Build location context
-        $location_context = "";
-        if (!empty($detected_locations)) {
-            $location_context = "\nDetected locations from query: " . implode(', ', $detected_locations) . "\n";
-        }
-        
-        $prompt = "User search query: \"$query\"" . $location_context . "
-
-You are analyzing search results from a business directory using INCLUSIVE filtering as a fallback.
-
-Here are the candidates found by semantic search:
-" . json_encode($results_summary, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "
-
-Apply INCLUSIVE filtering - keep any business that could reasonably serve the user's general need:
-
-KEEP results that:
-1. Are in a business category that could potentially help the user
-2. Might offer the service or product the user needs
-3. A reasonable person might consider visiting for this request
-4. Are broadly related to the user's intent (even if not perfect match)
-
-FILTER OUT only results that are:
-- Completely unrelated business types
-- Would never serve the user's stated need
-- Are clearly in wrong category
-
-Examples:
-- For coffee/breakfast search: keep cafés, restaurants, bakeries, hotels with dining
-- For pet help: keep vets, grooming, pet stores, training centers
-- For fitness: keep gyms, sports centers, yoga studios, trainers
-
-Return ONLY a JSON array of indices for broadly relevant results.
-
-Do not include any explanation, just the JSON array of relevant indices.";
-
-        try {
-            // Use lightweight models for result filtering
-            $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
-
-            // Gemini needs higher max_tokens in OpenAI compatibility mode
-            $max_tokens = ($this->provider->get_provider() === 'gemini') ? 300 : 100;
-
-            $response = wp_remote_post($this->provider->get_endpoint('chat'), array(
-                'headers' => $this->provider->get_headers(),
-                'body' => json_encode(array(
-                    'model' => $model,
-                    'messages' => array(
-                        array(
-                            'role' => 'user',
-                            'content' => $prompt
-                        )
-                    ),
-                    'max_tokens' => $max_tokens,
-                    'temperature' => 0.6
-                )),
-                'timeout' => 30,
-            ));
-
-            if (is_wp_error($response)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('AI FILTERING FALLBACK ERROR: ' . $response->get_error_message(), 'error');
-                }
-                return $results;
-            }
-
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-
-            if (isset($body['error'])) {
-                if ($debug) {
-                    $provider_name = $this->provider->get_provider_name();
-                    Listeo_AI_Search_Utility_Helper::debug_log($provider_name . ' AI FILTERING FALLBACK API ERROR: ' . $body['error']['message'], 'error');
-                }
-                return $results;
-            }
-            
-            $ai_response = $body['choices'][0]['message']['content'] ?? '';
-            $relevant_indices = json_decode(trim($ai_response), true);
-            
-            if (!is_array($relevant_indices)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('AI FILTERING FALLBACK: Invalid response format: ' . $ai_response, 'error');
-                }
-                return $results;
-            }
-            
-            // Filter results based on AI selection
-            $filtered_results = array();
-            foreach ($relevant_indices as $index) {
-                if (isset($results[$index])) {
-                    $filtered_results[] = $results[$index];
-                }
-            }
-            
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI FILTERING FALLBACK: Successfully applied inclusive filtering. Original: ' . count($results) . ', Filtered: ' . count($filtered_results) . ', Selected indices: [' . implode(', ', $relevant_indices) . ']');
-            }
-            
-            return $filtered_results;
-            
-        } catch (Exception $e) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI FILTERING FALLBACK EXCEPTION: ' . $e->getMessage(), 'error');
-            }
-            return $results;
-        }
-    }
-
-    /**
-     * Use GPT-4o mini to detect locations in search query for filtering
-     * 
-     * @param string $query Search query
-     * @param bool $debug Enable debug logging
-     * @return array Location analysis data
-     */
-    private function extract_location_from_query($query, $debug = false) {
-        if (empty($this->api_key)) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI PROCESSING: API key not configured, skipping location detection', 'warning');
-            }
-            return array();
-        }
-
-        if ($debug) {
-            Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Starting location detection for query: ' . $query);
-        }
-
-        $prompt = "Analyze this search query and detect location information: \"$query\"
-
-Please respond with ONLY a JSON object in this exact format:
-{
-    \"locations\": [\"city1\", \"city2\"],
-    \"has_location_intent\": true/false,
-    \"confidence\": 0.8
-}
-
-Rules:
-1. LOCATION DETECTION:
-   - locations: array of detected cities, countries, regions, neighborhoods, landmarks, addresses
-   - IMPORTANT: Return location names in their canonical/standard form (nominative case)
-   - Examples: \"warszawie\" → \"warszawa\", \"krakowie\" → \"kraków\", \"münchens\" → \"münchen\", \"parisien\" → \"paris\"
-   - has_location_intent: true if user is looking for location-specific results
-   - confidence: 0-1 how confident you are about location detection
-   - If no clear location mentioned, return empty locations array
-   - Distinguish between business names containing locations vs actual location searches
-   - Examples: \"Hotel Paris\" (business name) vs \"hotel in Paris\" (location search)
-   - Detect location patterns in ANY language (prepositions like \"in\", \"at\", \"near\", etc.)
-
-Do not include any explanation, just the JSON object.";
-
-        try {
-            // Use lightweight models for location extraction
-            $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
-
-            // Gemini needs higher max_tokens in OpenAI compatibility mode
-            $max_tokens = ($this->provider->get_provider() === 'gemini') ? 500 : 150;
-
-            $response = wp_remote_post($this->provider->get_endpoint('chat'), array(
-                'headers' => $this->provider->get_headers(),
-                'body' => json_encode(array(
-                    'model' => $model,
-                    'messages' => array(
-                        array(
-                            'role' => 'user',
-                            'content' => $prompt
-                        )
-                    ),
-                    'max_tokens' => $max_tokens,
-                    'temperature' => 0.6
-                )),
-                'timeout' => 30,
-            ));
-
-            if (is_wp_error($response)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION ERROR: ' . $response->get_error_message(), 'error');
-                }
-                return array(); // Return empty array on error
-            }
-
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-
-            if (isset($body['error'])) {
-                if ($debug) {
-                    $provider_name = $this->provider->get_provider_name();
-                    Listeo_AI_Search_Utility_Helper::debug_log($provider_name . ' AI LOCATION API ERROR: ' . $body['error']['message'], 'error');
-                }
-                return array();
-            }
-
-            $ai_response = $body['choices'][0]['message']['content'] ?? '';
-            $location_data = json_decode(trim($ai_response), true);
-
-            if (!is_array($location_data)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Invalid response format: ' . $ai_response, 'error');
-                }
-                return $this->fallback_query_analysis($query);
-            }
-
-            // Extract location components from simplified response
-            $locations = $location_data['locations'] ?? array();
-            $has_intent = $location_data['has_location_intent'] ?? false;
-            $confidence = $location_data['confidence'] ?? 0;
-
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Detected locations: ' . implode(', ', $locations));
-                Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Has location intent: ' . ($has_intent ? 'yes' : 'no'));
-                Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Confidence: ' . $confidence);
-            }
-
-            // Return simplified analysis object (no business keywords)
-            return array(
-                'locations' => $locations,
-                'has_location_intent' => $has_intent,
-                'confidence' => $confidence,
-                'original_query' => $query
-            );
-
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION: Filtering out results due to low confidence or no location intent', 'warning');
-            }
-
-            return array();
-
-        } catch (Exception $e) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('AI LOCATION EXCEPTION: ' . $e->getMessage(), 'error');
-            }
-            return $this->fallback_query_analysis($query);
-        }
-    }
     
     /**
      * Expand query with related keywords if enabled
@@ -866,11 +617,19 @@ Do not include any explanation, just the JSON object.";
             }
             return $query;
         }
-        
+
+        // Atomically acquire rate limit slot before making API call
+        if (!Listeo_AI_Search_Embedding_Manager::try_acquire_rate_limit()) {
+            if ($debug) {
+                Listeo_AI_Search_Utility_Helper::debug_log('QUERY EXPANSION: Skipped - global rate limit exceeded', 'warning');
+            }
+            return $query;
+        }
+
         if ($debug) {
             Listeo_AI_Search_Utility_Helper::debug_log('QUERY EXPANSION: Enabled - expanding query: "' . $query . '"');
         }
-        
+
         try {
             $prompt = "Expand this search query with 3-5 related keywords only. Focus on business types and services, NOT locations.
 
@@ -896,23 +655,16 @@ Keywords:";
 
             // Use lightweight models for query expansion
             $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
-
-            // Gemini needs higher max_tokens in OpenAI compatibility mode
             $max_tokens = ($this->provider->get_provider() === 'gemini') ? 500 : 150;
+
+            $payload = $this->provider->normalize_chat_payload(array(
+                'model' => $model,
+                'messages' => array(array('role' => 'user', 'content' => $prompt)),
+            ), array('max_tokens' => $max_tokens));
 
             $response = wp_remote_post($this->provider->get_endpoint('chat'), array(
                 'headers' => $this->provider->get_headers(),
-                'body' => json_encode(array(
-                    'model' => $model,
-                    'messages' => array(
-                        array(
-                            'role' => 'user',
-                            'content' => $prompt
-                        )
-                    ),
-                    'max_tokens' => $max_tokens,
-                    'temperature' => 0.6
-                )),
+                'body' => json_encode($payload),
                 'timeout' => 10,
             ));
 
@@ -972,46 +724,7 @@ Keywords:";
             return $query; // Return original query on exception
         }
     }
-    
-    /**
-     * Fallback query analysis using regex patterns
-     * 
-     * @param string $query Original search query
-     * @return array Fallback analysis
-     */
-    private function fallback_query_analysis($query) {
-        // Simple regex-based fallback for location detection
-        $location_patterns = array(
-            '/\bw\s+(\w+)/iu',      // Polish: "w Warszawie"
-            '/\bwe\s+(\w+)/iu',     // Polish: "we Włocławku"  
-            '/\bin\s+(\w+)/iu',     // English: "in London"
-            '/\bnear\s+(\w+)/iu',   // English: "near Berlin"
-            '/\bat\s+(\w+)/iu',     // English: "at Times Square"
-        );
-        
-        $detected_locations = array();
-        $clean_query = $query;
-        
-        foreach ($location_patterns as $pattern) {
-            if (preg_match_all($pattern, $query, $matches)) {
-                foreach ($matches[1] as $location) {
-                    $detected_locations[] = ucfirst(strtolower($location));
-                }
-                $clean_query = preg_replace($pattern, '', $clean_query);
-            }
-        }
-        
-        // Clean up extra whitespace
-        $clean_query = trim(preg_replace('/\s+/', ' ', $clean_query));
-        
-        return array(
-            'locations' => array_unique($detected_locations),
-            'has_location_intent' => !empty($detected_locations),
-            'confidence' => !empty($detected_locations) ? 0.6 : 0.0,
-            'original_query' => $query
-        );
-    }
-    
+
     /**
      * Calculate keyword boost for exact matches using semantic analysis
      * 
@@ -1083,135 +796,4 @@ Keywords:";
         return min($boost, 0.30);
     }
     
-    /**
-     * Determine if query is ultra-specific using AI analysis
-     * 
-     * @param string $query Search query
-     * @param array $intent_analysis Intent analysis data
-     * @param bool $debug Enable debug logging
-     * @return bool True if ultra-specific query
-     */
-    private function is_ultra_specific_query($query, $intent_analysis, $debug = false) {
-        // If we already have high confidence and specificity from intent analysis, use that
-        if ($intent_analysis['specificity_level'] === 'high' && $intent_analysis['intent_confidence'] >= 0.85) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Detected as ultra-specific based on intent analysis (confidence: ' . $intent_analysis['intent_confidence'] . ')');
-            }
-            return true;
-        }
-        
-        // For lower confidence, do additional AI analysis
-        if (empty($this->api_key)) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: API key not configured, using fallback detection', 'warning');
-            }
-            return false; // Conservative fallback
-        }
-
-        if ($debug) {
-            Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Performing AI analysis for ultra-specificity: ' . $query);
-        }
-
-        $prompt = "Analyze this search query to determine if it represents an ULTRA-SPECIFIC niche requirement: \"$query\"
-
-Respond with ONLY a JSON object:
-{
-    \"is_ultra_specific\": true/false,
-    \"specificity_reason\": \"brief explanation\",
-    \"confidence\": 0.8
-}
-
-ULTRA-SPECIFIC queries are those that:
-- Require very particular features, amenities, or characteristics
-- Have specialized requirements that most businesses don't offer
-- Need exact matching rather than general category matching
-- Represent niche markets or special accommodations
-
-Examples of ULTRA-SPECIFIC:
-- Businesses with specific dietary restrictions (vegan-only, gluten-free)
-- Accommodations with special accessibility features
-- Services with unusual hours (24/7, overnight)
-- Establishments with unique amenities (pet-friendly, co-working spaces)
-- Specialty services (organic-only, premium/luxury requirements)
-- Niche business types (cat cafes, escape rooms, specialty workshops)
-
-Examples of GENERAL/NORMAL:
-- \"restaurant\" (general dining)
-- \"hotel\" (general accommodation)
-- \"coffee shop\" (general cafe)
-- \"gym\" (general fitness)
-- \"vet\" (general veterinary)
-
-Do not include explanation, just the JSON object.";
-
-        try {
-            // Use lightweight models for specificity detection
-            $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
-
-            // Gemini needs higher max_tokens in OpenAI compatibility mode
-            $max_tokens = ($this->provider->get_provider() === 'gemini') ? 300 : 100;
-
-            $response = wp_remote_post($this->provider->get_endpoint('chat'), array(
-                'headers' => $this->provider->get_headers(),
-                'body' => json_encode(array(
-                    'model' => $model,
-                    'messages' => array(
-                        array(
-                            'role' => 'user',
-                            'content' => $prompt
-                        )
-                    ),
-                    'max_tokens' => $max_tokens,
-                    'temperature' => 0.6
-                )),
-                'timeout' => 15, // Shorter timeout for quick decision
-            ));
-
-            if (is_wp_error($response)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY ERROR: ' . $response->get_error_message(), 'error');
-                }
-                return false; // Conservative fallback
-            }
-
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-
-            if (isset($body['error'])) {
-                if ($debug) {
-                    $provider_name = $this->provider->get_provider_name();
-                    Listeo_AI_Search_Utility_Helper::debug_log($provider_name . ' NICHE QUERY API ERROR: ' . $body['error']['message'], 'error');
-                }
-                return false;
-            }
-
-            $ai_response = $body['choices'][0]['message']['content'] ?? '';
-            $specificity_data = json_decode(trim($ai_response), true);
-
-            if (!is_array($specificity_data)) {
-                if ($debug) {
-                    Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Invalid response format: ' . $ai_response, 'error');
-                }
-                return false;
-            }
-
-            $is_ultra_specific = $specificity_data['is_ultra_specific'] ?? false;
-            $reason = $specificity_data['specificity_reason'] ?? '';
-            $confidence = $specificity_data['confidence'] ?? 0;
-
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Ultra-specific: ' . ($is_ultra_specific ? 'yes' : 'no'));
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Reason: ' . $reason);
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY: Confidence: ' . $confidence);
-            }
-
-            // Only return true if AI is confident about ultra-specificity
-            return $is_ultra_specific && $confidence >= 0.7;
-
-        } catch (Exception $e) {
-            if ($debug) {
-                Listeo_AI_Search_Utility_Helper::debug_log('NICHE QUERY EXCEPTION: ' . $e->getMessage(), 'error');
-            }
-            return false; // Conservative fallback
-        }
-    }
 }

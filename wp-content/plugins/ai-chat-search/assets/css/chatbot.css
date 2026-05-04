@@ -483,6 +483,11 @@ body p.listeo-ai-listing-excerpt {
     font-weight: 500;
 }
 
+/* Hidden by default — customers can opt in via custom CSS override (display: inline-flex) */
+.listeo-ai-product-sku {
+    display: none !important;
+}
+
 .listeo-ai-listing-rating i {
     color: #f59e0b !important;
 }
@@ -773,6 +778,7 @@ body#dark-mode .listeo-ai-chat-input {background: #f5f5f5; color: #555;}
     max-height: 34px !important;
     min-height: 34px !important;
     transform: translateY(-50%);
+    margin: 0;
 }
 
 .listeo-ai-chat-send-btn img{
@@ -871,7 +877,7 @@ body#dark-mode .listeo-ai-chat-input {background: #f5f5f5; color: #555;}
     background: #222;
     color: white;
     border: none;
-    border-radius: 24px;
+    border-radius: 10px;
     padding: 8px 20px;
     font-size: 13px;
     font-weight: 600;
@@ -2029,10 +2035,11 @@ div.listeo-ai-product-card .listeo-ai-listing-thumbnail a {
 
 .listeo-ai-cart-popup-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 16px !important;
     font-weight: 600;
     color: #333;
     display: flex;
+    align-items: center;
 }
 
 .listeo-ai-cart-popup-close {

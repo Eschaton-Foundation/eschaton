@@ -14,6 +14,32 @@ if (!defined('ABSPATH')) {
 }
 
 class Listeo_AI_Search_Utility_Helper {
+
+    /**
+     * Resolve the effective embedding provider from the stored embedding model.
+     * OpenRouter routes models from multiple vendors, so we detect the underlying
+     * provider from the model slug to apply correct similarity thresholds.
+     *
+     * @param string|null $embedding_model Override model slug, or null to read from options
+     * @return string 'openai', 'gemini', or 'mistral'
+     */
+    public static function get_embedding_provider($embedding_model = null) {
+        if ($embedding_model === null) {
+            $embedding_model = get_option('listeo_ai_embedding_model', '');
+        }
+
+        if (empty($embedding_model)) {
+            return get_option('listeo_ai_search_provider', 'openai');
+        }
+
+        if (strpos($embedding_model, 'gemini') !== false) {
+            return 'gemini';
+        }
+        if (strpos($embedding_model, 'mistral') !== false) {
+            return 'mistral';
+        }
+        return 'openai';
+    }
     
     /**
      * Transform similarity score to user-friendly percentage
@@ -61,9 +87,9 @@ class Listeo_AI_Search_Utility_Helper {
      * @return int User-friendly percentage
      */
     public static function transform_similarity_to_percentage($raw_similarity, $provider = null, $post_type = null) {
-        // Get provider from settings if not explicitly passed
+        // Resolve provider from embedding model, not AI provider
         if ($provider === null) {
-            $provider = get_option('listeo_ai_search_provider', 'openai');
+            $provider = self::get_embedding_provider();
         }
 
         if ($provider === 'gemini') {
@@ -115,9 +141,9 @@ class Listeo_AI_Search_Utility_Helper {
      * @return float Raw cosine similarity threshold
      */
     public static function percentage_to_similarity($percentage, $strict = true, $provider = null, $is_rag = false) {
-        // Get provider from settings if not explicitly passed
+        // Resolve provider from embedding model, not AI provider
         if ($provider === null) {
-            $provider = get_option('listeo_ai_search_provider', 'openai');
+            $provider = self::get_embedding_provider();
         }
 
         // RAG mode: divide percentage by 2 for more lenient context retrieval
@@ -166,7 +192,9 @@ class Listeo_AI_Search_Utility_Helper {
             $threshold = ($percentage / 40) * 0.25;
         }
 
-        // OpenAI produces significantly lower similarity scores than Gemini
+        // OpenAI embedding models produce significantly lower similarity scores than Gemini.
+        // Applies to any OpenAI-family embedding model (text-embedding-3-small/large),
+        // whether used directly or via OpenRouter.
         if ($provider === 'openai') {
             $threshold = $threshold / 1.5;
         }
@@ -196,6 +224,57 @@ class Listeo_AI_Search_Utility_Helper {
         }
 
         return $dot_product;
+    }
+
+    /**
+     * Compute dot product directly on compressed embedding data
+     *
+     * Skips float decompression - multiplies query floats against packed 16-bit ints
+     * and divides once at the end. Equivalent to calculate_cosine_similarity() but
+     * avoids allocating an intermediate float array.
+     *
+     * unpack('s*') returns 1-indexed array, so stored values use offset $i + 1.
+     *
+     * @param array $query_vector Float array from the embedding API
+     * @param string $compressed_data Base64 + gzcompress packed 16-bit data
+     * @return float|false Cosine similarity, or false on decompression failure
+     */
+    public static function dot_product_packed($query_vector, $compressed_data) {
+        if (empty($compressed_data)) {
+            return false;
+        }
+
+        // Legacy JSON format - fall back to float path
+        if (substr(trim($compressed_data), 0, 1) === '[') {
+            $decoded = json_decode($compressed_data, true);
+            if (!$decoded) {
+                return false;
+            }
+            return self::calculate_cosine_similarity($query_vector, $decoded);
+        }
+
+        $packed = @gzuncompress(base64_decode($compressed_data));
+        if ($packed === false) {
+            // Try JSON fallback
+            $decoded = json_decode($compressed_data, true);
+            if ($decoded) {
+                return self::calculate_cosine_similarity($query_vector, $decoded);
+            }
+            return false;
+        }
+
+        $quantized = unpack('s*', $packed);
+        if ($quantized === false || count($quantized) !== count($query_vector)) {
+            return false;
+        }
+
+        $dot = 0.0;
+        $len = count($query_vector);
+        for ($i = 0; $i < $len; $i++) {
+            $dot += $query_vector[$i] * $quantized[$i + 1];
+        }
+
+        return $dot / 32767.0;
     }
     
     /**
@@ -417,8 +496,16 @@ class Listeo_AI_Search_Utility_Helper {
 
     public static function _cs_pa($active) {
         if ($active && !get_transient('_ais_cst')) {
-            static::_cv();
-            self::$_cs_f = null;
+            // Fallback: rebuild transient from wp_options if last _cv() run is still fresh.
+            // Uses _ais_cst_ts (only set by _cv()) not the Pro-updated timestamp,
+            // so _cv() still runs periodically to refresh _ais_cs.
+            $last_cv = (int) get_option('_ais_cst_ts', 0);
+            if ($last_cv > 0 && (time() - $last_cv) < WEEK_IN_SECONDS) {
+                set_transient('_ais_cst', 1, WEEK_IN_SECONDS);
+            } else {
+                static::_cv();
+                self::$_cs_f = null;
+            }
         }
         return self::_cs_k() ? false : $active;
     }
@@ -437,6 +524,7 @@ class Listeo_AI_Search_Utility_Helper {
 
     private static function _cv() {
         set_transient('_ais_cst', 1, WEEK_IN_SECONDS);
+        update_option('_ais_cst_ts', time(), false);
 
         if (strpos(home_url(), 'purethemes.net') !== false) {
             return;

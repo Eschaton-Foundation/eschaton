@@ -81,10 +81,17 @@ class Listeo_AI_Search_Chat_Shortcode
         );
         wp_add_inline_style("listeo-ai-chat", $custom_css);
 
+        // User-defined custom CSS from Developer & Debug Options.
+        // Stripped of HTML tags as defense-in-depth (also sanitized on save).
+        $user_custom_css = trim((string) get_option("listeo_ai_chat_custom_css", ""));
+        if ($user_custom_css !== "") {
+            wp_add_inline_style("listeo-ai-chat", wp_strip_all_tags($user_custom_css));
+        }
+
         // Enqueue chat script
         wp_enqueue_script(
             "listeo-ai-chat",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chatbot-core.js",
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chat-core-scripts.js",
             ["jquery"],
             LISTEO_AI_SEARCH_VERSION,
             true,

@@ -3,7 +3,7 @@
  * Content Chunker Class
  *
  * Handles intelligent content chunking for long posts/pages
- * to improve embedding quality for 1536-dimension vectors.
+ * to improve embedding quality.
  *
  * @package Listeo_AI_Search
  * @since 2.1.0
@@ -22,7 +22,7 @@ class Listeo_AI_Content_Chunker {
      * Using characters instead of words because PHP's word counting
      * doesn't work reliably for non-Latin scripts (Cyrillic, CJK, Arabic).
      *
-     * 7000 chars provides better semantic density for 1536-dim vectors
+     * 7000 chars provides better semantic density per vector
      * while balancing CPU cost of PHP cosine similarity calculations.
      */
     const DEFAULT_THRESHOLD = 7000;
@@ -31,7 +31,7 @@ class Listeo_AI_Content_Chunker {
      * Default target characters per chunk
      *
      * ~3500 chars provides focused semantic meaning per vector
-     * for improved search precision with 1536-dimension embeddings.
+     * for improved search precision.
      */
     const DEFAULT_CHUNK_SIZE = 3500;
 

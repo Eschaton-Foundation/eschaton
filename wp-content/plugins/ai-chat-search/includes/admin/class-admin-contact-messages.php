@@ -57,7 +57,7 @@ class Admin_Contact_Messages {
         $messages = Listeo_AI_Search_Contact_Messages::get_messages(self::PER_PAGE, 0);
         $total_count = Listeo_AI_Search_Contact_Messages::get_total_count();
         ?>
-        <div class="airs-card">
+        <div class="airs-card airs-card-toggleable" data-toggle-id="stats-contact-messages">
             <div class="airs-card-header airs-card-header-with-icon">
                 <div class="airs-card-icon airs-card-icon-purple">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
@@ -66,6 +66,7 @@ class Admin_Contact_Messages {
                     <h3><?php _e('Emails Sent via Chat', 'ai-chat-search'); ?></h3>
                     <p><?php _e('Messages sent via AI chat tool and contact form button.', 'ai-chat-search'); ?></p>
                 </div>
+                <span class="dashicons dashicons-arrow-down-alt2 airs-card-toggle-icon"></span>
             </div>
             <div class="airs-card-body">
                 <?php if (!AI_Chat_Search_Pro_Manager::can_access_conversation_logs()): ?>
@@ -164,13 +165,11 @@ class Admin_Contact_Messages {
      */
     public function render_message_box($msg) {
         ?>
-        <div class="contact-message-box" data-message-id="<?php echo intval($msg['id']); ?>">
+        <div class="contact-message-box view-contact-message" data-message-id="<?php echo intval($msg['id']); ?>" data-id="<?php echo intval($msg['id']); ?>">
             <div class="contact-message-header">
                 <div class="contact-message-info">
                     <strong><?php echo esc_html($msg['sender_name']); ?></strong>
-                    <a href="mailto:<?php echo esc_attr($msg['sender_email']); ?>" class="contact-message-email">
-                        <?php echo esc_html($msg['sender_email']); ?>
-                    </a>
+                    <span class="contact-message-email"><?php echo esc_html($msg['sender_email']); ?></span>
                 </div>
                 <div class="contact-message-meta">
                     <?php if ($msg['source'] === 'llm'): ?>
@@ -181,18 +180,10 @@ class Admin_Contact_Messages {
                     <?php if (!$msg['email_sent']): ?>
                         <span class="airs-badge airs-badge-red" title="<?php esc_attr_e('Email failed to send', 'ai-chat-search'); ?>">!</span>
                     <?php endif; ?>
-                    <span class="contact-message-date">
-                        <?php echo esc_html(human_time_diff(strtotime($msg['created_at']), current_time('timestamp'))); ?> <?php _e('ago', 'ai-chat-search'); ?>
-                    </span>
                 </div>
             </div>
-            <div class="contact-message-actions">
-                <button type="button" class="button button-small view-contact-message" data-id="<?php echo intval($msg['id']); ?>">
-                    <?php _e('View', 'ai-chat-search'); ?>
-                </button>
-                <button type="button" class="button button-small delete-contact-message" data-id="<?php echo intval($msg['id']); ?>">
-                    <?php _e('Delete', 'ai-chat-search'); ?>
-                </button>
+            <div class="contact-message-time">
+                <?php echo esc_html(human_time_diff(strtotime($msg['created_at']), current_time('timestamp'))); ?> <?php _e('ago', 'ai-chat-search'); ?>
             </div>
         </div>
         <?php
@@ -260,18 +251,10 @@ class Admin_Contact_Messages {
                                 <?php else: ?>
                                     <span class="airs-badge airs-badge-gray"><?php _e('Button', 'ai-chat-search'); ?></span>
                                 <?php endif; ?>
-                                <span class="contact-message-date">
-                                    <?php echo sprintf(__('%d hours ago', 'ai-chat-search'), $msg['time']); ?>
-                                </span>
                             </div>
                         </div>
-                        <div class="contact-message-actions">
-                            <button type="button" class="button button-small" disabled>
-                                <?php _e('View', 'ai-chat-search'); ?>
-                            </button>
-                            <button type="button" class="button button-small" disabled>
-                                <?php _e('Delete', 'ai-chat-search'); ?>
-                            </button>
+                        <div class="contact-message-time">
+                            <?php echo sprintf(__('%d hours ago', 'ai-chat-search'), $msg['time']); ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -309,12 +292,17 @@ class Admin_Contact_Messages {
             <div class="airs-modal-content" style="max-width: 600px;">
                 <div class="airs-modal-header">
                     <h3><?php _e('Contact Message', 'ai-chat-search'); ?></h3>
-                    <button type="button" class="airs-modal-close-btn contact-message-modal-close" style="background: none; border: none; cursor: pointer; padding: 5px;">
-                        <span class="dashicons dashicons-no-alt" style="font-size: 24px;"></span>
+                    <button type="button" class="listeo-ai-modal-close contact-message-modal-close">
+                        <span class="dashicons dashicons-no-alt"></span>
                     </button>
                 </div>
                 <div class="airs-modal-body" id="contact-message-modal-body">
                     <!-- Content loaded via AJAX -->
+                </div>
+                <div class="airs-modal-footer">
+                    <button type="button" class="airs-button airs-button-secondary delete-contact-message" id="contact-message-delete-btn">
+                        <?php _e('Delete', 'ai-chat-search'); ?>
+                    </button>
                 </div>
             </div>
         </div>
@@ -329,9 +317,14 @@ class Admin_Contact_Messages {
         ?>
         <script>
         jQuery(document).ready(function($) {
-            // View message
+            var currentMessageId = null;
+
+            // View message - delegated on the whole row (no inline buttons anymore)
             $(document).on('click', '.view-contact-message', function() {
                 var messageId = $(this).data('id');
+                if (!messageId) return;
+                currentMessageId = messageId;
+
                 var $modal = $('#contact-message-modal');
                 var $body = $('#contact-message-modal-body');
 
@@ -362,17 +355,19 @@ class Admin_Contact_Messages {
             // Close modal
             $(document).on('click', '.contact-message-modal-close, #contact-message-modal .airs-modal-overlay', function() {
                 $('#contact-message-modal').fadeOut(200);
+                currentMessageId = null;
             });
 
-            // Delete message
-            $(document).on('click', '.delete-contact-message', function() {
+            // Delete message - now lives in the modal footer
+            $(document).on('click', '#contact-message-delete-btn', function() {
+                if (!currentMessageId) return;
                 if (!confirm('<?php _e('Are you sure you want to delete this message?', 'ai-chat-search'); ?>')) {
                     return;
                 }
 
                 var $btn = $(this);
-                var messageId = $btn.data('id');
-                var $box = $btn.closest('.contact-message-box');
+                var messageId = currentMessageId;
+                var $box = $('.contact-message-box[data-message-id="' + messageId + '"]');
 
                 $btn.prop('disabled', true);
 
@@ -386,16 +381,19 @@ class Admin_Contact_Messages {
                     },
                     success: function(response) {
                         if (response.success) {
+                            $('#contact-message-modal').fadeOut(200);
+                            currentMessageId = null;
                             $box.fadeOut(300, function() {
                                 $(this).remove();
                             });
                         } else {
                             alert(response.data.message || '<?php _e('Error deleting message.', 'ai-chat-search'); ?>');
-                            $btn.prop('disabled', false);
                         }
                     },
                     error: function() {
                         alert('<?php _e('Error deleting message.', 'ai-chat-search'); ?>');
+                    },
+                    complete: function() {
                         $btn.prop('disabled', false);
                     }
                 });
@@ -630,7 +628,7 @@ class Admin_Contact_Messages {
             <?php if ($message['source'] === 'llm' && !empty($message['conversation_id'])): ?>
             <div class="field-row">
                 <span class="field-label"><?php _e('Conversation ID:', 'ai-chat-search'); ?></span>
-                <span class="field-value"><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($message['conversation_id']); ?></code></span>
+                <span class="field-value"><code class="airs-conversation-id-code"><?php echo esc_html($message['conversation_id']); ?></code></span>
             </div>
             <?php endif; ?>
             <div class="field-row" style="grid-template-columns: 1fr;">

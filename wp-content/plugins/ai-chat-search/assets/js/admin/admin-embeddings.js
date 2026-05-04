@@ -607,6 +607,158 @@
     AIRS.checkEmbeddingData = checkEmbeddingData;
 
     /**
+     * Initialize embedding model dropdown
+     */
+    function initEmbeddingModelDropdown() {
+        var $select = $('#listeo_ai_embedding_model');
+        if ($select.length === 0) {
+            return;
+        }
+
+        var originalValue = $select.data('original-value') || $select.val();
+        var ajax = window.listeo_ai_search_ajax || {};
+
+        var embeddingDefaults = {
+            openai: 'text-embedding-3-small',
+            gemini: 'gemini-embedding-001',
+            mistral: 'mistral-embed',
+            openrouter: 'openai/text-embedding-3-small'
+        };
+
+        // Show/hide optgroups based on current provider
+        function updateEmbeddingModelUI() {
+            var provider = ajax.current_provider || 'openai';
+            $('.embedding-model-group').hide();
+            $('.embedding-model-group-' + provider).show();
+
+
+            // Auto-select default if current value doesn't belong to this provider's optgroup
+            var currentVal = $select.val();
+            var $visibleOptions = $select.find('option').filter(function() {
+                return $(this).closest('.embedding-model-group-' + provider).length;
+            });
+            var isValid = $visibleOptions.filter(function() { return $(this).val() === currentVal; }).length > 0;
+            if (!isValid) {
+                var newDefault = embeddingDefaults[provider] || $visibleOptions.first().val();
+                $select.val(newDefault);
+                originalValue = newDefault;
+                $select.data('original-value', originalValue);
+                AIRS.ajax({
+                    action: 'listeo_ai_save_embedding_model',
+                    data: { nonce: ajax.nonce, model: newDefault }
+                });
+            }
+        }
+
+        updateEmbeddingModelUI();
+
+        // Handle change
+        $select.on('change', function() {
+            var newValue = $select.val();
+            if (newValue === originalValue) {
+                $('#embedding-model-retrain-notice').hide();
+                return;
+            }
+
+            var totalEmbeddings = AIRS.getTotalEmbeddings();
+            if (totalEmbeddings >= 1) {
+                // Show confirmation modal
+                $('#embedding-model-change-modal').fadeIn(200);
+                $('#embedding-model-change-modal').data('pending-value', newValue);
+            } else {
+                // No embeddings - save immediately
+                saveEmbeddingModel(newValue);
+            }
+        });
+
+        // Modal cancel
+        $('#embedding-model-cancel-btn, #embedding-model-change-modal .airs-modal-overlay').on('click', function() {
+            $('#embedding-model-change-modal').fadeOut(200);
+            $select.val(originalValue);
+            $('#embedding-model-change-modal').removeData('pending-value');
+            $('#embedding-model-retrain-notice').hide();
+            $('#embedding-model-save-indicator').hide();
+        });
+
+        // Modal confirm
+        $('#embedding-model-confirm-btn').on('click', function() {
+            var $button = $(this);
+            var pendingValue = $('#embedding-model-change-modal').data('pending-value');
+
+            if (!pendingValue) {
+                return;
+            }
+
+            AIRS.setButtonState($button, 'loading');
+
+            // Step 1: Clear embeddings
+            AIRS.ajax({
+                action: 'listeo_ai_clear_embeddings_for_provider_switch',
+                data: { nonce: ajax.clear_embeddings_nonce },
+                success: function(response) {
+                    if (response.success) {
+                        // Step 2: Save new embedding model
+                        saveEmbeddingModel(pendingValue, function() {
+                            $('#embedding-model-change-modal').fadeOut(200);
+                            $('#embedding-model-change-modal').removeData('pending-value');
+                            originalValue = pendingValue;
+                            $select.data('original-value', originalValue);
+                        });
+                    } else {
+                        alert(response.data.message || (i18n.errorClearingEmbeddings || 'Error clearing embeddings.'));
+                        $select.val(originalValue);
+                    }
+                },
+                error: function() {
+                    alert(i18n.ajaxError || 'An error occurred. Please try again.');
+                    $select.val(originalValue);
+                },
+                complete: function() {
+                    AIRS.setButtonState($button, 'reset');
+                }
+            });
+        });
+
+        // Save embedding model via AJAX
+        function saveEmbeddingModel(model, callback) {
+            var $indicator = $('#embedding-model-save-indicator');
+
+            $indicator.html('<span class="airs-spinner airs-spinner--small" style="color: #0073aa;"></span>').show();
+
+            AIRS.ajax({
+                action: 'listeo_ai_save_embedding_model',
+                data: {
+                    nonce: ajax.nonce,
+                    model: model
+                },
+                success: function(response) {
+                    if (response.success) {
+                        originalValue = model;
+                        $select.data('original-value', originalValue);
+                        $('#embedding-model-retrain-notice').hide();
+                        $indicator.html('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#46b450" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>' + (i18n.saved || 'Saved')).show();
+                        setTimeout(function() {
+                            $indicator.fadeOut(400);
+                        }, 1500);
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    } else {
+                        $indicator.hide();
+                        alert(response.data.message || (i18n.saveFailed || 'Failed to save embedding model.'));
+                        $select.val(originalValue);
+                    }
+                },
+                error: function() {
+                    $indicator.hide();
+                    alert(i18n.ajaxError || 'An error occurred. Please try again.');
+                    $select.val(originalValue);
+                }
+            });
+        }
+    }
+
+    /**
      * Initialize all embedding handlers
      */
     function init() {
@@ -617,6 +769,7 @@
 
         initBatchGeneration();
         initSingleEmbedding();
+        initEmbeddingModelDropdown();
 
     }
 

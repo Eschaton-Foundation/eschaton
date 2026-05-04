@@ -68,6 +68,7 @@ class Listeo_AI_Search_Shortcode_Handler
                         placeholder="<?php echo esc_attr($atts['placeholder']); ?>"
                         value="<?php echo esc_attr($atts['value']); ?>"
                         class="ai-search-input">
+                    <input type="text" name="ai_search_hp" tabindex="-1" autocomplete="off">
                     <?php
                     // Debugging line to check the button text
                     if ($atts['button_action'] === 'quick_picks'): ?>
@@ -258,6 +259,7 @@ class Listeo_AI_Search_Shortcode_Handler
                         name="ai_search_input"
                         placeholder="<?php echo esc_attr($atts['placeholder']); ?>"
                         class="ai-search-input">
+                    <input type="text" name="ai_search_hp" tabindex="-1" autocomplete="off">
                     <button type="button" class="ai-search-submit-btn"><i class="fa fa-search"></i></button>
                 </div>
 

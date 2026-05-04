@@ -438,7 +438,8 @@
             limit: maxResults, // Use admin setting instead of container data
             offset: offset,
             listing_types: listingTypes,
-            debug: debugMode
+            debug: debugMode,
+            ai_search_hp: $container.find('input[name="ai_search_hp"]').val() || ''
         };
         
         debugLog('AJAX data:', data);

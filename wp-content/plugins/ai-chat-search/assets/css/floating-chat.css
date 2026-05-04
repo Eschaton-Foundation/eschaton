@@ -157,6 +157,9 @@
     animation: popupSlideIn 0.3s ease;
 }
 
+.listeo-floating-chat-popup.listeo-no-animation {
+    animation: none !important;
+}
 
 @keyframes popupSlideIn {
     from {
@@ -202,10 +205,10 @@
     }
 
     .listeo-floating-chat-popup {
-        width: calc(100% - 30px) ! Important;
-        height: calc(100vh - 100px) ! Important;
-        bottom: 80px ! Important;
-        right: 15px ! Important;
+        width: calc(100% - 30px) !important;
+        height: calc(100vh - 100px) !important;
+        bottom: 80px !important;
+        right: 15px !important;
     }
 
     .listeo-floating-chat-widget.position-left .listeo-floating-chat-popup {

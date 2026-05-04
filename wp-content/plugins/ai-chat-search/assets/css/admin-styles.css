@@ -19,6 +19,7 @@
 
 .airs-admin-wrap a:focus { box-shadow: none; outline: none; }
 
+.airs-admin-wrap code,
 .airs-modal,
 .airs-admin-wrap,
 .listeo-ai-modal-content {
@@ -92,6 +93,15 @@
   .airs-tab-content .airs-sticky-footer {
     grid-column: 1 / -1; /* Span full width across all columns */
   }
+  .airs-settings-right-column {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  .airs-tab-content.airs-settings-tab > .airs-ajax-form {
+    align-items: start;
+  }
 }
 
 /* Card Header with Icon */
@@ -139,6 +149,37 @@
 .airs-card-icon-sky svg,
 .airs-card-icon-purple svg {
     color: #0073ee;
+}
+
+/* Inline icon badges (query expansion examples) */
+.airs-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 4px;
+    margin-top: -2px;
+}
+
+.airs-icon-badge-blue {
+    width: 18px;
+    height: 18px;
+    background: #e8f4fd;
+}
+
+.airs-icon-badge-blue svg {
+    color: #0073ee;
+}
+
+.airs-icon-badge-orange {
+    width: 16px;
+    height: 16px;
+    background: #fef3e2;
+}
+
+.airs-icon-badge-orange svg {
+    color: #d97706;
 }
 
 .airs-card-header-text h3 {
@@ -194,7 +235,7 @@
     gap: 1rem;
     position: relative;
     z-index: 1;
-    padding: 0 30px;
+    padding: 0 20px;
 }
 
 .airs-header-icon {
@@ -215,25 +256,49 @@
 }
 
 .airs-header-title {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 600;
     margin: 0 !important;
     padding: 0;
-    color: #111; 
-    padding-bottom: 10px;
+    font-size: 26px;
+    font-weight: 600;
+    color: #111;
 }
 
-.airs-header-text p {
-    margin: 0;
+.airs-header-main {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.airs-logo-container {
+    line-height: 0;
+    padding: 5px;
+    border-radius: 6px;
+    background: #fff;
+}
+.airs-header-logo {
+    border-radius: 6px;
+    height: 60px;
+    width: 60px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.airs-header-title-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: -4px;
+}
+
+.airs-header-subtitle {
+    margin: 7px 0 0;
     font-size: 1rem;
+    color: #666;
     opacity: 0.9;
     font-weight: 400;
 }
 
 /* Navigation Tabs */
 .airs-nav-tab-wrapper {
-    margin: 0 0 2rem 0;
+    margin: 0 0 2rem 0 !important;
     border-bottom: none;
     background: white;
     border-radius: 6px;
@@ -300,7 +365,8 @@
     fill: white !important;
 }
 
-.airs-nav-tab-wrapper .nav-tab-active svg path[stroke]:not([stroke="none"]) {
+.airs-nav-tab-wrapper .nav-tab-active svg path[stroke]:not([stroke="none"]),
+.airs-nav-tab-wrapper .nav-tab-active svg circle[stroke]:not([stroke="none"]) {
     stroke: white !important;
 }
 
@@ -370,6 +436,7 @@
     width: 18px;
     height: 18px;
     color: #222;
+    margin-top: -3px;
 }
 
 .airs-input {
@@ -425,6 +492,7 @@ textarea.airs-input { max-width: 100%; background: #fff; }
 .airs-help-text a:hover {
     text-decoration: underline;
 }
+
 
 /* Info Icon Tooltip */
 .airs-info-icon {
@@ -501,7 +569,8 @@ textarea.airs-input { max-width: 100%; background: #fff; }
     width: 18px;
     height: 18px;
     border: 2px solid #d1d5db;
-    border-radius: 6px;
+    box-sizing: border-box;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -585,6 +654,10 @@ content: '\2713';
     color: white;
 }
 
+.airs-button-primary:hover {
+    color: #fff;
+}
+
 #airs-add-pages-btn,
 #pdf-select-btn { padding: 5px 12px; }
 
@@ -599,9 +672,9 @@ content: '\2713';
 }
 
 #regenerate-embedding {
-    background: #00a32a24 !important;
+    background: #e8f5eb !important;
     color: #00a32a !important;
-    border-color: #00a32a50 !important;
+    border: 1px solid #b5e4bf !important
 }
 
 .airs-button-secondary:hover:not(:disabled) {
@@ -616,9 +689,9 @@ content: '\2713';
 
 #clear-chat-history.airs-button-secondary,
 .airs-button-danger {
-    background: #ef444420;
-    color: #ef4444;
-    border: none;
+    background: #fde8e8;
+    color: #b32d2e;
+    border: 1px solid #f5c2c2;
     padding: 10px 15px !important;
     font-size: 14px !important;
 }
@@ -824,6 +897,7 @@ content: '\2713';
     align-items: center;
     justify-content: center;
     text-align: center;
+    border: none !important;
 }
 
 @media (max-width: 1200px) {
@@ -876,6 +950,13 @@ content: '\2713';
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.airs-conversation-id-code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    font-size: 13px;
+    border-radius: 3px;
 }
 
 .airs-conversation-meta {
@@ -952,12 +1033,12 @@ content: '\2713';
 }
 
 .airs-stat-box-green {
-    background: #f3fdf4;
+    background: #e8f4e9;
     border: 1px solid #c8e6c9;
 }
 
 .airs-stat-box-blue {
-    background: #f1f9ff;
+    background: #e7f1ff;
     border: 1px solid #bbdefb;
 }
 
@@ -1124,6 +1205,16 @@ content: '\2713';
         gap: 1rem;
     }
 
+    .airs-header-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .airs-header-logo {
+        height: 48px;
+    }
+
     .airs-header-title {
         font-size: 1.5rem;
     }
@@ -1188,13 +1279,20 @@ content: '\2713';
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 19px;
+    padding: 10px;
     min-width: 108px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 6px;
+    box-sizing: border-box;
 }
 
+@media (max-width: 1300px) {
+    .ai-provider-option {zoom: 0.9;}
+}
+@media (max-width: 500px) {
+    .ai-provider-option {zoom: 0.8;}
+}
 .ai-provider-logo {
     display: flex;
     align-items: center;
@@ -1239,7 +1337,8 @@ content: '\2713';
 
 .ai-provider-toggle[data-selected="openai"] .ai-provider-option[data-value="openai"] .ai-provider-logo img,
 .ai-provider-toggle[data-selected="gemini"] .ai-provider-option[data-value="gemini"] .ai-provider-logo img,
-.ai-provider-toggle[data-selected="mistral"] .ai-provider-option[data-value="mistral"] .ai-provider-logo img {
+.ai-provider-toggle[data-selected="mistral"] .ai-provider-option[data-value="mistral"] .ai-provider-logo img,
+.ai-provider-toggle[data-selected="openrouter"] .ai-provider-option[data-value="openrouter"] .ai-provider-logo img {
     opacity: 1;
 }
 
@@ -1263,6 +1362,94 @@ content: '\2713';
 
 .ai-provider-toggle-3[data-selected="mistral"] .ai-provider-slider {
     left: calc(66.66%);
+}
+
+/* 4-option toggle (OpenAI, Gemini, Mistral, OpenRouter) */
+.ai-provider-toggle-4 .ai-provider-slider {
+    width: calc(25% - 4px);
+}
+
+.ai-provider-toggle-4[data-selected="openai"] .ai-provider-slider {
+    left: 4px;
+}
+
+.ai-provider-toggle-4[data-selected="gemini"] .ai-provider-slider {
+    left: calc(25% + 2px);
+}
+
+.ai-provider-toggle-4[data-selected="mistral"] .ai-provider-slider {
+    left: calc(50% + 1px);
+}
+
+.ai-provider-toggle-4[data-selected="openrouter"] .ai-provider-slider {
+    left: calc(75%);
+}
+
+/* =================================================================
+   Hint Icon + Floating Tooltip
+   The <span class="airs-hint-icon" data-tooltip="..."> renders a
+   small '?' circle next to a label. Its tooltip bubble is rendered
+   as a separate element appended to <body> by ai-admin-settings.js
+   (initInfoTooltips), so it escapes any ancestor overflow: hidden.
+   (Kept separate from the legacy .airs-info-tooltip / .airs-info-icon
+    CSS-only pattern used elsewhere in the admin.)
+   ================================================================= */
+.airs-hint-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: #c0c0c0;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+    vertical-align: middle;
+    transition: background 0.15s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.airs-hint-icon:hover,
+.airs-hint-icon:focus {
+    background: #0060ff;
+    outline: none;
+}
+
+/* Body-mounted tooltip bubble (rendered by JS via initInfoTooltips) */
+.airs-tooltip-bubble {
+    position: fixed;
+    top: 0;
+    left: 0;
+    max-width: 280px;
+    padding: 10px 14px;
+    background: #222;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 100000;
+    white-space: normal;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.airs-tooltip-bubble.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Responsive */
@@ -1394,6 +1581,7 @@ justify-content: space-between;
     font-size: 20px;
     font-weight: 600;
     color: #333;
+    line-height: 24px;
 }
 
 .airs-modal-body {
@@ -1431,12 +1619,14 @@ justify-content: space-between;
 .airs-modal-footer .airs-button {
     min-width: 120px;
     text-align: center;
+    display: flex;
+    justify-content: center;
 }
 
 .airs-modal-footer .airs-button-secondary {
-    background: #f8fafc;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: #f7f7f7;
+    color: #555;
+    border: 1px solid #ccc;
     justify-content: center;
 }
 
@@ -1730,19 +1920,20 @@ justify-content: space-between;
     white-space: nowrap;
 }
 
-#listeo_ai_chat_quick_buttons_wrapper.pro-active {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 20px;
-    background: #fff;
-}
-
 .listeo-quick-button-row {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
     align-items: flex-start;
     flex-wrap: wrap;
+}
+
+@media (max-width: 1480px) {
+    .listeo-quick-button-row {
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    } 
 }
 
 .listeo-quick-button-row .listeo-quick-button-text,
@@ -1796,7 +1987,7 @@ justify-content: space-between;
 /* Quick Button Color Tooltip */
 .listeo-quick-btn-tooltip {
     position: absolute;
-    z-index: 999;
+    z-index: 100001;
     background: #1d2327;
     color: #fff;
     font-size: 12px;
@@ -1819,7 +2010,7 @@ justify-content: space-between;
 
 .listeo-quick-btn-dropdown {
     position: absolute;
-    z-index: 100000;
+    z-index: 100001;
 }
 
 .listeo-quick-btn-dropdown .iris-picker {
@@ -2009,33 +2200,47 @@ gap:0;
 }
 
 
+/* Contact messages list - row-style like Chat Insights, fully clickable */
+#contact-messages-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+}
 .contact-message-box {
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 10px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    border-radius: 0;
+    padding: 14px 18px;
+    margin: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: border-color 0.2s ease;
+    cursor: pointer;
+    transition: background 0.15s ease;
 }
-
+.contact-message-box:last-child {
+    border-bottom: none;
+}
+.contact-message-box:hover {
+    background: #fbfbfb;
+}
 .contact-message-header {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 .contact-message-info {
-    margin-bottom: 5px;
 }
 .contact-message-info strong {
     margin-right: 10px;
 }
 .contact-message-email {
-    color: #2271b1;
+    color: #666;
     text-decoration: none;
-}
-.contact-message-email:hover {
-    text-decoration: underline;
 }
 .contact-message-meta {
     display: flex;
@@ -2043,35 +2248,23 @@ gap:0;
     gap: 8px;
     font-size: 12px;
 }
-.contact-message-date {
-    color: #666;
+.contact-message-time {
+    font-size: 12px;
+    color: #999;
+    margin-left: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.contact-message-actions {
-    display: flex;
-    gap: 5px;
+
+/* Delete button inside the contact message modal footer */
+#contact-message-delete-btn {
+    background: #fde8e8;
+    color: #b32d2e;
+    border-color: #f5c2c2;
 }
-.contact-message-actions .view-contact-message {
-    background: #f1f9ff;
-    border-color: #90caf9;
-    color: #1565c0;
-    transition: all 0.2s ease;
-}
-.contact-message-actions .view-contact-message:hover {
-    background: #bbdefb;
-    border-color: #64b5f6;
-    color: #0d47a1;
-}
-body .contact-message-actions button { border-radius: 5px;}
-.contact-message-actions .delete-contact-message {
-    background: #ffebee;
-    border-color: #ef9a9a;
-    color: #c62828;
-    transition: all 0.2s ease;
-}
-.contact-message-actions .delete-contact-message:hover {
-    background: #ffcdd2;
-    border-color: #e57373;
-    color: #b71c1c;
+#contact-message-delete-btn:hover {
+    background: #f9d5d5;
+    color: #8b1f20;
 }
 
 /* Conversation search buttons */
@@ -2088,12 +2281,14 @@ body .contact-message-actions button { border-radius: 5px;}
 .conversation-search-actions .conversation-search-btn:focus,
 .conversation-search-actions .conversation-search-btn:hover,
 .conversation-search-actions .conversation-search-btn {
-    background: #f1f9ff;
+    background: #e7f1ff;
     border-color: #90caf9;
+    border: none;
     color: #1565c0;
     transition: all 0.2s ease;
-    box-shadow: none;t
+    box-shadow: none;
     outline: none;
+    height: 40px;
 }
 
 .conversation-page-info { display: block; }
@@ -2103,6 +2298,7 @@ body .contact-message-actions button { border-radius: 5px;}
     border-color: #ef9a9a;
     color: #c62828;
     transition: all 0.2s ease;
+    border: none;    height: 40px;
 }
 .conversation-search-actions .conversation-search-clear:hover {
     background: #ffcdd2;
@@ -2116,7 +2312,7 @@ body .contact-message-actions button { border-radius: 5px;}
 .airs-badge {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 3px;
+    border-radius: 5px;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -2636,10 +2832,30 @@ body .contact-message-actions button { border-radius: 5px;}
     font-weight: 600;
 }
 
-.airs-trial-text span:last-child {
+.airs-trial-text > span {
     font-size: 15px;
     opacity: 0.9;
     font-weight: 300;
+}
+
+.airs-trial-line {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+
+.airs-trial-line .airs-trial-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 1;
 }
 
 .airs-trial-close {
@@ -2747,6 +2963,74 @@ body .contact-message-actions button { border-radius: 5px;}
 /* Trial Expired Banner - Warning Style */
 .airs-trial-expired-banner {
     background: linear-gradient(135deg, #e65c00 0%, #cc4400 100%);
+}
+
+/* Trial Overlay inside API Configuration card */
+.airs-trial-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+}
+
+.airs-trial-overlay-inner {
+    text-align: center;
+    padding: 24px;
+}
+
+.airs-trial-overlay-icon {
+    width: 40px;
+    height: 40px;
+    color: #2563eb;
+    margin-bottom: 12px;
+}
+
+.airs-trial-overlay-title {
+    display: block;
+    font-size: 17px;
+    color: #111;
+}
+
+.airs-trial-overlay-text {
+    margin: 8px 0 0;
+    color: #555;
+    font-size: 15px;
+}
+
+.airs-trial-overlay-text strong {
+    color: #111;
+}
+
+.airs-trial-overlay-disclaimer {
+    margin-top: 4px;
+    color: #d33434;
+    font-size: 14px;
+}
+
+.airs-trial-overlay-btn {
+    margin-top: 16px;
+    display: inline-block;
+}
+
+/* Trial Available notice above AI Provider */
+.airs-trial-available {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    color: #1e40af;
+}
+
+.airs-trial-available a {
+    margin-left: 8px;
+    color: #1e40af;
+    text-decoration: underline;
 }
 
 /* Listeo Discount Banner */
@@ -3150,7 +3434,7 @@ body .contact-message-actions button { border-radius: 5px;}
     align-items: center;
     gap: 2px;
     padding: 3px;
-    background: #f5f5f5;
+    background: #f6f6f6;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
 }
@@ -3164,7 +3448,7 @@ body .contact-message-actions button { border-radius: 5px;}
     background: transparent;
     border-radius: 4px;
     cursor: pointer;
-    color: #9ca3af;
+    color: #909090;
     font-size: 13px;
     font-weight: 500;
     line-height: 22px;
@@ -3172,13 +3456,17 @@ body .contact-message-actions button { border-radius: 5px;}
 }
 
 .airs-position-btn:hover {
-    color: #6b7280;
+    color: #666;
 }
 
 .airs-position-btn.active {
     background: #fff;
-    color: #1f2937;
+    color: #111;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.airs-audit-filters .airs-position-btn  {
+    padding: 4px 10px;
 }
 
 /* =================================================================
@@ -3665,6 +3953,13 @@ body .contact-message-actions button { border-radius: 5px;}
     }
 }
 
+/* Stats & History tab: each column sizes to its own content (no stretching) */
+@media (min-width: 1200px) {
+    .airs-tab-content.airs-stats-tab {
+        align-items: start;
+    }
+}
+
 
 #check-embedding { padding: 9px 15px; }
 #start-regeneration { transition: 0.3s; display: inline-flex; align-items: center; gap: 6px; zoom: 1.2; }
@@ -4003,8 +4298,8 @@ body .contact-message-actions button { border-radius: 5px;}
     align-items: center;
     justify-content: center;
     padding: 6px 12px;
-    background: #e8f1ff;
-    color: #0060ff;
+    background: #e7f1ff;
+    color: #1565c0;
     border: none;
     border-radius: 5px;
     font-size: 12px;
@@ -4075,14 +4370,16 @@ body .contact-message-actions button { border-radius: 5px;}
     min-width: 32px;
 }
 
-.airs-admin-wrap input {
+.airs-admin-wrap input,
+.airs-modal input {
     border-radius: 6px;
     border-color: #c0c0c0;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.07);
     padding: 4px 14px;
 }
 
-.airs-admin-wrap select {
+.airs-admin-wrap select,
+.airs-modal select {
     border-radius: 6px;
     border-color: #c0c0c0;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.07);
@@ -4090,10 +4387,13 @@ body .contact-message-actions button { border-radius: 5px;}
 }
 
 .airs-admin-wrap input:focus,
-.airs-admin-wrap select:focus {
+.airs-admin-wrap select:focus,
+.airs-modal input:focus,
+.airs-modal select:focus {
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.07);
 }
-.airs-admin-wrap input:focus {
+.airs-admin-wrap input:focus,
+.airs-modal input:focus {
     outline: none;
     border-color: #0060ff;
 }
@@ -4103,11 +4403,13 @@ body .contact-message-actions button { border-radius: 5px;}
    Progressive enhancement - falls back gracefully
    ============================================= */
 @supports (appearance: base-select) {
-    .airs-admin-wrap input {
+    .airs-admin-wrap input,
+    .airs-modal input {
         border-radius: 6px ;
     }
 
-    .airs-admin-wrap select {
+    .airs-admin-wrap select,
+    .airs-modal select {
         /* Opt into customizable select */
         appearance: base-select;
         position: relative;
@@ -4125,12 +4427,14 @@ body .contact-message-actions button { border-radius: 5px;}
         /* Prefer below, don't flip above */1
     }
 
-    .airs-admin-wrap select:hover {
+    .airs-admin-wrap select:hover,
+    .airs-modal select:hover {
         border-color: #0060ff;
         color: #222;
     }
 
-    .airs-admin-wrap select:focus {
+    .airs-admin-wrap select:focus,
+    .airs-modal select:focus {
         outline: none;
         border: 1px solid #c0c0c0;
         box-shadow: none;
@@ -4138,12 +4442,14 @@ body .contact-message-actions button { border-radius: 5px;}
     }
 
     /* Hide default picker icon, use custom arrow */
-    .airs-admin-wrap select::picker-icon {
+    .airs-admin-wrap select::picker-icon,
+    .airs-modal select::picker-icon {
         display: none;
     }
 
     /* Custom dropdown arrow */
-    .airs-admin-wrap select::after {
+    .airs-admin-wrap select::after,
+    .airs-modal select::after {
         content: '';
         display: block;
         width: 6px;
@@ -4155,16 +4461,18 @@ body .contact-message-actions button { border-radius: 5px;}
         transition: transform 0.2s ease;
         margin-top: 9px;
         margin-right: 5px;
-        right: 10px;
+        right: 14px;
         position: absolute;
     }
 
-    .airs-admin-wrap select:open::after {
+    .airs-admin-wrap select:open::after,
+    .airs-modal select:open::after {
         transform: rotate(-135deg) translateY(-2px);
     }
 
     /* The dropdown picker */
-    .airs-admin-wrap select::picker(select) {
+    .airs-admin-wrap select::picker(select),
+    .airs-modal select::picker(select) {
         appearance: base-select;
         background: #ffffff;
         border: none;
@@ -4188,7 +4496,8 @@ body .contact-message-actions button { border-radius: 5px;}
     }
 
     /* Closed state (off-stage) */
-    .airs-admin-wrap select:not(:open)::picker(select) {
+    .airs-admin-wrap select:not(:open)::picker(select),
+    .airs-modal select:not(:open)::picker(select) {
         opacity: 0;
 
         pointer-events: none;
@@ -4196,7 +4505,8 @@ body .contact-message-actions button { border-radius: 5px;}
     }
 
     /* Open state (on-stage) */
-    .airs-admin-wrap select:open::picker(select) {
+    .airs-admin-wrap select:open::picker(select),
+    .airs-modal select:open::picker(select) {
         opacity: 1;
 
         visibility: visible;
@@ -4204,7 +4514,8 @@ body .contact-message-actions button { border-radius: 5px;}
     }
 
     /* Option styling */
-    .airs-admin-wrap select option {
+    .airs-admin-wrap select option,
+    .airs-modal select option {
         padding: 4px 10px;
         border-radius: 6px;
         cursor: pointer;
@@ -4213,26 +4524,145 @@ body .contact-message-actions button { border-radius: 5px;}
         gap: 0;
     }
 
-    .airs-admin-wrap select option:hover {
+    .airs-admin-wrap select option:hover,
+    .airs-modal select option:hover {
         background: #f6f6f6;
     }
 
-    .airs-admin-wrap select option:focus {
+    .airs-admin-wrap select option:focus,
+    .airs-modal select option:focus {
         outline: none;
         background: #e5efff;
     }
 
-    .airs-admin-wrap select option:checked {
+    .airs-admin-wrap select option:checked,
+    .airs-modal select option:checked {
         background: #dce9ff;
         color: #0060ff;
         font-weight: 500;
     }
 
     /* Checkmark on selected option */
-    .airs-admin-wrap select option::checkmark {
+    .airs-admin-wrap select option::checkmark,
+    .airs-modal select option::checkmark {
          content: "\2713";
         margin-right: 8px;
         font-weight: 700;
         display: none;
     }
+
+    /* Vendor icons inside AI chat model <option> elements.
+       Scoped ONLY to #listeo_ai_chat_model so other dropdowns are untouched.
+       Icons are <img> tags injected by PHP for OpenRouter models;
+       progressive enhancement — on browsers without appearance:base-select
+       the <img> is stripped by the native OS renderer and text still shows. */
+    #listeo_ai_chat_model option,
+    #listeo_ai_embedding_model option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #listeo_ai_chat_model option .airs-model-icon,
+    #listeo_ai_embedding_model option .airs-model-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        object-fit: contain;
+        background: #fff;
+    }
 }
+
+/* =============================================
+   Chat History - View Messages summary
+   ============================================= */
+.airs-view-messages-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 8px 10px;
+    background: #f8f8f8;
+    border-radius: 5px;
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+    transition: 0.2s;
+}
+.airs-view-messages-summary::-webkit-details-marker {
+    display: none;
+}
+.airs-view-messages-summary:hover {
+    background: #f4f4f4;
+}
+.airs-view-messages-summary::marker {
+    display: none;
+    content: '';
+}
+.airs-view-messages-chevron {
+    color: #888;
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+details[open] > .airs-view-messages-summary .airs-view-messages-chevron {
+    transform: rotate(180deg);
+}
+
+/* =============================================
+   Chat History - Messages list inside <details>
+   ============================================= */
+.chat-history-messages {
+    margin-top: 10px;
+    padding: 10px;
+    background: #fafafa;
+    border-radius: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.airs-chat-msg {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 6px;
+}
+.airs-chat-msg-user {
+    background:#e7f1ff;
+}
+.airs-chat-msg-assistant {
+    background: #ffffff;
+}
+.airs-chat-msg-head {
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.airs-chat-msg-user .airs-chat-msg-head {
+    color: #1976d2;
+}
+.airs-chat-msg-assistant .airs-chat-msg-head {
+    color: #666;
+}
+.airs-chat-msg-head svg {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+.airs-chat-msg-name {
+    margin-right: 6px;
+}
+.airs-chat-msg-time {
+    color: #999;
+    font-weight: normal;
+    margin-left: 4px;
+}
+.airs-chat-msg-sep {
+    color: #999;
+    margin: 0 5px;
+}
+.airs-chat-msg-body {
+    color: #333;
+    word-break: break-word;
+}
+
+.airs-api-key-remove-button { margin-left: 4px; }

@@ -20,6 +20,8 @@ class Listeo_AI_Search_Chat_API
      */
     const NAMESPACE = "listeo/v1";
 
+    const CONTEXT_MULTIPLIERS = array('short' => 1, 'normal' => 2, 'long' => 6);
+
     /**
      * Convert markdown formatting to HTML
      * Handles cases where LLM uses markdown instead of HTML
@@ -268,14 +270,14 @@ class Listeo_AI_Search_Chat_API
         register_rest_route(self::NAMESPACE, "/chat-config", [
             "methods" => "GET",
             "callback" => [$this, "get_chat_config_endpoint"],
-            "permission_callback" => "__return_true",
+            "permission_callback" => "__return_true", // Public: read-only config, no sensitive data
         ]);
 
         // Universal search endpoint - searches across all post types
         register_rest_route(self::NAMESPACE, "/universal-search", [
             "methods" => "POST",
             "callback" => [$this, "universal_search"],
-            "permission_callback" => "__return_true",
+            "permission_callback" => "__return_true", // Public: tiered IP rate limit (per min / per 15 min / per day) + global hourly API cap + query length cap enforced in callback
             "args" => [
                 "query" => [
                     "required" => true,
@@ -300,7 +302,7 @@ class Listeo_AI_Search_Chat_API
         register_rest_route(self::NAMESPACE, "/get-content", [
             "methods" => "POST",
             "callback" => [$this, "get_content_details"],
-            "permission_callback" => "__return_true",
+            "permission_callback" => "__return_true", // Public by design: returns structured content for published public posts only
             "args" => [
                 "post_id" => [
                     "required" => true,
@@ -334,17 +336,13 @@ class Listeo_AI_Search_Chat_API
                     "type" => "string",
                     "description" => "Tool choice strategy",
                 ],
-                "max_tokens" => [
-                    "type" => "integer",
-                    "description" => "Maximum tokens",
-                ],
-                "max_completion_tokens" => [
-                    "type" => "integer",
-                    "description" => "Maximum completion tokens (GPT-5)",
-                ],
                 "verbosity" => [
                     "type" => "string",
                     "description" => "Verbosity setting (GPT-5)",
+                ],
+                "parallel_tool_calls" => [
+                    "type" => "boolean",
+                    "description" => "Allow parallel tool calls",
                 ],
             ],
         ]);
@@ -382,7 +380,7 @@ class Listeo_AI_Search_Chat_API
         register_rest_route("listeo/v1", "/woocommerce-product-details", [
             "methods" => "POST",
             "callback" => [$this, "get_product_details"],
-            "permission_callback" => "__return_true",
+            "permission_callback" => "__return_true", // Public by design: returns public WooCommerce product data only
             "args" => [
                 "product_id" => [
                     "required" => false,
@@ -403,7 +401,7 @@ class Listeo_AI_Search_Chat_API
             register_rest_route("listeo/v1", "/log-client-error", [
                 "methods" => "POST",
                 "callback" => [$this, "log_client_error"],
-                "permission_callback" => "__return_true",
+                "permission_callback" => "__return_true", // Public: debug-only endpoint (WP_DEBUG gate), writes to error log only
                 "args" => [
                     "error_type" => [
                         "required" => true,
@@ -557,7 +555,7 @@ class Listeo_AI_Search_Chat_API
         $request_id = substr(md5(uniqid("usearch_", true)), 0, 8);
         $client_ip = Listeo_AI_Search_Utility_Helper::get_client_ip_secure();
 
-        // Check global rate limit - prevent API abuse
+        // Read-only pre-filter; actual atomic quota is consumed deeper in AI_Engine → generate_embedding() / expand_query_if_enabled()
         if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
             // Log rate limit (uses WP_DEBUG_LOG, not plugin debug mode)
             error_log(
@@ -602,6 +600,13 @@ class Listeo_AI_Search_Chat_API
         }
 
         $query = $request->get_param("query");
+
+        // Limit query length to prevent input token abuse (same as rag-chat)
+        $max_query_length = 1000;
+        if (mb_strlen($query) > $max_query_length) {
+            $query = mb_substr($query, 0, $max_query_length);
+        }
+
         $post_types =
             $request->get_param("post_types") ?:
             self::get_universal_search_post_types();
@@ -868,8 +873,11 @@ class Listeo_AI_Search_Chat_API
      */
     public function chat_proxy($request)
     {
-        // Generate unique request ID for tracing errors across frontend/backend logs
-        $request_id = substr(md5(uniqid("proxy_", true)), 0, 8);
+        $request_id = 'unknown';
+
+        try {
+            // Generate unique request ID for tracing errors across frontend/backend logs
+            $request_id = substr(md5(uniqid("proxy_", true)), 0, 8);
         $client_ip = Listeo_AI_Search_Utility_Helper::get_client_ip_secure();
 
         // Check if login is required
@@ -1090,9 +1098,13 @@ class Listeo_AI_Search_Chat_API
             : [];
         $has_complex_tools = in_array("listing", $enabled_types) || in_array("product", $enabled_types);
         $base_messages = $has_complex_tools ? 12 : 6;
-        $context_multipliers = array('short' => 1, 'normal' => 2, 'long' => 6);
         $context_length = get_option('listeo_ai_chat_context_length', 'normal');
-        $multiplier = isset($context_multipliers[$context_length]) ? $context_multipliers[$context_length] : 1;
+        // Low context models: force short context to prevent token overflow errors
+        $model = $provider->get_chat_model();
+        if ($provider->get_provider() === 'mistral' || strpos($model, 'mistral') === 0) {
+            $context_length = 'short';
+        }
+        $multiplier = isset(self::CONTEXT_MULTIPLIERS[$context_length]) ? self::CONTEXT_MULTIPLIERS[$context_length] : 1;
         $max_messages = $base_messages * $multiplier;
         if (count($messages) > $max_messages) {
             $messages = array_slice($messages, -$max_messages);
@@ -1233,6 +1245,47 @@ class Listeo_AI_Search_Chat_API
             }
         }
 
+        // LLM relevance filtering: set up forced function calling
+        // When filter_candidates is true, a separate filter call with minimal
+        // system prompt is made first, then a text call with the full prompt.
+        $filter_candidates = $request->get_param("filter_candidates");
+        $relevant_ids = null;
+        $filter_tool_choice = null;
+
+        if (!empty($filter_candidates)) {
+            $filter_tool = [
+                "type" => "function",
+                "function" => [
+                    "name" => "filter_results",
+                    "description" => "From the search results provided in the conversation, select only the IDs that are genuinely relevant to the user's original query. Exclude tangentially related items. Return the relevant IDs in order of relevance.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "relevant_ids" => [
+                                "type" => "array",
+                                "items" => ["type" => "integer"],
+                                "description" => "Array of relevant result IDs in order of relevance. Empty array if none are relevant.",
+                            ],
+                        ],
+                        "required" => ["relevant_ids"],
+                    ],
+                ],
+            ];
+
+            if (!is_array($tools)) {
+                $tools = [];
+            }
+            $tools[] = $filter_tool;
+
+            // Force the model to call filter_results (used for the filter call only)
+            $filter_tool_choice = [
+                "type" => "function",
+                "function" => [
+                    "name" => "filter_results",
+                ],
+            ];
+        }
+
         // Find the LAST user message index to inject language rule into it
         // This keeps system prompt static (cacheable) while language rule goes in user message
         $last_user_index = null;
@@ -1265,6 +1318,10 @@ class Listeo_AI_Search_Chat_API
             }
         }
 
+        // Save conversation messages before prepending system prompt
+        // Needed for filter call which uses a minimal system prompt instead
+        $conversation_messages = $messages;
+
         array_unshift($messages, [
             "role" => "system",
             "content" => $system_prompt,
@@ -1276,25 +1333,13 @@ class Listeo_AI_Search_Chat_API
             $tool_choice,
         );
 
-        // GPT-5.2 has broken tool calling (doesn't follow get_listing_details instructions)
-        // Map it to 5.1 which works correctly - dropdown still shows 5.2 for users
-        if (isset($payload["model"]) && $payload["model"] === "gpt-5.2") {
-            $payload["model"] = "gpt-5.1";
-        }
-
-        // Hardcoded max tokens value (removed admin setting as it's not user-configurable)
-        $admin_max_tokens = 3000;
-
-        // GPT-5 models use max_completion_tokens, other models use max_tokens
-        if (strpos($payload["model"], "gpt-5") !== false) {
-            $payload["max_completion_tokens"] = $admin_max_tokens;
-        } else {
-            $payload["max_tokens"] = $admin_max_tokens;
-        }
+        // Normalize model-specific parameters (max_tokens key, reasoning, model remaps)
+        $payload = $provider->normalize_chat_payload($payload, array(
+            'max_tokens' => 3000,
+        ));
 
         // Allow only non-cost-affecting params from frontend
         // parallel_tool_calls: false prevents GPT-5.2 from chaining tool calls
-        // reasoning_effort is NOT passed from frontend — handled server-side per model
         $safe_params = ["verbosity", "parallel_tool_calls"];
         foreach ($safe_params as $param) {
             $value = $request->get_param($param);
@@ -1303,23 +1348,8 @@ class Listeo_AI_Search_Chat_API
             }
         }
 
-        // Server-side reasoning_effort per GPT-5 model
-        // Note: gpt-5.3+ don't support reasoning_effort with function tools in /v1/chat/completions
-        if (isset($payload["model"])) {
-            if ($payload["model"] === "gpt-5.1") {
-                $payload["reasoning_effort"] = "none";
-            } elseif ($payload["model"] === "gpt-5-mini") {
-                $payload["reasoning_effort"] = "low";
-            }
-        }
-
-        // Hardcode temperature to 0.6 (but NOT for GPT-5 models which don't support it)
-        if (strpos($payload["model"], "gpt-5") === false) {
-            $payload["temperature"] = 0.6;
-        }
-
-        // Check global rate limit before making API call
-        if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
+        // Atomically acquire rate limit slot before making API call
+        if (!Listeo_AI_Search_Embedding_Manager::try_acquire_rate_limit()) {
             // Log rate limit (uses WP_DEBUG_LOG, not plugin debug mode)
             error_log(
                 sprintf(
@@ -1411,47 +1441,23 @@ class Listeo_AI_Search_Chat_API
             }
             error_log("=== END MESSAGES ===");
 
-            // Log GPT-5 specific parameters
-            if (strpos($payload["model"], "gpt-5") !== false) {
-                error_log("GPT-5 Model Detected - Using max_completion_tokens");
-                if (isset($payload["max_completion_tokens"])) {
-                    error_log(
-                        "Max Completion Tokens: " .
-                            $payload["max_completion_tokens"],
-                    );
-                }
+            if ($provider->is_gpt5($payload["model"])) {
+                error_log("GPT-5 Model Detected");
                 if (isset($payload["verbosity"])) {
                     error_log("Verbosity: " . $payload["verbosity"]);
                 }
-                if (isset($payload["reasoning_effort"])) {
-                    error_log(
-                        "Reasoning Effort: " . $payload["reasoning_effort"],
-                    );
-                }
             } elseif (strpos($payload["model"], "gemini-3") !== false) {
-                // Log Gemini 3 thinking configuration
-                error_log(
-                    "Gemini 3 Model Detected - Using reasoning_effort for thinking",
-                );
+                error_log("Gemini 3 Model Detected");
                 if (isset($payload["reasoning_effort"])) {
-                    error_log(
-                        "Reasoning Effort (thinking_level): " .
-                            $payload["reasoning_effort"],
-                    );
+                    error_log("Reasoning Effort (thinking_level): " . $payload["reasoning_effort"]);
                 }
-                if (isset($payload["max_tokens"])) {
-                    error_log("Max Tokens: " . $payload["max_tokens"]);
-                }
-                if (isset($payload["temperature"])) {
-                    error_log("Temperature: " . $payload["temperature"]);
-                }
-            } else {
-                if (isset($payload["max_tokens"])) {
-                    error_log("Max Tokens: " . $payload["max_tokens"]);
-                }
-                if (isset($payload["temperature"])) {
-                    error_log("Temperature: " . $payload["temperature"]);
-                }
+            }
+            // Log OpenRouter reasoning if present (applied by normalize_chat_payload)
+            if (isset($payload["reasoning"])) {
+                error_log(sprintf(
+                    "OpenRouter reasoning: %s",
+                    wp_json_encode($payload["reasoning"])
+                ));
             }
             error_log("================================================");
         }
@@ -1460,10 +1466,95 @@ class Listeo_AI_Search_Chat_API
         $endpoint = $provider->get_endpoint("chat");
         $headers = $provider->get_headers();
 
+        // When filtering, make a lightweight filter call first with minimal prompt,
+        // then a text call with the full system prompt.
+        $api_payload = $payload;
+
+        if (!empty($filter_candidates)) {
+            $minimal_filter_prompt =
+            "You are a search relevance filter. From the search results provided, " .
+            "select IDs that could reasonably satisfy the user's query. " .
+            "Think semantically - match by intent and category, not just keywords. " .
+            "Exclude only results that clearly belong to a different category. " .
+            "When in doubt, include. Return the relevant IDs in order of relevance.";
+
+            $filter_messages = array_merge([
+                ["role" => "system", "content" => $minimal_filter_prompt]
+            ], $conversation_messages);
+
+            $filter_payload = $provider->prepare_chat_payload($filter_messages, $tools, $filter_tool_choice);
+            $filter_payload = $provider->normalize_chat_payload($filter_payload, ['max_tokens' => 500]);
+
+            $filter_response = wp_remote_post($endpoint, [
+                "headers" => $headers,
+                "body" => wp_json_encode($filter_payload),
+                "timeout" => 60,
+                "data_format" => "body",
+            ]);
+
+            $filter_tool_call = null;
+            $filter_assistant_msg = null;
+            if (!is_wp_error($filter_response) && wp_remote_retrieve_response_code($filter_response) === 200) {
+                $filter_body = json_decode(wp_remote_retrieve_body($filter_response), true);
+                if (isset($filter_body["choices"][0]["message"]["tool_calls"])) {
+                    foreach ($filter_body["choices"][0]["message"]["tool_calls"] as $tc) {
+                        if (isset($tc["function"]["name"]) && $tc["function"]["name"] === "filter_results") {
+                            $args = json_decode($tc["function"]["arguments"], true);
+                            if ($args === null && json_last_error() !== JSON_ERROR_NONE) {
+                                if (get_option("listeo_ai_search_debug_mode", false)) {
+                                    error_log(sprintf(
+                                        "AI Chat [%s] RELEVANCE FILTER: Malformed JSON in tool arguments",
+                                        $request_id
+                                    ));
+                                }
+                                continue;
+                            }
+                            $relevant_ids = isset($args["relevant_ids"]) && is_array($args["relevant_ids"])
+                                ? array_map('intval', $args["relevant_ids"])
+                                : [];
+                            $filter_tool_call = $tc;
+                            $filter_assistant_msg = $filter_body["choices"][0]["message"];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($filter_tool_call) {
+                $text_messages = $payload["messages"];
+                $text_messages[] = $filter_assistant_msg;
+                $text_messages[] = [
+                    "role" => "tool",
+                    "tool_call_id" => $filter_tool_call["id"],
+                    "content" => wp_json_encode(["filtered" => true, "relevant_ids" => $relevant_ids]),
+                ];
+
+                $text_payload = $provider->prepare_chat_payload($text_messages);
+                $text_payload = $provider->normalize_chat_payload($text_payload, ['max_tokens' => 3000]);
+                $api_payload = $text_payload;
+
+                if (get_option("listeo_ai_search_debug_mode", false)) {
+                    error_log(sprintf(
+                        "AI Chat [%s] RELEVANCE FILTER: LLM selected %d IDs: [%s]",
+                        $request_id,
+                        count($relevant_ids),
+                        implode(', ', $relevant_ids)
+                    ));
+                }
+            } else {
+                if (get_option("listeo_ai_search_debug_mode", false)) {
+                    error_log(sprintf(
+                        "AI Chat [%s] RELEVANCE FILTER: LLM did not return filter_results tool call, no filtering applied",
+                        $request_id
+                    ));
+                }
+            }
+        }
+
         // Make request to AI API server-side
         $response = wp_remote_post($endpoint, [
             "headers" => $headers,
-            "body" => wp_json_encode($payload),
+            "body" => wp_json_encode($api_payload),
             "timeout" => 60,
             "data_format" => "body",
         ]);
@@ -1526,11 +1617,123 @@ class Listeo_AI_Search_Chat_API
             );
         }
 
+        // Handle non-200 API responses - extract actual error message for the user
+        if ($response_code !== 200) {
+            $error_message = __('AI service returned an error.', 'ai-chat-search');
+
+            if ($response_data !== null) {
+                // Google/Gemini sometimes returns an array wrapper: [{"error": {"message": "..."}}]
+                if (is_array($response_data) && isset($response_data[0]['error']['message'])) {
+                    $error_message = $response_data[0]['error']['message'];
+                }
+                // OpenAI/Gemini object format: {"error": {"message": "..."}}
+                elseif (isset($response_data['error']['message'])) {
+                    $error_message = $response_data['error']['message'];
+                }
+                // Mistral/other format: {"message": "..."}
+                elseif (isset($response_data['message'])) {
+                    $error_message = $response_data['message'];
+                }
+                // Simple error string
+                elseif (isset($response_data['error']) && is_string($response_data['error'])) {
+                    $error_message = $response_data['error'];
+                }
+            }
+
+            return new WP_REST_Response(
+                [
+                    'success' => false,
+                    'error' => [
+                        'message' => $error_message,
+                        'type' => 'api_error',
+                        'request_id' => $request_id,
+                    ],
+                ],
+                200,
+            );
+        }
+
+        // Handle tool_calls server-side via filter (e.g., webhook execution)
+        if (
+            $response_code === 200 &&
+            isset($response_data["choices"][0]["message"]["tool_calls"])
+        ) {
+            $tool_calls = $response_data["choices"][0]["message"]["tool_calls"];
+            foreach ($tool_calls as $tc) {
+                if (!isset($tc["function"]["name"])) {
+                    continue;
+                }
+
+                $function_name = $tc["function"]["name"];
+                $function_args = json_decode($tc["function"]["arguments"], true);
+                if (!is_array($function_args)) {
+                    $function_args = [];
+                }
+
+                // Let Pro plugins execute tool calls server-side
+                $tool_result = apply_filters(
+                    "ai_chat_search_proxy_execute_tool",
+                    null,
+                    $function_name,
+                    $function_args,
+                    ["request" => $request, "session_id" => $request->get_header("X-Session-ID")]
+                );
+
+                if ($tool_result !== null) {
+                    // Append assistant tool_call + result, make second AI call for final response
+                    $assistant_msg = $response_data["choices"][0]["message"];
+                    $second_messages = $payload["messages"];
+                    $second_messages[] = $assistant_msg;
+                    $second_messages[] = [
+                        "role" => "tool",
+                        "tool_call_id" => $tc["id"],
+                        "content" => wp_json_encode($tool_result),
+                    ];
+
+                    $second_payload = $provider->prepare_chat_payload($second_messages);
+                    $second_payload = $provider->normalize_chat_payload($second_payload, ["max_tokens" => 3000]);
+
+                    $second_endpoint = $provider->get_endpoint("chat");
+                    $second_headers = $provider->get_headers();
+
+                    $second_response = wp_remote_post($second_endpoint, [
+                        "headers" => $second_headers,
+                        "body" => wp_json_encode($second_payload),
+                        "timeout" => 60,
+                        "data_format" => "body",
+                    ]);
+
+                    $second_body = null;
+                    if (!is_wp_error($second_response) && wp_remote_retrieve_response_code($second_response) === 200) {
+                        $second_body = json_decode(wp_remote_retrieve_body($second_response), true);
+                    }
+
+                    if (is_array($second_body) && isset($second_body["choices"])) {
+                        $response_data = $second_body;
+                    } else {
+                        // Second AI call failed - synthesize text response to prevent
+                        // frontend from re-executing the tool_call in $response_data
+                        $fallback_text = isset($tool_result["message"]) && is_string($tool_result["message"])
+                            ? $tool_result["message"]
+                            : __("Action completed but AI failed to generate a response.", "ai-chat-search");
+                        $response_data = [
+                            "choices" => [[
+                                "message" => [
+                                    "role" => "assistant",
+                                    "content" => $fallback_text,
+                                ],
+                                "finish_reason" => "stop",
+                            ]],
+                        ];
+                    }
+                    $response_code = 200;
+                    break;
+                }
+            }
+        }
+
         // Track chatbot stats (lightweight - only on successful responses)
         if ($response_code === 200) {
-            // Increment rate limit counter after successful API call
-            Listeo_AI_Search_Embedding_Manager::increment_rate_limit();
-
             $messages = $request->get_param("messages");
 
             if (is_array($messages) && count($messages) > 0) {
@@ -1565,8 +1768,34 @@ class Listeo_AI_Search_Chat_API
             $this->track_chat_history($request, $response_data);
         }
 
+        // Inject relevant_ids from forced function calling into the response
+        if ($relevant_ids !== null && $response_code === 200) {
+            $response_data["relevant_ids"] = $relevant_ids;
+        }
+
         // Return OpenAI response to frontend
         return new WP_REST_Response($response_data, $response_code);
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                "AI Chat [%s] PROXY 500: Unhandled exception in chat_proxy: %s in %s:%d. Trace: %s",
+                $request_id,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+                $e->getTraceAsString()
+            ));
+            return new WP_REST_Response(
+                [
+                    "success" => false,
+                    "error" => [
+                        "message" => __("An internal error occurred while processing the chat request.", "ai-chat-search"),
+                        "type" => "internal_error",
+                        "request_id" => $request_id,
+                    ],
+                ],
+                500,
+            );
+        }
     }
 
     /**
@@ -1960,9 +2189,8 @@ class Listeo_AI_Search_Chat_API
         $chat_history = $request->get_param("chat_history") ?: [];
 
         // Limit chat history to reduce token usage, respecting context length setting
-        $context_multipliers = array('short' => 1, 'normal' => 2, 'long' => 6);
         $context_length = get_option('listeo_ai_chat_context_length', 'normal');
-        $multiplier = isset($context_multipliers[$context_length]) ? $context_multipliers[$context_length] : 2;
+        $multiplier = isset(self::CONTEXT_MULTIPLIERS[$context_length]) ? self::CONTEXT_MULTIPLIERS[$context_length] : self::CONTEXT_MULTIPLIERS['normal'];
         $max_history = 6 * $multiplier;
         if (count($chat_history) > $max_history) {
             $chat_history = array_slice($chat_history, -$max_history);
@@ -2416,8 +2644,8 @@ class Listeo_AI_Search_Chat_API
                 );
             }
 
-            // Check global rate limit before making API call
-            if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
+            // Atomically acquire rate limit slot before making API call
+            if (!Listeo_AI_Search_Embedding_Manager::try_acquire_rate_limit()) {
                 throw new Exception(
                     "Rate limit exceeded. Please try again later.",
                 );
@@ -2437,44 +2665,15 @@ class Listeo_AI_Search_Chat_API
                 throw new Exception($ip_rate_check["error"]);
             }
 
-            // Make OpenAI request
-            // Build API payload - GPT-5 models require max_completion_tokens instead of max_tokens
-            $model = $config["model"];
-
-            // GPT-5.2 has broken tool calling - map to 5.1
-            if ($model === "gpt-5.2") {
-                $model = "gpt-5.1";
-            }
-
+            // Build and normalize API payload
+            // Use provider-resolved model (not raw config) so trial gateway overrides work correctly
             $api_payload = [
-                "model" => $model,
+                "model" => $provider->get_chat_model(),
                 "messages" => $messages,
             ];
-
-            // GPT-5 models use max_completion_tokens, GPT-4 and earlier use max_tokens
-            if (strpos($model, "gpt-5") !== false) {
-                $api_payload["max_completion_tokens"] = $config["max_tokens"];
-                // GPT-5.1 with reasoning_effort: none for fast, intelligent responses
-                if ($model === "gpt-5.1") {
-                    $api_payload["reasoning_effort"] = "none";
-                }
-                // GPT-5-mini with reasoning_effort: low for speed
-                if ($model === "gpt-5-mini") {
-                    $api_payload["reasoning_effort"] = "low";
-                }
-            } else {
-                $api_payload["max_tokens"] = $config["max_tokens"];
-                $api_payload["temperature"] = 0.6; // Hardcoded
-            }
-
-            // Add thinking configuration for Gemini 3 models
-            // Uses OpenAI compatibility mode with reasoning_effort parameter
-            // Valid values: high, low, medium, none
-            if (strpos($model, "gemini-3.1-pro") !== false || strpos($model, "gemini-3-pro") !== false) {
-                $api_payload["reasoning_effort"] = "low";
-            } elseif (strpos($model, "gemini-3-flash") !== false) {
-                $api_payload["reasoning_effort"] = "low";
-            }
+            $api_payload = $provider->normalize_chat_payload($api_payload, array(
+                'max_tokens' => 3000,
+            ));
 
             // Debug logging for RAG endpoint
             if (get_option("listeo_ai_search_debug_mode", false)) {
@@ -2484,54 +2683,24 @@ class Listeo_AI_Search_Chat_API
                         " RAG Chat API Call ==========",
                 );
                 error_log("Provider: " . $provider->get_provider());
-                error_log("Model: " . $config["model"]);
+                error_log("Model: " . $api_payload["model"]);
                 error_log("Messages count: " . count($messages));
 
-                // Log GPT-5 specific parameters
-                if (strpos($config["model"], "gpt-5") !== false) {
-                    error_log(
-                        "GPT-5 Model Detected - Using max_completion_tokens",
-                    );
-                    if (isset($api_payload["max_completion_tokens"])) {
-                        error_log(
-                            "Max Completion Tokens: " .
-                                $api_payload["max_completion_tokens"],
-                        );
-                    }
+                // Log model-specific parameters (already normalized by normalize_chat_payload)
+                if ($provider->is_gpt5($api_payload["model"])) {
+                    error_log("GPT-5 Model Detected");
+                } elseif (strpos($api_payload["model"], "gemini-3") !== false) {
+                    error_log("Gemini 3 Model Detected");
                     if (isset($api_payload["reasoning_effort"])) {
-                        error_log(
-                            "Reasoning Effort: " .
-                                $api_payload["reasoning_effort"],
-                        );
+                        error_log("Reasoning Effort (thinking_level): " . $api_payload["reasoning_effort"]);
                     }
-                } elseif (strpos($config["model"], "gemini-3") !== false) {
-                    // Log Gemini 3 thinking configuration
-                    error_log(
-                        "Gemini 3 Model Detected - Using reasoning_effort for thinking",
-                    );
-                    if (isset($api_payload["reasoning_effort"])) {
-                        error_log(
-                            "Reasoning Effort (thinking_level): " .
-                                $api_payload["reasoning_effort"],
-                        );
-                    }
-                    if (isset($api_payload["max_tokens"])) {
-                        error_log("Max Tokens: " . $api_payload["max_tokens"]);
-                    }
-                    if (isset($api_payload["temperature"])) {
-                        error_log(
-                            "Temperature: " . $api_payload["temperature"],
-                        );
-                    }
-                } else {
-                    if (isset($api_payload["max_tokens"])) {
-                        error_log("Max Tokens: " . $api_payload["max_tokens"]);
-                    }
-                    if (isset($api_payload["temperature"])) {
-                        error_log(
-                            "Temperature: " . $api_payload["temperature"],
-                        );
-                    }
+                }
+                // Log OpenRouter reasoning if present (applied by normalize_chat_payload)
+                if (isset($api_payload["reasoning"])) {
+                    error_log(sprintf(
+                        "OpenRouter reasoning: %s",
+                        wp_json_encode($api_payload["reasoning"])
+                    ));
                 }
                 error_log("===============================================");
             }
@@ -2596,9 +2765,6 @@ class Listeo_AI_Search_Chat_API
 
             // Track usage stats
             if ($response_code === 200) {
-                // Increment rate limit counter after successful API call
-                Listeo_AI_Search_Embedding_Manager::increment_rate_limit();
-
                 $stats = get_option("listeo_ai_chat_stats", [
                     "total_sessions" => 0,
                     "user_messages" => 0,
@@ -2661,7 +2827,7 @@ class Listeo_AI_Search_Chat_API
                     $session_id,
                     $question_for_history,
                     $answer,
-                    $config["model"],
+                    $provider->get_chat_model(),
                     is_user_logged_in() ? get_current_user_id() : null,
                     $page_url // Track which page chat was used on
                 );
@@ -2682,7 +2848,7 @@ class Listeo_AI_Search_Chat_API
                         "llm_time_ms" => $llm_time,
                         "total_time_ms" => $total_time,
                     ],
-                    "model" => $config["model"],
+                    "model" => $provider->get_chat_model(),
                     "usage" => $response_data["usage"] ?? null,
                 ],
                 200,
@@ -2954,12 +3120,13 @@ class Listeo_AI_Search_Chat_API
         // Get current date for AI context
         $current_date = current_time("F j, Y");
 
-        // Get logged-in user's first name for AI context
+        // Get logged-in user's name for AI context
         $user_name_context = '';
         if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
-            if (!empty($current_user->first_name)) {
-                $user_name_context = " The name of person who is talking to you is '{$current_user->first_name}'.";
+            $user_display = !empty($current_user->first_name) ? $current_user->first_name : $current_user->user_login;
+            if (!empty($user_display)) {
+                $user_name_context = " The name of person who is talking to you is '{$user_display}'.";
             }
         }
 
@@ -3262,9 +3429,10 @@ TOOLS:
                 $wc_details_number = $wc_tool_number + 1;
 
                 $default_prompt .= "
-{$wc_tool_number}. search_products(query, price_min, price_max, in_stock, on_sale, rating) - For finding PRODUCTS to BUY
+{$wc_tool_number}. search_products(query, price_min, price_max, in_stock, on_sale, rating, sku) - For finding PRODUCTS to BUY
    Examples: \"phones under \$100\", \"on-sale laptops\", \"4.5+ rated coffee makers\"
    - Pass natural query to \"query\" parameter
+   - If the user mentions a product code/SKU (e.g. \"ABC-123\"), pass it to the \"sku\" parameter
    - Available filters (USE ONLY WHEN USER ASKS): price_min, price_max, in_stock (boolean), on_sale (boolean), rating
    - You will receive: {id, title, price, stock_status, rating, url} for each product
    - IMPORTANT: ALWAYS use the \"url\" field for links - NEVER construct URLs manually
@@ -3284,12 +3452,11 @@ TOOLS:
                 $wc_order_number = $wc_details_number + 1;
 
                 $default_prompt .= "
-{$wc_order_number}. check_order_status(order_number, billing_email) - For checking WooCommerce order status and tracking
-   Examples: \"What's the status of my order #X\", \"Where is order X\", \"Track my order\"
-   - Use the order number/ID provided by the customer (can include # symbol or not)
-   - If user is NOT logged in OR if order verification fails, ask for billing_email
-   - Returns: order status, items ordered, payment info, shipping details, tracking information, delivery estimates
-   - IMPORTANT: Present order status clearly with emojis (✅ Completed, 📦 Shipped, 🔄 Processing, etc.)
+{$wc_order_number}. check_order_status(order_number, billing_email) - Check WooCommerce order status/tracking
+   Examples: \"status of my order #X\", \"track my order\"
+   - MUST ask the user for BOTH order_number and billing_email. Never guess or invent them.
+   - Returns: status, items, payment, shipping, tracking info
+   - Present with emojis (✅ Completed, 📦 Shipped, 🔄 Processing)
 
 ";
 
@@ -3408,14 +3575,14 @@ ADDITIONAL NOTES:
 
         $config = [
             "enabled" => get_option("listeo_ai_chat_enabled", 0),
-            "model" => get_option("listeo_ai_chat_model", "gpt-5.3-chat-latest"),
-            "max_tokens" => 3000, // Hardcoded
-            "temperature" => 0.6, // Hardcoded
+            "model" => get_option("listeo_ai_chat_model", "gpt-5.4-mini"),
             "system_prompt" => self::get_system_prompt(),
             "listeo_available" => $has_listeo, // Frontend can use this to conditionally show Listeo tools
             "woocommerce_available" => $has_woocommerce, // Frontend: show product features only when Pro + product enabled
-            "tools" => self::get_listeo_tools(), // Always return tools (at minimum search_universal_content)
+            "tools" => apply_filters("ai_chat_search_frontend_tools", self::get_listeo_tools()),
             "api_configured" => $api_configured, // Flag for frontend to show notification if not configured
+            "provider" => $provider->get_provider(), // Exposed so the client can log the active provider
+            "openrouter_reasoning_enabled" => (bool) get_option("listeo_ai_openrouter_reasoning", 0), // Mirrors the server-side override logic for client debug logging
         ];
 
         return $config;
@@ -3627,6 +3794,10 @@ ADDITIONAL NOTES:
                                 "type" => "string",
                                 "description" => "Product category slug or name only if user specified category!",
                             ],
+                            "sku" => [
+                                "type" => "string",
+                                "description" => "Product SKU/code/part number when the user refers to one. Extract the code itself WITHOUT the word 'sku'. Examples: 'find sku-123' → sku='sku-123'; 'sku 123' → sku='123'; 'do you have 123?' → sku='123'; 'product code ABC45' → sku='ABC45'. Do NOT use for prices, years, ratings, or quantities.",
+                            ],
                         ],
                         "required" => ["query"],
                     ],
@@ -3675,10 +3846,10 @@ ADDITIONAL NOTES:
                             "billing_email" => [
                                 "type" => "string",
                                 "description" =>
-                                    "The billing email address for verification. Required if user is not logged in or to verify order ownership.",
+                                    "The billing email address used on the order, as confirmed by the user in the conversation. Must be collected from the user — do not guess or auto-fill from account data.",
                             ],
                         ],
-                        "required" => ["order_number"],
+                        "required" => ["order_number", "billing_email"],
                     ],
                 ],
             ];

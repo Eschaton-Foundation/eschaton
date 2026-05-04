@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: AI Chat & Search
- * Plugin URI: https://purethemes.net/ai-chat-search-pro/
+ * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 1.9.7
+ * Version: 2.0.7
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "1.9.7");
+define("LISTEO_AI_SEARCH_VERSION", "2.0.7");
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
 
@@ -78,6 +78,8 @@ class Listeo_AI_Search
 
         add_action("init", [$this, "init"]);
         add_action("wp_enqueue_scripts", [$this, "enqueue_scripts"]);
+
+        $this->init_wp_rocket_compatibility();
 
         // Prevent WordPress from translating plugin name in admin — brand name should stay as-is
         if (is_admin()) {
@@ -320,6 +322,95 @@ class Listeo_AI_Search
     }
 
     /**
+     * Exclude our CSS/JS from cache/optimization plugins
+     */
+    private function init_wp_rocket_compatibility()
+    {
+        // --- WP Rocket ---
+        if (defined('WP_ROCKET_VERSION')) {
+            $js_re = '/plugins/ai-chat-search/assets/js/(.*).js';
+            $pro_js_re = '/plugins/ai-chat-search-pro/assets/js/(.*).js';
+
+            add_filter('rocket_rucss_external_exclusions', function ($ex) {
+                $ex[] = '/plugins/ai-chat-search/assets/css/';
+                $ex[] = '/plugins/ai-chat-search-pro/assets/css/';
+                return $ex;
+            });
+            add_filter('rocket_exclude_js', function ($ex) use ($js_re, $pro_js_re) {
+                $ex[] = $js_re;
+                $ex[] = $pro_js_re;
+                return $ex;
+            });
+            add_filter('rocket_exclude_defer_js', function ($ex) use ($js_re, $pro_js_re) {
+                $ex[] = $js_re;
+                $ex[] = $pro_js_re;
+                return $ex;
+            });
+            add_filter('rocket_delay_js_exclusions', function ($ex) use ($js_re, $pro_js_re) {
+                $ex[] = $js_re;
+                $ex[] = $pro_js_re;
+                return $ex;
+            });
+        }
+
+        // --- LiteSpeed Cache ---
+        if (defined('LSCWP_V')) {
+            add_filter('litespeed_optimize_css_excludes', function ($ex) {
+                $ex[] = 'ai-chat-search/assets/css/';
+                $ex[] = 'ai-chat-search-pro/assets/css/';
+                return $ex;
+            });
+            add_filter('litespeed_optimize_js_excludes', function ($ex) {
+                $ex[] = 'ai-chat-search/assets/js/';
+                $ex[] = 'ai-chat-search-pro/assets/js/';
+                return $ex;
+            });
+            add_filter('litespeed_optm_js_defer_exc', function ($ex) {
+                $ex[] = 'ai-chat-search/assets/js/';
+                $ex[] = 'ai-chat-search-pro/assets/js/';
+                return $ex;
+            });
+        }
+
+        // --- Autoptimize ---
+        if (defined('AUTOPTIMIZE_PLUGIN_VERSION')) {
+            add_filter('autoptimize_filter_css_exclude', function ($ex) {
+                $paths = 'ai-chat-search/assets/css/, ai-chat-search-pro/assets/css/';
+                return ($ex !== '' ? $ex . ', ' : '') . $paths;
+            });
+            add_filter('autoptimize_filter_js_exclude', function ($ex) {
+                $paths = 'ai-chat-search/assets/js/, ai-chat-search-pro/assets/js/';
+                return ($ex !== '' ? $ex . ', ' : '') . $paths;
+            });
+        }
+
+        // --- SiteGround Optimizer (uses WP handles) ---
+        if (defined('SiteGround_Optimizer\VERSION')) {
+            $handles = [
+                'ai-chat-search',
+                'listeo-ai-chat',
+                'listeo-ai-chat-dark-mode',
+                'listeo-ai-floating-chat',
+                'listeo-ai-chat-ui-utils',
+                'listeo-silk-wave-bg',
+                'ai-chat-search-pro-speech',
+            ];
+            add_filter('sgo_css_combine_exclude', function ($ex) use ($handles) {
+                return array_merge((array) $ex, $handles);
+            });
+            add_filter('sgo_css_minify_exclude', function ($ex) use ($handles) {
+                return array_merge((array) $ex, $handles);
+            });
+            add_filter('sgo_javascript_combine_exclude', function ($ex) use ($handles) {
+                return array_merge((array) $ex, $handles);
+            });
+            add_filter('sgo_js_minify_exclude', function ($ex) use ($handles) {
+                return array_merge((array) $ex, $handles);
+            });
+        }
+    }
+
+    /**
      * Enqueue scripts and styles
      */
     public function enqueue_scripts()
@@ -421,7 +512,7 @@ class Listeo_AI_Search
 
         wp_enqueue_style(
             "ai-chat-search",
-            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/search.css",
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/ai-search.css",
             [],
             LISTEO_AI_SEARCH_VERSION,
         );
@@ -498,6 +589,9 @@ class Listeo_AI_Search
         // Initialize default settings (only if not already set)
         $this->initialize_default_settings();
 
+        // Auto-set force language on first install to match WordPress locale
+        $this->maybe_set_force_language();
+
         // Create database tables
         Listeo_AI_Search_Database_Manager::create_tables();
 
@@ -539,63 +633,49 @@ class Listeo_AI_Search
     }
 
     /**
-     * Automatically install translation files on first plugin install
+     * Automatically install translation files on first plugin install.
      *
-     * This method is designed to be completely safe and non-breaking:
-     * - Only runs on first install (not updates)
-     * - Skips English locales
-     * - Silently fails if translation unavailable or download fails
-     * - Checks for required WordPress functions before attempting
-     *
-     * @since 1.8.3
-     * @return void
+     * Runs once on activation. Pro users get a per-version refresh on top of
+     * this via ajax_auto_update_translation() in class-admin-interface.php,
+     * so their .mo stays in sync with each plugin release. Free users keep
+     * this initial copy forever unless they trigger a manual re-install from
+     * the settings UI.
      */
     private function maybe_auto_install_translation()
     {
-        // Only run on first install - check if we've already attempted this
         if (get_option('listeo_ai_search_translation_auto_attempted', false)) {
             return;
         }
 
-        // Mark as attempted immediately to prevent retries
         update_option('listeo_ai_search_translation_auto_attempted', true);
 
-        // Get WordPress locale
         $locale = get_locale();
-
-        // Skip English locales - no translation needed
         if (empty($locale) || strpos($locale, 'en_') === 0 || $locale === 'en') {
             return;
         }
 
-        // Check if required functions exist
         if (!function_exists('wp_remote_head') || !function_exists('wp_remote_get') || !function_exists('download_url')) {
             return;
         }
 
-        // Check if translation file already exists
         $mo_file = WP_LANG_DIR . '/plugins/ai-chat-search-' . $locale . '.mo';
         if (file_exists($mo_file)) {
             return;
         }
 
-        // Check if translation is available on server
-        $base_url = 'https://purethemes.net/listeo-theme-translations/';
+        $base_url  = 'https://purethemes.net/listeo-theme-translations/';
         $check_url = $base_url . 'mo/ai-chat-search-' . $locale . '.mo';
 
         $response = wp_remote_head($check_url, array(
-            'timeout' => 5,
+            'timeout'   => 5,
             'sslverify' => true,
         ));
 
-        // If translation not available, silently exit
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
             return;
         }
 
-        // Try to download and install translation
         try {
-            // Load required WordPress file functions - check file exists first
             $file_php = ABSPATH . 'wp-admin/includes/file.php';
             if (!function_exists('WP_Filesystem')) {
                 if (!file_exists($file_php)) {
@@ -604,12 +684,10 @@ class Listeo_AI_Search
                 require_once $file_php;
             }
 
-            // Verify required functions are now available
             if (!function_exists('WP_Filesystem') || !function_exists('request_filesystem_credentials')) {
                 return;
             }
 
-            // Initialize filesystem - if it fails or requires credentials, skip
             $creds = request_filesystem_credentials('', '', false, false, array());
             if ($creds === false || !WP_Filesystem($creds)) {
                 return;
@@ -621,18 +699,14 @@ class Listeo_AI_Search
             }
 
             $dest_dir = trailingslashit(WP_LANG_DIR) . 'plugins/';
-
-            // Create directory if it doesn't exist
             if (!$wp_filesystem->is_dir($dest_dir)) {
                 if (!$wp_filesystem->mkdir($dest_dir, FS_CHMOD_DIR)) {
                     return;
                 }
             }
 
-            // Download and install .mo file (essential for translations)
-            $mo_url = $base_url . 'mo/ai-chat-search-' . $locale . '.mo';
+            $mo_url    = $base_url . 'mo/ai-chat-search-' . $locale . '.mo';
             $temp_file = download_url($mo_url, 15);
-
             if (is_wp_error($temp_file)) {
                 return;
             }
@@ -643,7 +717,6 @@ class Listeo_AI_Search
                 return;
             }
 
-            // Optionally try to download .po file too (not critical)
             $po_url = $base_url . 'po/ai-chat-search-' . $locale . '.po';
             $temp_po = download_url($po_url, 10);
             if (!is_wp_error($temp_po)) {
@@ -653,11 +726,9 @@ class Listeo_AI_Search
                 }
             }
 
-            // Log success if debug mode is on
             self::debug_log("Auto-installed translation for locale: {$locale}");
 
         } catch (Exception $e) {
-            // Silently fail - translation is not critical
             self::debug_log("Auto-translation install failed: " . $e->getMessage(), 'warning');
         }
     }
@@ -690,7 +761,7 @@ class Listeo_AI_Search
                 "ai-chat-search",
             ),
             "listeo_ai_chat_system_prompt" => "",
-            "listeo_ai_chat_model" => "gpt-5.3-chat-latest",
+            "listeo_ai_chat_model" => "gpt-5.4-mini",
             "listeo_ai_chat_max_results" => 10,
             "listeo_ai_chat_rag_sources_limit" => 5,
             "listeo_ai_chat_hide_images" => 0,
@@ -729,7 +800,6 @@ class Listeo_AI_Search
             "listeo_ai_chat_woo_cart_enabled" => 1,
 
             // Checkbox settings
-            "listeo_ai_search_ai_location_filtering_enabled" => 0,
             "listeo_ai_search_debug_mode" => 0,
             "listeo_ai_search_query_expansion" => 0,
             "listeo_ai_search_enable_analytics" => 1,
@@ -750,6 +820,28 @@ class Listeo_AI_Search
             if (get_option($option_name) === false) {
                 add_option($option_name, $default_value);
             }
+        }
+    }
+
+    /**
+     * Auto-set force language on first plugin install to match WordPress locale.
+     * Only runs if the setting has never been saved (no user modification).
+     */
+    private function maybe_set_force_language()
+    {
+        if (get_option('listeo_ai_chat_force_language') !== false) {
+            return;
+        }
+
+        $locale = get_locale();
+        if (empty($locale)) {
+            return;
+        }
+
+        $languages = Listeo_AI_Search_Admin_Interface::get_translation_languages();
+
+        if (isset($languages[$locale])) {
+            add_option('listeo_ai_chat_force_language', $languages[$locale]);
         }
     }
 
@@ -819,6 +911,10 @@ function listeo_ai_get_chat_strings($welcome_message = "")
             "⚠️ Hey, to start using the chatbot <strong>please add OpenAI or Gemini API key</strong> in plugin settings!",
             "ai-chat-search",
         ),
+        "noEmbeddings" => __(
+            "⚠️ No trained content found. Go to the <strong>Data Training</strong> tab to train your content.",
+            "ai-chat-search",
+        ),
         "errorConfig" => __(
             "Failed to load chat configuration. Please try again later.",
             "ai-chat-search",
@@ -856,6 +952,7 @@ function listeo_ai_get_chat_strings($welcome_message = "")
             "ai-chat-search",
         ),
         "analyzingProducts" => __("Analyzing products...", "ai-chat-search"),
+        "selectingBestMatches" => __("Analyzing results...", "ai-chat-search"),
         "gettingProductDetails" => __(
             "Getting product details...",
             "ai-chat-search",
@@ -960,6 +1057,8 @@ function listeo_ai_get_chat_strings($welcome_message = "")
         // Stock status
         "inStock" => __("In Stock", "ai-chat-search"),
         "outOfStock" => __("Out of Stock", "ai-chat-search"),
+        // Product
+        "sku" => __("SKU", "ai-chat-search"),
         // Contact form
         "contactFormFillAll" => __(
             "Please fill in all fields.",
@@ -1082,11 +1181,24 @@ function listeo_ai_get_chat_js_config()
         unset($chat_config["system_prompt"]);
     }
 
+    // Only check embeddings for admins - avoids DB query for regular visitors
+    if (current_user_can("manage_options") && class_exists("Listeo_AI_Search_Database_Manager")) {
+        global $wpdb;
+        $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
+        $chat_config["has_embeddings"] = false;
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$embeddings_table}'") === $embeddings_table) {
+            $chat_config["has_embeddings"] = (bool) $wpdb->get_var("SELECT 1 FROM {$embeddings_table} LIMIT 1");
+        }
+    } else {
+        $chat_config["has_embeddings"] = true;
+    }
+
     $config = [
         // API settings
         "apiBase" => esc_url(rest_url("listeo/v1")),
         "nonce" => wp_create_nonce("wp_rest"),
         "isLoggedIn" => is_user_logged_in(),
+        "isAdmin" => current_user_can("manage_options"),
 
         // Debug mode
         "debugMode" => (bool) get_option("listeo_ai_search_debug_mode", false),

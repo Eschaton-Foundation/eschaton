@@ -46,10 +46,15 @@
                 // Set the hidden input value
                 $('#listeo_ai_floating_custom_icon').val(attachment.id);
 
+                // Resolve current icon size (fallback to 32)
+                var iconSize = parseInt($('#listeo_ai_floating_custom_icon_size').val(), 10);
+                if (!iconSize || iconSize < 1) { iconSize = 32; }
+
                 // Update the preview with button circle style
                 var btnColor = i18n.buttonColor || '#222222';
+                var imgStyle = 'width:' + iconSize + 'px;height:' + iconSize + 'px;max-width:' + iconSize + 'px;max-height:' + iconSize + 'px;object-fit:contain;';
                 var previewHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
-                    '<img src="' + attachment.url + '" alt="Custom icon" width="28" height="28" /></div>';
+                    '<img src="' + attachment.url + '" alt="Custom icon" id="listeo-custom-icon-preview-img" style="' + imgStyle + '" /></div>';
                 $('#listeo-custom-icon-preview').html(previewHtml);
 
                 // Show remove button if it doesn't exist
@@ -59,6 +64,9 @@
                         (i18n.remove || 'Remove') + '</button>'
                     );
                 }
+
+                // Show the icon size input
+                $('#listeo-custom-icon-size-wrapper').show();
             });
 
             // Open the modal
@@ -79,8 +87,27 @@
                 '<img src="' + pluginUrl + 'assets/icons/chat.svg" alt="Default icon" width="28" height="28" /></div>';
             $('#listeo-custom-icon-preview').html(placeholderHtml);
 
+            // Hide the icon size input
+            $('#listeo-custom-icon-size-wrapper').hide();
+
             // Remove the remove button
             $(this).remove();
+        });
+
+        // Live-update preview icon size while editing the input
+        $(document).on('input change', '#listeo_ai_floating_custom_icon_size', function() {
+            var size = parseInt($(this).val(), 10);
+            if (!size || size < 1) { size = 32; }
+            var $img = $('#listeo-custom-icon-preview-img');
+            if ($img.length) {
+                $img.css({
+                    'width': size + 'px',
+                    'height': size + 'px',
+                    'max-width': size + 'px',
+                    'max-height': size + 'px',
+                    'object-fit': 'contain'
+                });
+            }
         });
     }
 

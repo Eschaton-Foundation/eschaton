@@ -147,4 +147,15 @@
 
     // Log successful initialization
 
+    // Auto-refresh .mo file after plugin version bump. Fire-and-forget POST,
+    // server side is gated to Pro + version mismatch so this is a no-op on
+    // every subsequent page load.
+    var translationCfg = window.listeo_ai_search_ajax || {};
+    if (translationCfg.translation_update_nonce && translationCfg.ajax_url) {
+        $.post(translationCfg.ajax_url, {
+            action: 'ai_chat_search_auto_update_translation',
+            nonce: translationCfg.translation_update_nonce
+        });
+    }
+
 })(jQuery);

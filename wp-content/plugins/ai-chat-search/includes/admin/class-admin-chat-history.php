@@ -40,11 +40,174 @@ class Admin_Chat_History {
      * @param bool $history_enabled Whether chat history is enabled
      */
     public function render_section($history_enabled) {
+        $this->render_config_modal();
+
         if ($history_enabled) {
             $this->render_enabled_section();
         } else {
             $this->render_disabled_section();
         }
+    }
+
+    /**
+     * Render the shared configure modal and its JS
+     */
+    private function render_config_modal() {
+        $nonce = wp_create_nonce('listeo_ai_search_nonce');
+        ?>
+        <div id="chat-history-config-modal" class="airs-modal" style="display: none;">
+            <div class="airs-modal-overlay"></div>
+            <div class="airs-modal-content airs-audit-settings-modal-content">
+                <form id="chat-history-config-form">
+                    <div class="airs-modal-header">
+                        <h3 style="margin: 0;"><?php _e('Chat History Settings', 'ai-chat-search'); ?></h3>
+                        <button type="button" id="chat-history-modal-close" class="listeo-ai-modal-close">
+                            <span class="dashicons dashicons-no-alt"></span>
+                        </button>
+                    </div>
+                    <div class="airs-modal-body">
+
+                        <div class="airs-form-group">
+                            <label class="airs-checkbox-label">
+                                <input type="checkbox" name="listeo_ai_chat_history_enabled" value="1" <?php checked(get_option('listeo_ai_chat_history_enabled', 0), 1); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <?php _e('Enable Chat History Tracking', 'ai-chat-search'); ?>
+                                    <small><?php _e('Save user questions and AI responses for analytics.', 'ai-chat-search'); ?></small>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="airs-form-group">
+                            <label class="airs-label" for="chat-history-retention-days"><?php _e('Data Retention', 'ai-chat-search'); ?></label>
+                            <?php $retention = get_option('listeo_ai_chat_retention_days', 30); ?>
+                            <select name="listeo_ai_chat_retention_days" id="chat-history-retention-days" class="airs-input">
+                                <option value="30" <?php selected($retention, 30); ?>><?php printf(__('Last %d days', 'ai-chat-search'), 30); ?></option>
+                                <option value="90" <?php selected($retention, 90); ?>><?php printf(__('Last %d days', 'ai-chat-search'), 90); ?></option>
+                                <option value="180" <?php selected($retention, 180); ?>><?php printf(__('Last %d days', 'ai-chat-search'), 180); ?></option>
+                                <option value="360" <?php selected($retention, 360); ?>><?php printf(__('Last %d days', 'ai-chat-search'), 360); ?></option>
+                            </select>
+                            <p class="airs-help-text"><?php _e('Conversations older than this will be automatically deleted by the weekly cleanup cron.', 'ai-chat-search'); ?></p>
+                        </div>
+
+                        <?php if (get_option('listeo_ai_chat_history_enabled', 0)): ?>
+                        <!-- Export Chat History CSV -->
+                        <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f8f9fa; border-radius: 6px;">
+                            <div>
+                                <strong style="font-size: 14px;"><?php _e('Export Chat History', 'ai-chat-search'); ?></strong>
+                                <p style="margin: 3px 0 0; font-size: 13px; color: #666;"><?php _e('Download all conversations as a CSV file.', 'ai-chat-search'); ?></p>
+                            </div>
+                            <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=listeo_ai_export_chat_history_csv&nonce=' . $nonce)); ?>" class="airs-button airs-button-secondary" style="font-size: 13px; padding: 6px 14px; text-decoration: none; white-space: nowrap;">
+                                <span class="dashicons dashicons-download" style="margin-top: 3px; margin-right: 3px;"></span>
+                                <?php _e('Export CSV', 'ai-chat-search'); ?>
+                            </a>
+                        </div>
+
+                        <!-- Clear History -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f8f9fa; border-radius: 6px;">
+                            <div>
+                                <strong style="font-size: 14px; color: #b32d2e;"><?php _e('Clear All History', 'ai-chat-search'); ?></strong>
+                                <p style="margin: 3px 0 0; font-size: 13px; color: #666;"><?php _e('Permanently delete all chat history records.', 'ai-chat-search'); ?></p>
+                            </div>
+                            <button type="button" id="clear-chat-history" class="airs-button airs-button-secondary airs-button-danger" style="font-size: 13px; padding: 6px 14px; white-space: nowrap;">
+                                <?php _e('Clear History', 'ai-chat-search'); ?>
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="airs-modal-footer">
+                        <button type="submit" class="airs-button airs-button-primary">
+                            <?php _e('Save Settings', 'ai-chat-search'); ?>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            var $configModal = $('#chat-history-config-modal');
+
+            $(document).on('click', '#chat-history-configure-btn', function(e) {
+                e.preventDefault();
+                $configModal.fadeIn(200);
+            });
+
+            function closeConfigModal() {
+                $configModal.fadeOut(200);
+            }
+            $(document).on('click', '#chat-history-modal-close, #chat-history-config-modal .airs-modal-overlay', closeConfigModal);
+
+            // Save settings (form submit)
+            $(document).on('submit', '#chat-history-config-form', function(e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $form.find('button[type="submit"]');
+
+                $btn.prop('disabled', true).text('<?php echo esc_js(__('Saving...', 'ai-chat-search')); ?>');
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'listeo_ai_save_settings',
+                        nonce: '<?php echo $nonce; ?>',
+                        listeo_ai_chat_history_enabled: $('input[name="listeo_ai_chat_history_enabled"]').is(':checked') ? 1 : 0,
+                        listeo_ai_chat_retention_days: $('#chat-history-retention-days').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Failed to save settings.', 'ai-chat-search')); ?>');
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Failed to save settings.', 'ai-chat-search')); ?>');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('<?php echo esc_js(__('Save Settings', 'ai-chat-search')); ?>');
+                    }
+                });
+            });
+
+            // Clear History button handler
+            $(document).on('click', '#clear-chat-history', function(e) {
+                e.preventDefault();
+
+                if (!confirm('<?php echo esc_js(__('Are you sure you want to delete all chat history? This action cannot be undone.', 'ai-chat-search')); ?>')) {
+                    return;
+                }
+
+                var $button = $(this);
+                var originalHtml = $button.html();
+
+                $button.prop('disabled', true).html('<span class="airs-spinner" style="margin-right: 6px;"></span> <?php echo esc_js(__('Clearing...', 'ai-chat-search')); ?>');
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'listeo_ai_clear_chat_history',
+                        nonce: '<?php echo $nonce; ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.data.message);
+                            $button.prop('disabled', false).html(originalHtml);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Failed to clear chat history. Please try again.', 'ai-chat-search')); ?>');
+                        $button.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
     }
 
     /**
@@ -79,7 +242,7 @@ class Admin_Chat_History {
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
                 </div>
                 <div class="airs-card-header-text">
-                    <h3><?php _e('Chat History (Last 30 Days)', 'ai-chat-search'); ?></h3>
+                    <h3><?php printf(__('Chat History (Last %d Days)', 'ai-chat-search'), get_option('listeo_ai_chat_retention_days', 30)); ?></h3>
                     <p><?php _e('Detailed conversation tracking', 'ai-chat-search'); ?></p>
                 </div>
             </div>
@@ -101,19 +264,24 @@ class Admin_Chat_History {
     private function render_disabled_section() {
         ?>
         <div class="airs-card">
-            <div class="airs-card-header">
-                <h3><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 6px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><?php _e('Chat History', 'ai-chat-search'); ?></h3>
-                <p><?php _e('Chat history tracking is currently disabled.', 'ai-chat-search'); ?></p>
+            <div class="airs-card-header airs-card-header-with-icon">
+                <div class="airs-card-icon airs-card-icon-indigo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+                </div>
+                <div class="airs-card-header-text">
+                    <h3><?php _e('Chat History', 'ai-chat-search'); ?></h3>
+                    <p><?php _e('Detailed conversation tracking', 'ai-chat-search'); ?></p>
+                </div>
             </div>
             <div class="airs-card-body">
-                <p><?php _e('Enable "Chat History Tracking" in the AI Chat tab to start collecting conversation data for analytics.', 'ai-chat-search'); ?></p>
-                <p style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    <strong><?php _e('Benefits:', 'ai-chat-search'); ?></strong><br>
-                    <?php _e('Track popular questions and user needs', 'ai-chat-search'); ?><br>
-                    <?php _e('Monitor conversation quality and patterns', 'ai-chat-search'); ?><br>
-                    <?php _e('Identify most requested information', 'ai-chat-search'); ?><br>
-                    <?php _e('Improve chatbot responses over time', 'ai-chat-search'); ?>
-                </p>
+                <div class="airs-audit-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <h3><?php _e('Chat history tracking is off', 'ai-chat-search'); ?></h3>
+                    <p><?php _e('Enable "Chat History Tracking" in the configure settings, have at least a few conversations, then come back here.', 'ai-chat-search'); ?></p>
+                    <button type="button" id="chat-history-configure-btn" class="airs-button airs-button-primary">
+                        <?php _e('Configure', 'ai-chat-search'); ?>
+                    </button>
+                </div>
             </div>
         </div>
         <?php
@@ -155,7 +323,7 @@ class Admin_Chat_History {
                         <div class="airs-conversation-header">
                             <div class="airs-conversation-id">
                                 <strong><?php _e('Conversation ID:', 'ai-chat-search'); ?></strong>
-                                <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($conv['id']); ?></code>
+                                <code class="airs-conversation-id-code"><?php echo esc_html($conv['id']); ?></code>
                             </div>
                             <div class="airs-conversation-meta">
                                 <div style="font-size: 12px; color: #666;">
@@ -186,11 +354,8 @@ class Admin_Chat_History {
 
                     <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                         <span class="airs-button airs-button-secondary" style="font-size: 13px; padding: 8px 16px; text-decoration: none; white-space: nowrap; opacity: 0.7; pointer-events: none;">
-                            <span class="dashicons dashicons-download" style="margin-top: 3px; margin-right: 3px;"></span>
-                            <?php _e('Export Chat History CSV', 'ai-chat-search'); ?>
-                        </span>
-                        <span class="airs-button airs-button-secondary airs-button-danger" style="font-size: 13px; padding: 8px 16px; text-decoration: none; white-space: nowrap; opacity: 0.7; pointer-events: none;">
-                            <?php _e('Clear History', 'ai-chat-search'); ?>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <?php _e('Configure', 'ai-chat-search'); ?>
                         </span>
                     </div>
                 </div>
@@ -271,7 +436,7 @@ class Admin_Chat_History {
             return;
         }
         ?>
-        <div style="margin: 20px 0;">
+        <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div>
@@ -280,7 +445,7 @@ class Admin_Chat_History {
                     </div>
                 </div>
                 <div class="conversation-search-actions">
-                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('Search by ID, IP or keyword', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('ID, IP or keyword', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
                     <button type="button" id="conversation-search-btn" class="button button-small conversation-search-btn"><?php _e('Search', 'ai-chat-search'); ?></button>
                     <button type="button" id="conversation-search-clear" class="button button-small conversation-search-clear" style="display: none;"><?php _e('Clear', 'ai-chat-search'); ?></button>
                 </div>
@@ -301,13 +466,10 @@ class Admin_Chat_History {
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=listeo_ai_export_chat_history_csv&nonce=' . wp_create_nonce('listeo_ai_search_nonce'))); ?>" class="airs-button airs-button-secondary" style="font-size: 13px; padding: 8px 16px; text-decoration: none; white-space: nowrap;">
-                    <span class="dashicons dashicons-download" style="margin-top: 3px; margin-right: 3px;"></span>
-                    <?php _e('Export Chat History CSV', 'ai-chat-search'); ?>
-                </a>
-                <a href="#" id="clear-chat-history" class="airs-button airs-button-secondary airs-button-danger" style="font-size: 13px; padding: 8px 16px; text-decoration: none; white-space: nowrap;">
-                    <?php _e('Clear History', 'ai-chat-search'); ?>
-                </a>
+                <button type="button" id="chat-history-configure-btn" class="airs-button airs-button-secondary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <?php _e('Configure', 'ai-chat-search'); ?>
+                </button>
             </div>
 
             <?php $this->render_javascript(); ?>
@@ -383,7 +545,7 @@ class Admin_Chat_History {
             <div class="airs-conversation-header">
                 <div class="airs-conversation-id">
                     <strong><?php _e('Conversation ID:', 'ai-chat-search'); ?></strong>
-                    <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html($conv['conversation_id']); ?></code>
+                    <code class="airs-conversation-id-code"><?php echo esc_html($conv['conversation_id']); ?></code>
                     <?php do_action('ai_chat_search_conversation_id_badge', $conv['conversation_id']); ?>
                     <button type="button" class="delete-conversation-btn" data-id="<?php echo esc_attr($conv['conversation_id']); ?>" title="<?php esc_attr_e('Delete this conversation', 'ai-chat-search'); ?>" style="background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 3px; color: #b32d2e; opacity: 0.6; transition: opacity 0.2s; margin-left: -5px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
@@ -432,37 +594,43 @@ class Admin_Chat_History {
                 }
             }
             ?>
-            <div style="font-size: 13px; color: #666; margin-bottom: 10px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><?php echo $conv['message_count']; ?> <?php _e('messages', 'ai-chat-search'); ?>
-                <?php if ($conv['first_message_at'] !== $conv['last_message_at']): ?>
-                    &bull; <?php printf(__('last %s ago', 'ai-chat-search'), human_time_diff(strtotime($conv['last_message_at']), current_time('timestamp'))); ?>
-                <?php endif; ?>
-                <?php if (!empty($cart_products)): ?>
-                    &bull;
-                    <span class="airs-cart-indicator" data-cart-tooltip="<?php echo esc_attr(implode(', ', $cart_products)); ?>" style="color: #27ae60; cursor: help;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><?php printf(_n('%d product added', '%d products added', count($cart_products), 'ai-chat-search'), count($cart_products)); ?>
-                    </span>
-                <?php endif; ?>
+            <div style="font-size: 13px; color: #666; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <span class="airs-conversation-meta-info">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><?php echo $conv['message_count']; ?> <?php _e('messages', 'ai-chat-search'); ?>
+                    <?php if ($conv['first_message_at'] !== $conv['last_message_at']): ?>
+                        &bull; <?php printf(__('last %s ago', 'ai-chat-search'), human_time_diff(strtotime($conv['last_message_at']), current_time('timestamp'))); ?>
+                    <?php endif; ?>
+                    <?php if (!empty($cart_products)): ?>
+                        &bull;
+                        <span class="airs-cart-indicator" data-cart-tooltip="<?php echo esc_attr(implode(', ', $cart_products)); ?>" style="color: #27ae60; cursor: help;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><?php printf(_n('%d product added', '%d products added', count($cart_products), 'ai-chat-search'), count($cart_products)); ?>
+                        </span>
+                    <?php endif; ?>
+                </span>
+                <?php
+                // Pro extension point: Conversation Auditor injects its "Analyze with AI" button here.
+                do_action('ai_chat_search_conversation_actions', $conv['conversation_id']);
+                ?>
             </div>
 
             <details class="chat-history-details" style="margin-top: 10px;">
-                <summary style="cursor: pointer; padding: 8px; background: #f9f9f9; border-radius: 3px; font-weight: 500;">
-                    <?php _e('View Messages', 'ai-chat-search'); ?> (<?php echo count($messages); ?>)
+                <summary class="airs-view-messages-summary">
+                    <span><?php _e('View Messages', 'ai-chat-search'); ?> (<?php echo count($messages); ?>)</span>
+                    <span class="dashicons dashicons-arrow-down-alt2 airs-view-messages-chevron"></span>
                 </summary>
-                <div class="chat-history-messages" style="margin-top: 10px; padding: 10px; background: #fafafa; border-radius: 3px; max-height: 400px; overflow-y: auto;">
+                <div class="chat-history-messages">
                     <?php
                     // Hook for displaying pre-chat field data before messages
                     do_action('ai_chat_search_conversation_messages_before', $messages, $conv['conversation_id']);
                     ?>
                     <?php foreach ($messages as $msg): ?>
-                        <div style="margin-bottom: 15px; padding: 10px; background: #e8f4ff; border-radius: 4px;">
-                            <div style="font-weight: bold; color: #1976d2; margin-bottom: 5px; font-size: 12px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><?php _e('User', 'ai-chat-search'); ?>
-                                <span style="color: #999; font-weight: normal; margin-left: 10px;">
-                                    <?php echo date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at'])); ?>
-                                </span>
+                        <div class="airs-chat-msg airs-chat-msg-user">
+                            <div class="airs-chat-msg-head">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                <span class="airs-chat-msg-name"><?php _e('User', 'ai-chat-search'); ?></span>
+                                <span class="airs-chat-msg-time"><?php echo date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at'])); ?></span>
                                 <?php if (!empty($msg['page_url'])): ?>
-                                    <span style="color: #999; margin: 0 5px;">•</span>
+                                    <span class="airs-chat-msg-sep">&bull;</span>
                                     <a href="<?php echo esc_url($msg['page_url']); ?>"
                                        target="_blank"
                                        title="<?php echo esc_attr($msg['page_url']); ?>"
@@ -472,19 +640,18 @@ class Admin_Chat_History {
                                     </a>
                                 <?php endif; ?>
                             </div>
-                            <div style="color: #333; word-break: break-word;">
+                            <div class="airs-chat-msg-body">
                                 <?php echo esc_html(trim($msg['user_message'])); ?>
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-radius: 4px;">
-                            <div style="font-weight: bold; color: #666; margin-bottom: 5px; font-size: 12px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg><?php _e('AI Assistant', 'ai-chat-search'); ?>
-                                <span style="color: #999; font-weight: normal; margin-left: 10px;">
-                                    <?php echo esc_html($msg['model_used']); ?>
-                                </span>
+                        <div class="airs-chat-msg airs-chat-msg-assistant">
+                            <div class="airs-chat-msg-head">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+                                <span class="airs-chat-msg-name"><?php _e('AI Assistant', 'ai-chat-search'); ?></span>
+                                <span class="airs-chat-msg-time"><?php echo esc_html($msg['model_used']); ?></span>
                             </div>
-                            <div style="color: #333; word-break: break-word;">
+                            <div class="airs-chat-msg-body">
                                 <?php echo nl2br(wp_kses($msg['assistant_message'], array('a' => array('href' => array(), 'title' => array(), 'target' => array(), 'rel' => array())))); ?>
                             </div>
                         </div>
@@ -542,20 +709,7 @@ class Admin_Chat_History {
                 }
             });
 
-            // Scroll to last message when chat history details is opened
-            $(document).on('click', '.chat-history-details > summary', function() {
-                var $details = $(this).parent();
-                if (!$details.attr('open')) {
-                    var $messagesContainer = $details.find('.chat-history-messages');
-                    if ($messagesContainer.length) {
-                        setTimeout(function() {
-                            $messagesContainer.scrollTop($messagesContainer[0].scrollHeight);
-                        }, 100);
-                    }
-                }
-            });
-
-            // Pagination click handler
+// Pagination click handler
             $(document).on('click', '.listeo-history-page', function(e) {
                 e.preventDefault();
                 var page = $(this).data('page');
@@ -651,41 +805,6 @@ class Admin_Chat_History {
                 $('#conversation-search-input').val('');
                 $(this).hide();
                 searchConversations('');
-            });
-
-            // Clear History button handler
-            $(document).on('click', '#clear-chat-history', function(e) {
-                e.preventDefault();
-
-                if (!confirm('<?php _e('Are you sure you want to delete all chat history? This action cannot be undone.', 'ai-chat-search'); ?>')) {
-                    return;
-                }
-
-                var $button = $(this);
-                var originalHtml = $button.html();
-
-                $button.prop('disabled', true).html('<span class="airs-spinner" style="margin-right: 6px;"></span> <?php _e('Clearing...', 'ai-chat-search'); ?>');
-
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'listeo_ai_clear_chat_history',
-                        nonce: '<?php echo $nonce; ?>'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            location.reload();
-                        } else {
-                            alert(response.data.message);
-                            $button.prop('disabled', false).html(originalHtml);
-                        }
-                    },
-                    error: function() {
-                        alert('<?php _e('Failed to clear chat history. Please try again.', 'ai-chat-search'); ?>');
-                        $button.prop('disabled', false).html(originalHtml);
-                    }
-                });
             });
 
             // Delete single conversation button handler

@@ -47,7 +47,7 @@ class Admin_Search_Analytics {
         $analytics_7d = Listeo_AI_Search_Analytics::get_analytics(7);
         $analytics_30d = Listeo_AI_Search_Analytics::get_analytics(30);
         ?>
-        <div class="airs-card airs-card-full-width">
+        <div class="airs-card airs-card-full-width airs-card-toggleable" data-toggle-id="stats-popular-queries">
             <div class="airs-card-header airs-card-header-with-icon">
                 <div class="airs-card-icon airs-card-icon-sky">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
@@ -56,6 +56,7 @@ class Admin_Search_Analytics {
                     <h3><?php _e('Popular Search Queries', 'ai-chat-search'); ?></h3>
                     <p><?php _e('Analytics of the keywords used by AI to provide responses to users.', 'ai-chat-search'); ?></p>
                 </div>
+                <span class="dashicons dashicons-arrow-down-alt2 airs-card-toggle-icon"></span>
             </div>
             <div class="airs-card-body">
                 <?php $this->render_stats_boxes($analytics_7d, $analytics_30d); ?>
@@ -158,6 +159,30 @@ class Admin_Search_Analytics {
                 </button>
             </div>
             <div class="airs-help-text"><?php _e('Analytics data is automatically cleaned up after 10.000 entries to prevent database bloat.', 'ai-chat-search'); ?></div>
+            <div class="airs-form-group" style="margin-top: 15px; margin-bottom: 5px;">
+                <label class="airs-checkbox-label">
+                    <input type="checkbox" id="toggle-search-analytics" value="1" <?php checked(get_option('listeo_ai_search_enable_analytics'), 1); ?>>
+                    <span class="airs-checkbox-custom"></span>
+                    <span class="airs-checkbox-text" style="font-weight: 500;"><?php _e('Enable Search Analytics Tracking', 'ai-chat-search'); ?></span>
+                </label>
+                <script>
+                jQuery(function($){
+                    $('#toggle-search-analytics').on('change', function(){
+                        var $cb = $(this),
+                            $custom = $cb.next('.airs-checkbox-custom'),
+                            $spinner = $('<span class="airs-spinner airs-spinner--small" style="margin-left:0;top:4px"></span>');
+                        $custom.hide().after($spinner);
+                        AIRS.ajax({
+                            action: 'listeo_ai_toggle_search_analytics',
+                            data: { enabled: $cb.is(':checked') },
+                            success: function(r){ if(r.success) location.reload(); },
+                            error: function(){ $cb.prop('checked', !$cb.is(':checked')); },
+                            complete: function(){ $spinner.remove(); $custom.show(); }
+                        });
+                    });
+                });
+                </script>
+            </div>
         </div>
         <?php
     }
@@ -167,7 +192,7 @@ class Admin_Search_Analytics {
      */
     private function render_disabled_section() {
         ?>
-        <div class="airs-card airs-card-full-width">
+        <div class="airs-card airs-card-full-width airs-card-toggleable" data-toggle-id="stats-popular-queries">
             <div class="airs-card-header airs-card-header-with-icon">
                 <div class="airs-card-icon airs-card-icon-sky">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
@@ -176,12 +201,36 @@ class Admin_Search_Analytics {
                     <h3><?php _e('Popular Search Queries', 'ai-chat-search'); ?></h3>
                     <p><?php _e('Analytics of the keywords used by AI to provide responses to users.', 'ai-chat-search'); ?></p>
                 </div>
+                <span class="dashicons dashicons-arrow-down-alt2 airs-card-toggle-icon"></span>
             </div>
             <div class="airs-card-body">
                 <div style="background: #f0f0f0; padding: 40px 20px; border-radius: 5px; text-align: center;">
                     <h3><?php _e('Search Analytics Disabled', 'ai-chat-search'); ?></h3>
-                    <p><?php _e('Enable search analytics in the Settings tab to track search patterns and performance.', 'ai-chat-search'); ?></p>
-                    <a href="?page=ai-chat-search&tab=settings" class="airs-button airs-button-primary"><?php _e('Go to Settings', 'ai-chat-search'); ?></a>
+                    <p><?php _e('Enable search analytics to track search patterns and performance.', 'ai-chat-search'); ?></p>
+                    <div class="airs-form-group" style="display: inline-block; margin-top: 10px;">
+                        <label class="airs-checkbox-label">
+                            <input type="checkbox" id="toggle-search-analytics-disabled" value="1">
+                            <span class="airs-checkbox-custom"></span>
+                            <span class="airs-checkbox-text" style="font-weight: 500;"><?php _e('Enable Search Analytics Tracking', 'ai-chat-search'); ?></span>
+                        </label>
+                        <script>
+                        jQuery(function($){
+                            $('#toggle-search-analytics-disabled').on('change', function(){
+                                var $cb = $(this),
+                                    $custom = $cb.next('.airs-checkbox-custom'),
+                                    $spinner = $('<span class="airs-spinner airs-spinner--small" style="margin-left:0;top:4px"></span>');
+                                $custom.hide().after($spinner);
+                                AIRS.ajax({
+                                    action: 'listeo_ai_toggle_search_analytics',
+                                    data: { enabled: $cb.is(':checked') },
+                                    success: function(r){ if(r.success) location.reload(); },
+                                    error: function(){ $cb.prop('checked', !$cb.is(':checked')); },
+                                    complete: function(){ $spinner.remove(); $custom.show(); }
+                                });
+                            });
+                        });
+                        </script>
+                    </div>
                 </div>
             </div>
         </div>

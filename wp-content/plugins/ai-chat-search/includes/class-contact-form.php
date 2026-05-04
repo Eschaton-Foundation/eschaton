@@ -27,7 +27,7 @@ class Listeo_AI_Search_Contact_Form {
         register_rest_route('listeo/v1', '/contact-form', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_submission'),
-            'permission_callback' => '__return_true', // Public endpoint
+            'permission_callback' => '__return_true', // Public: 5 submissions/IP/hour rate limit enforced in callback
             'args' => array(
                 'name' => array(
                     'required' => true,

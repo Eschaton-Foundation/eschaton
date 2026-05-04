@@ -164,8 +164,12 @@
     // This ensures users see the real error like "Cookie check failed" or "Rate limit exceeded"
     if (xhr.responseJSON) {
       var serverMsg = null;
+      // Google/Gemini array format: [{"error": {"message": "..."}}]
+      if (Array.isArray(xhr.responseJSON) && xhr.responseJSON[0] && xhr.responseJSON[0].error && xhr.responseJSON[0].error.message) {
+        serverMsg = xhr.responseJSON[0].error.message;
+      }
       // AI Chat format: {"error": {"message": "..."}}
-      if (xhr.responseJSON.error && xhr.responseJSON.error.message) {
+      else if (xhr.responseJSON.error && xhr.responseJSON.error.message) {
         serverMsg = xhr.responseJSON.error.message;
       }
       // WordPress format: {"message": "..."}
@@ -211,46 +215,56 @@
   };
 
   /**
-   * Configure payload for GPT-5 vs GPT-4 models
-   * GPT-5 models use max_completion_tokens and don't support temperature
-   * @param {Object} payload - The API payload to configure
-   * @param {Object} chatConfig - The chat configuration object
+   * Strip the "openai/" namespace prefix used by OpenRouter so that model
+   * comparisons below (startsWith "gpt-5", "gpt-", "o1/o3/o4") still work
+   * for slugs like "openai/gpt-5-mini" the same way they work for the bare
+   * "gpt-5-mini" used when OpenAI is the direct provider.
+   * @param {string} model
+   * @returns {string}
    */
-  const configureModelPayload = function (payload, chatConfig) {
-    var model = chatConfig.model;
+  const getBareModel = function (model) {
+    if (typeof model !== "string") return "";
+    return model.indexOf("openai/") === 0 ? model.substring(7) : model;
+  };
 
-    if (model.startsWith("gpt-5")) {
-      payload.max_completion_tokens = chatConfig.max_tokens;
+  const configureModelPayload = function (payload, chatConfig) {
+    var bareModel = getBareModel(chatConfig.model);
+    if (bareModel.startsWith("gpt-5")) {
       payload.verbosity = "medium";
-      // reasoning_effort is handled server-side per model (some GPT-5.x models
-      // don't support it with function tools in /v1/chat/completions)
-    } else {
-      payload.max_tokens = chatConfig.max_tokens;
-      payload.temperature = chatConfig.temperature;
     }
   };
 
-  /**
-   * Log model debug information
-   * @param {Object} payload - The API payload
-   * @param {string} context - Context description for the log
-   * @param {Object} chatConfig - The chat configuration object
-   */
   const logModelDebug = function (payload, context, chatConfig) {
     debugLog("========== OpenAI API Call (" + context + ") ==========");
     debugLog("Model:", chatConfig.model);
-    if (chatConfig.model.startsWith("gpt-5")) {
-      debugLog("GPT-5 Model Detected - Using max_completion_tokens");
-      debugLog("Max Completion Tokens:", payload.max_completion_tokens);
-      debugLog("Verbosity:", payload.verbosity);
-      if (payload.reasoning_effort) {
-        debugLog("Reasoning Effort:", payload.reasoning_effort);
-      }
-    } else {
-      debugLog("Max Tokens:", payload.max_tokens);
-      debugLog("Temperature:", payload.temperature);
-    }
     debugLog("=".repeat(55));
+  };
+
+  /**
+   * Compute the reasoning effort the SERVER will apply for this model.
+   *
+   * The reasoning override runs server-side (class-chat-api.php) right before
+   * wp_remote_post, so it's never in the client's payload at log time. This
+   * helper mirrors the server logic so the browser console can still show what
+   * reasoning setting is in effect per request.
+   *
+   * @param {string} model  — full model slug (e.g. "openai/gpt-5-mini")
+   * @returns {string}      — "minimal" | "none" | "(model default)" | "(native)"
+   */
+  const computeServerReasoning = function (model) {
+    if (!model) return "(native)";
+    var isOpenRouter = model.indexOf("/") !== -1;
+    if (!isOpenRouter) return "(native — server sets per-model)";
+
+    var cfg = window.listeoAiChatConfig && window.listeoAiChatConfig.chatConfig;
+    var reasoningEnabled = cfg && cfg.openrouter_reasoning_enabled;
+    if (reasoningEnabled) return "(model default — toggle ON)";
+
+    // Reasoning disabled — server applies lowest-possible per vendor
+    var reasoningMandatory =
+      model.indexOf("openai/") === 0 ||
+      model.indexOf("google/gemini-3.1-pro") !== -1;
+    return reasoningMandatory ? "minimal" : "none";
   };
 
   /**
@@ -258,22 +272,8 @@
    * @param {Object} payload - The API payload
    */
   const logApiRequest = function (payload) {
-    var isGpt5 = payload.model && payload.model.startsWith("gpt-5");
-    debugLog(
-      "🚀 API REQUEST | Model:",
-      payload.model,
-      "| Params:",
-      isGpt5
-        ? {
-            reasoning_effort: payload.reasoning_effort || "(default)",
-            max_completion_tokens: payload.max_completion_tokens,
-            verbosity: payload.verbosity,
-          }
-        : {
-            max_tokens: payload.max_tokens,
-            temperature: payload.temperature,
-          },
-    );
+    var params = { server_reasoning: computeServerReasoning(payload.model) };
+    debugLog("🚀 API REQUEST | Model:", payload.model, "| Params:", params);
   };
 
   /**
@@ -939,9 +939,11 @@
       // Load conversation from localStorage (this clears/restores messages)
       this.loadConversation();
 
-      // Show API notification AFTER loadConversation (which clears messages)
+      // Show API or embeddings notification AFTER loadConversation (which clears messages)
       if (this.configLoaded && !this.chatConfig.api_configured) {
         this.addMessage("system", listeoAiChatConfig.strings.apiNotConfigured);
+      } else if (this.configLoaded && listeoAiChatConfig.isAdmin && !this.chatConfig.has_embeddings) {
+        this.addMessage("system", listeoAiChatConfig.strings.noEmbeddings);
       }
 
       // Initialize pre-chat form AFTER loadConversation (which clears/restores messages)
@@ -1330,8 +1332,8 @@
 
       // Get valid history slice, respecting admin context length setting
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
-      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
-      var baseLimit = hasComplexTools ? 10 : 6;
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
+      var baseLimit = hasComplexTools ? 12 : 6;
       var recentHistory = self.getValidHistorySlice(baseLimit * ctxMul);
 
       // Build messages array (server handles system prompt injection for security)
@@ -1376,11 +1378,12 @@
       // We only send tool_choice to tell the server to use auto mode
       if (self.chatConfig.tools && self.chatConfig.tools.length > 0) {
         payload.tool_choice = "auto";
-        // Disable parallel tool calls for OpenAI (prevents chaining issues with GPT-5.2)
-        // Must only be sent when tools are present
-        var model = self.chatConfig.model;
-        var isOSeries = model.startsWith("o1") || model.startsWith("o3") || model.startsWith("o4");
-        var isOpenAI = model.startsWith("gpt-") || model.startsWith("chatgpt-");
+        // Disable parallel tool calls for OpenAI (prevents chaining issues with GPT-5.2).
+        // Must only be sent when tools are present. Uses getBareModel() so
+        // OpenRouter namespaced slugs (e.g. "openai/gpt-5.2") are matched too.
+        var bareModel = getBareModel(self.chatConfig.model);
+        var isOSeries = bareModel.startsWith("o1") || bareModel.startsWith("o3") || bareModel.startsWith("o4");
+        var isOpenAI = bareModel.startsWith("gpt-") || bareModel.startsWith("chatgpt-");
         if (isOpenAI && !isOSeries) {
           payload.parallel_tool_calls = false;
         }
@@ -1396,8 +1399,7 @@
 
       logApiRequest(payload);
 
-      // Send to OpenAI - with silent retry on failure
-      (function doChatProxyRequest(attempt) {
+      // Send to OpenAI - no retry to avoid duplicate paid provider calls
         $.ajax({
           url: listeoAiChatConfig.apiBase + "/chat-proxy",
           method: "POST",
@@ -1408,26 +1410,13 @@
           success: function (data) {
             // Check if response indicates an error (success: false)
             if (data.success === false) {
-              if (attempt < 2) {
-                debugLog(
-                  "Chat proxy returned error, retrying... (attempt " +
-                    attempt +
-                    ")",
-                );
-                doChatProxyRequest(attempt + 1);
-                return;
-              }
-              // 2nd failure - show detailed error
               var errorDetail =
                 data.error?.message || data.error?.type || "Unknown error";
-              debugError("Chat proxy error (final):", data.error);
+              debugError("Chat proxy error:", data.error);
               self.$messages.find("#" + loadingId).remove();
               self.addMessage(
                 "system",
-                listeoAiChatConfig.strings.errorGeneral +
-                  " [" +
-                  errorDetail +
-                  "]",
+                data.error?.message || listeoAiChatConfig.strings.errorGeneral,
               );
               self.isProcessing = false;
               self.$sendBtn.prop("disabled", false);
@@ -1488,24 +1477,16 @@
             }
           },
           error: function (xhr) {
-            if (attempt < 2) {
-              debugLog(
-                "Chat proxy XHR error, retrying... (attempt " + attempt + ")",
-              );
-              doChatProxyRequest(attempt + 1);
-            } else {
-              var errorInfo = analyzeError(xhr, "chat-proxy");
-              self.$messages.find("#" + loadingId).remove();
-              self.addMessage(
-                "system",
-                errorInfo.userMessage,
-              );
-              self.isProcessing = false;
-              self.$sendBtn.prop("disabled", false);
-            }
+            var errorInfo = analyzeError(xhr, "chat-proxy");
+            self.$messages.find("#" + loadingId).remove();
+            self.addMessage(
+              "system",
+              errorInfo.userMessage,
+            );
+            self.isProcessing = false;
+            self.$sendBtn.prop("disabled", false);
           },
         });
-      })(1);
     },
 
     /**
@@ -1529,11 +1510,13 @@
             generateLoaderHTML(listeoAiChatConfig.strings.searchingListings),
           );
 
+        var searchArgs = $.extend({}, functionArgs, { source: "chatbot" });
+
         $.ajax({
           url: listeoAiChatConfig.apiBase + "/listeo-hybrid-search",
           method: "POST",
           contentType: "application/json",
-          data: JSON.stringify(functionArgs),
+          data: JSON.stringify(searchArgs),
           success: function (response) {
             if (
               response.success &&
@@ -1542,26 +1525,24 @@
             ) {
               debugLog("Search results:", response.results.length);
 
-              // Show results grid
-              var gridHTML = self.formatListingsGrid(response.results);
-              self.$messages.find("#" + loadingId).remove();
-              self.addMessage("assistant", gridHTML);
+              // Show "selecting best matches" while LLM filters
+              self.$messages
+                .find("#" + loadingId + " .listeo-ai-chat-message-content")
+                .html(
+                  generateLoaderHTML(
+                    listeoAiChatConfig.strings.selectingBestMatches ||
+                      "Analyzing results...",
+                  ),
+                );
 
-              // Update loading for AI response
-              var responseLoadingId = "loading-response-" + Date.now();
-              self.addMessage(
-                "assistant",
-                generateLoaderHTML(listeoAiChatConfig.strings.analyzingResults),
-                responseLoadingId,
-              );
-
-              // Send results back to OpenAI for natural language response
+              // Send results to LLM for filtering + response
               self.getFinalResponse(
                 userMessage,
                 assistantMessage,
                 toolCall,
                 response,
-                responseLoadingId,
+                loadingId,
+                "search_listings",
               );
             } else {
               // No results - check if there's a notice (e.g., no embeddings trained)
@@ -1609,7 +1590,7 @@
             self.$messages.find("#" + loadingId).remove();
             self.addMessage(
               "system",
-              listeoAiChatConfig.strings.searchFailed,
+              errorInfo.userMessage,
             );
             self.isProcessing = false;
             self.$sendBtn.prop("disabled", false);
@@ -1653,13 +1634,13 @@
         // 1. RAG endpoint doesn't use function calling
         // 2. Chat history may contain tool messages that will break the request
         // 3. This is being called AS a tool, so history isn't needed
-        // Uses silent retry - retries once on failure, shows error only on 2nd failure
+        // No retry to avoid duplicate paid provider calls
         // Check if user message contains an image (for chat history logging)
         var messageHasImage = Array.isArray(userMessage) && userMessage.some(function(part) {
           return part.type === 'image_url';
         });
 
-        (function doRagRequest(attempt) {
+          // No IIFE wrapper needed - no retry
           $.ajax({
             url: listeoAiChatConfig.apiBase + "/rag-chat",
             method: "POST",
@@ -1725,43 +1706,19 @@
 
                 self.isProcessing = false;
                 self.$sendBtn.prop("disabled", false);
-              } else if (attempt < 2) {
-                // Silent retry on first failure
-                debugLog(
-                  "RAG request failed, retrying... (attempt " + attempt + ")",
-                );
-                doRagRequest(attempt + 1);
               } else {
-                // 2nd failure - show detailed error
-                var errorDetail =
-                  response.error?.message ||
-                  response.error?.type ||
-                  response.error?.code ||
-                  "Unknown error";
-                debugError("RAG endpoint error (final):", response.error);
+                debugError("RAG endpoint error:", response.error);
                 self.$messages.find("#" + loadingId).remove();
                 self.addMessage(
                   "system",
-                  listeoAiChatConfig.strings.errorGeneral +
-                    " [" +
-                    errorDetail +
-                    "]",
+                  response.error?.message || listeoAiChatConfig.strings.errorGeneral,
                 );
                 self.isProcessing = false;
                 self.$sendBtn.prop("disabled", false);
               }
             },
             error: function (xhr) {
-              if (attempt < 2) {
-                // Silent retry on first XHR failure
-                debugLog(
-                  "RAG request XHR error, retrying... (attempt " +
-                    attempt +
-                    ")",
-                );
-                doRagRequest(attempt + 1);
-              } else {
-                // 2nd failure - show detailed error
+                // No retry - XHR error may mean the provider already processed (and billed) the request
                 var errorInfo = analyzeError(xhr, "rag-universal-search");
                 self.$messages.find("#" + loadingId).remove();
                 self.addMessage(
@@ -1770,10 +1727,8 @@
                 );
                 self.isProcessing = false;
                 self.$sendBtn.prop("disabled", false);
-              }
             },
           });
-        })(1);
       } else if (functionName === "search_products") {
         // Search WooCommerce products
         self.$messages
@@ -1782,11 +1737,13 @@
             generateLoaderHTML(listeoAiChatConfig.strings.searchingProducts),
           );
 
+        var productSearchArgs = $.extend({}, functionArgs, { source: "chatbot" });
+
         $.ajax({
           url: listeoAiChatConfig.apiBase + "/woocommerce-product-search",
           method: "POST",
           contentType: "application/json",
-          data: JSON.stringify(functionArgs),
+          data: JSON.stringify(productSearchArgs),
           success: function (response) {
             if (
               response.success &&
@@ -1795,28 +1752,24 @@
             ) {
               debugLog("Product search results:", response.results.length);
 
-              // Show products grid (same container as listings, but with price instead of location)
-              var gridHTML = self.formatProductsGrid(response.results);
-              self.$messages.find("#" + loadingId).remove();
-              self.addMessage("assistant", gridHTML);
+              // Show "selecting best matches" while LLM filters
+              self.$messages
+                .find("#" + loadingId + " .listeo-ai-chat-message-content")
+                .html(
+                  generateLoaderHTML(
+                    listeoAiChatConfig.strings.selectingBestMatches ||
+                      "Analyzing results...",
+                  ),
+                );
 
-              // Update loading for AI response
-              var responseLoadingId = "loading-response-" + Date.now();
-              self.addMessage(
-                "assistant",
-                generateLoaderHTML(
-                  listeoAiChatConfig.strings.analyzingProducts,
-                ),
-                responseLoadingId,
-              );
-
-              // Send results back to OpenAI for natural language response
+              // Send results to LLM for filtering + response
               self.getFinalResponse(
                 userMessage,
                 assistantMessage,
                 toolCall,
                 response,
-                responseLoadingId,
+                loadingId,
+                "search_products",
               );
             } else {
               // No results - still need to show thinking indicator
@@ -1852,7 +1805,7 @@
             self.$messages.find("#" + loadingId).remove();
             self.addMessage(
               "system",
-              listeoAiChatConfig.strings.productSearchFailed,
+              errorInfo.userMessage,
             );
             self.isProcessing = false;
             self.$sendBtn.prop("disabled", false);
@@ -2065,112 +2018,6 @@
             );
           },
         });
-      } else if (functionName === "trigger_webhook_action") {
-        // Trigger webhook action via AI
-        debugLog("Triggering webhook action via AI tool");
-        self.$messages
-          .find("#" + loadingId + " .listeo-ai-chat-message-content")
-          .html(
-            generateLoaderHTML(
-              listeoAiChatConfig.strings.thinkingAboutQuery ||
-                "Thinking...",
-            ),
-          );
-
-        // Extract action_id and build data object from remaining args
-        var actionId = functionArgs.action_id || "";
-        var webhookData = {};
-        for (var key in functionArgs) {
-          if (
-            functionArgs.hasOwnProperty(key) &&
-            key !== "action_id"
-          ) {
-            webhookData[key] = functionArgs[key];
-          }
-        }
-
-        $.ajax({
-          url: listeoAiChatConfig.apiBase + "/webhook-trigger",
-          method: "POST",
-          headers: getRequestHeaders(),
-          contentType: "application/json",
-          processData: false,
-          data: JSON.stringify({
-            action_id: actionId,
-            data: webhookData,
-            conversation_id: self.sessionId,
-          }),
-          success: function (response) {
-            debugLog("Webhook trigger response:", response);
-
-            var toolResult = {
-              success: response.success || false,
-              message:
-                response.message ||
-                (response.success
-                  ? "Request submitted successfully!"
-                  : "Failed to process request."),
-            };
-
-            // Include remote server response data for AI context
-            if (response.remote_data) {
-              toolResult.remote_data = response.remote_data;
-            }
-
-            // Remove loading
-            self.$messages.find("#" + loadingId).remove();
-
-            // Add loading for AI response
-            var responseLoadingId = "loading-response-" + Date.now();
-            self.addMessage(
-              "assistant",
-              generateLoaderHTML(listeoAiChatConfig.strings.loading),
-              responseLoadingId,
-            );
-
-            // Send result back to AI for natural language response
-            self.getFinalResponse(
-              userMessage,
-              assistantMessage,
-              toolCall,
-              toolResult,
-              responseLoadingId,
-            );
-          },
-          error: function (xhr) {
-            debugError("Webhook trigger error:", xhr);
-
-            var errorMessage = "Failed to process request.";
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-              errorMessage = xhr.responseJSON.message;
-            }
-
-            var toolResult = {
-              success: false,
-              message: errorMessage,
-            };
-
-            // Remove loading
-            self.$messages.find("#" + loadingId).remove();
-
-            // Add loading for AI response
-            var responseLoadingId = "loading-response-" + Date.now();
-            self.addMessage(
-              "assistant",
-              generateLoaderHTML(listeoAiChatConfig.strings.loading),
-              responseLoadingId,
-            );
-
-            // Send error result back to AI
-            self.getFinalResponse(
-              userMessage,
-              assistantMessage,
-              toolCall,
-              toolResult,
-              responseLoadingId,
-            );
-          },
-        });
       } else {
         debugError("Unknown function:", functionName);
         self.$messages.find("#" + loadingId).remove();
@@ -2222,7 +2069,7 @@
 
       // Build conversation history, respecting admin context length setting
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
-      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
       var recentHistory = [];
       var historySlice = self.conversationHistory.slice(-(6 * ctxMul));
       historySlice.forEach(function (msg) {
@@ -2255,8 +2102,7 @@
       debugLog("(Generated server-side for security)");
       debugLog("===== END SYSTEM PROMPT =====");
 
-      // Uses silent retry - retries once on failure, shows error only on 2nd failure
-      (function doRagChatRequest(attempt) {
+      // No retry to avoid duplicate paid provider calls
         $.ajax({
           url: listeoAiChatConfig.apiBase + "/rag-chat",
           method: "POST",
@@ -2270,29 +2116,12 @@
             debugLog("📄 Full response:", response);
 
             if (!response.success) {
-              if (attempt < 2) {
-                // Silent retry on first failure
-                debugLog(
-                  "RAG chat failed, retrying... (attempt " + attempt + ")",
-                );
-                doRagChatRequest(attempt + 1);
-                return;
-              }
-              // 2nd failure - show detailed error
-              var errorDetail =
-                response.error?.message ||
-                response.error?.type ||
-                response.error?.code ||
-                "Unknown error";
-              debugError("❌ RAG endpoint returned success:false (final)");
+              debugError("RAG endpoint returned success:false");
               debugError("Error object:", response.error);
               self.$messages.find("#" + loadingId).remove();
               self.addMessage(
                 "system",
-                listeoAiChatConfig.strings.errorGeneral +
-                  " [" +
-                  errorDetail +
-                  "]",
+                response.error?.message || listeoAiChatConfig.strings.errorGeneral,
               );
               self.isProcessing = false;
               self.$sendBtn.prop("disabled", false);
@@ -2368,14 +2197,6 @@
             debugLog("✅ RAG flow completed successfully");
           },
           error: function (xhr) {
-            if (attempt < 2) {
-              // Silent retry on first XHR failure
-              debugLog(
-                "RAG chat XHR error, retrying... (attempt " + attempt + ")",
-              );
-              doRagChatRequest(attempt + 1);
-            } else {
-              // 2nd failure - show detailed error
               var errorInfo = analyzeError(xhr, "rag-chat");
               self.$messages.find("#" + loadingId).remove();
               self.addMessage(
@@ -2384,10 +2205,8 @@
               );
               self.isProcessing = false;
               self.$sendBtn.prop("disabled", false);
-            }
           },
         });
-      })(1);
     },
 
     /**
@@ -3033,8 +2852,8 @@
 
       // Get valid history slice, respecting admin context length setting
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
-      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
-      var recentHistory = self.getValidHistorySlice(10 * ctxMul);
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
+      var recentHistory = self.getValidHistorySlice(12 * ctxMul);
 
       // Build API payload (server handles system prompt injection for security)
       var payload = {
@@ -3149,13 +2968,14 @@
       toolCall,
       apiResult,
       loadingId,
+      filterToolName,
     ) {
       var self = this;
 
       // Get valid history slice, respecting admin context length setting
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
-      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 2;
-      var recentHistory = self.getValidHistorySlice(10 * ctxMul);
+      var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
+      var recentHistory = self.getValidHistorySlice(12 * ctxMul);
 
       // Detect tool type to format results appropriately
       var toolName = toolCall.function.name;
@@ -3163,13 +2983,16 @@
       var isListingSearch = toolName === "search_listings";
       var isNonSearchTool = !isProductSearch && !isListingSearch;
 
+      // LLM filtering mode: chatbot search results go through LLM for relevance filtering
+      var isFilterMode = filterToolName === "search_listings" || filterToolName === "search_products";
+
       // Non-search tools (webhook, contact form, etc.) - pass result directly to AI
       var condensedResults;
 
       if (isNonSearchTool) {
         condensedResults = apiResult;
       } else if (isProductSearch) {
-        // Product search - format with price and stock info
+        // Product search - format with excerpt for LLM relevance filtering
         condensedResults = {
           original_question: self.extractTextFromMessage(userMessage),
           total: apiResult.total,
@@ -3178,6 +3001,7 @@
                 var product = {
                   id: r.id,
                   title: r.title,
+                  excerpt: r.excerpt || "",
                   price: r.price?.formatted || "",
                   stock_status: r.stock_status || "",
                   on_sale: r.on_sale || false,
@@ -3189,11 +3013,9 @@
                 if (r.product_type) {
                   product.product_type = r.product_type;
                 }
-                // Pass through variation data so LLM can match SKU to correct price
                 if (r.variations) {
                   product.variations = r.variations;
                 }
-                // Pass through extra pricing if present (added by third-party plugins via listeo_ai_product_extra_pricing_data filter)
                 if (r.extra_pricing) {
                   product.extra_pricing = r.extra_pricing;
                 }
@@ -3202,7 +3024,7 @@
             : [],
         };
       } else {
-        // Listing search - format with address
+        // Listing search - format with excerpt for LLM relevance filtering
         condensedResults = {
           original_question: self.extractTextFromMessage(userMessage),
           total: apiResult.total,
@@ -3211,10 +3033,10 @@
                 var listing = {
                   id: r.id,
                   title: r.title,
+                  excerpt: r.excerpt || "",
                   address: r.location?.address || "",
                   url: r.url || "",
                 };
-                // Include event dates if available (cache-agnostic: only if PHP provides it)
                 if (r.event_dates) {
                   listing.event_dates = r.event_dates;
                 }
@@ -3225,6 +3047,7 @@
       }
 
       debugLog("===== CONDENSED RESULTS SENT TO AI =====");
+      debugLog("Filter mode:", isFilterMode);
       debugLog(JSON.stringify(condensedResults, null, 2));
 
       // Build API payload for final response (server handles system prompt for security)
@@ -3240,6 +3063,11 @@
           },
         ]),
       };
+
+      // Enable LLM relevance filtering for chatbot search results
+      if (isFilterMode) {
+        payload.filter_candidates = true;
+      }
 
       // If listing context is loaded, send listing ID for server-side injection
       if (self.loadedListing && self.loadedListing.id) {
@@ -3288,7 +3116,6 @@
             debugError("[AI Chat ERROR] LLM returned empty content");
             debugError("[AI Chat ERROR] Finish reason:", finishReason);
 
-            // Log if AI tried to chain tool calls (indicates parallel_tool_calls didn't work)
             if (finishReason === "tool_calls" && responseMessage?.tool_calls) {
               debugError("[AI Chat ERROR] AI attempted chained tool_calls despite parallel_tool_calls: false");
               debugError("[AI Chat ERROR] Tools:", responseMessage.tool_calls.map(function(tc) { return tc.function.name; }));
@@ -3302,19 +3129,54 @@
           // Remove loading indicator
           self.$messages.find("#" + loadingId).remove();
 
-          // Add text response ONLY (grid already shown above)
-          self.addMessage("assistant", finalMessage);
+          // LLM filtering mode: use relevant_ids from backend (forced function calling)
+          var displayResults = apiResult.results || [];
+          var textResponse = finalMessage;
+
+          if (isFilterMode && displayResults.length > 0 && data.relevant_ids) {
+            var relevantIds = data.relevant_ids.map(function(id) { return parseInt(id, 10); });
+            debugLog("LLM RELEVANCE FILTER: selected IDs [" + relevantIds.join(", ") + "] from candidates [" + displayResults.map(function(r) { return r.id; }).join(", ") + "]");
+
+            if (relevantIds.length > 0) {
+              // Filter results to only include LLM-approved IDs
+              displayResults = displayResults.filter(function (r) {
+                return relevantIds.indexOf(parseInt(r.id, 10)) !== -1;
+              });
+              // Re-order to match LLM's relevance ranking
+              displayResults.sort(function (a, b) {
+                return relevantIds.indexOf(parseInt(a.id, 10)) - relevantIds.indexOf(parseInt(b.id, 10));
+              });
+              debugLog("Filtered to", displayResults.length, "relevant results");
+            } else {
+              // LLM returned empty relevant_ids - no relevant results
+              displayResults = [];
+              debugLog("LLM filtered out all results");
+            }
+          }
+
+          // Add text response first
+          if (textResponse) {
+            self.addMessage("assistant", textResponse);
+          }
+
+          // Render grid below text (filtered or all results)
+          if (displayResults.length > 0) {
+            var gridHTML = isProductSearch
+              ? self.formatProductsGrid(displayResults)
+              : self.formatListingsGrid(displayResults);
+            self.addMessage("assistant", gridHTML);
+          }
 
           // Update history - MUST include complete tool calling sequence
           self.conversationHistory.push(
             { role: "user", content: userMessage },
-            assistantMessage, // Assistant message WITH tool_calls
+            assistantMessage,
             {
               role: "tool",
               tool_call_id: toolCall.id,
               content: JSON.stringify(condensedResults),
             },
-            { role: "assistant", content: finalMessage }, // Final response
+            { role: "assistant", content: textResponse },
           );
 
           // Save conversation to localStorage
@@ -3451,6 +3313,7 @@
         var url = product.url || "#";
         var productId = product.id || 0;
         var productType = product.product_type || "simple";
+        var sku = product.sku || "";
 
         // Best Match badge for first result
         var bestMatchBadge = "";
@@ -3552,6 +3415,16 @@
             "</span>";
         }
 
+        // SKU
+        if (sku) {
+          html +=
+            '        <span class="listeo-ai-product-sku">' +
+            (listeoAiChatConfig.strings.sku || "SKU") +
+            ": " +
+            self.escapeHtml(sku) +
+            "</span>";
+        }
+
         html += "      </div>";
 
         // Add to Cart / Select Options (only when cart is enabled)
@@ -3629,6 +3502,7 @@
       }
 
       // Add avatar for assistant messages if avatar is configured
+      // Hide avatar visually for result grids (keeps layout spacing)
       if (role === "assistant" && listeoAiChatConfig.chatAvatarUrl) {
         $message.addClass("has-avatar");
         var $avatar = $(
@@ -3636,6 +3510,9 @@
             listeoAiChatConfig.chatAvatarUrl +
             '" alt="" />',
         );
+        if (isResultsGrid) {
+          $avatar.css("opacity", "0");
+        }
         $message.append($avatar);
       }
 
@@ -4179,11 +4056,16 @@
           }
         }
         // Show centered welcome text for image header style
+        var welcomeMessage = listeoAiChatConfig.strings.welcomeMessage;
         var welcomeHtml =
           '<div class="chat-image-bg-welcome-text">' +
-          '<h3>' + this.escapeHtml(listeoAiChatConfig.chatName) + '</h3>' +
-          '<p>' + this.escapeHtml(listeoAiChatConfig.strings.welcomeMessage) + '</p>' +
-          '</div>';
+          '<h3>' + this.escapeHtml(listeoAiChatConfig.chatName) + '</h3>';
+        if (welcomeMessage.indexOf('<') !== -1) {
+          welcomeHtml += welcomeMessage;
+        } else {
+          welcomeHtml += '<p>' + this.escapeHtml(welcomeMessage) + '</p>';
+        }
+        welcomeHtml += '</div>';
         this.$messages.append(welcomeHtml);
       } else {
         // Show regular welcome message bubble

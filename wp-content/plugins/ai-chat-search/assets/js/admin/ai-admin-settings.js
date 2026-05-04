@@ -19,6 +19,12 @@
      */
     function initProviderToggle() {
         var $providerSelect = $('#listeo_ai_search_provider');
+        var ajax = window.listeo_ai_search_ajax || {};
+
+        if (ajax.trial_gateway_active) {
+            $providerSelect.val('openrouter');
+            updateProviderUI('openrouter');
+        }
 
         // Handle select change
         $providerSelect.on('change', function() {
@@ -83,17 +89,11 @@
                         applyProviderChange(pendingProvider);
                         $providerSelect.data('original-value', pendingProvider);
                         $('#provider-change-modal').fadeOut(200);
-                        $('#provider-retrain-notice').remove();
 
-                        // Add warning notice
-                        var $form = $('.airs-ajax-form[data-section="api-config"]');
-                        var $formActions = $form.find('.airs-form-actions');
-                        var $notice = $('<div id="provider-retrain-notice" class="provider-retrain-notice">' +
-                            '<span class="notice-emoji">\u26a0\ufe0f</span> ' +
-                            (i18n.providerRetrainNotice || 'Click Save and go to Data Training tab and start retraining after changing provider.') +
-                            '</div>');
-                        $formActions.before($notice);
-                        $notice[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        var $form = $('.airs-ajax-form[data-section="settings-config"]');
+                        if ($form.length) {
+                            $form.trigger('submit');
+                        }
                     } else {
                         alert(i18n.errorClearingEmbeddings || 'Error clearing embeddings. Please try again.');
                     }
@@ -123,7 +123,7 @@
     function updateProviderUI(provider) {
         // Hide all provider fields and model groups
         $('.provider-field').hide();
-        $('.model-group-openai, .model-group-gemini, .model-group-mistral').hide();
+        $('.model-group-openai, .model-group-gemini, .model-group-mistral, .model-group-openrouter').hide();
 
         var models = {
             openai: {
@@ -131,8 +131,8 @@
                 modelGroup: 'model-group-openai',
                 label: i18n.openaiModel || 'OpenAI Model',
                 help: i18n.openaiModelHelp || 'Select the OpenAI model for chat responses.',
-                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5-chat-latest', 'gpt-5.1', 'gpt-5.2', 'gpt-5.3-chat-latest', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'],
-                default: 'gpt-5.3-chat-latest'
+                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5-chat-latest', 'gpt-5.1', 'gpt-5.2', 'gpt-5.3-chat-latest', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5'],
+                default: 'gpt-5.4-mini'
             },
             gemini: {
                 class: 'provider-gemini',
@@ -147,8 +147,18 @@
                 modelGroup: 'model-group-mistral',
                 label: i18n.mistralModel || 'Mistral Model',
                 help: i18n.mistralModelHelp || 'Select the Mistral model for chat responses.',
-                models: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest'],
+                models: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-medium-3.5', 'mistral-large-latest'],
                 default: 'mistral-large-latest'
+            },
+            openrouter: {
+                class: 'provider-openrouter',
+                modelGroup: 'model-group-openrouter',
+                label: i18n.openrouterModel || 'OpenRouter Model',
+                help: i18n.openrouterModelHelp || 'Select an OpenRouter model for chat responses.',
+                // Any vendor/model slug is considered valid — OpenRouter has 300+ models.
+                // This list only governs auto-reset when switching into the openrouter provider.
+                models: ['openai/gpt-5-mini', 'openai/gpt-5.1', 'openai/gpt-5.3-chat-latest', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.1-flash-lite-preview', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
+                default: 'openai/gpt-5.4-mini'
             }
         };
 
@@ -171,13 +181,27 @@
      * Model change handler for Gemini 3 warning
      */
     function initModelChangeHandler() {
+        var incompatible = ['deepseek/', 'z-ai/', 'minimax/', 'meta-llama/', 'qwen/', 'moonshotai/'];
+
+        function checkMultimodal() {
+            var model = $('#listeo_ai_chat_model').val() || '';
+            var isRouter = model.indexOf('/') !== -1;
+            var hasFeature = $('#listeo_ai_chat_enable_speech').is(':checked') || $('#listeo_ai_chat_enable_image_input').is(':checked');
+            var matched = incompatible.some(function(p) { return model.indexOf(p) === 0; });
+            $('#openrouter-multimodal-warning').toggle(isRouter && hasFeature && matched);
+        }
+
         $('#listeo_ai_chat_model').on('change', function() {
             if ($(this).val() === 'gemini-3.1-pro-preview') {
                 $('#gemini-3-warning').show();
             } else {
                 $('#gemini-3-warning').hide();
             }
+            checkMultimodal();
         });
+
+        $(document).on('change', '#listeo_ai_chat_enable_speech, #listeo_ai_chat_enable_image_input', checkMultimodal);
+        checkMultimodal();
     }
 
     /**
@@ -246,7 +270,7 @@
             var $input = $(this);
             var name = $input.attr('name');
 
-            if (!name) return;
+            if (!name || $input.is(':disabled')) return;
 
             if ($input.attr('type') === 'checkbox') {
                 if (name.endsWith('[]')) {
@@ -295,6 +319,35 @@
             e.preventDefault();
             testApiKey('mistral', $(this), '#mistral-api-test-result', '#listeo_ai_search_mistral_api_key');
         });
+
+        // OpenRouter
+        $('#test-openrouter-api-key').on('click', function(e) {
+            e.preventDefault();
+            testApiKey('openrouter', $(this), '#openrouter-api-test-result', '#listeo_ai_search_openrouter_api_key');
+        });
+
+        $('.airs-api-key-remove-button').on('click', function(e) {
+            e.preventDefault();
+
+            var target = $(this).data('target');
+            var $input = $('#' + target);
+            var $flag = $('.airs-api-key-remove-flag[data-setting-name="' + target + '"]');
+            var placeholderMap = {
+                'listeo_ai_search_api_key': 'sk-...',
+                'listeo_ai_search_gemini_api_key': 'AIzaSy...',
+                'listeo_ai_search_mistral_api_key': '...',
+                'listeo_ai_search_openrouter_api_key': 'sk-or-v1-...'
+            };
+
+            $input.prop('disabled', false);
+            $input.attr('name', $input.data('setting-name'));
+            $input.val('');
+            $input.attr('placeholder', placeholderMap[target] || '');
+            $flag.val('1');
+
+            $(this).prop('disabled', true);
+            $input.focus();
+        });
     }
 
     /**
@@ -302,13 +355,11 @@
      */
     function testApiKey(provider, $button, resultSelector, keySelector) {
         var $result = $(resultSelector);
-        var apiKey = $(keySelector).val().trim();
+        var $input = $(keySelector);
+        var apiKey = '';
 
-        if (!apiKey) {
-            $result.removeClass('airs-api-test-success').addClass('airs-api-test-error')
-                .html('\u274c ' + (i18n.enterApiKeyFirst || 'Please enter an API key first.'))
-                .show();
-            return;
+        if (!$input.is(':disabled')) {
+            apiKey = $input.val().trim();
         }
 
         AIRS.setButtonState($button, 'loading');
@@ -318,11 +369,12 @@
 
         var action = provider === 'openai' ? 'listeo_ai_test_api_key' :
                      provider === 'gemini' ? 'listeo_ai_test_gemini_api_key' :
-                     'listeo_ai_test_mistral_api_key';
+                     provider === 'mistral' ? 'listeo_ai_test_mistral_api_key' :
+                     'listeo_ai_test_openrouter_api_key';
 
         AIRS.ajax({
             action: action,
-            data: { api_key: apiKey },
+            data: apiKey ? { api_key: apiKey } : {},
             success: function(response) {
 
                 if (response.success) {
@@ -478,7 +530,70 @@
         initClearRateLimits();
         initCreateTables();
         initPostReferencePicker();
+        initInfoTooltips();
 
+
+    }
+
+    /**
+     * Info Tooltips (floating, pure JS)
+     *
+     * Renders a tooltip bubble as a `position: fixed` element appended directly
+     * to <body>, so it escapes any ancestor with overflow: hidden (e.g. the
+     * admin card at .airs-tab-content .airs-card). Used by
+     * <span class="airs-hint-icon" data-tooltip="...">?</span>.
+     */
+    function initInfoTooltips() {
+        var $bubble = null;
+
+        function ensureBubble() {
+            if (!$bubble) {
+                $bubble = $('<div class="airs-tooltip-bubble" role="tooltip" aria-hidden="true"></div>').appendTo('body');
+            }
+            return $bubble;
+        }
+
+        function show(el) {
+            var text = el.getAttribute('data-tooltip') || '';
+            if (!text) return;
+            var $b = ensureBubble();
+            $b.text(text);
+
+            // Measure after content is set so width is correct
+            var rect = el.getBoundingClientRect();
+            var bubbleRect = $b[0].getBoundingClientRect();
+            var top = rect.top - bubbleRect.height - 10;
+            var left = rect.left + (rect.width / 2) - (bubbleRect.width / 2);
+
+            // Clamp to viewport so it never clips off-screen
+            var margin = 8;
+            left = Math.max(margin, Math.min(left, window.innerWidth - bubbleRect.width - margin));
+            if (top < margin) {
+                // Flip below the icon if there's no room above
+                top = rect.bottom + 10;
+                $b.attr('data-placement', 'bottom');
+            } else {
+                $b.attr('data-placement', 'top');
+            }
+
+            $b.css({ top: top + 'px', left: left + 'px' }).addClass('is-visible').attr('aria-hidden', 'false');
+        }
+
+        function hide() {
+            if ($bubble) $bubble.removeClass('is-visible').attr('aria-hidden', 'true');
+        }
+
+        // Delegated listeners — handles dynamically added tooltips without re-binding
+        $(document).on('mouseenter focus', '.airs-hint-icon[data-tooltip]', function() {
+            show(this);
+        });
+        $(document).on('mouseleave blur', '.airs-hint-icon[data-tooltip]', function() {
+            hide();
+        });
+        // Hide on scroll / resize to avoid stale positioning
+        $(window).on('scroll resize', function() {
+            hide();
+        });
     }
 
     /**

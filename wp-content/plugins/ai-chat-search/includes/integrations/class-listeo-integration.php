@@ -32,7 +32,7 @@ class Listeo_AI_Integration {
         register_rest_route('listeo/v1', '/listeo-hybrid-search', array(
             'methods' => 'POST',
             'callback' => array($this, 'hybrid_search'),
-            'permission_callback' => '__return_true',
+            'permission_callback' => '__return_true', // Public: global hourly API cap enforced in callback
             'args' => array(
                 'query' => array(
                     'required' => true,
@@ -96,7 +96,7 @@ class Listeo_AI_Integration {
         register_rest_route('listeo/v1', '/listeo-listing-details', array(
             'methods' => 'POST',
             'callback' => array($this, 'get_listing_details'),
-            'permission_callback' => '__return_true',
+            'permission_callback' => '__return_true', // Public by design: returns public listing data only
             'args' => array(
                 'listing_id' => array(
                     'required' => false,
@@ -122,7 +122,7 @@ class Listeo_AI_Integration {
      * @return WP_REST_Response
      */
     public function hybrid_search($request) {
-        // Rate limit check - prevent API abuse
+        // Read-only pre-filter; actual atomic quota is consumed deeper in AI_Engine → generate_embedding() / expand_query_if_enabled()
         if (!Listeo_AI_Search_Embedding_Manager::check_rate_limit()) {
             return new WP_REST_Response(array(
                 'success' => false,
@@ -143,6 +143,8 @@ class Listeo_AI_Integration {
         $query = $request->get_param('query');
         $location = $request->get_param('location');
         $radius = $request->get_param('radius');
+        $source = $request->get_param('source');
+        $is_chatbot = ($source === 'chatbot');
         $has_ai = class_exists('Listeo_AI_Search_AI_Engine');
 
         $debug = get_option('listeo_ai_search_debug_mode', false);
@@ -264,7 +266,8 @@ class Listeo_AI_Integration {
             }
 
             // AI search path - pass location-filtered IDs to reduce embedding load
-            $ai_results = apply_filters('listeo_search_ai_post_ids', $query, $location_filtered_ids);
+            // When chatbot: skip threshold (LLM will re-rank), use chatbot max results limit
+            $ai_results = apply_filters('listeo_search_ai_post_ids', $query, $location_filtered_ids, $is_chatbot);
 
             if ($debug) {
                 error_log('AI search returned: ' . (is_array($ai_results) ? count($ai_results) : 0) . ' results');

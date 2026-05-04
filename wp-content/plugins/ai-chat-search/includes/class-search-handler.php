@@ -56,7 +56,7 @@ class Listeo_AI_Search_Search_Handler {
         add_action('wp_ajax_listeo_ai_test', array($this, 'handle_test_action'));
         add_action('wp_ajax_listeo_ai_analytics', array($this, 'handle_analytics_action'));
 
-        add_filter('listeo_search_ai_post_ids', array($this, 'get_ai_search_post_ids'), 10, 2);
+        add_filter('listeo_search_ai_post_ids', array($this, 'get_ai_search_post_ids'), 10, 3);
     }
 
 
@@ -65,8 +65,9 @@ class Listeo_AI_Search_Search_Handler {
      *
      * @param string $ai_search_input Search query
      * @param array $location_filtered_ids Optional pre-filtered listing IDs from SQL location search
+     * @param bool $skip_threshold Skip similarity threshold (for LLM re-ranking in chatbot)
      */
-    public function get_ai_search_post_ids( $ai_search_input, $location_filtered_ids = array())
+    public function get_ai_search_post_ids( $ai_search_input, $location_filtered_ids = array(), $skip_threshold = false)
     {
         // Trim and normalize the input
         $normalized_query = trim($ai_search_input);
@@ -89,6 +90,26 @@ class Listeo_AI_Search_Search_Handler {
             return false;
         }
 
+        // Short-lived cache: listeo-core fires this filter twice per search
+        // (page render + AJAX listeo_get_listings) - avoid duplicate API calls
+        $debug_mode = get_option('listeo_ai_search_debug_mode', false);
+        $cache_key = 'ai_search_rc_' . md5($normalized_query);
+        $cached = !$debug_mode ? get_transient($cache_key) : false;
+        if ($cached !== false && is_array($cached) && !empty($cached['listings'])) {
+            if ($debug_mode) {
+                Listeo_AI_Search_Utility_Helper::debug_log('AI Search: Returning cached results for "' . $normalized_query . '"');
+            }
+            $ai_post_ids = array();
+            foreach ($cached['listings'] as $r) {
+                if (isset($r['id'])) {
+                    $ai_post_ids[] = $r['id'];
+                } elseif (is_numeric($r)) {
+                    $ai_post_ids[] = $r;
+                }
+            }
+            return $ai_post_ids;
+        }
+
         try {
             // Get AI search results
             $ai_engine = new Listeo_AI_Search_AI_Engine();
@@ -100,8 +121,10 @@ class Listeo_AI_Search_Search_Handler {
             }
 
             // Provide default values for limit, offset, and listing_types
-            // Increased to 150 to ensure chatbot has enough results after post-filtering (location, price, rating, dates)
-            $ai_results = $ai_engine->search($normalized_query, 150, 0, 'all', $debug, $location_filtered_ids);
+            // When skip_threshold: use chatbot max results setting (LLM will filter further)
+            // Otherwise: overfetch 150 to compensate for threshold false-negatives + post-filtering
+            $search_limit = $skip_threshold ? intval(get_option('listeo_ai_chat_max_results', 10)) : 150;
+            $ai_results = $ai_engine->search($normalized_query, $search_limit, 0, 'all', $debug, $location_filtered_ids, false, $skip_threshold);
 
             // Increment usage counter after successful API call
             $new_usage = $this->increment_hour_usage();
@@ -135,6 +158,7 @@ class Listeo_AI_Search_Search_Handler {
                 Listeo_AI_Search_Utility_Helper::debug_log('Found ' . count($ai_post_ids) . ' results for query: ' . $normalized_query);
             }
 
+            if (!$debug_mode) { set_transient($cache_key, $ai_results, 15); }
             return $ai_post_ids;
         }
 
@@ -185,8 +209,18 @@ class Listeo_AI_Search_Search_Handler {
             wp_die('Security check failed');
         }
         
+        // Honeypot check - if filled, silently reject
+        $honeypot = isset($_POST['ai_search_hp']) ? sanitize_text_field(wp_unslash($_POST['ai_search_hp'])) : '';
+        if (!empty($honeypot)) {
+            wp_send_json_success(array(
+                'listings' => array(),
+                'total_found' => 0,
+            ));
+            return;
+        }
+
         // Enhanced input validation
-        $query = sanitize_text_field($_POST['query'] ?? '');
+        $query = sanitize_text_field(wp_unslash($_POST['query'] ?? ''));
         $limit = max(1, min(50, intval($_POST['limit'] ?? 10))); // Limit between 1-50
         $offset = max(0, intval($_POST['offset'] ?? 0));
 
@@ -255,34 +289,44 @@ class Listeo_AI_Search_Search_Handler {
         
         try {
             if ($use_ai && !empty($this->api_key)) {
-                if ($debug) {
-                    $debug_info['search_mode'] = 'AI Search';
-                    $debug_info['api_key_status'] = 'configured';
-                }
-                
-                // Auto-detect batch processing based on embedding count
-                // Threshold: 5000 embeddings, Batch size: 3000 (safe for 256MB PHP)
-                $auto_batch_threshold = 5000;
-                $auto_batch_size = 3000;
-
-                $total_embeddings = Listeo_AI_Search_Database_Manager::count_embeddings_for_search($listing_types);
-
-                if ($total_embeddings > $auto_batch_threshold) {
+                // Check short-lived cache - skip API call if same query was just searched
+                $cache_key = 'ai_search_rc_' . md5($query);
+                $cached = !$debug ? get_transient($cache_key) : false;
+                if ($cached !== false && is_array($cached) && !empty($cached['listings'])) {
                     if ($debug) {
-                        $debug_info['batch_processing'] = 'auto-enabled';
-                        $debug_info['total_embeddings'] = $total_embeddings;
-                        $debug_info['batch_size'] = $auto_batch_size;
-                        Listeo_AI_Search_Utility_Helper::debug_log('SEARCH MODE: Auto-batch enabled (' . $total_embeddings . ' embeddings > ' . $auto_batch_threshold . ' threshold)');
+                        Listeo_AI_Search_Utility_Helper::debug_log('AI Search: Returning cached results for "' . $query . '"');
                     }
-                    $results = $this->ai_engine->search_with_batching($query, $limit, $offset, $listing_types, $debug, $auto_batch_size);
+                    $results = $cached;
                 } else {
                     if ($debug) {
-                        $debug_info['batch_processing'] = 'disabled (small dataset)';
-                        $debug_info['total_embeddings'] = $total_embeddings;
-                        Listeo_AI_Search_Utility_Helper::debug_log('SEARCH MODE: Standard processing (' . $total_embeddings . ' embeddings <= ' . $auto_batch_threshold . ' threshold)');
+                        $debug_info['search_mode'] = 'AI Search';
+                        $debug_info['api_key_status'] = 'configured';
                     }
-                    $results = $this->ai_engine->search($query, $limit, $offset, $listing_types, $debug);
-                }
+
+                    // Auto-detect batch processing based on embedding count
+                    // Threshold: 5000 embeddings, Batch size: 3000 (safe for 256MB PHP)
+                    $auto_batch_threshold = 5000;
+                    $auto_batch_size = 3000;
+
+                    $total_embeddings = Listeo_AI_Search_Database_Manager::count_embeddings_for_search($listing_types);
+
+                    if ($total_embeddings > $auto_batch_threshold) {
+                        if ($debug) {
+                            $debug_info['batch_processing'] = 'auto-enabled';
+                            $debug_info['total_embeddings'] = $total_embeddings;
+                            $debug_info['batch_size'] = $auto_batch_size;
+                            Listeo_AI_Search_Utility_Helper::debug_log('SEARCH MODE: Auto-batch enabled (' . $total_embeddings . ' embeddings > ' . $auto_batch_threshold . ' threshold)');
+                        }
+                        $results = $this->ai_engine->search_with_batching($query, $limit, $offset, $listing_types, $debug, $auto_batch_size);
+                    } else {
+                        if ($debug) {
+                            $debug_info['batch_processing'] = 'disabled (small dataset)';
+                            $debug_info['total_embeddings'] = $total_embeddings;
+                            Listeo_AI_Search_Utility_Helper::debug_log('SEARCH MODE: Standard processing (' . $total_embeddings . ' embeddings <= ' . $auto_batch_threshold . ' threshold)');
+                        }
+                        $results = $this->ai_engine->search($query, $limit, $offset, $listing_types, $debug);
+                    }
+                } // end cache else
             } else {
                 if ($debug) {
                     $debug_info['search_mode'] = 'Regular Search';
@@ -299,6 +343,11 @@ class Listeo_AI_Search_Search_Handler {
             
             // Log search analytics
             Listeo_AI_Search_Analytics::log_search($query, $results_count, $search_type, $processing_time);
+
+            // Cache full results so handle_search() and get_ai_search_post_ids() can reuse them
+            if (!$debug && $search_type === 'ai' && !empty($results['listings'])) {
+                set_transient('ai_search_rc_' . md5($query), $results, 15);
+            }
             
             if ($debug) {
                 $debug_info['processing_time'] = $processing_time . 'ms';

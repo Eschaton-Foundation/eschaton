@@ -522,39 +522,36 @@
                         // Update action links - Documents have special handling
                         const $actions = $card.find('.manual-selection-actions');
 
+                        const s = listeoAiUniversalSettings.strings;
                         if (postType === 'ai_pdf_document') {
-                            // Documents show Upload button instead of Manual selection
                             $actions.html(`
                                 <a href="#" class="pdf-upload-link" id="upload-pdf-btn">
                                     <span class="dashicons dashicons-upload"></span>
-                                    Upload documents
+                                    ${s.upload_documents}
                                 </a>
                             `);
                         } else if (postType === 'ai_external_page') {
-                            // External Pages show Add button instead of Manual selection
                             $actions.html(`
                                 <a href="#" class="external-pages-link" id="manage-external-pages-btn">
                                     <span class="dashicons dashicons-admin-site-alt3"></span>
-                                    Add external pages
+                                    ${s.add_external_pages}
                                 </a>
                             `);
                         } else if (stats.has_manual_selection) {
-                            // Show active state with clear link
                             $actions.html(`
                                 <a href="#" class="manual-selection-link active" data-post-type="${postType}">
                                     <span class="dashicons dashicons-yes"></span>
-                                    Manual selection active
+                                    ${s.manual_selection_active}
                                 </a>
                                 <a href="#" class="clear-selection-link" data-post-type="${postType}">
-                                    Clear
+                                    ${s.clear}
                                 </a>
                             `);
                         } else {
-                            // Show normal state
                             $actions.html(`
                                 <a href="#" class="manual-selection-link" data-post-type="${postType}">
                                     <span class="dashicons dashicons-admin-generic"></span>
-                                    Manual selection
+                                    ${s.manual_selection}
                                 </a>
                             `);
                         }
@@ -666,11 +663,11 @@
 
                         $countText.html(html);
                     } else {
-                        $countText.text('Error loading content count');
+                        $countText.text(listeoAiUniversalSettings.strings.error_loading_count);
                     }
                 },
                 error: () => {
-                    $countText.text('Error loading content count');
+                    $countText.text(listeoAiUniversalSettings.strings.error_loading_count);
                 }
             });
         },
@@ -789,7 +786,7 @@
                         // On first load, initialize selected IDs from saved selection
                         if (isFirstLoad) {
                             this._modalSelectedIds = new Set((data.selected_ids || []).map(id => parseInt(id)));
-                            $('#modal-title').text(`Manual Selection - ${data.post_type_label}`);
+                            $('#modal-title').text(`${listeoAiUniversalSettings.strings.manual_selection} - ${data.post_type_label}`);
                         }
 
                         this.renderPostsPage(data.posts, isFirstLoad);
@@ -799,7 +796,7 @@
                     }
                 },
                 error: () => {
-                    $list.html('<p class="error-message">Error loading posts</p>');
+                    $list.html('<p class="error-message">' + listeoAiUniversalSettings.strings.error_loading_posts + '</p>');
                 }
             });
         },
@@ -821,6 +818,7 @@
             }
 
             let html = '';
+            const s = listeoAiUniversalSettings.strings;
             posts.forEach((post) => {
                 const postId = parseInt(post.ID);
                 const isChecked = this._modalSelectedIds.has(postId);
@@ -833,8 +831,8 @@
                         <input type="checkbox" value="${postId}" ${isChecked ? 'checked' : ''}>
                         <span class="post-title">${post.post_title}</span>
                         <span class="post-id">ID: ${postId}</span>
-                        ${isVerified ? '<span class="post-verified-badge">✓ Verified</span>' : ''}
-                        <span class="post-status">${hasEmbedding ? '✓ Indexed' : 'Pending'}</span>
+                        ${isVerified ? '<span class="post-verified-badge">✓ ' + s.verified + '</span>' : ''}
+                        <span class="post-status">${hasEmbedding ? '✓ ' + s.indexed : s.pending}</span>
                     </label>
                 `;
             });
@@ -980,7 +978,8 @@
         updateSelectionCount: function() {
             const selected = this._modalSelectedIds.size;
             const total = this._modalTotalPosts;
-            $('#modal-selection-count').text(`${selected} of ${total} selected`);
+            const s = listeoAiUniversalSettings.strings;
+            $('#modal-selection-count').text(`${selected} ${s.selected_of} ${total} ${s.selected}`);
         },
 
         /**
@@ -1135,7 +1134,7 @@
 
             if (status === 'indexed') {
                 // Update status text and styling
-                $statusSpan.text('Indexed')
+                $statusSpan.text('✓ ' + listeoAiUniversalSettings.strings.indexed)
                     .removeClass('pending')
                     .addClass('indexed');
 
