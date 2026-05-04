@@ -723,9 +723,18 @@ class Languages {
 	 * @return PLL_Language|false Default language object, `false` if no language found.
 	 */
 	public function get_default() {
-		if ( empty( $this->options['default_lang'] ) ) {
+		if ( ! empty( $this->options['default_lang'] ) ) {
+			return $this->get( $this->options['default_lang'] );
+		}
+
+		// It happens that there the default language is lost. We require one, so let's select one arbitrarily.
+		$terms = $this->get_terms();
+		if ( empty( $terms ) ) {
 			return false;
 		}
+
+		$default_term = reset( $terms );
+		$this->update_default( $default_term->slug );
 
 		return $this->get( $this->options['default_lang'] );
 	}
