@@ -783,8 +783,13 @@
     gap: 12px;
 }
 
+.listeo-ai-modal-controls .button,
 .listeo-ai-modal-footer .button {
     margin: 0;
+    border-radius: 5px !important;
+}
+.listeo-ai-modal-footer .button .dashicons {
+    line-height: 20px !important;
 }
 
 .listeo-ai-modal-footer #modal-selection-count {
@@ -805,14 +810,14 @@
     gap: 6px;
 }
 
-#modal-train-now .dashicons {
-    font-size: 16px;
+#modal-train-now .airs-button-icon {
+    color: #fff;
     width: 16px;
     height: 16px;
-    margin-top: -2px;
+    flex-shrink: 0;
 }
 
-#modal-train-now .dashicons.spin {
+#modal-train-now .airs-button-icon.spin {
     animation: spin 1s linear infinite;
 }
 

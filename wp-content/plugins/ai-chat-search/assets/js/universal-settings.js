@@ -1152,7 +1152,10 @@
          */
         initTrialBanner: function() {
             var $banner = $('#airs-trial-banner');
-            if ($banner.length && localStorage.getItem('airs_trial_banner_dismissed') === 'true') {
+            if (!$banner.length || !$banner.find('#airs-trial-close').length) {
+                return;
+            }
+            if (localStorage.getItem('airs_trial_banner_dismissed') === 'true') {
                 $banner.hide();
             }
         },
@@ -1165,6 +1168,9 @@
             e.stopPropagation();
 
             var $banner = $('#airs-trial-banner');
+            if (!$banner.find('#airs-trial-close').length) {
+                return;
+            }
             $banner.fadeOut(200, function() {
                 localStorage.setItem('airs_trial_banner_dismissed', 'true');
             });

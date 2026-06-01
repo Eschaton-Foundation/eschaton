@@ -344,14 +344,15 @@
 /* ===== POWERED BY ===== */
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-powered-by {
     color: var(--chat-text-muted) !important;
+    margin-top: -8px !important;
 }
 
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-powered-by a {
-    color: var(--ai-chat-primary-color, #5fa8ff) !important;
+    color: #fff !important;
 }
 
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-powered-by a:hover {
-    color: var(--chat-text) !important;
+    color: #fff !important;
 }
 
 /* ===== TERMS NOTICE ===== */

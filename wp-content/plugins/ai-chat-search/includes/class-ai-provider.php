@@ -418,6 +418,12 @@ class Listeo_AI_Provider {
         if ($tools && is_array($tools) && count($tools) > 0) {
             $payload['tools'] = $tools;
 
+            // The frontend executes one tool call at a time. Keep compatible
+            // providers from returning multiple parallel tool calls in one turn.
+            if (in_array($this->get_provider(), array('openai', 'openrouter'), true)) {
+                $payload['parallel_tool_calls'] = false;
+            }
+
             // Only include tool_choice if tools are present
             if ($tool_choice) {
                 $payload['tool_choice'] = $tool_choice;
@@ -466,6 +472,14 @@ class Listeo_AI_Provider {
         }
         $has_prefix = strpos( $model, 'openai/' ) === 0;
         $bare = $this->get_bare_model( $model );
+
+        if ( $model === 'gemini-3.1-flash-lite-preview' ) {
+            return 'gemini-3.1-flash-lite';
+        }
+
+        if ( $model === 'google/gemini-3.1-flash-lite-preview' ) {
+            return 'google/gemini-3.1-flash-lite';
+        }
 
         // GPT-5.2 has broken tool calling - map to 5.1
         if ( $bare === 'gpt-5.2' ) {
@@ -538,7 +552,7 @@ class Listeo_AI_Provider {
                 $payload['reasoning_effort'] = 'low';
             } elseif ( strpos( $model, 'gemini-3.1-pro' ) !== false || strpos( $model, 'gemini-3-pro' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
-            } elseif ( strpos( $model, 'gemini-3-flash' ) !== false ) {
+            } elseif ( strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
             }
         }
@@ -553,9 +567,10 @@ class Listeo_AI_Provider {
                 // Explicit reasoning override takes precedence over toggle logic.
                 $payload['reasoning'] = array( 'effort' => $force_reasoning );
             } elseif ( ! get_option( 'listeo_ai_openrouter_reasoning', 0 ) ) {
-                // Some models reject 'none' with HTTP 400 (openai/*, google/gemini-3.1-pro*)
+                // Some models reject 'none' with HTTP 400 (openai/*, select google/gemini-3*)
                 $reasoning_mandatory = ( strpos( $payload['model'], 'openai/' ) === 0 )
-                    || ( strpos( $payload['model'], 'google/gemini-3.1-pro' ) !== false );
+                    || ( strpos( $payload['model'], 'google/gemini-3.1-pro' ) !== false )
+                    || ( strpos( $payload['model'], 'google/gemini-3.5-flash' ) !== false );
                 $effort = $reasoning_mandatory ? 'minimal' : 'none';
                 $payload['reasoning'] = array( 'effort' => $effort );
             } else {

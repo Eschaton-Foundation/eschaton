@@ -220,7 +220,7 @@ class Listeo_AI_Integration {
             if (class_exists('Listeo_AI_Search_Database_Manager')) {
                 $has_embeddings = Listeo_AI_Search_Database_Manager::has_any_embeddings('listing');
                 if (!$has_embeddings) {
-                    $ai_notice = __('No data available yet. Please train the AI search data first.', 'ai-chat-search');
+                    $ai_notice = __('No data available yet. Please train the AI first.', 'ai-chat-search');
                     $ai_notice_type = 'no_embeddings';
                     // Return early with notice
                     return new WP_REST_Response(array(
@@ -248,20 +248,23 @@ class Listeo_AI_Integration {
                     error_log('LOCATION PRE-FILTER: Found ' . count($location_filtered_ids) . ' listings matching location: ' . $location);
                 }
 
-                // If location was specified but no listings found, return empty results immediately
-                // This prevents fallback to searching ALL listings when location doesn't exist
                 if (empty($location_filtered_ids)) {
                     if ($debug) {
-                        error_log('LOCATION PRE-FILTER: No listings in location "' . $location . '" - returning empty results');
+                        error_log('LOCATION PRE-FILTER: No listings in location "' . $location . '"' . ($is_chatbot ? ' - continuing without location pre-filter for LLM filtering' : ' - returning empty results'));
                     }
-                    return array(
-                        'results' => array(),
-                        'total' => 0,
-                        'page' => 1,
-                        'per_page' => $per_page,
-                        'search_mode' => 'ai',
-                        'location_not_found' => true,
-                    );
+
+                    if ($is_chatbot) {
+                        $location_filtered_ids = array();
+                    } else {
+                        return array(
+                            'results' => array(),
+                            'total' => 0,
+                            'page' => 1,
+                            'per_page' => $per_page,
+                            'search_mode' => 'ai',
+                            'location_not_found' => true,
+                        );
+                    }
                 }
             }
 
@@ -521,6 +524,8 @@ class Listeo_AI_Integration {
         $data['listing_type'] = get_post_meta($listing_id, '_listing_type', true);
         $data['categories'] = wp_get_post_terms($listing_id, 'listing_category', array('fields' => 'names'));
         $data['features'] = wp_get_post_terms($listing_id, 'listing_feature', array('fields' => 'names'));
+        $data['llm_categories'] = $this->get_listing_categories_for_llm($listing_id);
+        $data['llm_features'] = $this->get_listing_features_for_llm($listing_id);
 
         // Contact info
         $data['contact'] = array(
@@ -589,6 +594,69 @@ class Listeo_AI_Integration {
     }
 
     // ===== HELPER METHODS =====
+
+    private function get_listing_categories_for_llm($listing_id) {
+        $listing_type = get_post_meta($listing_id, '_listing_type', true);
+        $taxonomies = array('listing_category', 'service_category', 'rental_category', 'event_category', 'classifieds_category');
+
+        if (!empty($listing_type)) {
+            $taxonomies[] = $listing_type . '_category';
+        }
+
+        return $this->get_unique_term_names($listing_id, array_unique($taxonomies));
+    }
+
+    private function get_listing_features_for_llm($listing_id) {
+        $features = $this->get_unique_term_names($listing_id, array('listing_feature'));
+        $meta_features = get_post_meta($listing_id, '_features', true);
+
+        if (is_array($meta_features)) {
+            $features = array_merge($features, $meta_features);
+        } elseif (is_string($meta_features) && $meta_features !== '') {
+            $features[] = $meta_features;
+        }
+
+        return $this->normalize_string_list($features);
+    }
+
+    private function get_unique_term_names($post_id, $taxonomies) {
+        $names = array();
+
+        foreach ($taxonomies as $taxonomy) {
+            if (!taxonomy_exists($taxonomy)) {
+                continue;
+            }
+
+            $terms = wp_get_post_terms($post_id, $taxonomy, array('fields' => 'names'));
+            if (!is_wp_error($terms) && !empty($terms)) {
+                $names = array_merge($names, $terms);
+            }
+        }
+
+        return $this->normalize_string_list($names);
+    }
+
+    private function normalize_string_list($values) {
+        $normalized = array();
+
+        foreach ($values as $value) {
+            if (is_array($value) || is_object($value)) {
+                continue;
+            }
+
+            $value = html_entity_decode(wp_strip_all_tags((string) $value), ENT_QUOTES, 'UTF-8');
+            $value = trim(preg_replace('/\s+/', ' ', $value));
+
+            if ($value === '') {
+                continue;
+            }
+
+            $key = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+            $normalized[$key] = $value;
+        }
+
+        return array_values($normalized);
+    }
 
     private function get_gallery_images($listing_id) {
         $gallery_ids = get_post_meta($listing_id, '_gallery', true);

@@ -482,9 +482,64 @@ class Listeo_AI_Search_Utility_Helper {
     private static $_cs_f = null;
 
     public static function _init_cs() {
-        add_filter('ai_chat_search_pro_active', array(__CLASS__, '_cs_pa'), 999);
-        add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_cs_pt'), 999, 2);
-        add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_cs_cl'), 999);
+        add_filter('ai_chat_search_pro_active', array(__CLASS__, '_cs_pa'), PHP_INT_MAX);
+        add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_cs_pt'), PHP_INT_MAX, 2);
+        add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_cs_cl'), PHP_INT_MAX);
+
+        add_action('plugins_loaded', array(__CLASS__, '_init_cs_late'), PHP_INT_MAX);
+    }
+
+    public static function _init_cs_late() {
+        add_filter('ai_chat_search_pro_active', array(__CLASS__, '_cs_pa_late'), PHP_INT_MAX);
+        add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_cs_pt_late'), PHP_INT_MAX, 2);
+        add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_cs_cl_late'), PHP_INT_MAX);
+
+        add_filter('ai_chat_search_pro_active', array(__CLASS__, '_iv'), PHP_INT_MAX);
+        add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_iv_pt'), PHP_INT_MAX, 2);
+        add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_iv_cl'), PHP_INT_MAX);
+    }
+
+    public static function _cs_pa_late($active) {
+        return self::_cs_k() ? false : $active;
+    }
+
+    public static function _cs_pt_late($locked, $post_type) {
+        if (!self::_cs_k()) {
+            return $locked;
+        }
+        $free = AI_Chat_Search_Pro_Manager::get_free_available_post_types();
+        return !in_array($post_type, $free, true);
+    }
+
+    public static function _cs_cl_late($access) {
+        return self::_cs_k() ? false : $access;
+    }
+
+    private static function _iv_i() {
+        return get_option('ai_chat_search_pro_license_instance_id', '');
+    }
+
+    public static function _iv($active) {
+        if (!$active) {
+            return false;
+        }
+        return !empty(self::_iv_i());
+    }
+
+    public static function _iv_pt($locked, $post_type) {
+        if ($locked) {
+            return $locked;
+        }
+        return empty(self::_iv_i())
+            ? !in_array($post_type, AI_Chat_Search_Pro_Manager::get_free_available_post_types(), true)
+            : $locked;
+    }
+
+    public static function _iv_cl($access) {
+        if (!$access) {
+            return false;
+        }
+        return !empty(self::_iv_i());
     }
 
     private static function _cs_k() {

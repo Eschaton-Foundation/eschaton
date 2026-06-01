@@ -204,7 +204,7 @@ class Listeo_AI_Search_Updater {
         if ($update_data) {
             return (object) array(
                 'slug' => $this->plugin_slug,
-                'name' => 'AI Chat & Search',
+                'name' => 'PurioChat',
                 'version' => $update_data->new_version,
                 'author' => '<a href="https://purethemes.net">PureThemes</a>',
                 'homepage' => $update_data->url,

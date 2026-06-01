@@ -379,7 +379,12 @@ class Listeo_AI_Search_Universal_Settings {
                             <button type="button" class="button" id="modal-cancel"><?php _e('Cancel', 'ai-chat-search'); ?></button>
                             <button type="button" class="button button-secondary" id="modal-save"><?php _e('Save Selection', 'ai-chat-search'); ?></button>
                             <button type="button" class="button button-primary" id="modal-train-now">
-                                <span class="dashicons dashicons-update"></span>
+                                <svg class="airs-button-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                    <path d="M3 21v-5h5"></path>
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                    <path d="M16 8h5V3"></path>
+                                </svg>
                                 <?php _e('Train Now', 'ai-chat-search'); ?>
                             </button>
                         </div>

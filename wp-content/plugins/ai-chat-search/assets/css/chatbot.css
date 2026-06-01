@@ -4,7 +4,7 @@
  * @package AI Chat by Purethemes
  */
 
-/* Chat Wrapper */
+/* Chat Wrapper  */
 .listeo-ai-chat-wrapper {
     width: 100%;
     margin: 0 auto;
@@ -643,7 +643,7 @@ body p.listeo-ai-listing-excerpt {
     }
 }
 .listeo-ai-chat-loading {
-    top: 2px;
+    top: 1px;
     margin-right: 2px;
     position: relative;
     display: inline-block;
@@ -1154,7 +1154,7 @@ padding: 12px 0;
 .elementor .listeo-ai-listing-item.listeo-ai-listing-item.listeo-ai-listing-hidden { display: none; }
 
 /*--------------------------------------
-# Powered by Purethemes Badge
+# Powered by PurioChat Badge
 ---------------------------------------*/
 .listeo-ai-chat-powered-by {
     text-align: center;
@@ -1167,10 +1167,25 @@ padding: 12px 0;
 }
 
 .listeo-ai-chat-powered-by a {
-    color: var(--ai-chat-primary-color, #0073ee);
+    color: #111;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 500;
     transition: color 0.2s ease;
+}
+
+.listeo-ai-chat-powered-by-logo {
+    display: inline-block;
+    position: relative;
+    top: 1px;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin: 0px 2px 0px 2px !important;
+    vertical-align: -3px;
+}
+
+.listeo-ai-chat-powered-by-name {
+    font-weight: 600;
 }
 
 .listeo-ai-chat-powered-by a:hover {
@@ -2290,4 +2305,3 @@ div.listeo-ai-product-card .listeo-ai-listing-thumbnail a {
     color: #fff;
     text-decoration: none;
 }
-

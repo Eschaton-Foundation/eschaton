@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: AI Chat & Search
+ * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.0.7
+ * Version: 2.1.18
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.0.7");
+define("LISTEO_AI_SEARCH_VERSION", "2.1.18");
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
 
@@ -84,7 +84,7 @@ class Listeo_AI_Search
         // Prevent WordPress from translating plugin name in admin — brand name should stay as-is
         if (is_admin()) {
             add_filter('gettext_ai-chat-search', function ($translation, $text) {
-                if ($text === 'AI Chat & Search') {
+                if ($text === 'PurioChat') {
                     return $text;
                 }
                 return $translation;
@@ -168,6 +168,11 @@ class Listeo_AI_Search
             // get auto-enabled via initialize_default_settings() default of 1
             if (version_compare($installed_version, "1.9.6", "<") && get_option("listeo_ai_chat_woo_cart_enabled") === false) {
                 add_option("listeo_ai_chat_woo_cart_enabled", 0);
+            }
+
+            // 2.1.2: Enable order checking by default for existing installs
+            if (version_compare($installed_version, "2.1.2", "<") && get_option("listeo_ai_chat_woo_order_checking_enabled") === false) {
+                add_option("listeo_ai_chat_woo_order_checking_enabled", 1);
             }
 
             // Update stored version
@@ -1082,7 +1087,7 @@ function listeo_ai_get_chat_strings($welcome_message = "")
         ),
         "micNoSSL" => __("Not available without SSL", "ai-chat-search"),
         "audioTooLarge" => __(
-            "Recording is too long. Please try a shorter message.",
+            "Recording is too large. Please keep it under 3MB.",
             "ai-chat-search",
         ),
         "transcriptionFailed" => __(
@@ -1173,24 +1178,15 @@ function listeo_ai_get_chat_js_config()
         ? wp_get_attachment_image_url($chat_avatar_id, "thumbnail")
         : "";
 
-    // Get chat config from Chat_API (includes enabled, model, listeo_available, tools, api_configured)
     $chat_config = [];
     if (class_exists("Listeo_AI_Search_Chat_API")) {
         $chat_config = Listeo_AI_Search_Chat_API::get_chat_config();
-        // Remove system_prompt - it's sensitive and handled server-side
-        unset($chat_config["system_prompt"]);
     }
 
-    // Only check embeddings for admins - avoids DB query for regular visitors
-    if (current_user_can("manage_options") && class_exists("Listeo_AI_Search_Database_Manager")) {
-        global $wpdb;
-        $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
-        $chat_config["has_embeddings"] = false;
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$embeddings_table}'") === $embeddings_table) {
-            $chat_config["has_embeddings"] = (bool) $wpdb->get_var("SELECT 1 FROM {$embeddings_table} LIMIT 1");
-        }
-    } else {
-        $chat_config["has_embeddings"] = true;
+    // Expose model to frontend only in debug mode (for plugin tester)
+    $debug_mode = (bool) get_option("listeo_ai_search_debug_mode", false);
+    if ($debug_mode) {
+        $chat_config["model"] = get_option("listeo_ai_chat_model", "gpt-5.4-mini");
     }
 
     $config = [
@@ -1198,10 +1194,9 @@ function listeo_ai_get_chat_js_config()
         "apiBase" => esc_url(rest_url("listeo/v1")),
         "nonce" => wp_create_nonce("wp_rest"),
         "isLoggedIn" => is_user_logged_in(),
-        "isAdmin" => current_user_can("manage_options"),
 
         // Debug mode
-        "debugMode" => (bool) get_option("listeo_ai_search_debug_mode", false),
+        "debugMode" => $debug_mode,
 
         // UI settings
         "placeholderImage" => esc_url($placeholder_url),
@@ -1210,11 +1205,6 @@ function listeo_ai_get_chat_js_config()
         "hideImages" => get_option("listeo_ai_chat_hide_images", 1),
         "loadingStyle" => get_option("listeo_ai_chat_loading_style", "spinner"),
         "typingAnimation" => (bool) get_option("listeo_ai_chat_typing_animation", 1),
-        "colorScheme" => get_option("listeo_ai_color_scheme", "light"),
-        "ragSourcesLimit" => max(2, intval(get_option("listeo_ai_chat_rag_sources_limit", 5))),
-        "imageInputEnabled" => class_exists("AI_Chat_Search_Pro_Manager")
-            && AI_Chat_Search_Pro_Manager::is_pro_active()
-            && (bool) get_option("listeo_ai_chat_enable_image_input", 0),
         "hasImageHeader" => in_array(get_option("listeo_ai_floating_header_style", "simple"), ["image", "animated"]),
         "hasImageHeaderOverlay" => (get_option("listeo_ai_floating_header_style", "simple") === "animated")
             || (get_option("listeo_ai_floating_header_style", "simple") === "image"
@@ -1251,13 +1241,27 @@ function listeo_ai_get_chat_js_config()
         // Localized strings
         "strings" => listeo_ai_get_chat_strings($welcome_message),
 
-        // Chat config (previously fetched via /chat-config API)
-        // Now included inline to eliminate extra HTTP request
+        // Minimal frontend UI flags - everything else is server-side
         "chatConfig" => $chat_config,
     ];
 
     // Allow Pro plugin to add extra config (e.g., pre-chat fields)
     return apply_filters('listeo_ai_chat_js_config', $config);
+}
+
+/**
+ * Localize chat config onto a script handle.
+ * Guarded so it only outputs once per page regardless of how many
+ * components (floating widget, shortcode) enqueue it.
+ */
+function listeo_ai_localize_chat_config($handle)
+{
+    static $localized = false;
+    if ($localized) {
+        return;
+    }
+    wp_localize_script($handle, 'listeoAiChatConfig', listeo_ai_get_chat_js_config());
+    $localized = true;
 }
 
 /**
@@ -1278,6 +1282,27 @@ add_action('wp_ajax_nopriv_listeo_ai_update_cart_qty', 'listeo_ai_handle_update_
 
 add_action('wp_ajax_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
 add_action('wp_ajax_nopriv_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
+
+function listeo_ai_clear_cart_events_for_conversation($conversation_id) {
+    $conversation_id = substr(sanitize_text_field($conversation_id), 0, 64);
+    if (empty($conversation_id)) {
+        return false;
+    }
+
+    $events = get_option('listeo_ai_cart_events', array());
+    if (!is_array($events) || !isset($events[$conversation_id])) {
+        return false;
+    }
+
+    unset($events[$conversation_id]);
+    update_option('listeo_ai_cart_events', $events, false);
+
+    return true;
+}
+
+function listeo_ai_clear_all_cart_events() {
+    delete_option('listeo_ai_cart_events');
+}
 
 function listeo_ai_handle_add_to_cart() {
     if (!function_exists('WC') || !WC()->cart) {

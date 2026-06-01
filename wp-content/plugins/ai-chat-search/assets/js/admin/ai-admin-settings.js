@@ -90,7 +90,7 @@
                         $providerSelect.data('original-value', pendingProvider);
                         $('#provider-change-modal').fadeOut(200);
 
-                        var $form = $('.airs-ajax-form[data-section="settings-config"]');
+                        var $form = $('.airs-ajax-form[data-section="ai-chat-config"]');
                         if ($form.length) {
                             $form.trigger('submit');
                         }
@@ -139,7 +139,7 @@
                 modelGroup: 'model-group-gemini',
                 label: i18n.geminiModel || 'Gemini Model',
                 help: i18n.geminiModelHelp || 'Select the Gemini model for chat responses.',
-                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview'],
+                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'],
                 default: 'gemini-3-flash-preview'
             },
             mistral: {
@@ -157,7 +157,7 @@
                 help: i18n.openrouterModelHelp || 'Select an OpenRouter model for chat responses.',
                 // Any vendor/model slug is considered valid — OpenRouter has 300+ models.
                 // This list only governs auto-reset when switching into the openrouter provider.
-                models: ['openai/gpt-5-mini', 'openai/gpt-5.1', 'openai/gpt-5.3-chat-latest', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.1-flash-lite-preview', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
+                models: ['openai/gpt-5-mini', 'openai/gpt-5.1', 'openai/gpt-5.3-chat-latest', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.5-flash', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
                 default: 'openai/gpt-5.4-mini'
             }
         };

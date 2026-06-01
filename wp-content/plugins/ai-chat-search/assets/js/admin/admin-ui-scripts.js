@@ -1015,6 +1015,71 @@
     }
 
     /**
+     * AI Chat tab sidebar navigation: show one section at a time.
+     */
+    function initChatSettingsNav() {
+        var $sidebar = $('.airs-chat-sidebar');
+        if (!$sidebar.length) return;
+
+        var heightTimeout = null;
+
+        function switchSection(target) {
+            if (!target) return;
+            var $btn = $sidebar.find('.airs-chat-sidebar-item[data-target="' + target + '"]');
+            if (!$btn.length) return;
+
+            $sidebar.find('.airs-chat-sidebar-item')
+                .removeClass('is-active')
+                .attr('aria-selected', 'false');
+            $btn.addClass('is-active').attr('aria-selected', 'true');
+
+            var $next = $('.airs-card[data-chat-section="' + target + '"]');
+            if (!$next.length) return;
+
+            var $current = $('.airs-card[data-chat-section].is-active');
+            var formEl = document.getElementById('ai-chat-settings-form');
+
+            if (!formEl || !$current.length || $current[0] === $next[0]) {
+                $('.airs-card[data-chat-section]').removeClass('is-active');
+                $next.addClass('is-active');
+                return;
+            }
+
+            var startHeight = formEl.offsetHeight;
+            var endHeight = startHeight - $current[0].offsetHeight + $next[0].offsetHeight;
+
+            formEl.style.height = startHeight + 'px';
+
+            $('.airs-card[data-chat-section]').removeClass('is-active');
+            $next.addClass('is-active');
+
+            void formEl.offsetHeight;
+
+            formEl.style.height = endHeight + 'px';
+
+            if (heightTimeout) clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(function() {
+                formEl.style.height = '';
+                heightTimeout = null;
+            }, 370);
+        }
+
+        // Restore section from URL hash
+        var hash = window.location.hash.replace('#', '');
+        if (hash) {
+            switchSection(hash);
+        }
+
+        $sidebar.on('click', '.airs-chat-sidebar-item', function() {
+            var target = $(this).data('target');
+            switchSection(target);
+            if (target) {
+                window.location.hash = target;
+            }
+        });
+    }
+
+    /**
      * Initialize all UI handlers
      */
     function init() {
@@ -1037,6 +1102,7 @@
         initQuickButtonTypeChange();
         initQuickButtonColorPickers();
         initModalHandlers();
+        initChatSettingsNav();
         initContactFormHandlers();
 
         console.log('AIRS Admin UI loaded');

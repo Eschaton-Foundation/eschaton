@@ -29,6 +29,7 @@ class Admin_Chat_History {
      */
     public function __construct() {
         add_action('wp_ajax_listeo_ai_load_chat_history', array($this, 'ajax_load'));
+        add_action('wp_ajax_listeo_ai_load_conversation_messages', array($this, 'ajax_load_conversation_messages'));
         add_action('wp_ajax_listeo_ai_clear_chat_history', array($this, 'ajax_clear'));
         add_action('wp_ajax_listeo_ai_delete_conversation', array($this, 'ajax_delete_conversation'));
         add_action('wp_ajax_listeo_ai_export_chat_history_csv', array($this, 'ajax_export_csv'));
@@ -454,9 +455,8 @@ class Admin_Chat_History {
             <div id="listeo-history-conversations">
             <?php foreach ($conversations as $conv): ?>
                 <?php
-                $messages = Listeo_AI_Search_Chat_History::get_conversation($conv['conversation_id']);
                 $user_info = $conv['user_id'] ? get_userdata($conv['user_id']) : null;
-                $this->render_conversation_card($conv, $messages, $user_info);
+                $this->render_conversation_card($conv, null, $user_info);
                 ?>
             <?php endforeach; ?>
             </div>
@@ -536,10 +536,14 @@ class Admin_Chat_History {
      * Render a single conversation card
      *
      * @param array $conv Conversation data
-     * @param array $messages Messages in the conversation
+     * @param array|null $messages Messages in the conversation, or null to lazy load
      * @param WP_User|null $user_info User info or null for guest
      */
     public function render_conversation_card($conv, $messages, $user_info) {
+        $messages_loaded = is_array($messages);
+        $message_count = isset($conv['message_count'])
+            ? intval($conv['message_count'])
+            : ($messages_loaded ? count($messages) : 0);
         ?>
         <div class="airs-conversation-card" data-conversation-id="<?php echo esc_attr($conv['conversation_id']); ?>">
             <div class="airs-conversation-header">
@@ -615,50 +619,70 @@ class Admin_Chat_History {
 
             <details class="chat-history-details" style="margin-top: 10px;">
                 <summary class="airs-view-messages-summary">
-                    <span><?php _e('View Messages', 'ai-chat-search'); ?> (<?php echo count($messages); ?>)</span>
+                    <span><?php _e('View Messages', 'ai-chat-search'); ?> (<?php echo number_format_i18n($message_count); ?>)</span>
                     <span class="dashicons dashicons-arrow-down-alt2 airs-view-messages-chevron"></span>
                 </summary>
-                <div class="chat-history-messages">
-                    <?php
-                    // Hook for displaying pre-chat field data before messages
-                    do_action('ai_chat_search_conversation_messages_before', $messages, $conv['conversation_id']);
-                    ?>
-                    <?php foreach ($messages as $msg): ?>
-                        <div class="airs-chat-msg airs-chat-msg-user">
-                            <div class="airs-chat-msg-head">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                <span class="airs-chat-msg-name"><?php _e('User', 'ai-chat-search'); ?></span>
-                                <span class="airs-chat-msg-time"><?php echo date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at'])); ?></span>
-                                <?php if (!empty($msg['page_url'])): ?>
-                                    <span class="airs-chat-msg-sep">&bull;</span>
-                                    <a href="<?php echo esc_url($msg['page_url']); ?>"
-                                       target="_blank"
-                                       title="<?php echo esc_attr($msg['page_url']); ?>"
-                                       class="airs-chat-page-link">
-                                        <span class="airs-chat-page-link-text"><?php echo esc_html($this->get_page_title_from_url($msg['page_url'])); ?></span>
-                                        <svg class="airs-chat-page-link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                            <div class="airs-chat-msg-body">
-                                <?php echo esc_html(trim($msg['user_message'])); ?>
-                            </div>
-                        </div>
-
-                        <div class="airs-chat-msg airs-chat-msg-assistant">
-                            <div class="airs-chat-msg-head">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
-                                <span class="airs-chat-msg-name"><?php _e('AI Assistant', 'ai-chat-search'); ?></span>
-                                <span class="airs-chat-msg-time"><?php echo esc_html($msg['model_used']); ?></span>
-                            </div>
-                            <div class="airs-chat-msg-body">
-                                <?php echo nl2br(wp_kses($msg['assistant_message'], array('a' => array('href' => array(), 'title' => array(), 'target' => array(), 'rel' => array())))); ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="chat-history-messages" data-loaded="<?php echo $messages_loaded ? '1' : '0'; ?>">
+                    <?php if ($messages_loaded): ?>
+                        <?php $this->render_conversation_messages($conv['conversation_id'], $messages); ?>
+                    <?php else: ?>
+                        <div class="airs-audit-loading"><span class="airs-spinner"></span></div>
+                    <?php endif; ?>
                 </div>
             </details>
         </div>
+        <?php
+    }
+
+    /**
+     * Render messages for a conversation.
+     *
+     * @param string $conversation_id Conversation identifier
+     * @param array $messages Messages in the conversation
+     */
+    private function render_conversation_messages($conversation_id, $messages) {
+        if (empty($messages)) {
+            echo '<p style="text-align: center; padding: 24px; color: #666;">' . esc_html__('No messages found for this conversation.', 'ai-chat-search') . '</p>';
+            return;
+        }
+        ?>
+        <?php
+        // Hook for displaying pre-chat field data before messages
+        do_action('ai_chat_search_conversation_messages_before', $messages, $conversation_id);
+        ?>
+        <?php foreach ($messages as $msg): ?>
+            <div class="airs-chat-msg airs-chat-msg-user">
+                <div class="airs-chat-msg-head">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="airs-chat-msg-name"><?php _e('User', 'ai-chat-search'); ?></span>
+                    <span class="airs-chat-msg-time"><?php echo date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at'])); ?></span>
+                    <?php if (!empty($msg['page_url'])): ?>
+                        <span class="airs-chat-msg-sep">&bull;</span>
+                        <a href="<?php echo esc_url($msg['page_url']); ?>"
+                           target="_blank"
+                           title="<?php echo esc_attr($msg['page_url']); ?>"
+                           class="airs-chat-page-link">
+                            <span class="airs-chat-page-link-text"><?php echo esc_html($this->get_page_title_from_url($msg['page_url'])); ?></span>
+                            <svg class="airs-chat-page-link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <div class="airs-chat-msg-body">
+                    <?php echo esc_html(trim($msg['user_message'])); ?>
+                </div>
+            </div>
+
+            <div class="airs-chat-msg airs-chat-msg-assistant">
+                <div class="airs-chat-msg-head">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+                    <span class="airs-chat-msg-name"><?php _e('AI Assistant', 'ai-chat-search'); ?></span>
+                    <span class="airs-chat-msg-time"><?php echo esc_html($msg['model_used']); ?></span>
+                </div>
+                <div class="airs-chat-msg-body">
+                    <?php echo nl2br(wp_kses($msg['assistant_message'], array('a' => array('href' => array(), 'title' => array(), 'target' => array(), 'rel' => array())))); ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
         <?php
     }
 
@@ -670,6 +694,9 @@ class Admin_Chat_History {
         ?>
         <script>
         jQuery(document).ready(function($) {
+            function escapeHtml(text) {
+                return $('<span>').text(text || '').html();
+            }
 
             // Build geo tooltips from data attributes
             function initGeoTooltips() {
@@ -709,7 +736,64 @@ class Admin_Chat_History {
                 }
             });
 
-// Pagination click handler
+            function loadConversationMessages($details) {
+                var $messages = $details.find('.chat-history-messages').first();
+                var conversationId = $details.closest('[data-conversation-id]').data('conversation-id');
+
+                if (!conversationId || $messages.attr('data-loaded') === '1' || $messages.attr('data-loading') === '1') {
+                    return;
+                }
+
+                $messages
+                    .attr('data-loading', '1')
+                    .html('<div class="airs-audit-loading"><span class="airs-spinner"></span></div>');
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'listeo_ai_load_conversation_messages',
+                        nonce: '<?php echo $nonce; ?>',
+                        conversation_id: conversationId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $messages.html(response.data.messages).attr('data-loaded', '1');
+                        } else {
+                            $messages.html('<p style="color: #d63638; text-align: center; padding: 20px;">' + escapeHtml(response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Failed to load messages.', 'ai-chat-search')); ?>') + '</p>');
+                        }
+                    },
+                    error: function() {
+                        $messages.html('<p style="color: #d63638; text-align: center; padding: 20px;"><?php echo esc_js(__('Failed to load messages. Please try again.', 'ai-chat-search')); ?></p>');
+                    },
+                    complete: function() {
+                        $messages.removeAttr('data-loading');
+                    }
+                });
+            }
+
+            function loadOpenConversationMessages($scope) {
+                $scope.find('.chat-history-details[open]').each(function() {
+                    loadConversationMessages($(this));
+                });
+            }
+
+            document.addEventListener('toggle', function(event) {
+                if ($(event.target).is('.chat-history-details') && $(event.target).prop('open')) {
+                    loadConversationMessages($(event.target));
+                }
+            }, true);
+
+            $(document).on('click', '.airs-view-messages-summary', function() {
+                var $details = $(this).closest('.chat-history-details');
+                setTimeout(function() {
+                    if ($details.prop('open')) {
+                        loadConversationMessages($details);
+                    }
+                }, 0);
+            });
+
+            // Pagination click handler
             $(document).on('click', '.listeo-history-page', function(e) {
                 e.preventDefault();
                 var page = $(this).data('page');
@@ -731,6 +815,7 @@ class Admin_Chat_History {
                             $container.html(response.data.conversations);
                             $pagination.html(response.data.pagination);
                             initGeoTooltips();
+                            loadOpenConversationMessages($container);
                             $('html, body').animate({
                                 scrollTop: $container.offset().top - 100
                             }, 300);
@@ -766,6 +851,7 @@ class Admin_Chat_History {
                             $container.html(response.data.conversations);
                             $pagination.html(response.data.pagination);
                             initGeoTooltips();
+                            loadOpenConversationMessages($container);
                             if (searchTerm) {
                                 $clearBtn.show();
                             }
@@ -942,9 +1028,8 @@ class Admin_Chat_History {
             }
         }
         foreach ($recent_conversations as $conv) {
-            $messages = Listeo_AI_Search_Chat_History::get_conversation($conv['conversation_id']);
             $user_info = $conv['user_id'] ? get_userdata($conv['user_id']) : null;
-            $this->render_conversation_card($conv, $messages, $user_info);
+            $this->render_conversation_card($conv, null, $user_info);
         }
         $conversations_html = ob_get_clean();
 
@@ -958,6 +1043,54 @@ class Admin_Chat_History {
             'pagination' => $pagination_html,
             'page' => $page,
             'total_pages' => $total_pages
+        ));
+    }
+
+    /**
+     * AJAX handler for lazy-loading messages for a single conversation.
+     */
+    public function ajax_load_conversation_messages() {
+        if (!check_ajax_referer('listeo_ai_search_nonce', 'nonce', false)) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search')));
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search')));
+            return;
+        }
+
+        if (!AI_Chat_Search_Pro_Manager::can_access_conversation_logs()) {
+            wp_send_json_error(array(
+                'message' => __('Conversation logs are a Pro feature. Please upgrade to access full chat history.', 'ai-chat-search'),
+                'upgrade_url' => AI_Chat_Search_Pro_Manager::get_upgrade_url('conversation_logs')
+            ));
+            return;
+        }
+
+        if (!class_exists('Listeo_AI_Search_Chat_History')) {
+            wp_send_json_error(array('message' => __('Chat history class not found.', 'ai-chat-search')));
+            return;
+        }
+
+        $conversation_id = isset($_POST['conversation_id'])
+            ? sanitize_text_field(wp_unslash($_POST['conversation_id']))
+            : '';
+
+        if (empty($conversation_id)) {
+            wp_send_json_error(array('message' => __('Missing conversation ID.', 'ai-chat-search')));
+            return;
+        }
+
+        $messages = Listeo_AI_Search_Chat_History::get_conversation($conversation_id);
+
+        ob_start();
+        $this->render_conversation_messages($conversation_id, $messages);
+        $messages_html = ob_get_clean();
+
+        wp_send_json_success(array(
+            'messages' => $messages_html,
+            'count' => count($messages),
         ));
     }
 
@@ -990,6 +1123,10 @@ class Admin_Chat_History {
             return;
         }
 
+        if (function_exists('listeo_ai_clear_all_cart_events')) {
+            listeo_ai_clear_all_cart_events();
+        }
+
         wp_send_json_success(array(
             'message' => sprintf(__('Successfully deleted %d chat records.', 'ai-chat-search'), $deleted),
             'deleted' => $deleted
@@ -1010,7 +1147,7 @@ class Admin_Chat_History {
             return;
         }
 
-        $conversation_id = isset($_POST['conversation_id']) ? sanitize_text_field($_POST['conversation_id']) : '';
+        $conversation_id = isset($_POST['conversation_id']) ? sanitize_text_field(wp_unslash($_POST['conversation_id'])) : '';
 
         if (empty($conversation_id)) {
             wp_send_json_error(array('message' => __('Conversation ID is required.', 'ai-chat-search')));
@@ -1034,6 +1171,10 @@ class Admin_Chat_History {
         if ($deleted === false) {
             wp_send_json_error(array('message' => __('Failed to delete conversation.', 'ai-chat-search')));
             return;
+        }
+
+        if (function_exists('listeo_ai_clear_cart_events_for_conversation')) {
+            listeo_ai_clear_cart_events_for_conversation($conversation_id);
         }
 
         wp_send_json_success(array(

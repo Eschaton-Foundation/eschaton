@@ -235,10 +235,7 @@ class AI_Chat_Search_Pro_Manager {
         if (self::is_pro_active()) {
             return 6000;
         }
-        if (self::is_listeo_theme()) {
-            return apply_filters('ai_chat_search_free_prompt_limit', 1000);
-        }
-        return 0;
+        return apply_filters('ai_chat_search_free_prompt_limit', 500);
     }
 
     /**

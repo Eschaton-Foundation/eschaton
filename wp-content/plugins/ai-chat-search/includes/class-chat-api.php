@@ -90,6 +90,14 @@ class Listeo_AI_Search_Chat_API
      */
     public function check_chat_permission()
     {
+        if (!get_option("listeo_ai_chat_enabled", 0)) {
+            return new WP_Error(
+                "chat_disabled",
+                __("AI Chat is currently disabled.", "ai-chat-search"),
+                ["status" => 403],
+            );
+        }
+
         // Check if current IP is blocked (PRO feature)
         if (apply_filters("listeo_ai_chat_should_block_ip", false)) {
             return new WP_Error(
@@ -323,26 +331,9 @@ class Listeo_AI_Search_Chat_API
                     "type" => "array",
                     "description" => "Chat messages array",
                 ],
-                "model" => [
-                    "required" => true,
-                    "type" => "string",
-                    "description" => "OpenAI model name",
-                ],
-                "tools" => [
-                    "type" => "array",
-                    "description" => "Function calling tools",
-                ],
                 "tool_choice" => [
                     "type" => "string",
                     "description" => "Tool choice strategy",
-                ],
-                "verbosity" => [
-                    "type" => "string",
-                    "description" => "Verbosity setting (GPT-5)",
-                ],
-                "parallel_tool_calls" => [
-                    "type" => "boolean",
-                    "description" => "Allow parallel tool calls",
                 ],
             ],
         ]);
@@ -519,9 +510,6 @@ class Listeo_AI_Search_Chat_API
     public function get_chat_config_endpoint()
     {
         $config = self::get_chat_config();
-
-        // Remove sensitive data from public response
-        unset($config["system_prompt"]);
 
         $response = new WP_REST_Response(
             [
@@ -1110,18 +1098,80 @@ class Listeo_AI_Search_Chat_API
             $messages = array_slice($messages, -$max_messages);
         }
 
-        // Remove orphaned tool messages after slicing to prevent API errors
-        // A tool response without its preceding assistant+tool_calls is invalid
-        while (!empty($messages) && $messages[0]['role'] === 'tool') {
-            array_shift($messages);
-        }
-        // An assistant with tool_calls at the end without tool responses is invalid
-        if (!empty($messages)) {
-            $last = end($messages);
-            if ($last['role'] === 'assistant' && isset($last['tool_calls'])) {
-                array_pop($messages);
+        // Validate tool calling sequences after slicing to prevent API errors.
+        // Each assistant tool_call must be followed by a matching tool message.
+        $validated_messages = [];
+        $message_count = count($messages);
+        for ($i = 0; $i < $message_count; $i++) {
+            $msg = $messages[$i];
+            $role = isset($msg['role']) ? $msg['role'] : '';
+
+            if ($role === 'tool') {
+                error_log(sprintf(
+                    'AI Chat [%s] TOOL CALL VALIDATION: Removed orphaned tool message (%s)',
+                    $request_id,
+                    isset($msg['tool_call_id']) ? $msg['tool_call_id'] : 'missing tool_call_id'
+                ));
+                continue;
             }
+
+            if ($role === 'assistant' && isset($msg['tool_calls']) && is_array($msg['tool_calls'])) {
+                $tool_calls_by_id = [];
+                foreach ($msg['tool_calls'] as $tool_call) {
+                    if (isset($tool_call['id'])) {
+                        $tool_calls_by_id[sanitize_text_field($tool_call['id'])] = $tool_call;
+                    }
+                }
+
+                $tool_messages_by_id = [];
+                $j = $i + 1;
+                while ($j < $message_count && isset($messages[$j]['role']) && $messages[$j]['role'] === 'tool') {
+                    if (isset($messages[$j]['tool_call_id'])) {
+                        $tool_messages_by_id[sanitize_text_field($messages[$j]['tool_call_id'])] = $messages[$j];
+                    }
+                    $j++;
+                }
+
+                $valid_tool_calls = [];
+                $valid_tool_messages = [];
+                foreach ($tool_calls_by_id as $tool_call_id => $tool_call) {
+                    if (isset($tool_messages_by_id[$tool_call_id])) {
+                        $valid_tool_calls[] = $tool_call;
+                        $valid_tool_messages[] = $tool_messages_by_id[$tool_call_id];
+                    }
+                }
+
+                if (count($valid_tool_calls) === count($tool_calls_by_id) && count($valid_tool_calls) > 0) {
+                    $validated_messages[] = $msg;
+                    foreach ($valid_tool_messages as $tool_message) {
+                        $validated_messages[] = $tool_message;
+                    }
+                } elseif (!empty($valid_tool_calls)) {
+                    error_log(sprintf(
+                        'AI Chat [%s] TOOL CALL VALIDATION: Trimmed assistant tool_calls from %d to %d to match available tool outputs',
+                        $request_id,
+                        count($tool_calls_by_id),
+                        count($valid_tool_calls)
+                    ));
+                    $msg['tool_calls'] = $valid_tool_calls;
+                    $validated_messages[] = $msg;
+                    foreach ($valid_tool_messages as $tool_message) {
+                        $validated_messages[] = $tool_message;
+                    }
+                } else {
+                    error_log(sprintf(
+                        'AI Chat [%s] TOOL CALL VALIDATION: Removed assistant tool_calls with no matching tool output',
+                        $request_id
+                    ));
+                }
+
+                $i = $j - 1;
+                continue;
+            }
+
+            $validated_messages[] = $msg;
         }
+        $messages = $validated_messages;
 
         // Check if the LAST user message contains an image (not history, just current message)
         // This prevents the image instruction from persisting when follow-up messages have no image
@@ -1338,16 +1388,6 @@ class Listeo_AI_Search_Chat_API
             'max_tokens' => 3000,
         ));
 
-        // Allow only non-cost-affecting params from frontend
-        // parallel_tool_calls: false prevents GPT-5.2 from chaining tool calls
-        $safe_params = ["verbosity", "parallel_tool_calls"];
-        foreach ($safe_params as $param) {
-            $value = $request->get_param($param);
-            if ($value !== null) {
-                $payload[$param] = $value;
-            }
-        }
-
         // Atomically acquire rate limit slot before making API call
         if (!Listeo_AI_Search_Embedding_Manager::try_acquire_rate_limit()) {
             // Log rate limit (uses WP_DEBUG_LOG, not plugin debug mode)
@@ -1459,6 +1499,12 @@ class Listeo_AI_Search_Chat_API
                     wp_json_encode($payload["reasoning"])
                 ));
             }
+            if (isset($payload["parallel_tool_calls"])) {
+                error_log(
+                    "Parallel tool calls: " .
+                    ($payload["parallel_tool_calls"] ? "true" : "false")
+                );
+            }
             error_log("================================================");
         }
 
@@ -1521,6 +1567,19 @@ class Listeo_AI_Search_Chat_API
             }
 
             if ($filter_tool_call) {
+                if (
+                    isset($filter_assistant_msg["tool_calls"]) &&
+                    is_array($filter_assistant_msg["tool_calls"]) &&
+                    count($filter_assistant_msg["tool_calls"]) > 1
+                ) {
+                    error_log(sprintf(
+                        "AI Chat [%s] RELEVANCE FILTER: Trimmed %d tool calls to the handled filter_results call",
+                        $request_id,
+                        count($filter_assistant_msg["tool_calls"])
+                    ));
+                    $filter_assistant_msg["tool_calls"] = [$filter_tool_call];
+                }
+
                 $text_messages = $payload["messages"];
                 $text_messages[] = $filter_assistant_msg;
                 $text_messages[] = [
@@ -1682,6 +1741,15 @@ class Listeo_AI_Search_Chat_API
                 if ($tool_result !== null) {
                     // Append assistant tool_call + result, make second AI call for final response
                     $assistant_msg = $response_data["choices"][0]["message"];
+                    if (count($tool_calls) > 1) {
+                        error_log(sprintf(
+                            "AI Chat [%s] PROXY TOOL CALLS: Trimmed %d tool calls to the server-handled %s call",
+                            $request_id,
+                            count($tool_calls),
+                            $function_name
+                        ));
+                        $assistant_msg["tool_calls"] = [$tc];
+                    }
                     $second_messages = $payload["messages"];
                     $second_messages[] = $assistant_msg;
                     $second_messages[] = [
@@ -1900,7 +1968,8 @@ class Listeo_AI_Search_Chat_API
             }
 
             // Save to database
-            $model = $request->get_param("model");
+            $provider = new Listeo_AI_Provider();
+            $model = $provider->get_chat_model();
             $user_id = is_user_logged_in() ? get_current_user_id() : null;
 
             Listeo_AI_Search_Chat_History::save_exchange(
@@ -3240,11 +3309,14 @@ ANSWERING RULE:
                 $tool_count += 2;
             } // search_listings + get_listing_details
             if ($has_woocommerce) {
-                $tool_count += 3;
+                $tool_count += 2; // search_products + get_product_details
+                if (get_option('listeo_ai_chat_woo_order_checking_enabled', 1)) {
+                    $tool_count += 1; // check_order_status
+                }
                 if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
                     $tool_count += 1; // add_to_cart
                 }
-            } // search_products + get_product_details + check_order_status (+ add_to_cart)
+            }
 
             $tool_word =
                 $tool_count === 1
@@ -3296,9 +3368,11 @@ DECISION LOGIC:
             if ($has_woocommerce) {
                 $default_prompt .= "
 - Question about products to BUY/SHOP → use search_products()
-- Question about specific product from results → use get_product_details()
+- Question about specific product from results → use get_product_details()";
+                if (get_option('listeo_ai_chat_woo_order_checking_enabled', 1)) {
+                    $default_prompt .= "
 - Question about ORDER STATUS/TRACKING/DELIVERY → use check_order_status()";
-
+                }
                 if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
                     $default_prompt .= "
 - User wants to ADD TO CART/BUY a product from results → use add_to_cart()";
@@ -3429,12 +3503,13 @@ TOOLS:
                 $wc_details_number = $wc_tool_number + 1;
 
                 $default_prompt .= "
-{$wc_tool_number}. search_products(query, price_min, price_max, in_stock, on_sale, rating, sku) - For finding PRODUCTS to BUY
-   Examples: \"phones under \$100\", \"on-sale laptops\", \"4.5+ rated coffee makers\"
-   - Pass natural query to \"query\" parameter
-   - If the user mentions a product code/SKU (e.g. \"ABC-123\"), pass it to the \"sku\" parameter
-   - Available filters (USE ONLY WHEN USER ASKS): price_min, price_max, in_stock (boolean), on_sale (boolean), rating
-   - You will receive: {id, title, price, stock_status, rating, url} for each product
+	{$wc_tool_number}. search_products(query, price_min, price_max, in_stock, on_sale, rating, sku) - For finding PRODUCTS to BUY
+	   Examples: \"phones under \$100\", \"on-sale laptops\", \"4.5+ rated coffee makers\"
+	   - Pass natural query to \"query\" parameter
+	   - For category-like requests, keep the category words in the query; product categories are provided in results for re-ranking
+	   - If the user mentions a product code/SKU (e.g. \"ABC-123\"), pass it to the \"sku\" parameter
+	   - Available filters (USE ONLY WHEN USER ASKS): price_min, price_max, in_stock (boolean), on_sale (boolean), rating
+	   - You will receive: {id, title, price, stock_status, rating, url} for each product
    - IMPORTANT: ALWAYS use the \"url\" field for links - NEVER construct URLs manually
 
      AFTER PRODUCT SEARCHING:
@@ -3451,7 +3526,8 @@ TOOLS:
 
                 $wc_order_number = $wc_details_number + 1;
 
-                $default_prompt .= "
+                if (get_option('listeo_ai_chat_woo_order_checking_enabled', 1)) {
+                    $default_prompt .= "
 {$wc_order_number}. check_order_status(order_number, billing_email) - Check WooCommerce order status/tracking
    Examples: \"status of my order #X\", \"track my order\"
    - MUST ask the user for BOTH order_number and billing_email. Never guess or invent them.
@@ -3459,9 +3535,10 @@ TOOLS:
    - Present with emojis (✅ Completed, 📦 Shipped, 🔄 Processing)
 
 ";
+                }
 
                 if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
-                    $cart_tool_number = $wc_order_number + 1;
+                    $cart_tool_number = get_option('listeo_ai_chat_woo_order_checking_enabled', 1) ? $wc_order_number + 1 : $wc_order_number;
                     $default_prompt .= "
 {$cart_tool_number}. add_to_cart(product_id, quantity) - Add a product to the shopping cart
    Examples: \"add that to my cart\", \"I want to buy this\", \"add 2 of those\"
@@ -3549,7 +3626,6 @@ ADDITIONAL NOTES:
      */
     public static function get_chat_config()
     {
-        // Check if Listeo is available AND listing post type is enabled in admin
         $has_listeo =
             class_exists("Listeo_AI_Detection") &&
             Listeo_AI_Detection::is_listeo_available();
@@ -3557,14 +3633,9 @@ ADDITIONAL NOTES:
             $enabled_types = Listeo_AI_Search_Database_Manager::get_enabled_post_types();
             $has_listeo = in_array("listing", $enabled_types);
         } else {
-            $has_listeo = false; // If no Database Manager, can't verify listings are enabled
+            $has_listeo = false;
         }
 
-        // Check if API key is configured
-        $provider = new Listeo_AI_Provider();
-        $api_configured = !empty($provider->get_api_key());
-
-        // Check if WooCommerce product support is available (Pro feature)
         $has_woocommerce = class_exists("WooCommerce");
         if ($has_woocommerce && class_exists("Listeo_AI_Search_Database_Manager")) {
             $enabled_types = Listeo_AI_Search_Database_Manager::get_enabled_post_types();
@@ -3573,16 +3644,14 @@ ADDITIONAL NOTES:
             $has_woocommerce = false;
         }
 
+        $tools = apply_filters("ai_chat_search_frontend_tools", self::get_listeo_tools());
+
         $config = [
             "enabled" => get_option("listeo_ai_chat_enabled", 0),
-            "model" => get_option("listeo_ai_chat_model", "gpt-5.4-mini"),
-            "system_prompt" => self::get_system_prompt(),
-            "listeo_available" => $has_listeo, // Frontend can use this to conditionally show Listeo tools
-            "woocommerce_available" => $has_woocommerce, // Frontend: show product features only when Pro + product enabled
-            "tools" => apply_filters("ai_chat_search_frontend_tools", self::get_listeo_tools()),
-            "api_configured" => $api_configured, // Flag for frontend to show notification if not configured
-            "provider" => $provider->get_provider(), // Exposed so the client can log the active provider
-            "openrouter_reasoning_enabled" => (bool) get_option("listeo_ai_openrouter_reasoning", 0), // Mirrors the server-side override logic for client debug logging
+            "listeo_available" => $has_listeo,
+            "woocommerce_available" => $has_woocommerce,
+            "hasTools" => !empty($tools),
+            "hasComplexTools" => $has_listeo || $has_woocommerce,
         ];
 
         return $config;
@@ -3786,17 +3855,13 @@ ADDITIONAL NOTES:
                                 "type" => "boolean",
                                 "description" => "ONLY if user explicitly says about 'on sale' or 'discounted'",
                             ],
-                            "rating" => [
-                                "type" => "number",
-                                "description" => "ONLY if user explicitly says about rating'",
-                            ],
-                            "category" => [
-                                "type" => "string",
-                                "description" => "Product category slug or name only if user specified category!",
-                            ],
-                            "sku" => [
-                                "type" => "string",
-                                "description" => "Product SKU/code/part number when the user refers to one. Extract the code itself WITHOUT the word 'sku'. Examples: 'find sku-123' → sku='sku-123'; 'sku 123' → sku='123'; 'do you have 123?' → sku='123'; 'product code ABC45' → sku='ABC45'. Do NOT use for prices, years, ratings, or quantities.",
+	                            "rating" => [
+	                                "type" => "number",
+	                                "description" => "ONLY if user explicitly says about rating'",
+	                            ],
+	                            "sku" => [
+	                                "type" => "string",
+	                                "description" => "Product SKU/code/part number when the user refers to one. Extract the code itself WITHOUT the word 'sku'. Examples: 'find sku-123' → sku='sku-123'; 'sku 123' → sku='123'; 'do you have 123?' → sku='123'; 'product code ABC45' → sku='ABC45'. Do NOT use for prices, years, ratings, or quantities.",
                             ],
                         ],
                         "required" => ["query"],
@@ -3829,30 +3894,32 @@ ADDITIONAL NOTES:
             ];
 
             // Add check order status tool
-            $tools[] = [
-                "type" => "function",
-                "function" => [
-                    "name" => "check_order_status",
-                    "description" =>
-                        "Check the status of a WooCommerce order including order details, items, shipping status, tracking information, and delivery estimates. Use this when user asks about their order status, tracking, or delivery.",
-                    "parameters" => [
-                        "type" => "object",
-                        "properties" => [
-                            "order_number" => [
-                                "type" => "string",
-                                "description" =>
-                                    'The order number or order ID from the customer. Can be numeric ID or order number string (e.g., "12345" or "#12345").',
+            if (get_option('listeo_ai_chat_woo_order_checking_enabled', 1)) {
+                $tools[] = [
+                    "type" => "function",
+                    "function" => [
+                        "name" => "check_order_status",
+                        "description" =>
+                            "Check the status of a WooCommerce order including order details, items, shipping status, tracking information, and delivery estimates. Use this when user asks about their order status, tracking, or delivery.",
+                        "parameters" => [
+                            "type" => "object",
+                            "properties" => [
+                                "order_number" => [
+                                    "type" => "string",
+                                    "description" =>
+                                        'The order number or order ID from the customer. Can be numeric ID or order number string (e.g., "12345" or "#12345").',
+                                ],
+                                "billing_email" => [
+                                    "type" => "string",
+                                    "description" =>
+                                        "The billing email address used on the order, as confirmed by the user in the conversation. Must be collected from the user — do not guess or auto-fill from account data.",
+                                ],
                             ],
-                            "billing_email" => [
-                                "type" => "string",
-                                "description" =>
-                                    "The billing email address used on the order, as confirmed by the user in the conversation. Must be collected from the user — do not guess or auto-fill from account data.",
-                            ],
+                            "required" => ["order_number", "billing_email"],
                         ],
-                        "required" => ["order_number", "billing_email"],
                     ],
-                ],
-            ];
+                ];
+            }
         }
 
         // Add to cart tool (only when WooCommerce cart is enabled in chatbot settings)

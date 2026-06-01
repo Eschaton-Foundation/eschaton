@@ -40,7 +40,7 @@
         // API key missing modal - go to settings
         $('#api-key-missing-settings-btn').on('click', function() {
             var ajaxVars = window.listeo_ai_search_ajax || {};
-            window.location.href = ajaxVars.settings_url || '?page=ai-chat-search&tab=settings';
+            window.location.href = ajaxVars.settings_url || '?page=ai-chat-search&tab=ai-chat';
         });
 
         // Modal cancel

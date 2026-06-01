@@ -2,26 +2,26 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: AI Chat & Search 2.0.4\n"
+"Project-Id-Version: PurioChat 2.1.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-23T17:43:24+00:00\n"
+"POT-Creation-Date: 2026-05-08T12:09:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ai-chat-search\n"
 
 #. Plugin Name of the plugin
 #: ai-chat-search.php
-msgid "AI Chat & Search"
+msgid "PurioChat"
 msgstr ""
 
 #. Plugin URI of the plugin
 #: ai-chat-search.php
-msgid "https://purethemes.net/ai-chat-search-pro/"
+msgid "https://purethemes.net/ai-chatbot-for-wordpress/"
 msgstr ""
 
 #. Description of the plugin
@@ -39,506 +39,508 @@ msgstr ""
 msgid "https://purethemes.net"
 msgstr ""
 
-#: ai-chat-search.php:108
+#: ai-chat-search.php:110
 #: includes/admin/class-universal-settings.php:621
 msgid "External Pages"
 msgstr ""
 
-#: ai-chat-search.php:383
+#: ai-chat-search.php:474
 #: includes/admin/class-admin-chat-history.php:753
-#: includes/admin/class-admin-interface.php:2431
+#: includes/admin/class-admin-interface.php:3427
 msgid "Searching..."
 msgstr ""
 
-#: ai-chat-search.php:384
-#: includes/admin/class-admin-interface.php:2322
-#: includes/admin/class-admin-interface.php:2435
+#: ai-chat-search.php:475
+#: includes/admin/class-admin-interface.php:3195
+#: includes/admin/class-admin-interface.php:3434
 msgid "No results found."
 msgstr ""
 
-#: ai-chat-search.php:385
+#: ai-chat-search.php:476
 msgid "Search error occurred."
 msgstr ""
 
-#: ai-chat-search.php:386
-#: ai-chat-search.php:811
+#: ai-chat-search.php:477
+#: ai-chat-search.php:930
 msgid "Best Match"
 msgstr ""
 
-#: ai-chat-search.php:387
+#: ai-chat-search.php:478
 msgid "Type keywords first"
 msgstr ""
 
-#: ai-chat-search.php:391
+#: ai-chat-search.php:482
 msgid "Top 1 listing matching"
 msgstr ""
 
-#: ai-chat-search.php:395
+#: ai-chat-search.php:486
 #: includes/frontend/class-shortcode-handler.php:144
 #, php-format
 msgid "Top %d listings matching"
 msgstr ""
 
-#: ai-chat-search.php:400
+#: ai-chat-search.php:491
 msgid "Too many searches. Please wait a moment and try again."
 msgstr ""
 
-#: ai-chat-search.php:404
+#: ai-chat-search.php:495
 msgid "AI search temporarily unavailable. Using basic search instead."
 msgstr ""
 
-#: ai-chat-search.php:408
+#: ai-chat-search.php:499
 msgid "Session expired. Please refresh the page."
 msgstr ""
 
-#: ai-chat-search.php:412
+#: ai-chat-search.php:503
 msgid "Showing regular search results instead."
 msgstr ""
 
-#: ai-chat-search.php:417
-#: ai-chat-search.php:939
+#: ai-chat-search.php:508
+#: ai-chat-search.php:1058
 msgid "In Stock"
 msgstr ""
 
-#: ai-chat-search.php:418
-#: ai-chat-search.php:940
+#: ai-chat-search.php:509
+#: ai-chat-search.php:1059
 msgid "Out of Stock"
 msgstr ""
 
-#: ai-chat-search.php:664
-#: ai-chat-search.php:1044
+#: ai-chat-search.php:758
+#: ai-chat-search.php:1163
 #: includes/admin/class-admin-chat-history.php:651
-#: includes/admin/class-admin-interface.php:245
-#: includes/admin/class-admin-interface.php:4468
-#: includes/class-chat-shortcode.php:151
-#: includes/class-floating-chat-widget.php:317
+#: includes/admin/class-admin-interface.php:248
+#: includes/admin/class-admin-interface.php:7000
+#: includes/class-chat-shortcode.php:150
+#: includes/class-floating-chat-widget.php:318
 msgid "AI Assistant"
 msgstr ""
 
-#: ai-chat-search.php:665
-#: ai-chat-search.php:756
-#: ai-chat-search.php:1048
-#: includes/admin/class-admin-interface.php:252
-#: includes/class-chat-shortcode.php:156
+#: ai-chat-search.php:759
+#: ai-chat-search.php:871
+#: ai-chat-search.php:1167
+#: includes/admin/class-admin-interface.php:255
+#: includes/class-chat-shortcode.php:155
 msgid "Hello! How can I help you today?"
 msgstr ""
 
-#: ai-chat-search.php:692
-#: includes/admin/class-admin-interface.php:451
-#: includes/admin/class-admin-interface.php:5244
+#: ai-chat-search.php:786
+#: includes/admin/class-admin-interface.php:471
+#: includes/admin/class-admin-interface.php:8219
+#: includes/admin/class-admin-interface.php:8224
 #: includes/class-floating-chat-widget.php:178
-#: includes/class-floating-chat-widget.php:331
+#: includes/class-floating-chat-widget.php:332
 msgid "Hi! How can I help you?"
 msgstr ""
 
-#: ai-chat-search.php:763
+#: ai-chat-search.php:878
 msgid "Ask about listings..."
 msgstr ""
 
-#: ai-chat-search.php:764
+#: ai-chat-search.php:879
 msgid "Send"
 msgstr ""
 
-#: ai-chat-search.php:766
-#: ai-chat-search.php:772
-#: ai-chat-search.php:774
-#: ai-chat-search.php:919
-#: includes/admin/class-admin-interface.php:5137
+#: ai-chat-search.php:881
+#: ai-chat-search.php:887
+#: ai-chat-search.php:889
+#: ai-chat-search.php:1038
+#: includes/admin/class-admin-interface.php:8009
 msgid "Thinking..."
 msgstr ""
 
-#: ai-chat-search.php:767
+#: ai-chat-search.php:882
 msgid "Please wait, loading configuration..."
 msgstr ""
 
-#: ai-chat-search.php:771
+#: ai-chat-search.php:886
 msgid "Getting listing details..."
 msgstr ""
 
-#: ai-chat-search.php:773
+#: ai-chat-search.php:888
 msgid "Analyzing..."
 msgstr ""
 
-#: ai-chat-search.php:775
+#: ai-chat-search.php:890
 msgid "Analyzing listing..."
 msgstr ""
 
-#: ai-chat-search.php:776
+#: ai-chat-search.php:891
 #: includes/admin/class-admin-contact-messages.php:331
 #: includes/admin/class-admin-contact-messages.php:408
-#: includes/admin/class-admin-interface.php:2317
+#: includes/admin/class-admin-interface.php:3187
 msgid "Loading..."
 msgstr ""
 
-#: ai-chat-search.php:777
+#: ai-chat-search.php:892
 msgid "Talk about this listing"
 msgstr ""
 
-#: ai-chat-search.php:778
+#: ai-chat-search.php:893
 msgid "Sorry, I couldn't find details for that listing."
 msgstr ""
 
-#: ai-chat-search.php:782
+#: ai-chat-search.php:897
 msgid "Error getting listing details."
 msgstr ""
 
-#: ai-chat-search.php:786
+#: ai-chat-search.php:901
 msgid "Error loading listing."
 msgstr ""
 
-#: ai-chat-search.php:787
+#: ai-chat-search.php:902
 msgid "Failed to load listing details."
 msgstr ""
 
-#: ai-chat-search.php:791
+#: ai-chat-search.php:906
 msgid "Please add API key in plugin settings."
 msgstr ""
 
-#: ai-chat-search.php:795
+#: ai-chat-search.php:910
 msgid "⚠️ Hey, to start using the chatbot <strong>please add OpenAI or Gemini API key</strong> in plugin settings!"
 msgstr ""
 
-#: ai-chat-search.php:823
+#: ai-chat-search.php:914
 msgid "⚠️ No trained content found. Go to the <strong>Data Training</strong> tab to train your content."
 msgstr ""
 
-#: ai-chat-search.php:827
+#: ai-chat-search.php:918
 msgid "Failed to load chat configuration. Please try again later."
 msgstr ""
 
-#: ai-chat-search.php:803
+#: ai-chat-search.php:922
 msgid "Sorry, an error occurred. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:807
-#: includes/class-chat-shortcode.php:179
+#: ai-chat-search.php:926
+#: includes/class-chat-api.php:96
+#: includes/class-chat-shortcode.php:178
 msgid "AI Chat is currently disabled."
 msgstr ""
 
-#: ai-chat-search.php:812
+#: ai-chat-search.php:931
 #, php-format
 msgid "Show more (%d)"
 msgstr ""
 
-#: ai-chat-search.php:813
+#: ai-chat-search.php:932
 msgid "Listing context loaded! You can now ask me anything about"
 msgstr ""
 
-#: ai-chat-search.php:818
+#: ai-chat-search.php:937
 msgid "Talk about this product"
 msgstr ""
 
-#: ai-chat-search.php:819
+#: ai-chat-search.php:938
 msgid "Product context loaded! You can now ask me anything about"
 msgstr ""
 
-#: ai-chat-search.php:823
+#: ai-chat-search.php:942
 msgid "Error loading product."
 msgstr ""
 
-#: ai-chat-search.php:824
+#: ai-chat-search.php:943
 msgid "Failed to load product details."
 msgstr ""
 
-#: ai-chat-search.php:829
+#: ai-chat-search.php:948
 msgid "Searching listings..."
 msgstr ""
 
-#: ai-chat-search.php:830
+#: ai-chat-search.php:949
 msgid "Searching products..."
 msgstr ""
 
-#: ai-chat-search.php:831
+#: ai-chat-search.php:950
 msgid "Searching site content..."
 msgstr ""
 
-#: ai-chat-search.php:835
+#: ai-chat-search.php:954
 msgid "Analyzing products..."
 msgstr ""
 
-#: ai-chat-search.php:836
+#: ai-chat-search.php:955
 msgid "Analyzing results..."
 msgstr ""
 
-#: ai-chat-search.php:837
+#: ai-chat-search.php:956
 msgid "Getting product details..."
 msgstr ""
 
-#: ai-chat-search.php:841
+#: ai-chat-search.php:960
 msgid "Analyzing product..."
 msgstr ""
 
-#: ai-chat-search.php:842
+#: ai-chat-search.php:961
 msgid "Comparing listings..."
 msgstr ""
 
-#: ai-chat-search.php:843
+#: ai-chat-search.php:962
 msgid "Comparing products..."
 msgstr ""
 
-#: ai-chat-search.php:844
+#: ai-chat-search.php:963
 msgid "Analyzing content..."
 msgstr ""
 
-#: ai-chat-search.php:846
+#: ai-chat-search.php:965
 msgid "Checking order status..."
 msgstr ""
 
-#: ai-chat-search.php:850
+#: ai-chat-search.php:969
 msgid "Analyzing order details..."
 msgstr ""
 
-#: ai-chat-search.php:855
+#: ai-chat-search.php:974
 msgid "Sending message..."
 msgstr ""
 
-#: ai-chat-search.php:856
+#: ai-chat-search.php:975
 msgid "Order not found. Please check the order number and try again."
 msgstr ""
 
-#: ai-chat-search.php:860
+#: ai-chat-search.php:979
 msgid "Please provide your billing email to verify the order."
 msgstr ""
 
-#: ai-chat-search.php:864
+#: ai-chat-search.php:983
 msgid "Unable to retrieve order status. Please try again later."
 msgstr ""
 
-#: ai-chat-search.php:869
+#: ai-chat-search.php:988
 msgid "Search failed. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:873
+#: ai-chat-search.php:992
 msgid "Product search failed. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:877
+#: ai-chat-search.php:996
 msgid "Unknown function requested."
 msgstr ""
 
-#: ai-chat-search.php:881
+#: ai-chat-search.php:1000
 msgid "Content not found or not published."
 msgstr ""
 
-#: ai-chat-search.php:885
+#: ai-chat-search.php:1004
 msgid "Error getting content details."
 msgstr ""
 
-#: ai-chat-search.php:889
+#: ai-chat-search.php:1008
 msgid "Product not found or not published."
 msgstr ""
 
-#: ai-chat-search.php:893
+#: ai-chat-search.php:1012
 msgid "Error getting product details."
 msgstr ""
 
-#: ai-chat-search.php:898
+#: ai-chat-search.php:1017
 msgid "Network error - request could not be sent. Please check your connection."
 msgstr ""
 
-#: ai-chat-search.php:902
+#: ai-chat-search.php:1021
 msgid "Connection was interrupted. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:906
+#: ai-chat-search.php:1025
 msgid "Request timed out. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:910
+#: ai-chat-search.php:1029
 msgid "Too many requests. Please wait a moment and try again."
 msgstr ""
 
-#: ai-chat-search.php:914
+#: ai-chat-search.php:1033
 msgid "Server error occurred. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:920
+#: ai-chat-search.php:1039
 msgid "I couldn't find results matching your search. Try different keywords or be more specific about what you're looking for."
 msgstr ""
 
-#: ai-chat-search.php:925
+#: ai-chat-search.php:1044
 msgid "You've reached the limit of"
 msgstr ""
 
-#: ai-chat-search.php:929
+#: ai-chat-search.php:1048
 msgid "messages per"
 msgstr ""
 
-#: ai-chat-search.php:930
+#: ai-chat-search.php:1049
 msgid "Please wait"
 msgstr ""
 
-#: ai-chat-search.php:931
+#: ai-chat-search.php:1050
 msgid "before trying again."
 msgstr ""
 
-#: ai-chat-search.php:932
+#: ai-chat-search.php:1051
 msgid "minute"
 msgstr ""
 
-#: ai-chat-search.php:933
+#: ai-chat-search.php:1052
 msgid "minutes"
 msgstr ""
 
-#: ai-chat-search.php:934
+#: ai-chat-search.php:1053
 msgid "hour"
 msgstr ""
 
-#: ai-chat-search.php:935
+#: ai-chat-search.php:1054
 msgid "hours"
 msgstr ""
 
-#: ai-chat-search.php:936
+#: ai-chat-search.php:1055
 msgid "second"
 msgstr ""
 
-#: ai-chat-search.php:937
+#: ai-chat-search.php:1056
 msgid "seconds"
 msgstr ""
 
-#: ai-chat-search.php:942
+#: ai-chat-search.php:1061
 msgid "SKU"
 msgstr ""
 
-#: ai-chat-search.php:944
+#: ai-chat-search.php:1063
 msgid "Please fill in all fields."
 msgstr ""
 
-#: ai-chat-search.php:948
+#: ai-chat-search.php:1067
 msgid "Message sent successfully!"
 msgstr ""
 
-#: ai-chat-search.php:949
+#: ai-chat-search.php:1068
 msgid "Failed to send message. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:954
+#: ai-chat-search.php:1073
 msgid "Recording..."
 msgstr ""
 
-#: ai-chat-search.php:955
-#: includes/admin/class-admin-interface.php:3751
+#: ai-chat-search.php:1074
+#: includes/admin/class-admin-interface.php:5881
 msgid "Processing..."
 msgstr ""
 
-#: ai-chat-search.php:956
+#: ai-chat-search.php:1075
 msgid "Microphone access denied. Please allow microphone access in your browser settings."
 msgstr ""
 
-#: ai-chat-search.php:960
+#: ai-chat-search.php:1079
 msgid "Speech-to-text is not supported in your browser."
 msgstr ""
 
-#: ai-chat-search.php:964
+#: ai-chat-search.php:1083
 msgid "Not available without SSL"
 msgstr ""
 
-#: ai-chat-search.php:965
+#: ai-chat-search.php:1084
 msgid "Recording is too long. Please try a shorter message."
 msgstr ""
 
-#: ai-chat-search.php:969
+#: ai-chat-search.php:1088
 msgid "Could not transcribe audio. Please try again."
 msgstr ""
 
-#: ai-chat-search.php:973
+#: ai-chat-search.php:1092
 msgid "Speech-to-text requires PRO version."
 msgstr ""
 
-#: ai-chat-search.php:978
+#: ai-chat-search.php:1097
 msgid "Image is too large. Maximum size is 4MB."
 msgstr ""
 
-#: ai-chat-search.php:982
+#: ai-chat-search.php:1101
 msgid "Image resolution is too large. Maximum is 3000x3000 pixels."
 msgstr ""
 
-#: ai-chat-search.php:986
+#: ai-chat-search.php:1105
 msgid "Invalid image format. Allowed: JPEG, PNG, GIF, WebP."
 msgstr ""
 
-#: ai-chat-search.php:990
+#: ai-chat-search.php:1109
 msgid "[Image attached]"
 msgstr ""
 
-#: ai-chat-search.php:991
+#: ai-chat-search.php:1110
 msgid "Analyzing image..."
 msgstr ""
 
-#: ai-chat-search.php:993
+#: ai-chat-search.php:1112
 msgid "Fill out required fields"
 msgstr ""
 
-#: ai-chat-search.php:995
+#: ai-chat-search.php:1114
 msgid "Add to Cart"
 msgstr ""
 
-#: ai-chat-search.php:996
+#: ai-chat-search.php:1115
 msgid "Select Options"
 msgstr ""
 
-#: ai-chat-search.php:997
+#: ai-chat-search.php:1116
 msgid "Adding..."
 msgstr ""
 
-#: ai-chat-search.php:998
+#: ai-chat-search.php:1117
 msgid "Added!"
 msgstr ""
 
-#: ai-chat-search.php:999
-#: ai-chat-search.php:1191
+#: ai-chat-search.php:1118
+#: ai-chat-search.php:1322
 msgid "Could not add to cart."
 msgstr ""
 
-#: ai-chat-search.php:1000
+#: ai-chat-search.php:1119
 msgid "Shopping Cart"
 msgstr ""
 
-#: ai-chat-search.php:1001
+#: ai-chat-search.php:1120
 msgid "Your cart is empty."
 msgstr ""
 
-#: ai-chat-search.php:1002
+#: ai-chat-search.php:1121
 msgid "Subtotal"
 msgstr ""
 
-#: ai-chat-search.php:1003
+#: ai-chat-search.php:1122
 msgid "View Cart"
 msgstr ""
 
-#: ai-chat-search.php:1004
+#: ai-chat-search.php:1123
 msgid "Checkout"
 msgstr ""
 
-#: ai-chat-search.php:1152
-#: ai-chat-search.php:1199
-#: ai-chat-search.php:1232
-#: ai-chat-search.php:1255
+#: ai-chat-search.php:1283
+#: ai-chat-search.php:1330
+#: ai-chat-search.php:1363
+#: ai-chat-search.php:1386
 msgid "WooCommerce not available."
 msgstr ""
 
-#: ai-chat-search.php:1161
+#: ai-chat-search.php:1292
 msgid "Invalid product."
 msgstr ""
 
-#: ai-chat-search.php:1167
+#: ai-chat-search.php:1298
 msgid "Product not found."
 msgstr ""
 
-#: ai-chat-search.php:1185
+#: ai-chat-search.php:1316
 msgid "You cannot purchase your own product."
 msgstr ""
 
-#: ai-chat-search.php:1239
-#: ai-chat-search.php:1262
+#: ai-chat-search.php:1370
+#: ai-chat-search.php:1393
 msgid "Invalid cart item."
 msgstr ""
 
-#: ai-chat-search.php:1249
+#: ai-chat-search.php:1380
 msgid "Could not remove item."
 msgstr ""
 
-#: ai-chat-search.php:1280
+#: ai-chat-search.php:1411
 msgid "Could not update cart."
 msgstr ""
 
@@ -596,18 +598,13 @@ msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:120
 #: includes/admin/class-admin-chat-history.php:169
-#: includes/admin/class-admin-interface.php:3535
-#: includes/admin/class-admin-interface.php:6048
-#: includes/admin/class-admin-interface.php:6139
-#: includes/admin/class-admin-interface.php:6161
-#: includes/admin/class-admin-interface.php:6235
-#: includes/admin/class-admin-interface.php:6241
-#: includes/admin/class-admin-interface.php:6437
+#: includes/admin/class-admin-interface.php:5493
+#: includes/admin/class-admin-interface.php:9760
+#: includes/admin/class-admin-interface.php:10155
 msgid "Save Settings"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:147
-#: includes/admin/class-admin-interface.php:6222
 msgid "Saving..."
 msgstr ""
 
@@ -621,7 +618,7 @@ msgid "Are you sure you want to delete all chat history? This action cannot be u
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:185
-#: includes/admin/class-admin-interface.php:2343
+#: includes/admin/class-admin-interface.php:3240
 msgid "Clearing..."
 msgstr ""
 
@@ -640,7 +637,7 @@ msgid "Detailed conversation tracking"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:272
-#: includes/admin/class-admin-interface.php:3445
+#: includes/admin/class-admin-interface.php:5080
 msgid "Chat History"
 msgstr ""
 
@@ -655,22 +652,21 @@ msgstr ""
 #: includes/admin/class-admin-chat-history.php:282
 #: includes/admin/class-admin-chat-history.php:358
 #: includes/admin/class-admin-chat-history.php:471
-#: includes/admin/class-admin-interface.php:4937
-#: includes/admin/class-admin-interface.php:5726
-#: includes/admin/class-admin-interface.php:6115
-#: includes/admin/class-admin-interface.php:6203
+#: includes/admin/class-admin-interface.php:8914
+#: includes/admin/class-admin-interface.php:9320
+#: includes/admin/class-admin-interface.php:9828
 msgid "Configure"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:306
 #: includes/admin/class-admin-chat-history.php:397
-#: includes/admin/class-admin-interface.php:4235
+#: includes/admin/class-admin-interface.php:6575
 msgid "Conversations"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:310
 #: includes/admin/class-admin-chat-history.php:407
-#: includes/admin/class-admin-interface.php:4239
+#: includes/admin/class-admin-interface.php:6582
 msgid "Messages"
 msgstr ""
 
@@ -681,61 +677,61 @@ msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:319
 #: includes/admin/class-admin-chat-history.php:443
-#: includes/admin/class-admin-interface.php:4412
+#: includes/admin/class-admin-interface.php:6877
 msgid "Recent Conversations"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:325
 #: includes/admin/class-admin-chat-history.php:547
 #: includes/admin/class-admin-contact-messages.php:630
-#: includes/admin/class-admin-interface.php:4427
+#: includes/admin/class-admin-interface.php:6918
 msgid "Conversation ID:"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:344
-#: includes/admin/class-admin-interface.php:4437
+#: includes/admin/class-admin-interface.php:6942
 #, php-format
 msgid "Started: %d hours ago"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:349
 #: includes/admin/class-admin-chat-history.php:599
-#: includes/admin/class-admin-interface.php:4371
-#: includes/admin/class-admin-interface.php:4443
+#: includes/admin/class-admin-interface.php:6813
+#: includes/admin/class-admin-interface.php:6955
 msgid "messages"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:350
-#: includes/admin/class-admin-interface.php:4444
+#: includes/admin/class-admin-interface.php:6957
 #, php-format
 msgid "last %d hours ago"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:366
-#: includes/admin/class-admin-interface.php:4492
+#: includes/admin/class-admin-interface.php:7035
 msgid "Chat History & Analytics"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:368
-#: includes/admin/class-admin-interface.php:4495
+#: includes/admin/class-admin-interface.php:7041
 msgid "Conversation statistics and metrics"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:369
-#: includes/admin/class-admin-interface.php:4496
+#: includes/admin/class-admin-interface.php:7045
 msgid "Complete message history"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:372
 #: includes/admin/class-admin-contact-messages.php:276
-#: includes/admin/class-admin-interface.php:4278
-#: includes/admin/class-admin-interface.php:4393
-#: includes/admin/class-admin-interface.php:4501
+#: includes/admin/class-admin-interface.php:6634
+#: includes/admin/class-admin-interface.php:6857
+#: includes/admin/class-admin-interface.php:7057
 #: includes/admin/class-universal-settings.php:238
 #: includes/admin/class-universal-settings.php:542
 #: includes/admin/class-universal-settings.php:637
-#: includes/class-pro-manager.php:357
-#: includes/class-pro-manager.php:397
+#: includes/class-pro-manager.php:354
+#: includes/class-pro-manager.php:394
 msgid "Upgrade to Pro"
 msgstr ""
 
@@ -763,7 +759,7 @@ msgid "ID, IP or keyword"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:449
-#: includes/admin/class-admin-interface.php:2412
+#: includes/admin/class-admin-interface.php:3387
 msgid "Search"
 msgstr ""
 
@@ -807,12 +803,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/admin/class-admin-chat-history.php:618
-#: includes/admin/class-admin-interface.php:4449
+#: includes/admin/class-admin-interface.php:6964
 msgid "View Messages"
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:630
-#: includes/admin/class-admin-interface.php:4455
+#: includes/admin/class-admin-interface.php:6973
 msgid "User"
 msgstr ""
 
@@ -855,26 +851,25 @@ msgstr ""
 #: includes/admin/class-admin-contact-messages.php:564
 #: includes/admin/class-admin-contact-messages.php:651
 #: includes/admin/class-admin-contact-messages.php:689
-#: includes/admin/class-admin-interface.php:967
-#: includes/admin/class-admin-interface.php:1113
-#: includes/admin/class-admin-interface.php:1302
-#: includes/admin/class-admin-interface.php:1337
-#: includes/admin/class-admin-interface.php:1401
-#: includes/admin/class-admin-interface.php:1472
-#: includes/admin/class-admin-interface.php:1538
-#: includes/admin/class-admin-interface.php:1604
-#: includes/admin/class-admin-interface.php:1686
-#: includes/admin/class-admin-interface.php:1733
-#: includes/admin/class-admin-interface.php:1753
-#: includes/admin/class-admin-interface.php:1773
-#: includes/admin/class-admin-interface.php:1794
-#: includes/admin/class-admin-interface.php:1902
-#: includes/admin/class-admin-interface.php:1986
-#: includes/admin/class-admin-interface.php:2025
-#: includes/admin/class-admin-interface.php:2098
-#: includes/admin/class-admin-interface.php:2137
-#: includes/admin/class-admin-interface.php:6748
-#: includes/admin/class-admin-interface.php:6782
+#: includes/admin/class-admin-interface.php:1116
+#: includes/admin/class-admin-interface.php:1499
+#: includes/admin/class-admin-interface.php:1799
+#: includes/admin/class-admin-interface.php:1899
+#: includes/admin/class-admin-interface.php:2010
+#: includes/admin/class-admin-interface.php:2115
+#: includes/admin/class-admin-interface.php:2225
+#: includes/admin/class-admin-interface.php:2341
+#: includes/admin/class-admin-interface.php:2402
+#: includes/admin/class-admin-interface.php:2430
+#: includes/admin/class-admin-interface.php:2458
+#: includes/admin/class-admin-interface.php:2487
+#: includes/admin/class-admin-interface.php:2648
+#: includes/admin/class-admin-interface.php:2779
+#: includes/admin/class-admin-interface.php:2834
+#: includes/admin/class-admin-interface.php:2929
+#: includes/admin/class-admin-interface.php:2982
+#: includes/admin/class-admin-interface.php:10589
+#: includes/admin/class-admin-interface.php:10641
 #: includes/admin/class-admin-search-analytics.php:246
 msgid "Security check failed."
 msgstr ""
@@ -888,25 +883,24 @@ msgstr ""
 #: includes/admin/class-admin-contact-messages.php:570
 #: includes/admin/class-admin-contact-messages.php:657
 #: includes/admin/class-admin-contact-messages.php:695
-#: includes/admin/class-admin-interface.php:1119
-#: includes/admin/class-admin-interface.php:1307
-#: includes/admin/class-admin-interface.php:1343
-#: includes/admin/class-admin-interface.php:1407
-#: includes/admin/class-admin-interface.php:1478
-#: includes/admin/class-admin-interface.php:1544
-#: includes/admin/class-admin-interface.php:1610
-#: includes/admin/class-admin-interface.php:1692
-#: includes/admin/class-admin-interface.php:1738
-#: includes/admin/class-admin-interface.php:1758
-#: includes/admin/class-admin-interface.php:1778
-#: includes/admin/class-admin-interface.php:1800
-#: includes/admin/class-admin-interface.php:1908
-#: includes/admin/class-admin-interface.php:1992
-#: includes/admin/class-admin-interface.php:2030
-#: includes/admin/class-admin-interface.php:2103
-#: includes/admin/class-admin-interface.php:2142
-#: includes/admin/class-admin-interface.php:6754
-#: includes/admin/class-admin-interface.php:6788
+#: includes/admin/class-admin-interface.php:1507
+#: includes/admin/class-admin-interface.php:1807
+#: includes/admin/class-admin-interface.php:1907
+#: includes/admin/class-admin-interface.php:2018
+#: includes/admin/class-admin-interface.php:2123
+#: includes/admin/class-admin-interface.php:2233
+#: includes/admin/class-admin-interface.php:2349
+#: includes/admin/class-admin-interface.php:2409
+#: includes/admin/class-admin-interface.php:2437
+#: includes/admin/class-admin-interface.php:2465
+#: includes/admin/class-admin-interface.php:2495
+#: includes/admin/class-admin-interface.php:2656
+#: includes/admin/class-admin-interface.php:2787
+#: includes/admin/class-admin-interface.php:2841
+#: includes/admin/class-admin-interface.php:2936
+#: includes/admin/class-admin-interface.php:2989
+#: includes/admin/class-admin-interface.php:10597
+#: includes/admin/class-admin-interface.php:10649
 #: includes/admin/class-admin-search-analytics.php:251
 msgid "Insufficient permissions."
 msgstr ""
@@ -1026,7 +1020,7 @@ msgid "Contact Message"
 msgstr ""
 
 #: includes/admin/class-admin-contact-messages.php:304
-#: includes/admin/class-admin-interface.php:5681
+#: includes/admin/class-admin-interface.php:9254
 msgid "Delete"
 msgstr ""
 
@@ -1061,7 +1055,7 @@ msgstr ""
 #: includes/admin/class-admin-contact-messages.php:469
 #, php-format
 msgid ""
-"This is a test email from the AI Chat & Search plugin.\n"
+"This is a test email from the PurioChat plugin.\n"
 "\n"
 "If you received this email, your contact form email delivery is working correctly.\n"
 "\n"
@@ -1101,7 +1095,7 @@ msgid "Invalid from email address."
 msgstr ""
 
 #: includes/admin/class-admin-contact-messages.php:554
-#: includes/admin/class-admin-interface.php:1272
+#: includes/admin/class-admin-interface.php:1755
 msgid "Settings saved successfully!"
 msgstr ""
 
@@ -1137,7 +1131,6 @@ msgid "Source:"
 msgstr ""
 
 #: includes/admin/class-admin-contact-messages.php:613
-#: includes/admin/class-admin-interface.php:2853
 msgid "AI Chat"
 msgstr ""
 
@@ -1161,2646 +1154,2698 @@ msgstr ""
 msgid "Message deleted."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:971
+#: includes/admin/class-admin-interface.php:1121
 msgid "You do not have permission to do this."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1328
-msgid "Quick buttons saved."
+#: includes/admin/class-admin-interface.php:1232
+#: includes/admin/class-admin-interface.php:1334
+#: includes/admin/class-admin-interface.php:4017
+msgid "Dashboard"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1354
-#: includes/admin/class-admin-interface.php:2338
+#: includes/admin/class-admin-interface.php:1236
+#: includes/admin/class-admin-interface.php:1335
+#: includes/admin/class-admin-interface.php:4030
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1243
+#: includes/admin/class-admin-interface.php:1336
+#: includes/admin/class-admin-interface.php:4042
+msgid "AI Search"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1249
+#: includes/admin/class-admin-interface.php:1337
+#: includes/admin/class-admin-interface.php:4058
+#: includes/admin/class-admin-interface.php:6278
+msgid "Data Training"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1255
+#: includes/admin/class-admin-interface.php:1338
+msgid "License"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1822
+#: includes/admin/class-admin-interface.php:3229
 msgid "Please enter an API key first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1369
-#: includes/admin/class-admin-interface.php:1440
-#: includes/admin/class-admin-interface.php:1506
-#: includes/admin/class-admin-interface.php:1572
+#: includes/admin/class-admin-interface.php:1843
+#: includes/admin/class-admin-interface.php:1951
+#: includes/admin/class-admin-interface.php:2056
+#: includes/admin/class-admin-interface.php:2161
 msgid "Connection failed: "
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1378
+#: includes/admin/class-admin-interface.php:1854
 msgid "✅ API key is valid!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1381
+#: includes/admin/class-admin-interface.php:1858
 msgid "❌ Invalid API key. Please check your key and try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1383
-#: includes/admin/class-admin-interface.php:1454
-#: includes/admin/class-admin-interface.php:1520
-#: includes/admin/class-admin-interface.php:1586
+#: includes/admin/class-admin-interface.php:1865
+#: includes/admin/class-admin-interface.php:1976
+#: includes/admin/class-admin-interface.php:2081
+#: includes/admin/class-admin-interface.php:2186
 msgid "⚠️ API key valid but rate limit exceeded. Try again in a moment."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1386
-#: includes/admin/class-admin-interface.php:1457
-#: includes/admin/class-admin-interface.php:1523
-#: includes/admin/class-admin-interface.php:1589
-#: includes/admin/class-admin-interface.php:1967
+#: includes/admin/class-admin-interface.php:1874
+#: includes/admin/class-admin-interface.php:1985
+#: includes/admin/class-admin-interface.php:2090
+#: includes/admin/class-admin-interface.php:2197
+#: includes/admin/class-admin-interface.php:2753
 msgid "Unknown error"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1387
+#: includes/admin/class-admin-interface.php:1877
 #, php-format
 msgid "❌ API Error (%d): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1391
-#: includes/admin/class-admin-interface.php:1462
-#: includes/admin/class-admin-interface.php:1528
-#: includes/admin/class-admin-interface.php:1594
+#: includes/admin/class-admin-interface.php:1886
+#: includes/admin/class-admin-interface.php:1997
+#: includes/admin/class-admin-interface.php:2102
+#: includes/admin/class-admin-interface.php:2212
 msgid "❌ Test failed: "
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1418
+#: includes/admin/class-admin-interface.php:1922
 msgid "Please enter a Gemini API key first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1449
+#: includes/admin/class-admin-interface.php:1962
 msgid "✅ Gemini API key is valid!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1452
+#: includes/admin/class-admin-interface.php:1969
 msgid "❌ Invalid Gemini API key. Please check your key and try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1458
+#: includes/admin/class-admin-interface.php:1988
 #, php-format
 msgid "❌ Gemini API Error (%d): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1489
+#: includes/admin/class-admin-interface.php:2033
 msgid "Please enter a Mistral API key first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1515
+#: includes/admin/class-admin-interface.php:2067
 msgid "✅ Mistral API key is valid!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1518
+#: includes/admin/class-admin-interface.php:2074
 msgid "❌ Invalid Mistral API key. Please check your key and try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1524
+#: includes/admin/class-admin-interface.php:2093
 #, php-format
 msgid "❌ Mistral API Error (%d): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1555
+#: includes/admin/class-admin-interface.php:2138
 msgid "Please enter an OpenRouter API key first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1581
+#: includes/admin/class-admin-interface.php:2172
 msgid "✅ OpenRouter API key is valid!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1584
+#: includes/admin/class-admin-interface.php:2179
 msgid "❌ Invalid OpenRouter API key. Please check your key and try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1590
+#: includes/admin/class-admin-interface.php:2200
 #, php-format
 msgid "❌ OpenRouter API Error (%d): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1621
+#: includes/admin/class-admin-interface.php:2245
 msgid "API health status"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1628
-msgid "rate limiting"
+#: includes/admin/class-admin-interface.php:2252
+msgid "global rate limit"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1635
+#: includes/admin/class-admin-interface.php:2271
 msgid "usage tracking"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1651
+#: includes/admin/class-admin-interface.php:2288
 #, php-format
 msgid "Google Places data (%d)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1666
+#: includes/admin/class-admin-interface.php:2306
 #, php-format
 msgid "processing delays (%d)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1670
+#: includes/admin/class-admin-interface.php:2314
 #, php-format
 msgid "✅ Cleared %d cache entries: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1671
+#: includes/admin/class-admin-interface.php:2318
 msgid "ℹ️ No cache entries found to clear."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1676
+#: includes/admin/class-admin-interface.php:2327
 msgid "❌ Clear cache failed: "
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1715
+#: includes/admin/class-admin-interface.php:2374
 #, php-format
 msgid "Cleared %d IP rate limits."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1719
+#: includes/admin/class-admin-interface.php:2380
 msgid "No IP rate limits to clear."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1724
+#: includes/admin/class-admin-interface.php:2389
 msgid "Failed to clear IP rate limits: "
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1842
+#: includes/admin/class-admin-interface.php:2556
 msgid "creation failed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1845
+#: includes/admin/class-admin-interface.php:2563
 msgid "class/method not found"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1865
+#: includes/admin/class-admin-interface.php:2594
 #, php-format
 msgid "Created tables: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1868
+#: includes/admin/class-admin-interface.php:2600
 #, php-format
 msgid "Added columns: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1871
+#: includes/admin/class-admin-interface.php:2606
 #, php-format
 msgid "Failed: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1883
+#: includes/admin/class-admin-interface.php:2624
 msgid "Please refresh the page."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1889
+#: includes/admin/class-admin-interface.php:2630
 msgid "ℹ️ Database is already up to date."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1915
+#: includes/admin/class-admin-interface.php:2665
 msgid "Please enter a valid post ID."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1922
+#: includes/admin/class-admin-interface.php:2678
 #, php-format
 msgid "Post ID %d not found."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1929
+#: includes/admin/class-admin-interface.php:2690
 #, php-format
 msgid "Post type \"%s\" is not enabled for AI search. Enable it in Universal Settings first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1938
+#: includes/admin/class-admin-interface.php:2707
 #, php-format
 msgid "%s API key is not configured. Please configure it in Settings first."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1947
+#: includes/admin/class-admin-interface.php:2724
 #, php-format
 msgid "✅ Embedding regenerated successfully for \"%s\" (ID: %d, Type: %s). Processed %d characters."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1964
+#: includes/admin/class-admin-interface.php:2746
 #, php-format
 msgid "❌ Failed to regenerate embedding for \"%s\" (ID: %d): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1973
+#: includes/admin/class-admin-interface.php:2760
 #, php-format
 msgid "❌ Error regenerating embedding for post ID %d: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:1999
-#: includes/admin/class-admin-interface.php:2430
+#: includes/admin/class-admin-interface.php:2798
+#: includes/admin/class-admin-interface.php:3423
 msgid "Please enter a search term."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2014
+#: includes/admin/class-admin-interface.php:2820
 #, php-format
 msgid "Error searching embeddings: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2112
+#: includes/admin/class-admin-interface.php:2951
 msgid "Topic and post are required."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2150
+#: includes/admin/class-admin-interface.php:2999
 msgid "Source not found."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2315
+#: includes/admin/class-admin-interface.php:3185
 #: includes/admin/class-universal-settings.php:126
 msgid "Success!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2316
+#: includes/admin/class-admin-interface.php:3186
 msgid "Error!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2318
+#: includes/admin/class-admin-interface.php:3188
 msgid "AJAX error:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2319
+#: includes/admin/class-admin-interface.php:3189
 msgid "Connection failed:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2320
+#: includes/admin/class-admin-interface.php:3190
 msgid "AJAX error occurred"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2321
+#: includes/admin/class-admin-interface.php:3191
 msgid "Error: AJAX configuration not loaded. Please refresh the page."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2323
-#: includes/admin/class-admin-interface.php:5650
-#: includes/admin/class-admin-interface.php:5677
+#: includes/admin/class-admin-interface.php:3196
+#: includes/admin/class-admin-interface.php:9189
+#: includes/admin/class-admin-interface.php:9239
 msgid "When user asks about"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2326
+#: includes/admin/class-admin-interface.php:3199
 msgid "Click Save and go to Data Training tab and start retraining after changing provider."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2327
+#: includes/admin/class-admin-interface.php:3203
 msgid "Error clearing embeddings. Please try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2328
+#: includes/admin/class-admin-interface.php:3207
 msgid "Saved"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2329
+#: includes/admin/class-admin-interface.php:3208
 msgid "Failed to save embedding model."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2330
-#: includes/admin/class-admin-interface.php:4644
+#: includes/admin/class-admin-interface.php:3212
+#: includes/admin/class-admin-interface.php:4545
 msgid "OpenAI Model"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2331
+#: includes/admin/class-admin-interface.php:3213
 msgid "Select the OpenAI model for chat responses."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2332
-#: includes/admin/class-admin-interface.php:4638
+#: includes/admin/class-admin-interface.php:3217
+#: includes/admin/class-admin-interface.php:4539
 msgid "Gemini Model"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2333
+#: includes/admin/class-admin-interface.php:3218
 msgid "Select the Gemini model for chat responses."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2334
-#: includes/admin/class-admin-interface.php:4640
+#: includes/admin/class-admin-interface.php:3222
+#: includes/admin/class-admin-interface.php:4541
 msgid "Mistral Model"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2335
+#: includes/admin/class-admin-interface.php:3223
 msgid "Select the Mistral model for chat responses."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2339
+#: includes/admin/class-admin-interface.php:3233
 msgid "Testing API connection..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2340
+#: includes/admin/class-admin-interface.php:3237
 msgid "Test failed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2344
+#: includes/admin/class-admin-interface.php:3241
 msgid "Clear cache failed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2345
+#: includes/admin/class-admin-interface.php:3242
 msgid "Failed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2346
+#: includes/admin/class-admin-interface.php:3243
 msgid "Creating..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2347
+#: includes/admin/class-admin-interface.php:3244
 msgid "Failed to create tables"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2350
+#: includes/admin/class-admin-interface.php:3250
 msgid "Starting structured embedding generation..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2351
+#: includes/admin/class-admin-interface.php:3254
 msgid "Generation stopped by user."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2352
+#: includes/admin/class-admin-interface.php:3258
 msgid "Processing batch starting at offset"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2353
+#: includes/admin/class-admin-interface.php:3262
 msgid "Batch completed:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2354
+#: includes/admin/class-admin-interface.php:3263
 msgid "items processed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2355
+#: includes/admin/class-admin-interface.php:3264
 msgid "Progress:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2356
+#: includes/admin/class-admin-interface.php:3265
 msgid "Batch had"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2357
+#: includes/admin/class-admin-interface.php:3266
 msgid "errors:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2358
+#: includes/admin/class-admin-interface.php:3267
 msgid "and"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2359
+#: includes/admin/class-admin-interface.php:3268
 msgid "more errors"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2360
+#: includes/admin/class-admin-interface.php:3269
 msgid "Generation completed successfully!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2361
+#: includes/admin/class-admin-interface.php:3273
 msgid "Batch failed:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2362
+#: includes/admin/class-admin-interface.php:3274
 msgid "Generation failed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2363
+#: includes/admin/class-admin-interface.php:3275
 msgid "Generation failed due to connection error."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2364
-#: includes/admin/class-admin-interface.php:4158
+#: includes/admin/class-admin-interface.php:3279
+#: includes/admin/class-admin-interface.php:6490
 msgid "API Key Not Configured"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2365
+#: includes/admin/class-admin-interface.php:3280
 msgid "Please add your API key in the Settings tab before starting training."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2366
-#: includes/admin/class-admin-interface.php:4180
+#: includes/admin/class-admin-interface.php:3284
+#: includes/admin/class-admin-interface.php:6518
 msgid "Go to Settings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2369
+#: includes/admin/class-admin-interface.php:3287
 msgid "Please enter a listing ID"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2370
+#: includes/admin/class-admin-interface.php:3291
 msgid "Please enter a valid listing ID"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2371
+#: includes/admin/class-admin-interface.php:3295
 msgid "Loading embedding data for listing"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2372
+#: includes/admin/class-admin-interface.php:3299
 msgid "Regeneration failed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2373
+#: includes/admin/class-admin-interface.php:3300
 msgid "Generating..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2374
+#: includes/admin/class-admin-interface.php:3301
 msgid "Done"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2375
+#: includes/admin/class-admin-interface.php:3302
 msgid "Failed to generate embedding:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2378
+#: includes/admin/class-admin-interface.php:3308
 msgid "Parent"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2379
+#: includes/admin/class-admin-interface.php:3309
 msgid "This content is chunked into"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2380
+#: includes/admin/class-admin-interface.php:3313
 msgid "parts for better embedding quality"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2381
+#: includes/admin/class-admin-interface.php:3317
 msgid "Words"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2382
+#: includes/admin/class-admin-interface.php:3318
 msgid "Characters"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2383
+#: includes/admin/class-admin-interface.php:3319
 msgid "Embedding"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2384
+#: includes/admin/class-admin-interface.php:3320
 msgid "Created"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2385
+#: includes/admin/class-admin-interface.php:3321
 msgid "Yes"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2386
+#: includes/admin/class-admin-interface.php:3322
 msgid "No"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2387
+#: includes/admin/class-admin-interface.php:3323
 msgid "Click on a chunk ID to view its embedding details."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2388
+#: includes/admin/class-admin-interface.php:3327
 msgid "Processed Content"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2389
+#: includes/admin/class-admin-interface.php:3328
 msgid "Embedding Vector (first 10 dimensions)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2390
+#: includes/admin/class-admin-interface.php:3332
 msgid "Full embedding vector contains"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2391
+#: includes/admin/class-admin-interface.php:3336
 msgid "dimensions"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2392
+#: includes/admin/class-admin-interface.php:3337
 msgid "Delete Embedding"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2393
+#: includes/admin/class-admin-interface.php:3338
 msgid "Delete All Chunks"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2394
+#: includes/admin/class-admin-interface.php:3339
 msgid "Parent post does not have its own embedding - content is stored in chunks above."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2395
+#: includes/admin/class-admin-interface.php:3343
 msgid "No embedding found"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2396
+#: includes/admin/class-admin-interface.php:3344
 msgid "This listing has not been processed for AI search yet."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2397
+#: includes/admin/class-admin-interface.php:3348
 msgid "Are you sure you want to delete the embedding for"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2398
+#: includes/admin/class-admin-interface.php:3352
 msgid "Are you sure you want to delete all"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2399
+#: includes/admin/class-admin-interface.php:3356
 msgid "chunks for"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2400
+#: includes/admin/class-admin-interface.php:3357
 msgid "You will need to regenerate it to use AI search for this item."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2401
+#: includes/admin/class-admin-interface.php:3361
 msgid "Deleting embedding..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2402
+#: includes/admin/class-admin-interface.php:3365
 msgid "Deleting chunks..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2403
+#: includes/admin/class-admin-interface.php:3366
 msgid "Embedding deleted successfully."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2404
+#: includes/admin/class-admin-interface.php:3370
 msgid "All chunks deleted successfully."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2407
+#: includes/admin/class-admin-interface.php:3376
 msgid "Processed Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2408
+#: includes/admin/class-admin-interface.php:3380
 msgid "Missing Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2409
+#: includes/admin/class-admin-interface.php:3381
 msgid "Recent Activity (24h)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2410
+#: includes/admin/class-admin-interface.php:3382
 msgid "Recent Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2411
+#: includes/admin/class-admin-interface.php:3383
 msgid "Search by title or ID..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2413
+#: includes/admin/class-admin-interface.php:3388
 msgid "Title"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2414
+#: includes/admin/class-admin-interface.php:3389
 msgid "Type"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2415
+#: includes/admin/class-admin-interface.php:3390
 msgid "Click on any ID to view its embedding data."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2416
+#: includes/admin/class-admin-interface.php:3394
 msgid "indicates that content was split into parts for better accuracy."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2417
+#: includes/admin/class-admin-interface.php:3398
 msgid "No recent embeddings found."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2418
+#: includes/admin/class-admin-interface.php:3402
 #: includes/admin/class-universal-settings.php:366
 msgid "Select All"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2419
+#: includes/admin/class-admin-interface.php:3403
 #: includes/admin/class-universal-settings.php:367
 msgid "Deselect All"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2420
+#: includes/admin/class-admin-interface.php:3404
 msgid "Generate Selected"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2421
+#: includes/admin/class-admin-interface.php:3405
 msgid "Last Modified"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2422
+#: includes/admin/class-admin-interface.php:3406
 msgid "Action"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2423
+#: includes/admin/class-admin-interface.php:3407
 msgid "Generate"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2424
+#: includes/admin/class-admin-interface.php:3408
 msgid "Click \"Generate\" for individual listings or select multiple and use \"Generate Selected\"."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2425
+#: includes/admin/class-admin-interface.php:3412
 msgid "All"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2426
+#: includes/admin/class-admin-interface.php:3413
 msgid "listings are missing embeddings. Use the \"Generate Structured Embeddings\" tool above to process them in bulk."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2427
+#: includes/admin/class-admin-interface.php:3417
 msgid "Error loading listing information"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2432
+#: includes/admin/class-admin-interface.php:3428
 msgid "Search failed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2433
+#: includes/admin/class-admin-interface.php:3429
 msgid "Search request failed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2434
+#: includes/admin/class-admin-interface.php:3433
 msgid "result(s) found"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2436
+#: includes/admin/class-admin-interface.php:3435
 msgid "Clear search results"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2439
+#: includes/admin/class-admin-interface.php:3441
 msgid "Are you sure? This will delete all embeddings and cannot be undone."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2440
+#: includes/admin/class-admin-interface.php:3445
 msgid "Clearing database..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2441
+#: includes/admin/class-admin-interface.php:3446
 msgid "Please select a post type"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2442
+#: includes/admin/class-admin-interface.php:3450
 msgid "Are you sure you want to delete all embeddings for"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2443
+#: includes/admin/class-admin-interface.php:3454
 msgid "This cannot be undone."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2444
+#: includes/admin/class-admin-interface.php:3455
 msgid "Deleting embeddings for"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2445
+#: includes/admin/class-admin-interface.php:3459
 msgid "Clearing analytics data..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2446
+#: includes/admin/class-admin-interface.php:3463
 msgid "Action completed successfully!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2447
+#: includes/admin/class-admin-interface.php:3467
 msgid "Successfully deleted"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2448
+#: includes/admin/class-admin-interface.php:3471
 msgid "embedding(s) for post type:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2449
+#: includes/admin/class-admin-interface.php:3475
 msgid "Analytics data cleared successfully!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2452
+#: includes/admin/class-admin-interface.php:3481
 msgid "embeddings..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2453
+#: includes/admin/class-admin-interface.php:3482
 msgid "Completed:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2454
+#: includes/admin/class-admin-interface.php:3483
 msgid "Processing"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2457
+#: includes/admin/class-admin-interface.php:3486
 msgid "Select Custom Icon"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2458
+#: includes/admin/class-admin-interface.php:3487
 msgid "Use this icon"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2459
+#: includes/admin/class-admin-interface.php:3488
 msgid "Select Chat Avatar"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2460
+#: includes/admin/class-admin-interface.php:3489
 msgid "Use this image"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2461
-#: includes/admin/class-admin-interface.php:5026
-#: includes/admin/class-admin-interface.php:5281
-#: includes/admin/class-admin-interface.php:5451
-#: includes/admin/class-admin-interface.php:6117
-#: includes/admin/class-admin-interface.php:6205
+#: includes/admin/class-admin-interface.php:3490
+#: includes/admin/class-admin-interface.php:7821
+#: includes/admin/class-admin-interface.php:8308
+#: includes/admin/class-admin-interface.php:8604
+#: includes/admin/class-admin-interface.php:8916
+#: includes/admin/class-admin-interface.php:9830
 msgid "Remove"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2466
-#: includes/admin/class-admin-interface.php:2818
+#: includes/admin/class-admin-interface.php:3498
+#: includes/admin/class-admin-interface.php:3993
 msgid "Copied!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2469
+#: includes/admin/class-admin-interface.php:3501
 msgid "English is default, no install needed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2470
+#: includes/admin/class-admin-interface.php:3505
 msgid "Checking..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2471
+#: includes/admin/class-admin-interface.php:3506
 msgid "Translation already installed!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2472
+#: includes/admin/class-admin-interface.php:3510
 msgid "Translation available. Click Install."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2473
+#: includes/admin/class-admin-interface.php:3514
 msgid "Translation not available for this locale."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2474
+#: includes/admin/class-admin-interface.php:3518
 msgid "Check failed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2475
+#: includes/admin/class-admin-interface.php:3519
 msgid "Installing..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2476
+#: includes/admin/class-admin-interface.php:3520
 msgid "Translation installed successfully!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2477
+#: includes/admin/class-admin-interface.php:3524
 msgid "Installation failed."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2478
-#: includes/admin/class-admin-interface.php:4609
+#: includes/admin/class-admin-interface.php:3525
+#: includes/admin/class-admin-interface.php:7324
 msgid "Install"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2479
-#: includes/admin/class-admin-interface.php:4608
+#: includes/admin/class-admin-interface.php:3526
+#: includes/admin/class-admin-interface.php:7323
 msgid "Update"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2482
-#: includes/admin/class-admin-interface.php:3833
+#: includes/admin/class-admin-interface.php:3529
+#: includes/admin/class-admin-interface.php:6013
 msgid "Loose - many results, lower relevance"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2483
-#: includes/admin/class-admin-interface.php:3836
+#: includes/admin/class-admin-interface.php:3533
+#: includes/admin/class-admin-interface.php:6019
 msgid "Broad - more results, some may be less relevant"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2484
-#: includes/admin/class-admin-interface.php:3839
+#: includes/admin/class-admin-interface.php:3537
+#: includes/admin/class-admin-interface.php:6025
 msgid "Balanced - good mix of quantity and quality"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2485
-#: includes/admin/class-admin-interface.php:3842
+#: includes/admin/class-admin-interface.php:3542
+#: includes/admin/class-admin-interface.php:6032
 #, php-format
 msgid "Quality focused - pay attention because %syou might start getting little results%s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2486
-#: includes/admin/class-admin-interface.php:3845
+#: includes/admin/class-admin-interface.php:3550
+#: includes/admin/class-admin-interface.php:6042
 #, php-format
 msgid "Very strict — %syou might get little to no results%s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2489
-#: includes/admin/class-admin-interface.php:6111
+#: includes/admin/class-admin-interface.php:3559
+#: includes/admin/class-admin-interface.php:8898
 msgid "https://example.com"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2490
-#: includes/admin/class-admin-interface.php:6111
-#: includes/admin/class-admin-interface.php:6200
+#: includes/admin/class-admin-interface.php:3560
+#: includes/admin/class-admin-interface.php:8902
+#: includes/admin/class-admin-interface.php:9822
 msgid "Message to send"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2491
-#: includes/admin/class-admin-interface.php:5043
+#: includes/admin/class-admin-interface.php:3561
+#: includes/admin/class-admin-interface.php:7850
 msgid "Buttons Color"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2492
+#: includes/admin/class-admin-interface.php:3562
 msgid "Reset"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2493
+#: includes/admin/class-admin-interface.php:3563
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2628
-msgid "An AI chatbot that searches the website database and responds like a human assistant."
+#: includes/admin/class-admin-interface.php:3727
+#, php-format
+msgid "Hello, %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2657
+#: includes/admin/class-admin-interface.php:3731
+#, php-format
+msgid "Manage your AI assistant, train your content, and track conversations with %sPurioChat by Purethemes%s."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3772
 msgid "Trial License Active"
 msgstr ""
 
 #. translators: %1$s: hours, %2$s: minutes
-#: includes/admin/class-admin-interface.php:2662
+#: includes/admin/class-admin-interface.php:3779
 #, php-format
 msgid "Time remaining: %1$s hours, %2$s minutes"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2674
-#: includes/admin/class-admin-interface.php:2714
+#: includes/admin/class-admin-interface.php:3804
+#: includes/admin/class-admin-interface.php:3853
 msgid "Upgrade Now"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2709
+#: includes/admin/class-admin-interface.php:3842
 msgid "Trial License Expired"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2710
+#: includes/admin/class-admin-interface.php:3846
 msgid "Upgrade now to continue using Pro features."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2728
+#: includes/admin/class-admin-interface.php:3869
 msgid "Request Free Trial for 3 Days"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2730
+#: includes/admin/class-admin-interface.php:3874
 msgid "Unlock everything and see for yourself."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2731
+#: includes/admin/class-admin-interface.php:3878
 msgid "No card required"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2732
+#: includes/admin/class-admin-interface.php:3882
 msgid "No API key needed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2736
-#: includes/admin/class-admin-interface.php:2784
+#: includes/admin/class-admin-interface.php:3889
+#: includes/admin/class-admin-interface.php:3955
 #: includes/admin/class-universal-settings.php:469
 msgid "Dismiss"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2774
+#: includes/admin/class-admin-interface.php:3936
 msgid "Click to copy"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2840
-msgid "Settings"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:2852
-msgid "AI Search"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:2866
-#: includes/admin/class-admin-interface.php:3988
-msgid "Data Training"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:2874
-msgid "Stats & History"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:2940
+#: includes/admin/class-admin-interface.php:4142
+#: includes/admin/class-admin-interface.php:7099
 msgid "API Configuration"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2941
+#: includes/admin/class-admin-interface.php:4143
 msgid "Configure your AI provider and rate limiting."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2950
+#: includes/admin/class-admin-interface.php:4157
 msgid "Free Trial Active"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2952
+#: includes/admin/class-admin-interface.php:4163
 #, php-format
 msgid "No API key needed during your trial. We've got you covered.<br>Chat limit: <strong>%d</strong> messages. Training limit: <strong>%d</strong> resources."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2954
+#: includes/admin/class-admin-interface.php:4173
 msgid "Use my API key now"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2955
+#: includes/admin/class-admin-interface.php:4177
 msgid "After the trial you need to use your own API key."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2963
+#: includes/admin/class-admin-interface.php:4188
 msgid "AI Provider"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2965
+#: includes/admin/class-admin-interface.php:4201
 msgid "Use Trial AI Gateway"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2971
+#: includes/admin/class-admin-interface.php:4216
 msgid "OpenAI"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2972
+#: includes/admin/class-admin-interface.php:4226
 msgid "Google Gemini"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2973
+#: includes/admin/class-admin-interface.php:4236
 msgid "Mistral AI"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:2974
+#: includes/admin/class-admin-interface.php:4246
 msgid "OpenRouter"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3003
+#: includes/admin/class-admin-interface.php:4292
 msgid "Choose between OpenAI, Google Gemini, Mistral AI, or OpenRouter - a gateway to all top AI models."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3010
+#: includes/admin/class-admin-interface.php:4308
 msgid "OpenAI API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3019
-#: includes/admin/class-admin-interface.php:3050
-#: includes/admin/class-admin-interface.php:3080
-#: includes/admin/class-admin-interface.php:3111
+#: includes/admin/class-admin-interface.php:4327
+#: includes/admin/class-admin-interface.php:4388
+#: includes/admin/class-admin-interface.php:4448
+#: includes/admin/class-admin-interface.php:4509
 msgid "Test API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3023
-#: includes/admin/class-admin-interface.php:3054
-#: includes/admin/class-admin-interface.php:3084
-#: includes/admin/class-admin-interface.php:3115
+#: includes/admin/class-admin-interface.php:4334
+#: includes/admin/class-admin-interface.php:4395
+#: includes/admin/class-admin-interface.php:4455
+#: includes/admin/class-admin-interface.php:4516
 msgid "Testing..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3027
-#: includes/admin/class-admin-interface.php:3058
-#: includes/admin/class-admin-interface.php:3088
-#: includes/admin/class-admin-interface.php:3119
+#: includes/admin/class-admin-interface.php:4338
+#: includes/admin/class-admin-interface.php:4399
+#: includes/admin/class-admin-interface.php:4459
+#: includes/admin/class-admin-interface.php:4520
 msgid "Remove API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3033
+#: includes/admin/class-admin-interface.php:4342
 msgid "<strong>OpenAI requires $5 minimum balance.</strong> Enter your OpenAI API key from the OpenAI Dashboard."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3034
+#: includes/admin/class-admin-interface.php:4346
 msgid "How to create Open AI API key →"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3041
+#: includes/admin/class-admin-interface.php:4364
 msgid "Google Gemini API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3064
+#: includes/admin/class-admin-interface.php:4404
 #, php-format
 msgid "Enter your Google Gemini API key from %1$sGoogle AI Studio%2$s. Note: %3$sfree tier has very low rate limits%4$s — we recommend a paid plan."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3071
+#: includes/admin/class-admin-interface.php:4427
 msgid "Mistral AI API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3094
+#: includes/admin/class-admin-interface.php:4463
 msgid "Enter your Mistral AI API key from the Mistral Console. Mistral is hosted in"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3094
+#: includes/admin/class-admin-interface.php:4466
 msgid "European Union"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3095
+#: includes/admin/class-admin-interface.php:4470
 msgid "Get Mistral API Key →"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3102
+#: includes/admin/class-admin-interface.php:4488
 msgid "OpenRouter API Key"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3125
+#: includes/admin/class-admin-interface.php:4524
 msgid "<strong>One API key for top AI providers</strong> (OpenAI, Anthropic, Google, Meta, Mistral, DeepSeek, Grok).<br><strong>OpenRouter requires $5 minimum balance.</strong>"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3134
+#: includes/admin/class-admin-interface.php:4543
+msgid "OpenRouter Model"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4723
+msgid "Enable reasoning"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4726
+msgid "Reasoning can produce better answers for complex questions but might be slower."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4729
+#: includes/admin/class-admin-interface.php:7508
+#: includes/admin/class-admin-interface.php:7569
+msgid "More info"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4738
+msgid "Select the Gemini model for chat responses. Better models provide more accurate and context-aware responses."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4743
+msgid "Select the Mistral model for chat responses. Better models provide more accurate and context-aware responses."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4748
+msgid "Select an OpenRouter model for chat responses. The better the model, the more accurate and context-aware the responses at a cost of time response."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4753
+msgid "Select the OpenAI model for chat responses. The better the model, the more accurate and context-aware the responses at a cost of time response."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4763
+msgid "Gemini 3.1 Pro Preview requires billing in Google. Flash models are available in the Free Tier."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4769
+msgid "This model does not support audio or image input."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4782
 msgid "Rate Limit Settings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3143
+#: includes/admin/class-admin-interface.php:4794
 msgid "Global API Rate Limit (per hour)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3146
+#: includes/admin/class-admin-interface.php:4805
 msgid "API calls per hour"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3148
+#: includes/admin/class-admin-interface.php:4810
 msgid "Maximum number of API calls allowed per hour (includes chat completions, and search operations)."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3162
+#: includes/admin/class-admin-interface.php:4834
 msgid "User Rate Limit - Per IP Address"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3162
+#: includes/admin/class-admin-interface.php:4837
 msgid "Clear all IP limits"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3166
+#: includes/admin/class-admin-interface.php:4849
 msgid "/min"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3170
+#: includes/admin/class-admin-interface.php:4861
 msgid "/15min"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3174
+#: includes/admin/class-admin-interface.php:4873
 msgid "/day"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3177
+#: includes/admin/class-admin-interface.php:4879
 msgid "Max chat messages per IP address in each time window. Enforced server-side."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3187
+#: includes/admin/class-admin-interface.php:4892
 msgid "Switch AI Provider?"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3195
+#: includes/admin/class-admin-interface.php:4903
 msgid "Switching to a different AI provider will:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3197
+#: includes/admin/class-admin-interface.php:4908
 msgid "Clear all existing embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3198
+#: includes/admin/class-admin-interface.php:4912
 msgid "Require retraining with the new provider"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3203
-#: includes/admin/class-admin-interface.php:3724
-#: includes/admin/class-admin-interface.php:4144
-#: includes/admin/class-admin-interface.php:4177
+#: includes/admin/class-admin-interface.php:4920
+#: includes/admin/class-admin-interface.php:5833
+#: includes/admin/class-admin-interface.php:6476
+#: includes/admin/class-admin-interface.php:6515
 #: includes/admin/class-universal-settings.php:379
 msgid "Cancel"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3206
+#: includes/admin/class-admin-interface.php:4923
 msgid "Yes, Clear Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3225
-msgid "Search Suggestions"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3226
-msgid "Help users discover what they can search for with intelligent suggestions."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3235
-msgid "Enable search suggestions"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3236
-msgid "Show helpful search suggestions below the search input to guide users."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3243
-msgid "Suggestion Source:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3248
-msgid "Show top 5 most popular searches"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3253
-msgid "Show top 10 most popular searches"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3258
-msgid "Use custom suggestions (comma-separated)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3264
-msgid "Custom Suggestions (comma-separated):"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3268
-msgid "Enter search suggestions separated by commas. These will be displayed when \"custom suggestions\" is selected above."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3269
-#: includes/admin/class-admin-interface.php:3307
-msgid "Examples:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3283
-msgid "Search Refining"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3284
-msgid "Extra AI-powered search features and optimizations."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3301
-msgid "AI Query Expansion"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3305
-msgid "Expands queries with related keywords to find more relevant results, but may return broader matches."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3311
-msgid "Adds ~1s latency per search due to additional AI processing"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3320
-msgid "Best Match Badge Threshold"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3325
-msgid "Show <strong>\"Best Match\" badge</strong> for search results above this similarity percentage. Higher values make the badge more exclusive."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3335
-#: includes/admin/class-admin-interface.php:3377
-msgid "Maximum AI Top Picks Results"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3338
-#: includes/admin/class-admin-interface.php:3380
-msgid "results"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3340
-#: includes/admin/class-admin-interface.php:3382
-msgid "Maximum number of <strong>\"Best Match\" badge</strong> results to display in <strong>search field shortcode</strong> dropdown."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3366
+#: includes/admin/class-admin-interface.php:4948
 msgid "AI Semantic Search Field"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3367
+#: includes/admin/class-admin-interface.php:4952
 msgid "Add AI-powered semantic search to any page using a shortcode."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3384
-#: includes/admin/class-admin-interface.php:5772
+#: includes/admin/class-admin-interface.php:4965
+#: includes/admin/class-admin-interface.php:5456
+msgid "Maximum AI Top Picks Results"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4973
+#: includes/admin/class-admin-interface.php:5467
+msgid "results"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4975
+#: includes/admin/class-admin-interface.php:5472
+msgid "Maximum number of <strong>\"Best Match\" badge</strong> results to display in <strong>search field shortcode</strong> dropdown."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4980
+#: includes/admin/class-admin-interface.php:7640
 msgid "Balanced (recommended)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3385
+#: includes/admin/class-admin-interface.php:4984
 msgid "Compact"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3386
+#: includes/admin/class-admin-interface.php:4988
 msgid "Comprehensive"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3401
+#: includes/admin/class-admin-interface.php:5005
 msgid "Developer & Debug Options"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3402
+#: includes/admin/class-admin-interface.php:5009
 msgid "Advanced options for development and troubleshooting."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3412
+#: includes/admin/class-admin-interface.php:5024
 msgid "Debug Mode"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3413
+#: includes/admin/class-admin-interface.php:5025
 msgid "Enable debug logging to wp-content/debug.log"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3416
+#: includes/admin/class-admin-interface.php:5031
 msgid "When enabled, detailed search information will be logged to help troubleshoot issues. Make sure WP_DEBUG_LOG is enabled in wp-config.php."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3425
+#: includes/admin/class-admin-interface.php:5046
 msgid "Load chatbot scripts only when the floating widget is opened"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3428
+#: includes/admin/class-admin-interface.php:5052
 msgid "Defers loading chatbot JavaScript until the user opens the chat. Improves page load performance. Only applies to the floating widget, not the shortcode."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3433
+#: includes/admin/class-admin-interface.php:5060
 msgid "Custom CSS"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3440
+#: includes/admin/class-admin-interface.php:5069
 msgid "Database Tables Status"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3444
+#: includes/admin/class-admin-interface.php:5076
 msgid "Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3446
+#: includes/admin/class-admin-interface.php:5084
 msgid "Contact Messages"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3462
+#: includes/admin/class-admin-interface.php:5114
 msgid "Chat History: ip_address column"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3472
+#: includes/admin/class-admin-interface.php:5128
 msgid "All database tables are properly configured."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3482
+#: includes/admin/class-admin-interface.php:5142
 #, php-format
 msgid "Missing tables: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3485
+#: includes/admin/class-admin-interface.php:5151
 #, php-format
 msgid "Missing columns: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3491
+#: includes/admin/class-admin-interface.php:5162
 msgid "To fix: Deactivate and reactivate the plugin."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3498
+#: includes/admin/class-admin-interface.php:5172
 msgid "Server Info"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3500
+#: includes/admin/class-admin-interface.php:5179
 msgid "Unknown"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3506
+#: includes/admin/class-admin-interface.php:5189
 msgid "WP Memory Limit:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3507
+#: includes/admin/class-admin-interface.php:5195
 msgid "PHP Memory Limit:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3508
+#: includes/admin/class-admin-interface.php:5201
 msgid "Max Execution Time:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3511
+#: includes/admin/class-admin-interface.php:5209
 msgid "PHP memory limit is below 256 MB. This may cause issues with embedding generation and AI search. Please increase it in your hosting panel or php.ini."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3516
+#: includes/admin/class-admin-interface.php:5217
 msgid "Cache Management"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3517
+#: includes/admin/class-admin-interface.php:5221
 msgid "Clear rate limiting and usage tracking data. Useful for testing or troubleshooting."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3521
+#: includes/admin/class-admin-interface.php:5228
 msgid "Clear Cache"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3555
+#: includes/admin/class-admin-interface.php:5253
+msgid "Search Suggestions"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5257
+msgid "Help users discover what they can search for with intelligent suggestions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5274
+msgid "Enable search suggestions"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5278
+msgid "Show helpful search suggestions below the search input to guide users."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5288
+msgid "Suggestion Source:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5299
+msgid "Show top 5 most popular searches"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5313
+msgid "Show top 10 most popular searches"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5327
+msgid "Use custom suggestions (comma-separated)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5336
+msgid "Custom Suggestions (comma-separated):"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5348
+msgid "Enter search suggestions separated by commas. These will be displayed when \"custom suggestions\" is selected above."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5352
+#: includes/admin/class-admin-interface.php:5408
+msgid "Examples:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5369
+msgid "Search Refining"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5370
+msgid "Extra AI-powered search features and optimizations."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5396
+msgid "AI Query Expansion"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5403
+msgid "Expands queries with related keywords to find more relevant results, but may return broader matches."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5415
+msgid "Adds ~1s latency per search due to additional AI processing"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5430
+msgid "Best Match Badge Threshold"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5443
+msgid "Show <strong>\"Best Match\" badge</strong> for search results above this similarity percentage. Higher values make the badge more exclusive."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5517
 msgid "Select Content for Training"
 msgstr ""
 
 #. translators: %s: "New content is automatically trained" (bold text)
-#: includes/admin/class-admin-interface.php:3560
+#: includes/admin/class-admin-interface.php:5524
 #, php-format
 msgid "Disabling a post type will exclude it from training and search results. %s after adding/editing, no need to run this in future."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3561
+#: includes/admin/class-admin-interface.php:5529
 msgid "New content is automatically trained"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3584
+#: includes/admin/class-admin-interface.php:5555
 msgid "Database Management"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3585
+#: includes/admin/class-admin-interface.php:5556
 msgid "Manage your AI search database and monitor embedding statistics."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3592
+#: includes/admin/class-admin-interface.php:5566
 msgid "Database Actions"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3598
+#: includes/admin/class-admin-interface.php:5580
 msgid "Disable auto-training for new/edited content"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3623
+#: includes/admin/class-admin-interface.php:5613
 msgid "Disable custom fields in embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3624
+#: includes/admin/class-admin-interface.php:5618
 msgid "When enabled, auto-detected custom fields will be excluded from embedding content. Requires re-training after changing."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3624
+#: includes/admin/class-admin-interface.php:5623
 msgid "More info about disabling custom fields"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3669
+#: includes/admin/class-admin-interface.php:5683
 msgid "Embedding Model"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3670
+#: includes/admin/class-admin-interface.php:5688
 msgid "Embedding models convert your content into numerical vectors so the chatbot can find semantically similar results. Higher dimensions (e.g. 3072) capture more nuance and accuracy but are slower to search. Lower dimensions (e.g. 512, 1024) are faster with slightly reduced precision."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3670
+#: includes/admin/class-admin-interface.php:5693
 msgid "More info about embedding models"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3702
+#: includes/admin/class-admin-interface.php:5799
 msgid "Select the embedding model for generating content vectors."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3704
+#: includes/admin/class-admin-interface.php:5804
 msgid "Embedding model changed. Save, then go to Data Training to retrain all content."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3713
+#: includes/admin/class-admin-interface.php:5816
 msgid "Change Embedding Model?"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3721
+#: includes/admin/class-admin-interface.php:5827
 msgid "Changing the embedding model requires clearing all existing embeddings and retraining all content from scratch."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3725
+#: includes/admin/class-admin-interface.php:5837
 msgid "Clear & Change Model"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3732
-#: includes/admin/class-admin-interface.php:3736
+#: includes/admin/class-admin-interface.php:5847
+#: includes/admin/class-admin-interface.php:5854
 msgid "Check Embedding"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3738
+#: includes/admin/class-admin-interface.php:5859
 msgid "Enter an item ID to view its embedding data and processed content."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3743
-#: includes/admin/class-admin-interface.php:3748
+#: includes/admin/class-admin-interface.php:5867
+#: includes/admin/class-admin-interface.php:5875
 msgid "Regenerate Embedding"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3755
+#: includes/admin/class-admin-interface.php:5888
 msgid "Enter an item ID to regenerate its embedding data. This will fetch fresh content and create a new embedding."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3761
+#: includes/admin/class-admin-interface.php:5897
 msgid "Delete Embeddings by Post Type"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3765
+#: includes/admin/class-admin-interface.php:5904
 msgid "Select post type..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3777
+#: includes/admin/class-admin-interface.php:5930
 msgid "Delete Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3779
+#: includes/admin/class-admin-interface.php:5935
 msgid "Delete all embeddings for a specific post type. This will not delete the posts themselves, only their embeddings."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3783
+#: includes/admin/class-admin-interface.php:5942
 msgid "Clear All Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3784
+#: includes/admin/class-admin-interface.php:5946
 msgid "Delete all embeddings. You will need to regenerate them after clearing."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3790
+#: includes/admin/class-admin-interface.php:5955
 msgid "Database Status"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3793
+#: includes/admin/class-admin-interface.php:5961
 msgid "Loading database status..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3796
+#: includes/admin/class-admin-interface.php:5967
 msgid "Refresh Status"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3807
+#: includes/admin/class-admin-interface.php:5981
 msgid "Embedding Data"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3812
+#: includes/admin/class-admin-interface.php:5986
 msgid "Close"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3850
+#: includes/admin/class-admin-interface.php:6053
 msgid "Minimum Match Percentage"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3871
+#: includes/admin/class-admin-interface.php:6089
 #, php-format
 msgid "Acts as a <strong>quality filter</strong> for search field results and RAG context retrieval. Only <strong><span title=\"%s\" style=\"cursor: help; border-bottom: 1px dotted currentColor;\">sources</span> scoring above this level</strong> will be shown. Does not affect chatbot product/listing search - the LLM handles filtering there."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3872
+#: includes/admin/class-admin-interface.php:6093
 msgid "pages, documents, posts, products, listings, etc."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3929
+#: includes/admin/class-admin-interface.php:6162
 msgid "No content types trained yet!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3930
+#: includes/admin/class-admin-interface.php:6166
 msgid "Please go to the \"Data Training\" tab first and train at least one content type before using this shortcode."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3935
+#: includes/admin/class-admin-interface.php:6174
 msgid "Using Listeo Theme?"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3935
+#: includes/admin/class-admin-interface.php:6178
 #, php-format
 msgid "To use Semantic Search field with listings in Listeo please check <a href=\"%s\" target=\"_blank\" style=\"color: #e65100; font-weight: 600;\">this article in docs</a>."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3940
+#: includes/admin/class-admin-interface.php:6188
 msgid "<strong>Do not need chatbot? No problems - use this shortcode </strong> builder to create an AI-powered semantic search field. Select which content types to include in search results."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3945
+#: includes/admin/class-admin-interface.php:6196
 msgid "How it works:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3947
+#: includes/admin/class-admin-interface.php:6201
 msgid "Users type their search query in natural language"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3948
+#: includes/admin/class-admin-interface.php:6205
 msgid "AI finds semantically related content (not just keyword matches)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3949
+#: includes/admin/class-admin-interface.php:6209
 msgid "Results are displayed in a dropdown according to Minimum Match Percentage setting"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3956
+#: includes/admin/class-admin-interface.php:6219
 msgid "Select Content Types to Search:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3975
+#: includes/admin/class-admin-interface.php:6253
 #, php-format
 msgid "%d item trained"
 msgid_plural "%d items trained"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/class-admin-interface.php:3977
+#: includes/admin/class-admin-interface.php:6262
 msgid "Not trained yet"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3988
+#: includes/admin/class-admin-interface.php:6273
 msgid "You can index/train content to search in the"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3988
+#: includes/admin/class-admin-interface.php:6278
 msgid "tab."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3994
+#: includes/admin/class-admin-interface.php:6287
 msgid "Placeholder Text:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3998
+#: includes/admin/class-admin-interface.php:6294
 #: includes/frontend/class-shortcode-handler.php:222
 msgid "Search anything..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:3999
+#: includes/admin/class-admin-interface.php:6298
 msgid "Enter placeholder text"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4002
+#: includes/admin/class-admin-interface.php:6304
 msgid "Max Results:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4015
+#: includes/admin/class-admin-interface.php:6325
 msgid "Generated Shortcode:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4026
+#: includes/admin/class-admin-interface.php:6336
 msgid "Copy Shortcode"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4030
+#: includes/admin/class-admin-interface.php:6340
 msgid "Copy this shortcode and paste it into any page, post, or widget to display the AI semantic search field."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4046
+#: includes/admin/class-admin-interface.php:6360
 msgid "Loading content information..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4052
+#: includes/admin/class-admin-interface.php:6369
 msgid "Start Training"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4053
+#: includes/admin/class-admin-interface.php:6373
 msgid "Stop"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4090
+#: includes/admin/class-admin-interface.php:6413
 msgid "Training in progress..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4091
+#: includes/admin/class-admin-interface.php:6417
 msgid "This may take a while depending on the number of items selected"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4123
+#: includes/admin/class-admin-interface.php:6452
 msgid "Progress Log:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4132
+#: includes/admin/class-admin-interface.php:6461
 msgid "Start Training?"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4140
+#: includes/admin/class-admin-interface.php:6469
 msgid "This will generate embeddings for all selected post types and consume API credits. You can stop anytime."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4147
+#: includes/admin/class-admin-interface.php:6479
 msgid "Yes, Start Training"
 msgstr ""
 
 #. translators: %s: AI provider name (e.g. OpenAI, Gemini, Mistral)
-#: includes/admin/class-admin-interface.php:4170
+#: includes/admin/class-admin-interface.php:6505
 #, php-format
 msgid "Please add your %s API key in the Settings tab before starting training."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4215
+#: includes/admin/class-admin-interface.php:6553
 msgid "Chat Activity"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4216
+#: includes/admin/class-admin-interface.php:6554
 msgid "Chat activity trends over time"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4270
+#: includes/admin/class-admin-interface.php:6616
 msgid "Activity Analytics"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4273
+#: includes/admin/class-admin-interface.php:6622
 msgid "Visual conversation trends"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4324
-#: includes/admin/class-admin-interface.php:4383
+#: includes/admin/class-admin-interface.php:6681
+#: includes/admin/class-admin-interface.php:6831
 msgid "Chat Insights"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4325
-msgid "AI analyzes chatbot conversations and highlights summaries, gaps, weaknesses, and sentiment."
+#: includes/admin/class-admin-interface.php:6682
+msgid "AI analyzes chatbot conversations and highlights summaries, data gaps, and sentiment."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4337
+#: includes/admin/class-admin-interface.php:6697
 msgid "Analyzed"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4341
+#: includes/admin/class-admin-interface.php:6704
 msgid "Data gaps"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4345
+#: includes/admin/class-admin-interface.php:6711
 msgid "Weak points"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4349
-#: includes/admin/class-admin-interface.php:4357
+#: includes/admin/class-admin-interface.php:6718
+#: includes/admin/class-admin-interface.php:6734
 msgid "Positive"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4357
+#: includes/admin/class-admin-interface.php:6730
 msgid "User asking about weekend availability"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4357
-#: includes/admin/class-admin-interface.php:4359
+#: includes/admin/class-admin-interface.php:6739
+#: includes/admin/class-admin-interface.php:6777
 msgid "Resolved"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4358
+#: includes/admin/class-admin-interface.php:6749
 msgid "Refund policy inquiry"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4358
+#: includes/admin/class-admin-interface.php:6753
 msgid "Negative"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4358
+#: includes/admin/class-admin-interface.php:6758
 msgid "Unresolved"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4359
+#: includes/admin/class-admin-interface.php:6768
 msgid "Listing submission help"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4359
+#: includes/admin/class-admin-interface.php:6772
 msgid "Neutral"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4369
+#: includes/admin/class-admin-interface.php:6808
 msgid "data gap"
 msgid_plural "data gaps"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/class-admin-interface.php:4386
+#: includes/admin/class-admin-interface.php:6837
 msgid "AI summaries of every conversation"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4387
+#: includes/admin/class-admin-interface.php:6841
 msgid "Spot data gaps your bot cannot answer"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4388
+#: includes/admin/class-admin-interface.php:6845
 msgid "Detect weak points and sentiment"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4461
+#: includes/admin/class-admin-interface.php:6990
 msgid "Looking for a restaurant near downtown..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4474
+#: includes/admin/class-admin-interface.php:7009
 msgid "I found several great restaurants downtown. Would you like to see Italian, Asian, or American cuisine options?"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4480
+#: includes/admin/class-admin-interface.php:7019
 msgid "more messages"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4538
+#: includes/admin/class-admin-interface.php:7091
+msgid "AI Chat settings sections"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7108
+#: includes/admin/class-admin-interface.php:7205
 msgid "General"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4539
-msgid "Core settings for the AI chat functionality."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4552
-msgid "Enable AI Chat"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4553
-msgid "Global switch - disables shortcode and floating widget."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4558
-msgid "Shortcode Usage"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4562
-msgid "Available parameters:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4562
-msgid "or"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4570
-msgid "Install Translation"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4574
-msgid "-- Select Language --"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4626
-msgid "Switch to English"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4629
-msgid "Translates all plugin settings and chatbot states like \"Thinking...\" or \"Searching products...\""
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4642
-msgid "OpenRouter Model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4764
-msgid "Enable reasoning"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4764
-msgid "Reasoning can produce better answers for complex questions but might be slower."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4764
-#: includes/admin/class-admin-interface.php:4871
-#: includes/admin/class-admin-interface.php:4903
-msgid "More info"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4771
-msgid "Select the Gemini model for chat responses. Better models provide more accurate and context-aware responses."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4773
-msgid "Select the Mistral model for chat responses. Better models provide more accurate and context-aware responses."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4775
-msgid "Select an OpenRouter model for chat responses. The better the model, the more accurate and context-aware the responses at a cost of time response."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4777
-msgid "Select the OpenAI model for chat responses. The better the model, the more accurate and context-aware the responses at a cost of time response."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4782
-msgid "To use Gemini 3 you need to enable billing in Google. It doesn't work within Free Tier."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4785
-msgid "This model does not support audio or image input."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4800
-msgid "Maximum Products/Listings Cards Displayed"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4803
-msgid "Maximum number of WooCommerce products to display in chat results (1-25). Default: 10"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4810
-msgid "Hide Images in Chat Results"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4811
-msgid "Remove listing/product thumbnails from search results in chat for a cleaner, text-only interface."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4830
-msgid "Enable WooCommerce Cart in Chatbot"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4834
-msgid "Show \"Add to Cart\" buttons on product cards and a cart icon in the chat header."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4840
-msgid "Upgrade to Pro to enable WooCommerce cart"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4867
-msgid "Multimodal Features"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4867
-msgid "Enable Speech-to-Text"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4871
-msgid "Audio is sent directly to AI for transcription and is not stored on your server."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4873
-msgid "Show a microphone button that allows users to send voice messages."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4879
-msgid "Upgrade to Pro to enable speech-to-text"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4899
-msgid "Enable Image Input"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4903
-msgid "Images are sent directly to AI and are not stored on your server."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4905
-msgid "Show a button that allows users to attach an image for the AI to analyze."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4911
-msgid "Upgrade to Pro to enable image input"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4926
-msgid "Enable Quick Action Buttons"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4927
-msgid "Show quick action buttons above the chat input field."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4943
-msgid "Add <strong>custom buttons</strong> above the chat input to guide user interactions."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4947
-msgid "Who are you?"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4948
-msgid "Human Contact Form"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4949
-msgid "View Pricing"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4953
-msgid "<strong>Chat Message</strong> buttons - send predefined messages to AI"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4954
-msgid "<strong>Link buttons</strong> - direct users to any URL"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4955
-msgid "<strong>Contact Form</strong> - built-in contact form overlay"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4960
-msgid "Unlock Quick Buttons"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4979
-msgid "Appearance"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4980
-msgid "Customize how the chat looks and feels to your users."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4990
-msgid "Chatbot Name"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4993
-msgid "Displayed in chat header. Default: \"Assistant\""
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4996
-msgid "Welcome Message"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4999
-msgid "The initial greeting message displayed when chat loads. HTML tags allowed (e.g., &lt;b&gt;, &lt;i&gt;, &lt;a&gt;, &lt;br&gt;)."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5003
-msgid "Chatbot Avatar"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5022
-#: includes/admin/class-admin-interface.php:5447
-msgid "Upload"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5031
-msgid "100x100px recommended."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5038
-msgid "Color Settings"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5046
-msgid "Floating button, send button, context button."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5050
-msgid "Primary Color"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5053
-msgid "Links, user messages, and UI elements."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5057
-msgid "Color Scheme"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5060
-msgid "Light"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5074
-msgid "System"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5094
-msgid "Dark"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5110
-msgid "Light, system preference (auto), or dark mode."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5117
-msgid "Show color scheme switcher in chat window"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5118
-msgid "Adds a sun/moon toggle icon letting visitors switch between light and dark mode."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5127
-msgid "Loading Animation Style"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5128
-msgid "Choose how the loading indicator appears while the AI is processing your request."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5140
-msgid "Icon + Text"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5152
-msgid "Dots Only"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5163
-msgid "Enable Typing Animation"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5164
-msgid "Show AI responses with a smooth word-by-word typing effect, similar to ChatGPT streaming."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5184
-msgid "Enable Whitelabel"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5188
-msgid "Remove \"Powered by Purethemes\" badge from chat interface."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5194
-msgid "Upgrade to Pro to enable whitelabel"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5212
+#: includes/admin/class-admin-interface.php:7117
+#: includes/admin/class-admin-interface.php:8122
 msgid "Floating Widget"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:5213
-msgid "Configure the floating chat bubble that appears on your site."
+#: includes/admin/class-admin-interface.php:7126
+#: includes/admin/class-admin-interface.php:7746
+msgid "Appearance"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:5226
-msgid "Enable Floating Chat Widget"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5227
-msgid "Show a floating chat button on all pages."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5311
-msgid "Keep Chat Open Between Pages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5312
-msgid "Remember open/closed state when user navigates between pages."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5231
-msgid "Left"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5234
-msgid "Right"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5242
-msgid "Welcome Bubble Message"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5245
-msgid "Short message displayed above the button on first visit."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5245
-msgid "Leave empty to disable."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5249
-msgid "Button Icon"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5277
-msgid "Change Icon"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5288
-msgid "Icon Size (px)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5303
-msgid "Popup Width (px)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5306
-msgid "Default: 390px. Range: 320-800px."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5310
-msgid "Popup Height (px)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5313
-msgid "Default: 600px. Range: 400-900px."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5324
-msgid "Widget Offset"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5327
-msgid "Desktop"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5328
-msgid "Mobile"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5334
-#: includes/admin/class-admin-interface.php:5352
-msgid "Horizontal"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5341
-#: includes/admin/class-admin-interface.php:5359
-msgid "Vertical"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5376
-msgid "Initial Header Style"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5380
-#: includes/admin/class-admin-interface.php:5381
-msgid "Simple"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5392
-#: includes/admin/class-admin-interface.php:5393
-msgid "Image"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5404
-#: includes/admin/class-admin-interface.php:5405
-msgid "Animated"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5430
-msgid "Header Background Image"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5456
-msgid "Recommended size: 400x120px or larger. Image will be cropped to fit."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5463
-msgid "Enable overlay"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5464
-msgid "Blends image with chat background."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5476
-msgid "Wave Color"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5484
-msgid "Base color for the animated wave effect."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5488
-msgid "Preview"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5501
-msgid "Hide Chat on Selected Pages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5521
-msgid "No pages found."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5536
-msgid "Select pages where the floating chat widget should be hidden."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5553
-msgid "AI Tools"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5554
-msgid "Configure AI behavior, prompts, and interactive features."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5562
-msgid "Force Response Language"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5571
-msgid "Leave empty to auto-detect language from messages and user browser."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5572
-msgid "Set a language (e.g., \"French\") to force AI to always respond in that language."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5583
-msgid "Custom System Prompt (Additional Instructions)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5587
-msgid "See the FAQ for tips"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5595
-msgid "Upgrade to Pro to add custom instructions"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5598
-msgid "Custom system instructions require Pro version."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5600
-msgid "Add custom instructions about your website, business focus, special features..."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5607
-msgid "Upgrade to Pro and Increase limit to 6000 characters"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5613
-msgid "Use this to describe your website, special features, or guide the AI behavior."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5615
-msgid "Instructions should be short and concise. Long prompts can mislead the LLM - stay under 3000 characters."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5625
-#: includes/admin/class-admin-interface.php:5642
-msgid "Hints for AI"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5631
-msgid "Direct the AI to use a specific page or document when answering certain questions."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5632
-msgid "Optional. Use only if needed for sensitive topics where accuracy matters most."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5651
-msgid "e.g. shipping, delivery, returns"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5655
-msgid "Search in"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5656
-msgid "Search page or document by title..."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5665
-msgid "Add"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5687
-msgid "No hints added yet."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5713
-msgid "Allow AI to Send Emails to You"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5717
-msgid "When enabled, AI can send emails to you on behalf of users who explicitly request it when chatting with AI."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5733
-msgid "Upgrade to Pro to allow AI to send emails"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5744
-msgid "Contact Tool Instructions for AI"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5747
-msgid "Customize when AI should or should not use the contact form tool. This helps AI understand your specific use cases."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5755
-msgid "Additional Settings"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5765
-msgid "Number of Content Sources to Send to the AI"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5768
-msgid "sources"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5770
-msgid "For RAG responses <strong>(when searching pages, posts etc.)</strong>. Not related to WooCommerce products!"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5773
-msgid "Faster/cheaper"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5774
-msgid "More context (not recommended)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5781
-msgid "Conversation Context Length"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5785
-msgid "Short, ~3 user messages, lowest cost"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5786
-#: includes/admin/class-admin-interface.php:5799
-msgid "Short"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5788
-msgid "Normal, ~9 user messages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5789
-#: includes/admin/class-admin-interface.php:5800
-msgid "Normal"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5791
-msgid "Long, ~24 user messages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5792
-#: includes/admin/class-admin-interface.php:5801
-msgid "Long"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5797
-msgid "How many previous user messages are included as context for the AI."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5797
-msgid "Short prevents context pollution and saves tokens. Longer gives the AI more memory of previous user questions."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5799
-msgid "~3 user messages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5800
-msgid "~9 user messages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5801
-msgid "~24 user messages"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5819
-msgid "Access & Privacy"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5820
-msgid "Control who can use the chat and how data is handled."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5831
-msgid "Require Login to Use Chat"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5832
-msgid "Only logged-in WordPress users can access the AI chat. Shortcode will show a login message, floating widget will be hidden."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5843
-msgid "Show Terms of Use Notice"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5844
-msgid "Display a terms notice below the chat input for privacy compliance."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5852
-msgid "Terms Notice Text"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5855
-msgid "Text displayed below the chat input. HTML tags allowed (e.g., &lt;a href=\"/terms\"&gt;Terms&lt;/a&gt;)."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5871
-msgid "Enable Pre-Chat Form"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5873
-msgid "Collect visitor information before the chat starts. The submitted data will be visible in chat history."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5885
-msgid "Block IP Addresses"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5891
-msgid "The chat widget will be completely hidden for visitors from these IP addresses. Supports individual IPs and CIDR ranges (e.g., 192.168.1.0/24)."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5906
-msgid "e.g., 192.168.1.100 or 10.0.0.0/8"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5916
-msgid "Upgrade to Pro to block IP addresses"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5934
-msgid "Integrations"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5935
-msgid "Connect AI chat to external services and automation platforms."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5950
-msgid "Webhook Automation (e.g. N8N, Zapier, Make)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5952
-msgid "When enabled, AI can send structured data to external systems (N8N, Zapier, Make) when users explicitly request actions."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5953
-msgid "Read Guide"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5959
-msgid "Upgrade to Pro to enable webhook automations"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5977
-msgid "WhatsApp Integration (via Twilio)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5979
-msgid "When enabled, users can chat with your AI assistant via WhatsApp."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:5985
-msgid "Upgrade to Pro to enable WhatsApp integration"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6003
-msgid "Telegram Integration"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6005
-msgid "When enabled, users can chat with your AI assistant via Telegram."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6011
-msgid "Upgrade to Pro to enable Telegram integration"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6065
+#: includes/admin/class-admin-interface.php:7135
+#: includes/admin/class-admin-interface.php:8754
 msgid "Quick Action Buttons"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6072
+#: includes/admin/class-admin-interface.php:7144
+#: includes/admin/class-admin-interface.php:9028
+msgid "Custom Instructions"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7153
+#: includes/admin/class-admin-interface.php:9376
+msgid "Access & Privacy"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7162
+#: includes/admin/class-admin-interface.php:9548
+msgid "Integrations"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7172
+msgid "Search Field"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7182
+msgid "Developer & Debug"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7206
+msgid "Core settings for the AI chat functionality."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7225
+msgid "Enable AI Chat"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7229
+msgid "Global switch - disables shortcode and floating widget."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7238
+msgid "Shortcode Usage"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7244
+msgid "Available parameters:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7247
+msgid "or"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7258
+msgid "Install Translation"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7266
+msgid "-- Select Language --"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7355
+msgid "Switch to English"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7358
+msgid "Translates all plugin settings and chatbot states like \"Thinking...\" or \"Searching products...\""
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7382
+msgid "Maximum Products/Listings Cards Displayed"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7390
+msgid "Maximum number of WooCommerce products to display in chat results (1-25). Default: 10"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7403
+msgid "Hide Images in Chat Results"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7407
+msgid "Remove listing/product thumbnails from search results in chat for a cleaner, text-only interface."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7436
+msgid "Enable WooCommerce Cart in Chatbot"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7443
+msgid "Show \"Add to Cart\" buttons on product cards and a cart icon in the chat header."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7456
+msgid "Upgrade to Pro to enable WooCommerce cart"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7495
+msgid "Enable Order Checking"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7502
+msgid "Allow users to check their WooCommerce order status and tracking via the chatbot."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7471
+msgid "Multimodal Features"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7498
+msgid "Enable Speech-to-Text"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7505
+msgid "Audio is sent directly to AI for transcription and is not stored on your server."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7513
+msgid "Show a microphone button that allows users to send voice messages."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7526
+msgid "Upgrade to Pro to enable speech-to-text"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7559
+msgid "Enable Image Input"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7566
+msgid "Images are sent directly to AI and are not stored on your server."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7574
+msgid "Show a button that allows users to attach an image for the AI to analyze."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7587
+msgid "Upgrade to Pro to enable image input"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7603
+msgid "Additional Settings"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7619
+msgid "Number of Content Sources to Send to the AI"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7630
+msgid "sources"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7635
+msgid "For RAG responses <strong>(when searching pages, posts etc.)</strong>. Not related to WooCommerce products!"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7644
+msgid "Faster/cheaper"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7648
+msgid "More context (not recommended)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7658
+msgid "Conversation Context Length"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7671
+msgid "Short, ~3 user messages, lowest cost"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7675
+#: includes/admin/class-admin-interface.php:7708
+msgid "Short"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7680
+msgid "Normal, ~9 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7684
+#: includes/admin/class-admin-interface.php:7715
+msgid "Normal"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7689
+msgid "Long, ~24 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7693
+#: includes/admin/class-admin-interface.php:7722
+msgid "Long"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7700
+msgid "How many previous user messages are included as context for the AI."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7703
+msgid "Short prevents context pollution and saves tokens. Longer gives the AI more memory of previous user questions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7711
+msgid "~3 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7718
+msgid "~9 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7725
+msgid "~24 user messages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7747
+msgid "Customize how the chat looks and feels to your users."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7760
+msgid "Chatbot Name"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7765
+msgid "Displayed in chat header. Default: \"Assistant\""
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7771
+msgid "Welcome Message"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7779
+msgid "The initial greeting message displayed when chat loads. HTML tags allowed (e.g., &lt;b&gt;, &lt;i&gt;, &lt;a&gt;, &lt;br&gt;)."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7786
+msgid "Chatbot Avatar"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7817
+#: includes/admin/class-admin-interface.php:8597
+msgid "Upload"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7829
+msgid "100x100px recommended."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7839
+msgid "Color Settings"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7858
+msgid "Floating button, send button, context button."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7865
+msgid "Primary Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7873
+msgid "Links, user messages, and UI elements."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7880
+msgid "Color Scheme"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7886
+msgid "Light"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7906
+msgid "System"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7932
+msgid "Dark"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7953
+msgid "Light, system preference (auto), or dark mode."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7968
+msgid "Show color scheme switcher in chat window"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7972
+msgid "Adds a sun/moon toggle icon letting visitors switch between light and dark mode."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7984
+msgid "Loading Animation Style"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7988
+msgid "Choose how the loading indicator appears while the AI is processing your request."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8015
+msgid "Icon + Text"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8036
+msgid "Dots Only"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8053
+msgid "Enable Typing Animation"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8057
+msgid "Show AI responses with a smooth word-by-word typing effect, similar to ChatGPT streaming."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8084
+msgid "Enable Whitelabel"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8088
+msgid "Remove \"Powered by PurioChat\" badge from chat interface."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8101
+msgid "Upgrade to Pro to enable whitelabel"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8123
+msgid "Configure the floating chat bubble that appears on your site."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8147
+msgid "Enable Floating Chat Widget"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8151
+msgid "Show a floating chat button on all pages."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8164
+msgid "Left"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8173
+msgid "Right"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8197
+msgid "Keep Chat Open Between Pages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8201
+msgid "Remember open/closed state when user navigates between pages."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8211
+msgid "Welcome Bubble Message"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8228
+msgid "Short message displayed above the button on first visit."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8231
+msgid "Leave empty to disable."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8238
+msgid "Button Icon"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8301
+msgid "Change Icon"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8320
+msgid "Icon Size (px)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8340
+msgid "Popup Width (px)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8351
+msgid "Default: 390px. Range: 320-800px."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8358
+msgid "Popup Height (px)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8369
+msgid "Default: 600px. Range: 400-900px."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8395
+msgid "Widget Offset"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8401
+msgid "Desktop"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8405
+msgid "Mobile"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8414
+#: includes/admin/class-admin-interface.php:8442
+msgid "Horizontal"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8426
+#: includes/admin/class-admin-interface.php:8454
+msgid "Vertical"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8476
+msgid "Initial Header Style"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8486
+#: includes/admin/class-admin-interface.php:8490
+msgid "Simple"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8507
+#: includes/admin/class-admin-interface.php:8511
+msgid "Image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8528
+#: includes/admin/class-admin-interface.php:8532
+msgid "Animated"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8573
+msgid "Header Background Image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8612
+msgid "Recommended size: 400x120px or larger. Image will be cropped to fit."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8628
+msgid "Enable overlay"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8632
+msgid "Blends image with chat background."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8650
+msgid "Wave Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8660
+msgid "Base color for the animated wave effect."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8667
+msgid "Preview"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8680
+msgid "Hide Chat on Selected Pages"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8706
+msgid "No pages found."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8733
+msgid "Select pages where the floating chat widget should be hidden."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8758
+msgid "Customizable shortcut buttons displayed above the chat input."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8778
+msgid "Enable Quick Action Buttons"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8782
+msgid "Show quick action buttons above the chat input field."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8800
 msgid "Add buttons that appear above the chat input. \"<strong>Chat Message</strong>\" buttons send a message to the AI, \"<strong>Link</strong>\" buttons open a link and \"<strong>Contact Form</strong>\" buttons open a contact form."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6100
-#: includes/admin/class-admin-interface.php:6189
+#: includes/admin/class-admin-interface.php:8862
+#: includes/admin/class-admin-interface.php:9799
 msgid "Button Text"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6104
-#: includes/admin/class-admin-interface.php:6193
+#: includes/admin/class-admin-interface.php:8872
+#: includes/admin/class-admin-interface.php:9806
 msgid "Chat Message"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6105
-#: includes/admin/class-admin-interface.php:6194
+#: includes/admin/class-admin-interface.php:8879
+#: includes/admin/class-admin-interface.php:9810
 msgid "Link"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6106
-#: includes/admin/class-admin-interface.php:6195
+#: includes/admin/class-admin-interface.php:8886
+#: includes/admin/class-admin-interface.php:9814
 msgid "Contact Form"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6125
+#: includes/admin/class-admin-interface.php:8929
 msgid "+ Add Button"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6130
+#: includes/admin/class-admin-interface.php:8933
 msgid "Visibility"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6132
+#: includes/admin/class-admin-interface.php:8944
 msgid "Always show"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6133
+#: includes/admin/class-admin-interface.php:8954
 msgid "Hide after 1st message"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6239
-msgid "Failed to save. Please try again."
+#: includes/admin/class-admin-interface.php:8964
+msgid "Add <strong>custom buttons</strong> above the chat input to guide user interactions."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6256
+#: includes/admin/class-admin-interface.php:8971
+msgid "Who are you?"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8975
+msgid "Human Contact Form"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8979
+msgid "View Pricing"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8986
+msgid "<strong>Chat Message</strong> buttons - send predefined messages to AI"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8990
+msgid "<strong>Link buttons</strong> - direct users to any URL"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8994
+msgid "<strong>Contact Form</strong> - built-in contact form overlay"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9006
+msgid "Unlock Quick Buttons"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9032
+msgid "Configure AI behavior, prompts, and interactive features."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9043
+msgid "Force Response Language"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9057
+msgid "Leave empty to auto-detect language from messages and user browser."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9061
+msgid "Set a language (e.g., \"French\") to force AI to always respond in that language."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9075
+msgid "Custom System Prompt (Additional Instructions)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9082
+msgid "See the FAQ for tips"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9097
+msgid "Upgrade to Pro to add custom instructions"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9103
+msgid "Custom system instructions require Pro version."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9112
+msgid "Add custom instructions about your website, business focus, special features..."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9126
+msgid "Upgrade to Pro and Increase limit to 6000 characters"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9135
+msgid "Use this to describe your website, special features, or guide the AI behavior."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9140
+msgid "Instructions should be short and concise. Long prompts can mislead the LLM - stay under 3000 characters."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9155
+#: includes/admin/class-admin-interface.php:9178
+msgid "Hints for AI"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9161
+msgid "Direct the AI to use a specific page or document when answering certain questions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9165
+msgid "Optional. Use only if needed for sensitive topics where accuracy matters most."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9193
+msgid "e.g. shipping, delivery, returns"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9200
+msgid "Search in"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9204
+msgid "Search page or document by title..."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9216
+msgid "Add"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9268
+msgid "No hints added yet."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9301
+msgid "Allow AI to Send Emails to You"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9308
+msgid "When enabled, AI can send emails to you on behalf of users who explicitly request it when chatting with AI."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9331
+msgid "Upgrade to Pro to allow AI to send emails"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9346
+msgid "Contact Tool Instructions for AI"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9357
+msgid "Customize when AI should or should not use the contact form tool. This helps AI understand your specific use cases."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9377
+msgid "Control who can use the chat and how data is handled."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9394
+msgid "Require Login to Use Chat"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9398
+msgid "Only logged-in WordPress users can access the AI chat. Shortcode will show a login message, floating widget will be hidden."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9418
+msgid "Show Terms of Use Notice"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9422
+msgid "Display a terms notice below the chat input for privacy compliance."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9438
+msgid "Terms Notice Text"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9446
+msgid "Text displayed below the chat input. HTML tags allowed (e.g., &lt;a href=\"/terms\"&gt;Terms&lt;/a&gt;)."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9465
+msgid "Enable Pre-Chat Form"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9470
+msgid "Collect visitor information before the chat starts. The submitted data will be visible in chat history."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9483
+msgid "Block IP Addresses"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9492
+msgid "The chat widget will be completely hidden for visitors from these IP addresses. Supports individual IPs and CIDR ranges (e.g., 192.168.1.0/24)."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9510
+msgid "e.g., 192.168.1.100 or 10.0.0.0/8"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9527
+msgid "Upgrade to Pro to block IP addresses"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9549
+msgid "Connect AI chat to external services and automation platforms."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9567
+msgid "Webhook Automation (e.g. N8N, Zapier, Make)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9572
+msgid "When enabled, AI can send structured data to external systems (N8N, Zapier, Make) when users explicitly request actions."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9576
+msgid "Read Guide"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9589
+msgid "Upgrade to Pro to enable webhook automations"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9610
+msgid "WhatsApp Integration (via Twilio)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9615
+msgid "When enabled, users can chat with your AI assistant via WhatsApp."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9628
+msgid "Upgrade to Pro to enable WhatsApp integration"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9649
+msgid "Telegram Integration"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9654
+msgid "When enabled, users can chat with your AI assistant via Telegram."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9667
+msgid "Upgrade to Pro to enable Telegram integration"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9848
 msgid "Contact Form Settings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6292
+#: includes/admin/class-admin-interface.php:9890
 msgid "SMTP Configured"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6294
+#: includes/admin/class-admin-interface.php:9896
 #, php-format
 msgid "%s detected. Emails should be delivered reliably."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6302
+#: includes/admin/class-admin-interface.php:9911
 msgid "No SMTP Plugin Detected"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6304
+#: includes/admin/class-admin-interface.php:9916
 msgid "Using PHP mail() which has poor deliverability. We recommend installing an SMTP plugin like WP Mail SMTP for reliable email delivery."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6314
+#: includes/admin/class-admin-interface.php:9929
 msgid "Test Email Delivery"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6315
+#: includes/admin/class-admin-interface.php:9933
 msgid "Send a test email to verify your configuration."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6318
+#: includes/admin/class-admin-interface.php:9939
 msgid "Send Test"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6329
+#: includes/admin/class-admin-interface.php:9953
 msgid "Recipient Email"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6331
+#: includes/admin/class-admin-interface.php:9965
 msgid "Email address where contact form messages will be sent."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6335
+#: includes/admin/class-admin-interface.php:9972
 msgid "From Name"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6340
+#: includes/admin/class-admin-interface.php:9987
 msgid "From Email"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6397
+#: includes/admin/class-admin-interface.php:10067
 #, php-format
 msgid "Detected from %s: %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6406
+#: includes/admin/class-admin-interface.php:10083
 msgid "⚠️ Mismatch detected!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6407
+#: includes/admin/class-admin-interface.php:10087
 msgid "Your From Email doesn't match your SMTP plugin settings. Emails may fail to deliver."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6414
+#: includes/admin/class-admin-interface.php:10101
 msgid "Must match your SMTP plugin's verified sender address for reliable delivery."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6416
+#: includes/admin/class-admin-interface.php:10106
 msgid "The \"From\" address for outgoing emails. If using an SMTP plugin, this should match your verified sender."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6422
+#: includes/admin/class-admin-interface.php:10115
 msgid "Email Subject"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6424
+#: includes/admin/class-admin-interface.php:10125
 msgid "Available placeholders: {site_name}, {name}, {email}"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6428
+#: includes/admin/class-admin-interface.php:10132
 msgid "Success Message"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6429
+#: includes/admin/class-admin-interface.php:10139
 #: includes/class-contact-form.php:148
 msgid "Your message has been sent successfully!"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6430
+#: includes/admin/class-admin-interface.php:10145
 msgid "Message shown to users after successful form submission."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6497
-#: includes/admin/class-admin-interface.php:6610
-#: includes/admin/class-admin-interface.php:6710
+#: includes/admin/class-admin-interface.php:10267
+#: includes/admin/class-admin-interface.php:10411
+#: includes/admin/class-admin-interface.php:10538
 msgid "Permission denied."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6502
-#: includes/admin/class-admin-interface.php:6615
-#: includes/admin/class-admin-interface.php:6715
+#: includes/admin/class-admin-interface.php:10276
+#: includes/admin/class-admin-interface.php:10420
+#: includes/admin/class-admin-interface.php:10547
 msgid "Invalid locale."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6627
+#: includes/admin/class-admin-interface.php:10434
 msgid "Could not create languages directory."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6649
+#: includes/admin/class-admin-interface.php:10460
 msgid "Could not write .mo file to languages directory."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6651
+#: includes/admin/class-admin-interface.php:10465
 msgid "Downloaded .mo file is empty."
 msgstr ""
 
 #. translators: %s: URL to the .po file
-#: includes/admin/class-admin-interface.php:6659
+#: includes/admin/class-admin-interface.php:10473
 #, php-format
 msgid "Your server didn't allow saving translation files. Please <a href=\"%s\" target=\"_blank\">download the .po file manually</a> and upload it in Loco Translate."
 msgstr ""
 
 #. translators: %s: underlying error message from the download attempt
-#: includes/admin/class-admin-interface.php:6665
+#: includes/admin/class-admin-interface.php:10482
 #, php-format
 msgid "Could not download translation (.mo): %s"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6697
+#: includes/admin/class-admin-interface.php:10517
 msgid "Translation installed (.mo and .po). Reloading page..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6698
+#: includes/admin/class-admin-interface.php:10521
 msgid "Translation installed (.mo only). Reloading page..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6733
+#: includes/admin/class-admin-interface.php:10566
 msgid "Translation removed. Plugin will now use English."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6737
+#: includes/admin/class-admin-interface.php:10573
 msgid "No translation files found to remove."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6760
+#: includes/admin/class-admin-interface.php:10605
 msgid "Database manager class not found."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6767
+#: includes/admin/class-admin-interface.php:10617
 msgid "Failed to clear embeddings."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6772
+#: includes/admin/class-admin-interface.php:10626
 msgid "All embeddings have been successfully cleared."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6794
+#: includes/admin/class-admin-interface.php:10659
 msgid "No embedding model selected."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6801
+#: includes/admin/class-admin-interface.php:10670
 msgid "Embedding model saved."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6836
+#: includes/admin/class-admin-interface.php:10709
 msgid "Version Mismatch:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6837
-msgid "AI Chat & Search and AI Chat & Search Pro are running different versions. Please update both plugins to the same version to avoid compatibility issues."
+#: includes/admin/class-admin-interface.php:10710
+msgid "PurioChat and PurioChat Pro are running different versions. Please update both plugins to the same version to avoid compatibility issues."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6838
+#: includes/admin/class-admin-interface.php:10714
 msgid "Base:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6840
+#: includes/admin/class-admin-interface.php:10716
 msgid "Pro:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10731
+msgid "Debug Mode Active:"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10734
+#, php-format
+msgid "Detailed logs are being written to %s"
 msgstr ""
 
 #: includes/admin/class-admin-search-analytics.php:56
@@ -4062,59 +4107,63 @@ msgstr ""
 msgid "Last Searched"
 msgstr ""
 
-#: includes/class-chat-api.php:97
+#: includes/class-chat-api.php:105
 msgid "Access denied."
 msgstr ""
 
-#: includes/class-chat-api.php:174
+#: includes/class-chat-api.php:182
 #, php-format
 msgid "Rate limit exceeded: %d messages per minute. Please wait a moment."
 msgstr ""
 
-#: includes/class-chat-api.php:188
+#: includes/class-chat-api.php:196
 #, php-format
 msgid "Rate limit exceeded: %d messages per 15 minutes. Please slow down."
 msgstr ""
 
-#: includes/class-chat-api.php:202
+#: includes/class-chat-api.php:210
 #, php-format
 msgid "Daily limit reached: %d messages per day. Please try again tomorrow."
 msgstr ""
 
-#: includes/class-chat-api.php:900
-#: includes/class-chat-api.php:2118
+#: includes/class-chat-api.php:888
+#: includes/class-chat-api.php:2136
 msgid "You must be logged in to use AI Chat."
 msgstr ""
 
-#: includes/class-chat-api.php:931
+#: includes/class-chat-api.php:919
 #, php-format
 msgid "%s API key is not configured on the server."
 msgstr ""
 
-#: includes/class-chat-api.php:1572
+#: includes/class-chat-api.php:1556
 #, php-format
 msgid "Failed to connect to %s API: %s"
 msgstr ""
 
-#: includes/class-chat-api.php:1676
+#: includes/class-chat-api.php:1600
+msgid "AI service returned an error."
+msgstr ""
+
+#: includes/class-chat-api.php:1696
 msgid "Action completed but AI failed to generate a response."
 msgstr ""
 
-#: includes/class-chat-api.php:1752
+#: includes/class-chat-api.php:1769
 msgid "An internal error occurred while processing the chat request."
 msgstr ""
 
-#: includes/class-chat-api.php:1810
-#: includes/class-chat-api.php:2781
+#: includes/class-chat-api.php:1827
+#: includes/class-chat-api.php:2796
 msgid "Image attached"
 msgstr ""
 
-#: includes/class-chat-api.php:1822
-#: includes/class-chat-api.php:2787
+#: includes/class-chat-api.php:1839
+#: includes/class-chat-api.php:2802
 msgid "Transcribed"
 msgstr ""
 
-#: includes/class-chat-api.php:2209
+#: includes/class-chat-api.php:2227
 #, php-format
 msgid "%s API key is not configured."
 msgstr ""
@@ -4163,36 +4212,36 @@ msgstr ""
 msgid "Created At"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:153
-#: includes/class-floating-chat-widget.php:319
+#: includes/class-chat-shortcode.php:152
+#: includes/class-floating-chat-widget.php:320
 msgid "Type a message"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:191
+#: includes/class-chat-shortcode.php:190
 msgid "Please log in to use AI Chat."
 msgstr ""
 
-#: includes/class-chat-shortcode.php:257
-#: includes/class-floating-chat-widget.php:525
+#: includes/class-chat-shortcode.php:256
+#: includes/class-floating-chat-widget.php:526
 msgid "Shopping cart"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:263
-#: includes/class-floating-chat-widget.php:531
+#: includes/class-chat-shortcode.php:262
+#: includes/class-floating-chat-widget.php:532
 msgid "Toggle dark mode"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:280
-#: includes/class-floating-chat-widget.php:564
+#: includes/class-chat-shortcode.php:279
+#: includes/class-floating-chat-widget.php:565
 msgid "Start a new chat"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:300
-#: includes/class-floating-chat-widget.php:583
+#: includes/class-chat-shortcode.php:299
+#: includes/class-floating-chat-widget.php:584
 msgid "Attach Image"
 msgstr ""
 
-#: includes/class-chat-shortcode.php:488
+#: includes/class-chat-shortcode.php:487
 msgid "Popular Searches:"
 msgstr ""
 
@@ -4305,20 +4354,20 @@ msgstr ""
 msgid "Chunk %d/%d"
 msgstr ""
 
-#: includes/class-floating-chat-widget.php:205
-#: includes/class-floating-chat-widget.php:483
+#: includes/class-floating-chat-widget.php:206
+#: includes/class-floating-chat-widget.php:484
 msgid "Open chat"
 msgstr ""
 
-#: includes/class-floating-chat-widget.php:206
+#: includes/class-floating-chat-widget.php:207
 msgid "Close chat"
 msgstr ""
 
-#: includes/class-floating-chat-widget.php:555
+#: includes/class-floating-chat-widget.php:556
 msgid "Expand chat"
 msgstr ""
 
-#: includes/class-floating-chat-widget.php:556
+#: includes/class-floating-chat-widget.php:557
 msgid "Collapse chat"
 msgstr ""
 
@@ -4372,19 +4421,19 @@ msgstr ""
 msgid "Available in Pro version"
 msgstr ""
 
-#: includes/class-pro-manager.php:404
+#: includes/class-pro-manager.php:401
 msgid "Learn More"
 msgstr ""
 
-#: includes/class-search-handler.php:229
+#: includes/class-search-handler.php:250
 msgid "Search query must be at least 2 characters long"
 msgstr ""
 
-#: includes/class-search-handler.php:236
+#: includes/class-search-handler.php:257
 msgid "Search query is too long (maximum 500 characters)"
 msgstr ""
 
-#: includes/class-search-handler.php:342
+#: includes/class-search-handler.php:378
 msgid "AI search temporarily unavailable"
 msgstr ""
 
@@ -4409,17 +4458,17 @@ msgstr ""
 msgid "You have the latest version!"
 msgstr ""
 
-#: includes/class-utility-helper.php:238
+#: includes/class-utility-helper.php:289
 #, php-format
 msgid "No listings found matching \"%s\""
 msgstr ""
 
-#: includes/class-utility-helper.php:240
+#: includes/class-utility-helper.php:291
 #, php-format
 msgid "Top 1 listing matching \"%s\""
 msgstr ""
 
-#: includes/class-utility-helper.php:242
+#: includes/class-utility-helper.php:293
 #, php-format
 msgid "Top %d listings matching \"%s\""
 msgstr ""
@@ -4472,8 +4521,9 @@ msgid "Top %d results matching"
 msgstr ""
 
 #: includes/integrations/class-listeo-integration.php:223
-#: includes/search/class-ai-engine.php:168
-msgid "No data available yet. Please train the AI search data first."
+#: ../ai-chat-search-pro/includes/integrations/class-woocommerce-integration.php:229
+#: includes/search/class-ai-engine.php:161
+msgid "No data available yet. Please train the AI first."
 msgstr ""
 
 #: includes/search/class-fallback-engine.php:54
@@ -4481,48 +4531,85 @@ msgstr ""
 msgid "Here are listings matching \"%s\""
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:189
-msgid "Enable Pre-Chat Form"
+#: includes/class-quick-buttons.php:130
+msgid "Contact Us"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:190
-msgid "Collect visitor information before the chat starts. The submitted data will be visible in chat history."
+#: includes/class-quick-buttons.php:137
+msgid "Name"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:197
-msgid "Form Fields"
+#: includes/class-quick-buttons.php:141
+msgid "Email"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:200
-msgid "Add the fields visitors must fill out before chatting."
+#: includes/class-quick-buttons.php:145
+msgid "Message"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:204
-msgid "Form Headline"
+#: includes/class-speech-to-text.php:703
+msgid "Voice Input"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:209
-msgid "e.g., Please introduce yourself"
+#: includes/class-conversation-auditor.php:393
+#: includes/class-conversation-auditor.php:422
+msgid "Analyze with AI"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:212
-msgid "Leave blank for no headline."
+#: includes/class-conversation-auditor.php:357
+#: includes/class-conversation-auditor.php:421
+msgid "View analysis"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:223
-#: includes/class-pre-chat-fields.php:253
-msgid "e.g., Full Name, Email, Phone Number"
+
+#: includes/class-conversation-auditor.php:214
+msgid "Configure Chat Insights"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:226
-#: includes/class-pre-chat-fields.php:256
-msgid "Remove"
+
+
+#: includes/class-conversation-auditor.php:232
+msgid "Enable Automatic Analysis"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:234
-msgid "+ Add Field"
+
+
+#: includes/class-conversation-auditor.php:239
+msgid "Analysis Interval"
 msgstr ""
 
-#: includes/class-pre-chat-fields.php:316
-msgid "Start Chat"
+
+#: includes/class-conversation-auditor.php:275
+#: includes/class-conversation-auditor.php:382
+msgid "Analyze past conversations"
+msgstr ""
+
+
+
+#: includes/class-conversation-auditor.php:303
+msgid "Clear All Analysis"
+msgstr ""
+
+
+
+#: includes/class-chat-history-chart.php:646
+msgid "Last 30 Days"
+msgstr ""
+
+
+
+#: includes/class-chat-history-chart.php:647
+msgid "This year"
+msgstr ""
+
+
+#: includes/class-chat-history-chart.php:577
+#: includes/class-chat-history-chart.php:661
+#: includes/class-chat-history-chart.php:716
+msgid "Emails Sent"
+msgstr ""
+
+
+#: includes/class-quick-buttons.php:150
+msgid "Send Message"
 msgstr ""

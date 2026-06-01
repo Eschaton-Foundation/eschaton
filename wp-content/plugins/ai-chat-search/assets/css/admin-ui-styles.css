@@ -11,10 +11,10 @@
     margin: 0;
     min-height: calc(100vh - 32px);
     padding: 0;
-    overflow-x: hidden !important;
-    max-width: 1600px;
+    overflow: hidden !important;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 0 10px 10px 10px;
+    padding: 0 10px 30px 10px;
 }
 
 .airs-admin-wrap a:focus { box-shadow: none; outline: none; }
@@ -25,6 +25,9 @@
 .listeo-ai-modal-content {
     font-family: "Outfit", BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+.airs-admin-wrap .button:focus { outline: none; box-shadow: none; }
+
 
 /* CSS Spinner Utility */
 .airs-spinner {
@@ -48,7 +51,7 @@
 /* Header Section */
 .airs-header {
     padding: 2rem 0;
-    margin: 0 -20px 0 -20px;
+    margin: 0;
     position: relative;
     overflow: hidden;
 }
@@ -235,7 +238,7 @@
     gap: 1rem;
     position: relative;
     z-index: 1;
-    padding: 0 20px;
+    padding: 0;
 }
 
 .airs-header-icon {
@@ -256,9 +259,10 @@
 }
 
 .airs-header-title {
+    line-height: 22px;
     margin: 0 !important;
     padding: 0;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 600;
     color: #111;
 }
@@ -289,8 +293,8 @@
 }
 
 .airs-header-subtitle {
-    margin: 7px 0 0;
-    font-size: 1rem;
+    margin: 8px 0 0;
+    font-size: 17px;
     color: #666;
     opacity: 0.9;
     font-weight: 400;
@@ -301,7 +305,7 @@
     margin: 0 0 2rem 0 !important;
     border-bottom: none;
     background: white;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 0.5rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     display: flex;
@@ -373,7 +377,7 @@
 /* Card Components */
 .airs-card {
     background: #fff;
-    border-radius: 6px;
+    border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
     border: none;
     margin-bottom: 2rem;
@@ -629,7 +633,8 @@ content: '\2713';
     display: inline-flex;
     align-items: center;
     gap: 0;
-    padding: 10px 15px;
+    padding: 10px 12px;
+    line-height: 20px;
     border-radius: 6px;
     font-weight: 500;
     font-size: 0.875rem;
@@ -640,6 +645,13 @@ content: '\2713';
     position: relative;
     overflow: hidden;
     box-shadow: none;
+}
+#pdf-select-btn .airs-button-icon,
+#airs-add-pages-btn .airs-button-icon {
+    color: #fff;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
 }
 
 .airs-button:disabled {
@@ -658,8 +670,13 @@ content: '\2713';
     color: #fff;
 }
 
+#database-status button.button { border-radius: 5px;}
+
 #airs-add-pages-btn,
-#pdf-select-btn { padding: 5px 12px; }
+#pdf-select-btn {
+    gap: 6px;
+    padding: 5px 12px;
+}
 
 .airs-button-secondary {
     background: #f8fafc;
@@ -1270,6 +1287,7 @@ content: '\2713';
     gap: 4px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
+    zoom: 1.1;
 }
 
 .ai-provider-option {
@@ -1287,11 +1305,10 @@ content: '\2713';
     box-sizing: border-box;
 }
 
-@media (max-width: 1300px) {
-    .ai-provider-option {zoom: 0.9;}
-}
+
 @media (max-width: 500px) {
-    .ai-provider-option {zoom: 0.8;}
+    .ai-provider-toggle { flex-direction: column; width: 100%;}
+    .ai-provider-slider { display: none;}
 }
 .ai-provider-logo {
     display: flex;
@@ -1530,7 +1547,9 @@ content: '\2713';
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
 }
-
+.airs-card .airs-modal-overlay {
+    background: rgba(0, 0, 0, 0.2);
+}
 .airs-modal-content {
     position: relative;
     z-index: 1;
@@ -1562,7 +1581,7 @@ content: '\2713';
 justify-content: space-between;
 }
 
-#contact-form-modal-close span { 
+#contact-form-modal-close span {
     font-size: 30px;
     height: 20px;
     line-height: 20px;
@@ -1904,21 +1923,13 @@ justify-content: space-between;
    ========================================================================== */
 
 #listeo_ai_chat_quick_buttons_wrapper {
-    margin-left: 30px;
+    margin-left: 0px;
 }
 
-#listeo_ai_chat_quick_buttons_wrapper button.listeo-configure-contact-form {
-    padding-top: 7px;
-    padding-bottom: 7px;
+#listeo_ai_chat_quick_buttons_wrapper .airs-help-text {
+    margin-top: 0 !important;
 }
 
-#listeo_ai_chat_quick_buttons_wrapper input,
-#listeo_ai_chat_quick_buttons_wrapper select {
-    padding: 1px 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 .listeo-quick-button-row {
     display: flex;
@@ -1928,13 +1939,13 @@ justify-content: space-between;
     flex-wrap: wrap;
 }
 
-@media (max-width: 1480px) {
-    .listeo-quick-button-row {
-        padding: 10px;
-        background: #f9f9f9;
-        border-radius: 8px;
-    } 
+
+.listeo-quick-button-row {
+padding: 10px;
+background: #f7f7f7;
+border-radius: 8px;
 }
+
 
 .listeo-quick-button-row .listeo-quick-button-text,
 .listeo-quick-button-row .listeo-quick-button-type,
@@ -1966,9 +1977,19 @@ justify-content: space-between;
     align-self: center;
 }
 
+.airs-button-secondary.listeo-remove-quick-button:hover,
+.airs-button-secondary.listeo-remove-quick-button:focus,
+.airs-button-secondary.listeo-remove-quick-button {
+    height: 37px;
+    width: 37px;
+    border: none;
+    background: #fde3e3;
+    color: #e31e1e;
+}
+
 .listeo-quick-btn-color-swatch {
-    width: 30px;
-    height: 30px;
+    width: 37px;
+    height: 37px;
     border-radius: 8px;
     border: 1px solid rgba(0, 0, 0, 0.15);
     cursor: pointer;
@@ -2613,7 +2634,7 @@ gap:0;
 /* =================================================================
    AI SEMANTIC SEARCH FIELD - Shortcode Builder Styles
    ================================================================= */
-
+.airs-shortcode-builder { padding-bottom: 30px;}
 /* Info notice for shortcode builder */
 .airs-shortcode-builder-info {
     padding: 12px 15px;
@@ -3647,7 +3668,7 @@ gap:0;
     height: 100%;
     object-fit: cover;
     display: block;
-}
+} 
 
 .airs-header-bg-preview-frame.airs-header-bg-placeholder {
     border: 2px dashed #ddd;
@@ -3666,6 +3687,7 @@ gap:0;
     position: relative;
     width: 100%;
     height: 120px;
+    max-width: 400px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid #e0e0e0;
@@ -4420,11 +4442,13 @@ gap:0;
         border: 1px solid #c0c0c0;
         border-radius: 6px;
         box-shadow: 0 2px 3px rgba(0, 0, 0, 0.07);
-        padding: 4px 14px;
+        padding: 1px 14px !important;
+        height: 40px;
+        line-height: 36px;
         min-width: 180px;
         cursor: pointer;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        /* Prefer below, don't flip above */1
+        /* Prefer below, don't flip above */
     }
 
     .airs-admin-wrap select:hover,
@@ -4459,7 +4483,7 @@ gap:0;
         border-width: 0 2px 2px 0;
         transform: rotate(45deg) translateY(-2px);
         transition: transform 0.2s ease;
-        margin-top: 9px;
+        margin-top: 14px;
         margin-right: 5px;
         right: 14px;
         position: absolute;
@@ -4666,3 +4690,217 @@ details[open] > .airs-view-messages-summary .airs-view-messages-chevron {
 }
 
 .airs-api-key-remove-button { margin-left: 4px; }
+
+/* ==========================================
+   AI Chat tab: sidebar layout
+   ========================================== */
+
+/* Override the parent tab grid (sidebar layout takes over). */
+@media (min-width: 1200px) {
+    .airs-ai-chat-tab {
+        display: block;
+    }
+}
+
+.airs-chat-layout {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+
+.airs-chat-sidebar {
+    flex: 0 0 260px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    padding: 10px;
+    position: sticky;
+    top: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.airs-chat-content {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.airs-chat-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px;
+    font-weight: 400;
+    border: none;
+    outline: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    color: #444;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+    box-shadow: none;
+}
+
+.airs-chat-sidebar-item:hover {
+    background: transparent;
+    color: #0073ee;
+}
+
+.airs-chat-sidebar-item:focus {
+    outline: none;
+}
+
+.airs-chat-sidebar-item.is-active {
+    background: #f0f7ff;
+    color: #0073ee;
+}
+
+.airs-chat-sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    background: #f6f6f6;
+    border-radius: 6px;
+    height: 30px;
+    width: 30px;
+    padding: 7px;
+    transition: 0.2s;
+}
+
+.airs-chat-sidebar-item:hover .airs-chat-sidebar-icon {
+    background: #dbefff;
+}
+
+.airs-chat-sidebar-item.is-active .airs-chat-sidebar-icon {
+    background: linear-gradient(135deg, #0073ee 0%, #005bb5 100%) !important;
+    color: #fff;
+}
+
+.airs-chat-sidebar-icon svg {
+    width: 18px;
+    height: 18px;
+    color: currentColor;
+}
+
+.airs-chat-sidebar-label {
+    flex: 1;
+}
+
+#ai-chat-settings-form {
+    position: relative;
+    transition: height 0.35s ease-in-out;
+}
+
+.airs-card[data-chat-section] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition:
+        opacity 0.1s ease-out,
+        transform 0.1s ease-out,
+        visibility 0s linear 0.1s;
+    pointer-events: none;
+}
+
+.airs-card[data-chat-section].is-active {
+    position: relative;
+    z-index: 2;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition:
+        opacity 0.35s ease-in-out,
+        transform 0.35s ease-in-out,
+        visibility 0s linear 0s;
+    pointer-events: auto;
+}
+
+.airs-debug-notice {
+    background: #fff8e7;
+    border-radius: 6px;
+    padding: 0 16px;
+    margin: 0 0 16px 0;
+    color: #9d781e;
+    font-size: 13px;
+    line-height: 20px;
+    display: inline-block;
+}
+.airs-debug-notice code {
+    background: rgb(133 88 0 / 8%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #9d781e;
+}
+.airs-debug-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    background: #9d781e;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 11px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+
+.airs-help-text.airs-blue{
+    background: #f0f7ff;
+    color: #0073ee;
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: block;
+    margin: 10px 0 0 0 !important;
+    font-size: 13px;
+    line-height: 20px;
+    line-height: 20px;
+
+}
+
+.airs-help-text.airs-blue code {
+    background: rgba(0, 64, 133, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #0476ee;
+}
+
+
+.airs-help-text.airs-blue a,
+.airs-help-text.airs-blue strong {
+    color: #0476ee;
+    font-weight: 600;
+}
+
+.airs-help-text.airs-blue a{
+    text-decoration: underline;
+    text-decoration-color: #0476ee;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 1px;
+    text-decoration-style: solid;
+    color: #0476ee;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .airs-chat-layout {
+        flex-direction: column;
+    }
+    .airs-chat-sidebar { width: 100%;}
+}

@@ -222,21 +222,9 @@
    * @param {string} model
    * @returns {string}
    */
-  const getBareModel = function (model) {
-    if (typeof model !== "string") return "";
-    return model.indexOf("openai/") === 0 ? model.substring(7) : model;
-  };
-
-  const configureModelPayload = function (payload, chatConfig) {
-    var bareModel = getBareModel(chatConfig.model);
-    if (bareModel.startsWith("gpt-5")) {
-      payload.verbosity = "medium";
-    }
-  };
-
   const logModelDebug = function (payload, context, chatConfig) {
     debugLog("========== OpenAI API Call (" + context + ") ==========");
-    debugLog("Model:", chatConfig.model);
+    debugLog("Model:", chatConfig.model || "(server-side)");
     debugLog("=".repeat(55));
   };
 
@@ -271,9 +259,9 @@
    * Log API request summary with model params
    * @param {Object} payload - The API payload
    */
-  const logApiRequest = function (payload) {
-    var params = { server_reasoning: computeServerReasoning(payload.model) };
-    debugLog("🚀 API REQUEST | Model:", payload.model, "| Params:", params);
+  const logApiRequest = function (payload, model) {
+    var params = { server_reasoning: computeServerReasoning(model) };
+    debugLog("🚀 API REQUEST | Model:", model || "(server-side)", "| Params:", params);
   };
 
   /**
@@ -939,13 +927,6 @@
       // Load conversation from localStorage (this clears/restores messages)
       this.loadConversation();
 
-      // Show API or embeddings notification AFTER loadConversation (which clears messages)
-      if (this.configLoaded && !this.chatConfig.api_configured) {
-        this.addMessage("system", listeoAiChatConfig.strings.apiNotConfigured);
-      } else if (this.configLoaded && listeoAiChatConfig.isAdmin && !this.chatConfig.has_embeddings) {
-        this.addMessage("system", listeoAiChatConfig.strings.noEmbeddings);
-      }
-
       // Initialize pre-chat form AFTER loadConversation (which clears/restores messages)
       if (listeoAiChatConfig.preChatFields && listeoAiChatConfig.preChatFields.length > 0) {
         this.initPreChatForm();
@@ -1144,10 +1125,10 @@
 
         debugLog("[CONFIG] ✅ Loaded from inline data:", {
           enabled: self.chatConfig.enabled,
-          model: self.chatConfig.model,
           listeo_available: self.chatConfig.listeo_available,
-          tools_count: self.chatConfig.tools ? self.chatConfig.tools.length : 0,
-          api_configured: self.chatConfig.api_configured,
+          woocommerce_available: self.chatConfig.woocommerce_available,
+          hasTools: self.chatConfig.hasTools,
+          hasComplexTools: self.chatConfig.hasComplexTools,
         });
 
         // API notification is now shown in init() after loadConversation()
@@ -1309,7 +1290,7 @@
       debugLog("===== FUNCTION CALLING MODE =====");
       debugLog(
         "Tools available:",
-        this.chatConfig.tools ? this.chatConfig.tools.length : 0,
+        this.chatConfig.hasTools ? 1 : 0,
       );
       debugLog(
         "LLM will decide whether to call tools or answer directly from conversation context",
@@ -1326,9 +1307,7 @@
       var self = this;
 
       // Check if listing/product tools are available (need more history for complex flows)
-      var hasComplexTools = self.chatConfig.tools && self.chatConfig.tools.some(function(t) {
-        return t.function && (t.function.name === "search_listings" || t.function.name === "search_products");
-      });
+      var hasComplexTools = self.chatConfig.hasComplexTools;
 
       // Get valid history slice, respecting admin context length setting
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
@@ -1341,9 +1320,8 @@
         { role: "user", content: userMessage },
       ]);
 
-      // Build payload with tools (only if tools are available)
+      // Build payload (model and tools are handled server-side)
       var payload = {
-        model: self.chatConfig.model,
         messages: messages,
       };
 
@@ -1374,30 +1352,18 @@
         );
       }
 
-      // Tools are now generated server-side for security
-      // We only send tool_choice to tell the server to use auto mode
-      if (self.chatConfig.tools && self.chatConfig.tools.length > 0) {
+      // Tell server to use auto tool choice when tools are available
+      if (self.chatConfig.hasTools) {
         payload.tool_choice = "auto";
-        // Disable parallel tool calls for OpenAI (prevents chaining issues with GPT-5.2).
-        // Must only be sent when tools are present. Uses getBareModel() so
-        // OpenRouter namespaced slugs (e.g. "openai/gpt-5.2") are matched too.
-        var bareModel = getBareModel(self.chatConfig.model);
-        var isOSeries = bareModel.startsWith("o1") || bareModel.startsWith("o3") || bareModel.startsWith("o4");
-        var isOpenAI = bareModel.startsWith("gpt-") || bareModel.startsWith("chatgpt-");
-        if (isOpenAI && !isOSeries) {
-          payload.parallel_tool_calls = false;
-        }
       }
 
-      // Configure model-specific parameters (GPT-5 vs GPT-4)
-      configureModelPayload(payload, self.chatConfig);
       logModelDebug(payload, "Function Calling", self.chatConfig);
 
       debugLog("===== SENDING TO CHAT-PROXY =====");
       debugLog("Messages:", messages.length);
-      debugLog("Tools (server-side):", self.chatConfig.tools ? self.chatConfig.tools.length : 0);
+      debugLog("Tools (server-side):", self.chatConfig.hasTools ? 1 : 0);
 
-      logApiRequest(payload);
+      logApiRequest(payload, self.chatConfig.model);
 
       // Send to OpenAI - no retry to avoid duplicate paid provider calls
         $.ajax({
@@ -1494,6 +1460,20 @@
      */
     executeToolCalls: function (userMessage, assistantMessage, loadingId) {
       var self = this;
+
+      if (assistantMessage.tool_calls.length > 1) {
+        debugError(
+          "Multiple tool_calls returned despite sequential tool handling. Using the first tool_call only:",
+          assistantMessage.tool_calls.map(function (tc) {
+            return tc.id + ":" + tc.function.name;
+          }),
+        );
+
+        assistantMessage = $.extend({}, assistantMessage, {
+          tool_calls: [assistantMessage.tool_calls[0]],
+        });
+      }
+
       var toolCall = assistantMessage.tool_calls[0]; // Handle first tool call
       var functionName = toolCall.function.name;
       var functionArgs = JSON.parse(toolCall.function.arguments);
@@ -1772,8 +1752,19 @@
                 "search_products",
               );
             } else {
-              // No results - still need to show thinking indicator
+              // No results - show backend notice if available, otherwise ask AI to respond naturally
               debugLog("No products found");
+
+              if (response.notice && response.notice_type === "no_embeddings") {
+                self.$messages.find("#" + loadingId).remove();
+                self.addMessage(
+                  "system",
+                  response.notice,
+                );
+                self.isProcessing = false;
+                self.$sendBtn.prop("disabled", false);
+                return;
+              }
 
               // Update loading indicator to show AI is thinking about no results
               self.$messages
@@ -2855,9 +2846,8 @@
       var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
       var recentHistory = self.getValidHistorySlice(12 * ctxMul);
 
-      // Build API payload (server handles system prompt injection for security)
+      // Build API payload (model and tools are handled server-side)
       var payload = {
-        model: self.chatConfig.model,
         messages: recentHistory.concat([
           { role: "user", content: userMessage },
           assistantMessage,
@@ -2879,8 +2869,6 @@
         payload.product_context_id = self.loadedProduct.id;
       }
 
-      // Configure model-specific parameters (GPT-5 vs GPT-4)
-      configureModelPayload(payload, self.chatConfig);
       logModelDebug(payload, "Listing Details", self.chatConfig);
 
       debugLog("===== SENDING LISTING DETAILS TO OPENAI =====");
@@ -2901,7 +2889,7 @@
         ),
       );
       debugLog("Full payload:", payload);
-      logApiRequest(payload);
+      logApiRequest(payload, self.chatConfig.model);
 
       $.ajax({
         url: listeoAiChatConfig.apiBase + "/chat-proxy",
@@ -2988,6 +2976,19 @@
 
       // Non-search tools (webhook, contact form, etc.) - pass result directly to AI
       var condensedResults;
+      var trimWordsForLlm = function (text, limit) {
+        text = (text || "").toString().replace(/\s+/g, " ").trim();
+        if (!text) {
+          return "";
+        }
+
+        var words = text.split(" ");
+        if (words.length <= limit) {
+          return text;
+        }
+
+        return words.slice(0, limit).join(" ");
+      };
 
       if (isNonSearchTool) {
         condensedResults = apiResult;
@@ -3001,20 +3002,29 @@
                 var product = {
                   id: r.id,
                   title: r.title,
-                  excerpt: r.excerpt || "",
+                  excerpt: r.llm_excerpt || r.excerpt || "",
                   price: r.price?.formatted || "",
                   stock_status: r.stock_status || "",
                   on_sale: r.on_sale || false,
                   url: r.url || "",
                 };
-                if (r.sku) {
-                  product.sku = r.sku;
-                }
-                if (r.product_type) {
-                  product.product_type = r.product_type;
-                }
-                if (r.variations) {
-                  product.variations = r.variations;
+	                if (r.sku) {
+	                  product.sku = r.sku;
+	                }
+	                if (r.product_type) {
+	                  product.product_type = r.product_type;
+	                }
+	                if (r.categories && r.categories.length) {
+	                  product.categories = r.categories;
+	                }
+	                if (r.tags && r.tags.length) {
+	                  product.tags = r.tags;
+	                }
+	                if (r.variations) {
+	                  product.variations = r.variations;
+	                }
+                if (r.attributes && Object.keys(r.attributes).length) {
+                  product.attributes = r.attributes;
                 }
                 if (r.extra_pricing) {
                   product.extra_pricing = r.extra_pricing;
@@ -3033,10 +3043,20 @@
                 var listing = {
                   id: r.id,
                   title: r.title,
-                  excerpt: r.excerpt || "",
+                  excerpt: trimWordsForLlm(r.content || r.excerpt || "", 100),
                   address: r.location?.address || "",
                   url: r.url || "",
                 };
+                if (r.llm_categories && r.llm_categories.length) {
+                  listing.categories = r.llm_categories;
+                } else if (r.categories && r.categories.length) {
+                  listing.categories = r.categories;
+                }
+                if (r.llm_features && r.llm_features.length) {
+                  listing.features = r.llm_features;
+                } else if (r.features && r.features.length) {
+                  listing.features = r.features;
+                }
                 if (r.event_dates) {
                   listing.event_dates = r.event_dates;
                 }
@@ -3050,9 +3070,8 @@
       debugLog("Filter mode:", isFilterMode);
       debugLog(JSON.stringify(condensedResults, null, 2));
 
-      // Build API payload for final response (server handles system prompt for security)
+      // Build API payload for final response (model and tools are handled server-side)
       var payload = {
-        model: self.chatConfig.model,
         messages: recentHistory.concat([
           { role: "user", content: userMessage },
           assistantMessage,
@@ -3079,8 +3098,6 @@
         payload.product_context_id = self.loadedProduct.id;
       }
 
-      // Configure model-specific parameters (GPT-5 vs GPT-4)
-      configureModelPayload(payload, self.chatConfig);
       logModelDebug(payload, "Tool Response Summary", self.chatConfig);
 
       debugLog("===== SENDING MESSAGE TO OPENAI (SECOND CALL - SUMMARY) =====");
@@ -3093,7 +3110,7 @@
       debugLog("Full messages array:", payload.messages);
       debugLog("Condensed results being sent:", condensedResults);
       debugLog("Complete payload:", payload);
-      logApiRequest(payload);
+      logApiRequest(payload, self.chatConfig.model);
 
       $.ajax({
         url: listeoAiChatConfig.apiBase + "/chat-proxy",

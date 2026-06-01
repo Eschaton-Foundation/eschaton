@@ -113,15 +113,28 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Lazy load mode: defer chatbot scripts until user opens the widget
         $lazy_load = get_option('listeo_ai_chat_lazy_load', 0);
-        $is_pro = AI_Chat_Search_Pro_Manager::is_pro_active();
-        $whitelabel_enabled = $is_pro && get_option('listeo_ai_chat_whitelabel_enabled', 0);
+        $pro_plugin_file = 'ai-chat-search-pro/ai-chat-search-pro.php';
+        $active_plugins = (array) get_option('active_plugins', array());
+        $network_active_plugins = is_multisite() ? (array) get_site_option('active_sitewide_plugins', array()) : array();
+        $pro_plugin_active =
+            in_array($pro_plugin_file, $active_plugins, true) ||
+            isset($network_active_plugins[$pro_plugin_file]);
+        $trial_expires_at = (int) get_option('ai_chat_search_pro_trial_expires_at', 0);
+        $trial_expired =
+            get_option('ai_chat_search_pro_is_trial', false) &&
+            $trial_expires_at <= time();
+        $whitelabel_enabled =
+            $pro_plugin_active &&
+            get_option('listeo_ai_chat_whitelabel_enabled', 0) &&
+            get_option('ai_chat_search_pro_license_instance_id', '') !== '' &&
+            !$trial_expired;
         $needs_silk_wave = get_option('listeo_ai_floating_header_style', 'simple') === 'animated';
 
         if (!$lazy_load) {
             // Standard mode: load all scripts upfront
             wp_enqueue_script(
                 "listeo-ai-chat",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chat-core-scripts.js",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-scripts.js",
                 ["jquery"],
                 LISTEO_AI_SEARCH_VERSION,
                 true,
@@ -161,7 +174,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
         if (!$lazy_load && !$whitelabel_enabled) {
             wp_enqueue_script(
                 "listeo-ai-chat-ui-utils",
-                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chat-ui-utils.js",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-chat-ui-utils.js",
                 ["jquery", "listeo-ai-chat"],
                 LISTEO_AI_SEARCH_VERSION,
                 true,
@@ -170,7 +183,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Localize chat config on the script that's guaranteed to be enqueued
         $config_handle = $lazy_load ? "listeo-ai-floating-chat" : "listeo-ai-chat";
-        wp_localize_script($config_handle, "listeoAiChatConfig", listeo_ai_get_chat_js_config());
+        listeo_ai_localize_chat_config($config_handle);
 
         // Get welcome bubble message for floating widget
         $welcome_bubble_message = get_option(
@@ -185,9 +198,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
             if ($needs_silk_wave) {
                 $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js";
             }
-            $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/ai-chat-core-scripts.js";
+            $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-scripts.js";
             if (!$whitelabel_enabled) {
-                $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/chat-ui-utils.js";
+                $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-chat-ui-utils.js";
             }
             if (AI_Chat_Search_Pro_Manager::is_pro_active() && get_option('listeo_ai_chat_enable_speech', 0)) {
                 $lazy_scripts[] = defined('AI_CHAT_SEARCH_PRO_URL') ? AI_CHAT_SEARCH_PRO_URL . "assets/js/speech-to-text.js" : '';
@@ -633,16 +646,25 @@ class Listeo_AI_Search_Floating_Chat_Widget
                         <?php endif; ?>
 
                         <?php
-                        // Show "Powered by Purethemes" badge in FREE version (unless whitelabel is enabled in PRO)
-                        $is_pro_widget =
-                            class_exists("AI_Chat_Search_Pro_Manager") &&
-                            AI_Chat_Search_Pro_Manager::is_pro_active();
+                        // Show "Powered by PurioChat" badge unless whitelabel is fully enabled.
+                        $pro_plugin_file = "ai-chat-search-pro/ai-chat-search-pro.php";
+                        $active_plugins = (array) get_option("active_plugins", array());
+                        $network_active_plugins = is_multisite() ? (array) get_site_option("active_sitewide_plugins", array()) : array();
+                        $pro_plugin_active =
+                            in_array($pro_plugin_file, $active_plugins, true) ||
+                            isset($network_active_plugins[$pro_plugin_file]);
+                        $trial_expires_at = (int) get_option("ai_chat_search_pro_trial_expires_at", 0);
+                        $trial_expired =
+                            get_option("ai_chat_search_pro_is_trial", false) &&
+                            $trial_expires_at <= time();
                         $whitelabel_enabled_widget =
-                            $is_pro_widget &&
-                            get_option("listeo_ai_chat_whitelabel_enabled", 0);
+                            $pro_plugin_active &&
+                            get_option("listeo_ai_chat_whitelabel_enabled", 0) &&
+                            get_option("ai_chat_search_pro_license_instance_id", "") !== "" &&
+                            !$trial_expired;
                         if (!$whitelabel_enabled_widget): ?>
                             <div class="listeo-ai-chat-powered-by" id="listeo-ai-chat-powered-by-floating" data-required="true">
-                                Powered by <a href="https://purethemes.net/ai-chatbot-for-wordpress/?utm_source=chatbot-widget&utm_medium=powered-by&utm_campaign=branding" target="_blank" rel="noopener">Purethemes</a>
+                                Powered by <a href="https://purethemes.net/ai-chatbot-for-wordpress/?utm_source=chatbot-widget&utm_medium=powered-by&utm_campaign=branding" target="_blank" rel="noopener" style="--ai-chat-primary-color: #111;"><img class="listeo-ai-chat-powered-by-logo" src="<?php echo esc_url(LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/purio.svg"); ?>" alt="" aria-hidden="true" /><span class="listeo-ai-chat-powered-by-name" style="font-weight: 600 !important;">PurioChat</span></a>
                             </div>
                         <?php endif;
                         ?>

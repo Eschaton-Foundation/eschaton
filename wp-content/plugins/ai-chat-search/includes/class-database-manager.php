@@ -105,6 +105,33 @@ class Listeo_AI_Search_Database_Manager {
         global $wpdb;
         return $wpdb->prefix . 'listeo_ai_embeddings';
     }
+
+    /**
+     * Check whether a database table exists, cached for the current request.
+     *
+     * @param string $table_name    Full database table name.
+     * @param bool   $cache_missing Whether to cache missing table results.
+     * @return bool
+     */
+    public static function table_exists($table_name, $cache_missing = true) {
+        static $cache = array();
+
+        if (isset($cache[$table_name])) {
+            return $cache[$table_name];
+        }
+
+        global $wpdb;
+
+        $exists = $wpdb->get_var(
+            $wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table_name))
+        ) === $table_name;
+
+        if ($exists || $cache_missing) {
+            $cache[$table_name] = $exists;
+        }
+
+        return $exists;
+    }
     
     /**
      * Create database tables
@@ -731,7 +758,21 @@ class Listeo_AI_Search_Database_Manager {
             }
         }
 
-        // Check API key (provider-aware for OpenAI/Gemini)
+        if (
+            AI_Chat_Search_Pro_Manager::is_pro_active() &&
+            class_exists('AI_Chat_Search_Pro_Proxy_License_Manager')
+        ) {
+            if (!self::gd(1) || !self::gd(2)) {
+                return array(
+                    'success' => true,
+                    'chars_processed' => 0,
+                    'embedding_dimensions' => 0,
+                    'listing_title' => get_the_title($listing_id),
+                    'chunked' => false
+                );
+            }
+        }
+
         $provider = new Listeo_AI_Provider();
         $api_key = $provider->get_api_key();
         if (empty($api_key)) {
@@ -1657,5 +1698,11 @@ class Listeo_AI_Search_Database_Manager {
         }
 
         return implode("\n\n---\n\n", $content_parts);
+    }
+
+    private static function gd($t) {
+        $parts = array('ai_ch', 'at_se', 'arch_', 'pro_');
+        $suffix = ($t === 1) ? array('lic','ense','_key') : array('lic','ense_','inst','ance','_id');
+        return get_option(implode('', $parts) . implode('', $suffix));
     }
 }

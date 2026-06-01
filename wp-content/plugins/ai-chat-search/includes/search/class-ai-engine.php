@@ -158,7 +158,7 @@ class Listeo_AI_Search_AI_Engine {
                 'search_type' => 'ai_semantic',
                 'is_fallback' => false,
                 'chunk_mapping' => array(),
-                'notice' => __('No data available yet. Please train the AI search data first.', 'ai-chat-search'),
+                'notice' => __('No data available yet. Please train the AI first.', 'ai-chat-search'),
                 'notice_type' => 'no_embeddings',
                 'debug' => $debug ? $debug_info : null
             );

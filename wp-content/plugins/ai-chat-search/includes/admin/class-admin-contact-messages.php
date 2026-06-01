@@ -466,7 +466,7 @@ class Admin_Contact_Messages {
         // Prepare test email
         $subject = sprintf(__('[%s] Test Email from AI Chat Contact Form', 'ai-chat-search'), get_bloginfo('name'));
         $message = sprintf(
-            __("This is a test email from the AI Chat & Search plugin.\n\n" .
+            __("This is a test email from the PurioChat plugin.\n\n" .
             "If you received this email, your contact form email delivery is working correctly.\n\n" .
             "Settings:\n" .
             "- Recipient: %s\n" .
