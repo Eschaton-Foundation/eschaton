@@ -266,8 +266,7 @@ class AI_Chat_Search_Pro_PDF_Manager {
         }
 
         // Get file extension
-        $file_type = wp_check_filetype($file['name']);
-        $extension = strtolower($file_type['ext']);
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
         // Validate file type
         if (!$this->is_supported_extension($extension)) {

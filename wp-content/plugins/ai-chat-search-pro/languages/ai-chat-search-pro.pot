@@ -2,7 +2,7 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: AI Chat & Search Pro 1.8.6\n"
+"Project-Id-Version: PurioChat Pro 2.1.5\n"
 "Report-Msgid-Bugs-To: https://purethemes.net\n"
 "POT-Creation-Date: 2026-02-06 00:00+0000\n"
 "MIME-Version: 1.0\n"
@@ -208,4 +208,3 @@ msgstr ""
 #: includes/messaging/class-telegram-admin.php:282
 msgid "Invalid bot token. Check the token from @BotFather."
 msgstr ""
-

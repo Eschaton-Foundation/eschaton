@@ -111,13 +111,13 @@ class AI_Chat_Search_Pro_Speech_To_Text {
             ), 400);
         }
 
-        // Validate file size (max 25MB)
-        $max_size = 25 * 1024 * 1024;
+        // Validate file size (max 3MB)
+        $max_size = 3 * 1024 * 1024;
         if ($file['size'] > $max_size) {
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => array(
-                    'message' => __('Audio file too large (max 25MB).', 'ai-chat-search'),
+                    'message' => __('Audio file too large (max 3MB).', 'ai-chat-search'),
                     'type' => 'validation_error',
                     'request_id' => $request_id
                 )

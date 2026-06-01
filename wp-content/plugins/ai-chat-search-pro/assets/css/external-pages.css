@@ -189,14 +189,13 @@
 #airs-add-pages-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
 
-#airs-add-pages-btn .dashicons {
-    font-size: 16px;
+#airs-add-pages-btn .airs-button-icon {
     width: 16px;
     height: 16px;
-    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* List section */

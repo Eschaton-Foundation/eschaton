@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: AI Chat & Search Pro
+ * Plugin Name: PurioChat Pro
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
- * Description: Premium features for AI Chat & Search plugin - Unlimited post types, full conversation logs, and priority support
- * Version: 2.0.7
+ * Description: Premium features for PurioChat plugin - Unlimited post types, full conversation logs, and priority support
+ * Version: 2.1.7
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Pro constants early
-define('AI_CHAT_SEARCH_PRO_VERSION', '2.0.7');
+define('AI_CHAT_SEARCH_PRO_VERSION', '2.1.7');
 define('AI_CHAT_SEARCH_PRO_FILE', __FILE__);
 define('AI_CHAT_SEARCH_PRO_DIR', plugin_dir_path(__FILE__));
 define('AI_CHAT_SEARCH_PRO_URL', plugin_dir_url(__FILE__));
@@ -53,8 +53,8 @@ function ai_chat_search_pro_missing_free_notice() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                 </div>
                 <div style="flex:1;">
-                    <h3 style="margin:0 0 6px 0;font-size:17px;font-weight:600;color:#111;"><?php _e('AI Chat Pro Requires Base (Free) Plugin', 'ai-chat-search'); ?></h3>
-                    <p style="margin:0 0 16px 0;font-size:14px;color:#666;line-height:1.5;"><?php _e('AI Chat & Search Pro requires the free base plugin to be installed and activated.', 'ai-chat-search'); ?></p>
+                    <h3 style="margin:0 0 6px 0;font-size:17px;font-weight:600;color:#111;"><?php _e('PurioChat Pro Requires Base (Free) Plugin', 'ai-chat-search'); ?></h3>
+                    <p style="margin:0 0 16px 0;font-size:14px;color:#666;line-height:1.5;"><?php _e('PurioChat Pro requires the free base plugin to be installed and activated.', 'ai-chat-search'); ?></p>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <?php if (current_user_can('install_plugins')) : ?>
                             <a href="<?php echo esc_url($install_url); ?>" class="button" style="background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%) !important;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
@@ -405,7 +405,7 @@ class AI_Chat_Search_Pro {
      * Get account URL
      */
     public function get_account_url($url) {
-        return 'https://purethemes.net/ai-chat-search-pro/';
+        return 'https://purethemes.net/ai-chatbot-for-wordpress/';
     }
 
     /**
@@ -415,9 +415,9 @@ class AI_Chat_Search_Pro {
         ?>
         <div class="notice notice-success is-dismissible">
             <p>
-                <strong><?php _e('AI Chat & Search Pro activated!', 'ai-chat-search'); ?></strong>
+                <strong><?php _e('PurioChat Pro activated!', 'ai-chat-search'); ?></strong>
                 <?php _e('All premium features are now unlocked.', 'ai-chat-search'); ?>
-                <a href="<?php echo admin_url('admin.php?page=ai-chat-search'); ?>">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=ai-chat-search&tab=stats')); ?>">
                     <?php _e('Go to Settings', 'ai-chat-search'); ?> →
                 </a>
             </p>

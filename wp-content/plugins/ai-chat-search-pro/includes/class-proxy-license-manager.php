@@ -146,7 +146,10 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             // Store trial info if present (backward compatible - only acts if is_trial is explicitly true)
             if (!empty($result['is_trial']) && !empty($result['trial_expires_at'])) {
                 update_option(self::OPTION_IS_TRIAL, true);
-                update_option(self::OPTION_TRIAL_EXPIRES_AT, (int) $result['trial_expires_at']);
+                // Server deletes the trial record after 48h, but the plugin
+                // revalidates at 72h. Add 24h so the local counter reflects
+                // the actual usable period.
+                update_option(self::OPTION_TRIAL_EXPIRES_AT, (int) $result['trial_expires_at'] + 86400);
             } elseif (get_option(self::OPTION_IS_TRIAL, false)) {
                 // Only clear if previously was a trial (e.g., upgrading from trial to paid)
                 delete_option(self::OPTION_IS_TRIAL);
@@ -157,6 +160,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             // Clear validation cache and set cache
             delete_transient(self::TRANSIENT_LICENSE_VALID);
             set_transient(self::TRANSIENT_LICENSE_VALID, 1, self::CACHE_DURATION);
+            $this->clear_update_cache();
             delete_option('_ais_cs');
             delete_transient('_ais_cst');
 
@@ -630,7 +634,19 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
         delete_option(self::OPTION_IS_TRIAL);
         delete_option(self::OPTION_TRIAL_EXPIRES_AT);
         delete_transient(self::TRANSIENT_LICENSE_VALID);
+        $this->clear_update_cache();
         delete_option(self::OPTION_LAST_CHECK);
+    }
+
+    /**
+     * Clear cached update data when license state changes.
+     */
+    private function clear_update_cache() {
+        delete_transient('ai_chat_search_pro_update_data');
+        delete_transient('ai_chat_search_pro_update_error');
+        if (function_exists('wp_clean_plugins_cache')) {
+            wp_clean_plugins_cache();
+        }
     }
 
     /**
@@ -722,7 +738,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             ?>
             <div class="notice notice-warning">
                 <p>
-                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search'); ?></strong>
+                    <strong><?php _e('PurioChat Pro:', 'ai-chat-search'); ?></strong>
                     <?php _e('Please activate your license key to unlock Pro features.', 'ai-chat-search'); ?>
                     <a href="<?php echo admin_url('admin.php?page=ai-chat-search&tab=license'); ?>">
                         <?php _e('Activate License', 'ai-chat-search'); ?>
@@ -734,7 +750,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
             ?>
             <div class="notice notice-error">
                 <p>
-                    <strong><?php _e('AI Chat & Search Pro:', 'ai-chat-search'); ?></strong>
+                    <strong><?php _e('PurioChat Pro:', 'ai-chat-search'); ?></strong>
                     <?php _e('Your license is invalid or has expired. Please check your license status.', 'ai-chat-search'); ?>
                     <a href="<?php echo admin_url('admin.php?page=ai-chat-search&tab=license'); ?>">
                         <?php _e('Check License', 'ai-chat-search'); ?>
@@ -752,7 +768,7 @@ class AI_Chat_Search_Pro_Proxy_License_Manager {
      */
     public function get_license_data() {
         return array(
-            'product' => array('name' => 'AI Chat & Search Pro'),
+            'product' => array('name' => 'PurioChat Pro'),
             'customer' => array('email' => ''), // Not stored locally
             'created_at' => '' // Not stored locally
         );

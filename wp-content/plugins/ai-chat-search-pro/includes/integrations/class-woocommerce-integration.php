@@ -198,9 +198,14 @@ class Listeo_AI_WooCommerce_Integration {
         if ($category === '' || $category === null) {
             $category = null;
         }
+        if ($is_chatbot && $has_ai) {
+            // Chatbot product results are re-ranked by the LLM with category metadata.
+            // Do not hard-filter candidates by a guessed category before that pass.
+            $category = null;
+        }
 
         // Execute search
-        $results = array();
+	        $results = array();
 
         // Track notice from AI engine (e.g., no embeddings)
         $ai_notice = null;
@@ -655,6 +660,7 @@ class Listeo_AI_WooCommerce_Integration {
             'url' => get_permalink($product_id),
             // Use product description stripped and trimmed (short_description often contains styled marketing HTML)
             'excerpt' => wp_trim_words(wp_strip_all_tags($product->get_description()), 25),
+            'llm_excerpt' => $this->get_product_llm_excerpt($product),
             'featured_image' => $featured_image,
         );
 
@@ -740,7 +746,87 @@ class Listeo_AI_WooCommerce_Integration {
         $tags = wp_get_post_terms($product_id, 'product_tag', array('fields' => 'names'));
         $data['tags'] = !is_wp_error($tags) ? $tags : array();
 
+        $data['attributes'] = $this->get_product_attributes_for_llm($product);
+
         return $data;
+    }
+
+    private function get_product_llm_excerpt($product) {
+        $parts = array();
+        $short_description = $this->clean_text_for_llm($product->get_short_description());
+        $description = $this->clean_text_for_llm($product->get_description());
+
+        if ($short_description !== '') {
+            $parts[] = $short_description;
+        }
+
+        if ($description !== '' && $description !== $short_description) {
+            $parts[] = $description;
+        }
+
+        return wp_trim_words(implode(' ', $parts), 100);
+    }
+
+    private function get_product_attributes_for_llm($product) {
+        $attributes = $product->get_attributes();
+        if (empty($attributes)) {
+            return array();
+        }
+
+        $formatted = array();
+        foreach ($attributes as $attribute) {
+            if (count($formatted) >= 8 || !is_a($attribute, 'WC_Product_Attribute') || !$attribute->get_visible()) {
+                continue;
+            }
+
+            $name = wc_attribute_label($attribute->get_name());
+            $values = array();
+
+            if ($attribute->is_taxonomy()) {
+                $terms = wc_get_product_terms($product->get_id(), $attribute->get_name(), array('fields' => 'names'));
+                if (!is_wp_error($terms) && !empty($terms)) {
+                    $values = $terms;
+                }
+            } else {
+                $values = $attribute->get_options();
+            }
+
+            $values = $this->normalize_llm_string_list($values, 8);
+            if (!empty($name) && !empty($values)) {
+                $formatted[$name] = $values;
+            }
+        }
+
+        return $formatted;
+    }
+
+    private function clean_text_for_llm($text) {
+        if (is_array($text) || is_object($text)) {
+            return '';
+        }
+
+        $text = html_entity_decode(wp_strip_all_tags((string) $text), ENT_QUOTES, 'UTF-8');
+        return trim(preg_replace('/\s+/', ' ', $text));
+    }
+
+    private function normalize_llm_string_list($values, $limit) {
+        $normalized = array();
+
+        foreach ($values as $value) {
+            if (count($normalized) >= $limit) {
+                break;
+            }
+
+            $value = $this->clean_text_for_llm($value);
+            if ($value === '') {
+                continue;
+            }
+
+            $key = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+            $normalized[$key] = $value;
+        }
+
+        return array_values($normalized);
     }
 
     /**
@@ -867,6 +953,12 @@ class Listeo_AI_WooCommerce_Integration {
             error_log('=== ORDER STATUS REQUEST ===');
             error_log('Order Number: ' . $order_number);
             error_log('User Logged In: ' . (is_user_logged_in() ? 'Yes' : 'No'));
+        }
+
+        $order_number = preg_replace('/^\s*#\s*/', '', $order_number);
+        $order_number = trim($order_number);
+        if (preg_match('/^[\d\s-]+$/', $order_number)) {
+            $order_number = preg_replace('/\D+/', '', $order_number);
         }
 
         // Try to get order by order number or order ID

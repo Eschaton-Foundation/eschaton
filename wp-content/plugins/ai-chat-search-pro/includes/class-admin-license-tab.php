@@ -84,7 +84,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
     public function add_license_tab($active_tab)
     {
         ?>
-        <a href="?page=ai-chat-search&tab=license"
+        <a href="<?php echo esc_url(admin_url("admin.php?page=ai-chat-search&tab=license")); ?>"
            class="nav-tab <?php echo $active_tab == "license"
                ? "nav-tab-active"
                : ""; ?>">
@@ -133,7 +133,7 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                         "ai-chat-search",
                     ); ?></h3>
                     <p><?php _e(
-                        "Your AI Chat & Search Pro license information.",
+                        "Your PurioChat Pro license information.",
                         "ai-chat-search",
                     ); ?></p>
                 </div>
@@ -178,19 +178,6 @@ class AI_Chat_Search_Pro_Admin_License_Tab
                             <span class="detail-value"><code class="license-key-code"><?php echo esc_html(
                                 $license_key_masked,
                             ); ?></code></span>
-                        </div>
-
-                        <div class="license-detail-row">
-                            <span class="detail-label"><?php _e(
-                                "Activated On",
-                                "ai-chat-search",
-                            ); ?></span>
-                            <span class="detail-value"><?php echo esc_html(
-                                date_i18n(
-                                    get_option("date_format"),
-                                    strtotime($license_data["created_at"]),
-                                ),
-                            ); ?></span>
                         </div>
 
                         <?php if ($last_check > 0): ?>

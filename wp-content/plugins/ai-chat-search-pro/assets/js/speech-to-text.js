@@ -274,8 +274,8 @@
   SpeechToTextHandler.prototype.transcribeAudio = function (audioBlob) {
     var self = this;
 
-    // Check file size (25MB limit)
-    if (audioBlob.size > 25 * 1024 * 1024) {
+    // Check file size (3MB limit)
+    if (audioBlob.size > 3 * 1024 * 1024) {
       this.setButtonState("idle");
       this.showError(
         listeoAiChatConfig.strings.audioTooLarge || "Recording too large",
