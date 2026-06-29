@@ -169,7 +169,7 @@ class editorController extends MaxController
 
 		if ($new_button)
 		{
-  	 		wp_redirect($url);
+  	 		wp_safe_redirect($url);
   	 		exit();
 		}
 

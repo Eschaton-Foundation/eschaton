@@ -143,7 +143,7 @@ class Screen
   // add a maxfield to be displayed on the admin.
   public function addfield($field, $start = '', $end = '')
   {
-    $field_id = isset($field->id) ? $field->id : $field->template . \rand(0,1000);
+    $field_id = isset($field->id) ? $field->id : $field->template . \wp_rand(0,1000);
 
     // don't add if it's not our screen.
     if (! $this->isFieldThisScreen($field))

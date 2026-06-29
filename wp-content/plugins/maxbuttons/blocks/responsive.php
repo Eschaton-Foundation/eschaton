@@ -215,7 +215,7 @@ class responsiveBlock extends maxBlock
 		$name->label = __('Screen Name', 'maxbuttons');
 		$name->is_new = true;
 		$name->value = $screen->getValue($name->id);
-		$name->note = __('The internal name for this screen. [optional]');
+		$name->note = __('The internal name for this screen. [optional]', 'maxbuttons');
 		$screen->addField($name, 'start', 'end');
 
 		$presets = $this->getPresets($screen);
@@ -229,7 +229,7 @@ class responsiveBlock extends maxBlock
 		$preset = new maxField('option_select');
 		$preset->id = $screen->getFieldID('preset');
 		$preset->name = $preset->id;
-		$preset->label = __('Select a Preset');
+		$preset->label = __('Select a Preset', 'maxbuttons');
 		$preset->is_new = true;
 		$preset->options = $preset_options;
 		$screen->addField($preset, 'start', '');
@@ -338,7 +338,7 @@ class responsiveBlock extends maxBlock
 			$output = "<div class='upgrade-responsive'>";
 			$output .= "<div class='removed-note'>" . __("Save your settings first to remove the screen", 'maxbuttons') . '</div>';
 			$output .= '<p><h4>' . sprintf(__('You already have %s screens. To add more responsive screens to your buttons, upgrade to MaxButtons PRO.', 'maxbuttons'), $screen::countScreens() ) . '</b></h4>';
-			$output .= '<h4>' . __('The best button editor for WordPress includes: ') . '</h4>';
+			$output .= '<h4>' . __('The best button editor for WordPress includes: ', 'maxbuttons') . '</h4>';
 			$output .= '<ul>';
 			$output .= '<li>' . __('Infinite amount of screens', 'maxbuttons') . '</li>';
 			$output .= '<li>' . __('Icons and Images', 'maxbuttons') . '</li>';

@@ -2,11 +2,11 @@
 Contributors: maxfoundry, basszje, arcware, johnbhartley
 Tags: butotn creator, share button, css3 button generator, responsive buttons, css wordpress button
 Requires at least: 5.0
-Tested up to: 6.8
+Tested up to: 7.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 7.0
-Stable tag: 9.8.5
+Stable tag: 9.8.6
 
 Maxbuttons is the best and easiest button plugin for WordPress. Within minutes you can create beautiful buttons, share buttons and social icons.
 
@@ -277,6 +277,12 @@ Secondly, please use latin only characters for button name ( Basic settings) and
 Upgrading to the PRO version is quite simple. Obtain a license key via our [site](https://maxbuttons.com). You can enter the license code within the free version on the 'Upgrade to PRO' page. After entering the license key, the PRO version will automatically download and install. You are good to go!
 
 == Changelog ==
+
+= 9.8.6 = 
+
+- Maintenance release
+- Fix - Missing escape on view parameter in maxbutton list
+- Compatible and tested with latest WordPress (7.0) and PHP (8.3)
 
 = 9.8.5 =
 

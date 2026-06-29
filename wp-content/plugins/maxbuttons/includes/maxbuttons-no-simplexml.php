@@ -10,7 +10,7 @@ $admin = MB()->getClass("admin");
 $admin->get_header(array("tabs_active" => true, "title" => $page_title, "title_action" => $action));
 
 $admin = MB()->getClass('admin');
-$page_title = __("Packs","maxbuttons-pro");
+$page_title = __("Packs","maxbuttons");
 
 $admin->get_header(array("title" => $page_title) );
 

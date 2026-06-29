@@ -77,17 +77,6 @@ class upgradeLicense
 		if ($free_url != '')
 			$args["free_url"] = $free_url;
 
-		//$api_url = add_query_arg($args, $this->api_url);
-
-		//header('Content-Type: application/json');
-
-		if ($error) // errors before the request
-		{
-			 return $error_body;
-			//echo json_encode($error_body);
-		//	exit();
-		}
-
 		$data = $this->do_api_post($args);
 
 		if (isset($data->license) && $data->license == 'valid')
@@ -162,37 +151,33 @@ class upgradeLicense
 			switch( $data->error ) {
 					case 'expired' :
 						$message = sprintf(
-							__( 'Your license key expired on %s.', 'maxbuttons-pro' ),
+							__( 'Your license key expired on %s.', 'maxbuttons' ),
 							date_i18n( get_option( 'date_format' ), strtotime( strval($data->expires), current_time( 'timestamp' ) ) )
 						);
 						break;
 					case 'revoked' :
 					case 'disabled' :
-						$message = __( 'Your license key has been disabled.','maxbuttons-pro');
+						$message = __( 'Your license key has been disabled.','maxbuttons');
 						break;
 					case 'missing' :
-						$message = __( 'Invalid license. Please check the license code. ', 'maxbuttons-pro');
+						$message = __( 'Invalid license. Please check the license code. ', 'maxbuttons');
 						break;
 					case 'invalid' :
 					case 'site_inactive' :
-						$message = __( 'Your license is not active for this URL.', 'maxbuttons-pro' );
+						$message = __( 'Your license is not active for this URL.', 'maxbuttons' );
 						break;
 					case 'item_name_mismatch' :
-						$message = sprintf( __( 'This appears to be an invalid license key for %s.', 'maxbuttons-pro' ), 'MaxButtons PRO' );
+						$message = sprintf( __( 'This appears to be an invalid license key for %s.', 'maxbuttons' ), 'MaxButtons PRO' );
 						break;
 					case 'no_activations_left':
-						$message = __( 'Your license key has reached its activation limit.','maxbuttons-pro' );
+						$message = __( 'Your license key has reached its activation limit.','maxbuttons' );
 						break;
 					default :
-						$message = __( 'An error occurred, please try again.', 'maxbuttons-pro' );
+						$message = __( 'An error occurred, please try again.', 'maxbuttons' );
 						break;
 			}
 			$data->additional_info = $message ;
-	//		$result = $new_result;
-
 			return $data;
-		//echo json_encode($result);
-	//	exit();
 	}
 
 

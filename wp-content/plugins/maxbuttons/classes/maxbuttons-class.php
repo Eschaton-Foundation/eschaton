@@ -553,12 +553,12 @@ class maxButtonsPlugin
 				'maxbutton-alpha-picker',
 				'wpColorPickerL10n',
 				array(
-					'clear'            => __( 'Clear' ),
-					'clearAriaLabel'   => __( 'Clear color' ),
-					'defaultString'    => __( 'Default' ),
-					'defaultAriaLabel' => __( 'Select default color' ),
-					'pick'             => __( 'Select Color' ),
-					'defaultLabel'     => __( 'Color value' ),
+					'clear'            => __( 'Clear', 'maxbuttons' ),
+					'clearAriaLabel'   => __( 'Clear color', 'maxbuttons' ),
+					'defaultString'    => __( 'Default', 'maxbuttons' ),
+					'defaultAriaLabel' => __( 'Select default color', 'maxbuttons' ),
+					'pick'             => __( 'Select Color', 'maxbuttons' ),
+					'defaultLabel'     => __( 'Color value', 'maxbuttons' ),
 				)
 			);
 

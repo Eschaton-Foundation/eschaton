@@ -310,7 +310,7 @@ class maxButtonsAdmin
 		$display_args = array('echo'=> false, 'load_css' => 'inline');
 		$preview = new maxField('generic');
 		$preview->name = 'button-preview';
-		$preview->content = '<h3>' . __('Shortcode Options') . '</h3>
+		$preview->content = '<h3>' . __('Shortcode Options', 'maxbuttons') . '</h3>
 												<p>' . $button->display($display_args) . '</p>
 												<p>' . __('Change the options to add shortcode attributes. ', 'maxbuttons') . '</p>';
 

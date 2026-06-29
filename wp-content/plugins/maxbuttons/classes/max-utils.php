@@ -31,11 +31,11 @@ class maxUtils
 
 		$plugin_action = isset($_POST['plugin_action']) ? sanitize_text_field($_POST['plugin_action']) : '';
 		$nonce = isset($_POST['nonce']) ? $_POST['nonce'] : false;
-		$message = __( sprintf("No Handler found for action %s ", $plugin_action), 'maxbuttons');
+		$message = sprintf(__("No Handler found for action %s ",'maxbuttons'), $plugin_action );
 
 		if (! wp_verify_nonce($nonce, 'maxajax') )
 		{
-			$message = __('Nonce not verified (' . $nonce . ')', 'maxbuttons');
+			$message = sprintf(__('Nonce not verified (%s)', 'maxbuttons'), sanitize_text_field($nonce) );
 		}
 		else
 		{
@@ -394,7 +394,7 @@ class maxUtils
 		}
 
 		// This is a fix specific for NGGallery since they load their scripts weirdly / wrongly, but do check for the presence of a style named 'fontawesome' .
-		wp_register_style('fontawesome', $src);
+		wp_register_style('fontawesome', $src, [], MAXBUTTONS_VERSION_NUM);
 
 	}
 

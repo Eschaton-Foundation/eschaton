@@ -236,16 +236,15 @@ class basicBlock extends maxBlock
 			return false;
 
 		$sql = $wpdb->prepare("SELECT id from $table where name = %s and status = 'publish' and id <> %d ", $name, $button_id);
-
 		$results = $wpdb->get_col($sql);
 
 		if (count($results) > 0)
 		{
 			$message = __('Button name already used. Using non-unique names with the shortcode can cause issues', 'maxbuttons');
-			$message .=  ' ' . __('Already used in : ');
+			$message .=  ' ' . __('Already used in : ', 'maxbuttons');
 			foreach($results as $id)
 			{
-				$url =  admin_url() . 'admin.php?page=maxbuttons-controller&action=edit&id=' . $id;
+				$url =  admin_url() . 'admin.php?page=maxbuttons-controller&action=edit&id=' . intval($id);
 				$message .= ' <a href="' . esc_attr($url) . '" target="_blank">' . intval($id) . '</a> ';
 			}
 
@@ -321,7 +320,7 @@ class basicBlock extends maxBlock
 						$copyno = new maxField('generic');
 						$copyno->label = '&nbsp;';
 						$copyno->name = 'prevent-copy-message';
-						$copyno->content = "<p>" . __('<strong>Tip: </strong> You don\'t need to copy buttons to change URL or Text. See the examples on top of page') . '</p>';
+						$copyno->content = "<p>" . __('<strong>Tip: </strong> You don\'t need to copy buttons to change URL or Text. See the examples on top of page', 'maxbuttons') . '</p>';
 						$screen->addField($copyno, 'start','end');
 					}
 
@@ -393,7 +392,7 @@ class basicBlock extends maxBlock
 					$field_text->name = $field_text->id;
 					$field_text->is_responsive = false;
 					$field_text->value = esc_attr($screen->getValue($field_text->id));
-					$field_text->help = __('Shortcode attribute: text');
+					$field_text->help = __('Shortcode attribute: text', 'maxbuttons');
 					$screen->addField($field_text, 'start', 'end');
 
 

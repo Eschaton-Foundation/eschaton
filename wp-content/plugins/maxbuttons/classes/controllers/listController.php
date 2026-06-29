@@ -34,8 +34,11 @@ class listController extends MaxController
 
   public function loadView()
   {
-    if (! isset($this->view->listView)) // Can be set by handlePost
-      $this->view->listView = (isset($_GET["view"])) ? sanitize_text_field($_GET["view"]) : "all";
+    if (! isset($this->view->listView))
+    { // Can be set by handlePost
+      $view = isset($_GET['view']) && ($_GET['view'] == 'trash') ? 'trash' : 'all';
+      $this->view->listView = $view;
+    }
 
     $this->loadButtons();
     $this->view->published_buttons_count = $this->mbadmin->getButtonCount(array());

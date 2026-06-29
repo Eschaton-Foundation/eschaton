@@ -59,7 +59,7 @@ $this->mbadmin->get_header(array("title" => $page_title, "title_action" => $acti
 						<input type="hidden" name="paged" value="<?php echo $view->pageArgs['paged'] ?>" />
 				<?php endif; ?>
 
-				<input type="hidden" name="view" value="<?php echo $view->listView ?>" />
+				<input type="hidden" name="view" value="<?php echo esc_attr($view->listView) ?>" />
 				<?php wp_nonce_field("mb-list","mb-list-nonce");  ?>
 
 				<select name="bulk-action-select" id="bulk-action-select">
@@ -76,7 +76,7 @@ $this->mbadmin->get_header(array("title" => $page_title, "title_action" => $acti
 				<input type="submit" class="button" value="<?php _e('Apply', 'maxbuttons') ?>" />
 
 				<?php if ($view->listView == 'trash'): ?>
-					<button type="button" class='button alignright' value='empty-trash' data-buttonaction='empty-trash' data-confirm="<?php _e('Permanently delete all buttons in trash. Are you sure?', 'maxbuttons-pro') ?>"><?php _e('Empty Trash', 'maxbuttons'); ?></button>
+					<button type="button" class='button alignright' value='empty-trash' data-buttonaction='empty-trash' data-confirm="<?php _e('Permanently delete all buttons in trash. Are you sure?', 'maxbuttons') ?>"><?php _e('Empty Trash', 'maxbuttons'); ?></button>
 				<?php endif; ?>
 	 			<?php do_action("mb-display-pagination", $view->pageArgs, 'top'); ?>
 

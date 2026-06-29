@@ -575,6 +575,7 @@ class maxButton
 		$output = apply_filters('mb-before-button-output', $output);
 		maxButtons::buttonDone(array("button_id" => $this->id, "document_id" => $this->document_id) );
 
+		$domObj->clear();
 		maxUtils::endTime('button-display-'. $this->id);
 
 		if ($args["echo"])

@@ -23,12 +23,10 @@ class maxAdmin
 	{
 		$version = self::getAdVersion();
 		$url = self::getCheckoutURL();
-	?>
+	
+		printf(__('Upgrade to MaxButtons Pro today!  %sClick Here%s', 'maxbuttons'), '<a class="simple-btn" href="' . esc_attr($url) . '&utm_source=mbf-dash' . $version . '&utm_medium=mbf-plugin&utm_content=click-here&utm_campaign=cart' . esc_attr($version) . '" target="_blank">', '</a>' );
 
-			<?php printf(__('Upgrade to MaxButtons Pro today!  %sClick Here%s', 'maxbuttons'), '<a class="simple-btn" href="' . $url . '&utm_source=mbf-dash' . $version . '&utm_medium=mbf-plugin&utm_content=click-here&utm_campaign=cart' . $version . '" target="_blank">', '</a>' ) ?>
 
-
-	<?php
 	}
 
 	public static function tab_items_init()

@@ -45,7 +45,10 @@ $admin->get_header(array("title" => $page_title, "title_action" => $action) );
 
   echo maxbuttons_system_label('MySQL Version:', $mysql_version, 8) ?>
 
-<?php echo maxbuttons_system_label('Web Server:', $_SERVER['SERVER_SOFTWARE'], 11) ?>
+<?php
+ $software = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : ''; 
+ echo maxbuttons_system_label('Web Server:', esc_html($software)  , 11) 
+ ?>
 
 <?php echo maxbuttons_system_label('WordPress URL:', get_bloginfo('wpurl'), 8) ?>
 
