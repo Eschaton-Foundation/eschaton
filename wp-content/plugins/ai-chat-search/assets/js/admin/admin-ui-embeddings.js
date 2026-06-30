@@ -17,6 +17,40 @@
     var regenerationRunning = false;
     var currentOffset = 0;
     var totalListings = 0;
+    var activeBatchLogEntry = null;
+
+    function getAjaxErrorMessage(response, fallback) {
+        if (response && response.message) {
+            return response.message;
+        }
+        if (response && response.data) {
+            if (typeof response.data === 'string') {
+                return response.data;
+            }
+            if (response.data.message) {
+                return response.data.message;
+            }
+            if (response.data.error) {
+                return response.data.error;
+            }
+        }
+        return fallback || 'Unknown error';
+    }
+
+    function escapeMessage(message) {
+        if (AIRS.escapeHtml) {
+            return AIRS.escapeHtml(message);
+        }
+        return String(message || '').replace(/[&<>"']/g, function(match) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[match];
+        });
+    }
 
     /**
      * Initialize batch embedding generation
@@ -60,8 +94,10 @@
             $('#stop-regeneration').show();
             $('#regeneration-progress').show();
             $('#regeneration-log').show();
+            $('#log-content').empty();
+            activeBatchLogEntry = null;
 
-            logMessage(i18n.startingGeneration || 'Starting structured embedding generation...');
+            logMessage(i18n.startingGeneration || 'Preparing training run');
             runRegenerationBatch();
         });
 
@@ -70,7 +106,7 @@
             regenerationRunning = false;
             $('#start-regeneration').show();
             $('#stop-regeneration').hide();
-            logMessage('\u23f8\ufe0f ' + (i18n.stoppedByUser || 'Generation stopped by user.'));
+            finishActiveBatchLog(i18n.stoppedByUser || 'Training stopped by user.', 'warning');
         });
     }
 
@@ -82,7 +118,7 @@
 
         var batchSize = 20; // Reduced to prevent PHP timeout
 
-        logMessage((i18n.processingBatch || 'Processing batch starting at offset') + ' ' + currentOffset + '...');
+        startActiveBatchLog(getBatchRangeLabel(batchSize));
 
         AIRS.ajax({
             action: 'listeo_ai_manage_database',
@@ -105,31 +141,44 @@
                         currentOffset = data.next_offset;
                     }
 
-                    // Log progress
+                    // Log progress only for real work; processed 0 is the completion sentinel.
+                    var processed = data.processed || 0;
                     var progressPercent = totalListings > 0 ? Math.round((currentOffset / totalListings) * 100) : 0;
-                    logMessage('\u2705 ' + (i18n.batchCompleted || 'Batch completed:') + ' ' +
-                        (data.processed || 0) + ' ' + (i18n.itemsProcessed || 'items processed.') +
-                        ' ' + (i18n.progress || 'Progress:') + ' ' + progressPercent + '% (' +
-                        currentOffset + '/' + totalListings + ')');
+                    if (processed > 0) {
+                        finishActiveBatchLog(
+                            processed + ' ' + (i18n.itemsProcessed || 'items trained.') +
+                            ' ' + (i18n.progress || 'Complete:') + ' ' + progressPercent + '% (' +
+                            currentOffset + '/' + totalListings + ')',
+                            'success'
+                        );
+                    } else {
+                        removeActiveBatchLog();
+                    }
 
                     // Log errors if any
                     if (data.errors && data.errors.length > 0) {
-                        logMessage('\u26a0\ufe0f ' + (i18n.batchHadErrors || 'Batch had') + ' ' +
+                        logMessage((i18n.batchHadErrors || 'Batch had') + ' ' +
                             data.errors.length + ' ' + (i18n.errors || 'errors:'), 'error');
 
                         data.errors.slice(0, 3).forEach(function(error) {
-                            logMessage('   \u2192 ' + error, 'error');
+                            logMessage(error, 'error');
                         });
 
                         if (data.errors.length > 3) {
-                            logMessage('   ... ' + (i18n.andMore || 'and') + ' ' +
+                            logMessage((i18n.andMore || 'and') + ' ' +
                                 (data.errors.length - 3) + ' ' + (i18n.moreErrors || 'more errors'), 'error');
                         }
                     }
 
+                    if (processed === 0 && data.errors && data.errors.length > 0) {
+                        finishActiveBatchLog((i18n.batchFailed || 'Batch failed:') + ' ' + data.errors[0], 'error');
+                        finishRegeneration(i18n.generationFailed || 'Training failed.', 'error');
+                        return;
+                    }
+
                     // Check completion
                     if (data.status === 'complete' || data.processed === 0) {
-                        finishRegeneration('\ud83c\udf89 ' + (i18n.generationComplete || 'Generation completed successfully!'));
+                        finishRegeneration(i18n.generationComplete || 'Training completed successfully!', 'success');
                         if (typeof AIRS.refreshDatabaseStatus === 'function') {
                             AIRS.refreshDatabaseStatus();
                         }
@@ -137,14 +186,14 @@
                         setTimeout(runRegenerationBatch, 1000);
                     }
                 } else {
-                    logMessage('\u274c ' + (i18n.batchFailed || 'Batch failed:') + ' ' +
-                        (response.data || 'Unknown error'), 'error');
-                    finishRegeneration('\u274c ' + (i18n.generationFailed || 'Generation failed.'));
+                    finishActiveBatchLog((i18n.batchFailed || 'Batch failed:') + ' ' +
+                        getAjaxErrorMessage(response), 'error');
+                    finishRegeneration(i18n.generationFailed || 'Training failed.', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                logMessage('\u274c ' + (i18n.ajaxError || 'AJAX error:') + ' ' + error, 'error');
-                finishRegeneration('\u274c ' + (i18n.connectionError || 'Generation failed due to connection error.'));
+                finishActiveBatchLog((i18n.ajaxError || 'AJAX error:') + ' ' + error, 'error');
+                finishRegeneration(i18n.connectionError || 'Training failed due to connection error.', 'error');
             }
         });
     }
@@ -152,26 +201,156 @@
     /**
      * Finish batch regeneration
      */
-    function finishRegeneration(message) {
+    function finishRegeneration(message, type) {
         regenerationRunning = false;
         $('#start-regeneration').show();
         $('#stop-regeneration').hide();
         $('#regeneration-progress').hide();
-        logMessage(message);
+        logMessage(message, type || 'success');
     }
 
     /**
      * Log message to regeneration log
      */
     function logMessage(message, type) {
+        var $entry = buildLogEntry(message, type || 'info');
+
+        $('#log-content').append($entry);
+        scrollLogToBottom();
+
+        return $entry;
+    }
+
+    /**
+     * Add or replace the currently running batch row.
+     */
+    function startActiveBatchLog(message) {
+        if (activeBatchLogEntry && activeBatchLogEntry.length) {
+            activeBatchLogEntry.remove();
+        }
+
+        activeBatchLogEntry = logMessage(message, 'running');
+    }
+
+    /**
+     * Convert the running batch row into a final status.
+     */
+    function finishActiveBatchLog(message, type) {
+        if (!activeBatchLogEntry || !activeBatchLogEntry.length) {
+            logMessage(message, type);
+            return;
+        }
+
+        updateLogEntry(activeBatchLogEntry, message, type);
+        activeBatchLogEntry = null;
+        scrollLogToBottom();
+    }
+
+    /**
+     * Remove the running batch row without logging it.
+     */
+    function removeActiveBatchLog() {
+        if (activeBatchLogEntry && activeBatchLogEntry.length) {
+            activeBatchLogEntry.remove();
+        }
+
+        activeBatchLogEntry = null;
+    }
+
+    /**
+     * Build the visible range for the next batch.
+     */
+    function getBatchRangeLabel(batchSize) {
+        var start = currentOffset + 1;
+        var end = currentOffset + batchSize;
+
+        if (totalListings > 0) {
+            end = Math.min(end, totalListings);
+        }
+
+        return (i18n.processingBatch || 'Training items') + ' ' + start + '-' + end;
+    }
+
+    /**
+     * Build a single structured log row.
+     */
+    function buildLogEntry(message, type) {
         var timestamp = new Date().toLocaleTimeString();
-        var colorStyle = type === 'error' ? 'color: #ff6b6b;' : 'color: #51cf66;';
+        var $entry = $('<div>', {
+            class: 'airs-log-entry airs-log-entry--' + type
+        });
 
-        $('#log-content').append(
-            '<div style="' + colorStyle + '">[' + timestamp + '] ' + message + '</div>'
-        );
+        $entry.append($('<span>', {
+            class: 'airs-log-time',
+            text: timestamp
+        }));
+        $entry.append($('<span>', {
+            class: 'airs-log-icon',
+            html: getLogIcon(type),
+            'aria-hidden': 'true'
+        }));
+        $entry.append($('<span>', {
+            class: 'airs-log-message',
+            text: message
+        }));
 
-        // Auto-scroll to bottom
+        if (type === 'running') {
+            appendLoadingDots($entry.find('.airs-log-message'));
+        }
+
+        return $entry;
+    }
+
+    /**
+     * Update an existing log row with a new final status.
+     */
+    function updateLogEntry($entry, message, type) {
+        $entry
+            .removeClass('airs-log-entry--info airs-log-entry--running airs-log-entry--success airs-log-entry--warning airs-log-entry--error')
+            .addClass('airs-log-entry--' + type);
+        $entry.find('.airs-log-time').text(new Date().toLocaleTimeString());
+        $entry.find('.airs-log-icon').html(getLogIcon(type));
+        $entry.find('.airs-log-message').text(message);
+
+        if (type === 'running') {
+            appendLoadingDots($entry.find('.airs-log-message'));
+        }
+    }
+
+    /**
+     * Append animated loading dots to running rows.
+     */
+    function appendLoadingDots($message) {
+        var $dots = $('<span>', {
+            class: 'airs-log-dots',
+            'aria-hidden': 'true'
+        });
+
+        $dots.append($('<span>').text('.'));
+        $dots.append($('<span>').text('.'));
+        $dots.append($('<span>').text('.'));
+        $message.append($dots);
+    }
+
+    /**
+     * Return a static SVG icon for a log status.
+     */
+    function getLogIcon(type) {
+        var icons = {
+            running: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg>',
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+        };
+
+        return icons[type] || icons.info;
+    }
+
+    /**
+     * Auto-scroll log to bottom.
+     */
+    function scrollLogToBottom() {
         var logElement = $('#log-content')[0];
         if (logElement) {
             logElement.scrollTop = logElement.scrollHeight;
@@ -266,7 +445,7 @@
                     displayEmbeddingData(response.data);
                 } else {
                     $('#embedding-content').html('<p style="color: red;">' +
-                        (i18n.error || 'Error:') + ' ' + (response.data || 'Unknown error') + '</p>');
+                        (i18n.error || 'Error:') + ' ' + escapeMessage(getAjaxErrorMessage(response)) + '</p>');
                 }
             },
             error: function(xhr, status, error) {
@@ -421,7 +600,7 @@
                     }, 1500);
                 } else {
                     $('#embedding-content').html('<p style="color: red;">' +
-                        (i18n.error || 'Error:') + ' ' + (response.data || 'Unknown error') + '</p>');
+                        (i18n.error || 'Error:') + ' ' + escapeMessage(getAjaxErrorMessage(response)) + '</p>');
                 }
             },
             error: function(xhr, status, error) {
@@ -460,7 +639,7 @@
                     }, 1500);
                 } else {
                     $('#embedding-content').html('<p style="color: red;">' +
-                        (i18n.error || 'Error:') + ' ' + (response.data || 'Unknown error') + '</p>');
+                        (i18n.error || 'Error:') + ' ' + escapeMessage(getAjaxErrorMessage(response)) + '</p>');
                 }
             },
             error: function(xhr, status, error) {
@@ -501,7 +680,7 @@
                     $button.text('\u2717 ' + (i18n.failed || 'Failed'))
                         .removeClass('button-primary').addClass('button-secondary');
                     alert((i18n.failedToGenerate || 'Failed to generate embedding:') + ' ' +
-                        (response.message || 'Unknown error'));
+                        getAjaxErrorMessage(response));
 
                     setTimeout(function() {
                         $button.text(originalText).prop('disabled', false)
@@ -669,6 +848,11 @@
                 // No embeddings - save immediately
                 saveEmbeddingModel(newValue);
             }
+        });
+
+        $(document).on('listeo_ai_provider_changed', function(event, provider) {
+            ajax.current_provider = provider || ajax.current_provider;
+            updateEmbeddingModelUI();
         });
 
         // Modal cancel

@@ -451,33 +451,8 @@ class Listeo_AI_Search_Database_Manager {
 
                     $total_indexed += $direct + $via_chunks;
                 } else {
-                    // Direct embeddings for this post type
-                    $direct = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(DISTINCT e.listing_id)
-                         FROM {$table_name} e
-                         INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
-                         WHERE p.post_type = %s AND p.post_status = 'publish'",
-                        $post_type
-                    ));
-
-                    // Chunk-covered posts without direct embedding
-                    $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
-                         FROM {$wpdb->postmeta} pm
-                         INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
-                         INNER JOIN {$wpdb->posts} parent ON CAST(pm.meta_value AS UNSIGNED) = parent.ID
-                         WHERE chunk.post_type = %s
-                         AND pm.meta_key = '_chunk_parent_id'
-                         AND parent.post_type = %s
-                         AND parent.post_status = 'publish'
-                         AND parent.ID NOT IN (
-                             SELECT e2.listing_id FROM {$table_name} e2
-                         )",
-                        $chunk_post_type,
-                        $post_type
-                    ));
-
-                    $total_indexed += $direct + $via_chunks;
+                    // Direct embeddings + chunk-covered posts (shared logic)
+                    $total_indexed += self::count_indexed_posts($post_type);
                 }
             }
 
@@ -520,6 +495,57 @@ class Listeo_AI_Search_Database_Manager {
         }
     }
     
+    /**
+     * Count published posts of a type that are covered by embeddings.
+     *
+     * Counts posts with a direct embedding plus posts covered only via
+     * content chunks (chunking removes the parent's direct embedding,
+     * so a direct-only count undercounts long-form content).
+     *
+     * @param string $post_type Post type slug.
+     * @return int Number of indexed posts.
+     */
+    public static function count_indexed_posts($post_type) {
+        global $wpdb;
+
+        $table_name = self::get_embeddings_table_name();
+        if (!self::table_exists($table_name)) {
+            return 0;
+        }
+
+        $chunk_post_type = class_exists('Listeo_AI_Content_Chunker')
+            ? Listeo_AI_Content_Chunker::CHUNK_POST_TYPE
+            : 'ai_content_chunk';
+
+        // Direct embeddings for this post type
+        $direct = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT e.listing_id)
+             FROM {$table_name} e
+             INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
+             WHERE p.post_type = %s AND p.post_status = 'publish'",
+            $post_type
+        ));
+
+        // Chunk-covered posts without direct embedding
+        $via_chunks = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT CAST(pm.meta_value AS UNSIGNED))
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} chunk ON pm.post_id = chunk.ID
+             INNER JOIN {$wpdb->posts} parent ON CAST(pm.meta_value AS UNSIGNED) = parent.ID
+             WHERE chunk.post_type = %s
+             AND pm.meta_key = '_chunk_parent_id'
+             AND parent.post_type = %s
+             AND parent.post_status = 'publish'
+             AND parent.ID NOT IN (
+                 SELECT e2.listing_id FROM {$table_name} e2
+             )",
+            $chunk_post_type,
+            $post_type
+        ));
+
+        return $direct + $via_chunks;
+    }
+
     /**
      * Get posts that are missing embeddings (across all enabled post types)
      *
@@ -786,20 +812,23 @@ class Listeo_AI_Search_Database_Manager {
             global $wpdb;
             $table_name = $wpdb->prefix . 'listeo_ai_embeddings';
 
+            // Preflight content before chunk cleanup so failed fetches preserve existing embeddings.
+            $content = Listeo_AI_Background_Processor::collect_listing_content($listing_id);
+            if (trim($content) === '') {
+                return array(
+                    'success' => false,
+                    'error' => 'No content available for embedding'
+                );
+            }
+
             // Check if this post should be chunked
             if (Listeo_AI_Content_Chunker::should_chunk($listing_id)) {
                 return self::generate_chunked_embeddings($listing_id, $provider, $table_name);
             }
-
-            // Not chunked - use normal single embedding flow
-            // But first, clean up any existing chunks (post might have been shortened)
+            // Not chunked - use normal single embedding flow.
+            // Existing chunks are removed after the replacement embedding is stored.
             $existing_chunks = Listeo_AI_Content_Chunker::get_chunk_count($listing_id);
-            if ($existing_chunks > 0) {
-                Listeo_AI_Content_Chunker::delete_chunks_for_post($listing_id);
-            }
 
-            // Collect listing content to get character count
-            $content = Listeo_AI_Background_Processor::collect_listing_content($listing_id);
             $chars_processed = strlen($content);
 
             // Generate embedding using embedding manager (uses configured provider)
@@ -828,6 +857,10 @@ class Listeo_AI_Search_Database_Manager {
                     'success' => false,
                     'error' => 'Failed to store embedding in database'
                 );
+            }
+
+            if ($existing_chunks > 0) {
+                Listeo_AI_Content_Chunker::delete_chunks_for_post($listing_id);
             }
 
             return array(
@@ -878,6 +911,7 @@ class Listeo_AI_Search_Database_Manager {
         $total_chunks = count($chunk_ids);
         $total_chars = 0;
         $embedding_dimensions = 0;
+        $errors = array();
 
         // Generate embedding for each chunk
         foreach ($chunk_ids as $chunk_id) {
@@ -911,6 +945,7 @@ class Listeo_AI_Search_Database_Manager {
                 usleep(50000); // 50ms
 
             } catch (Exception $e) {
+                $errors[] = $e->getMessage();
                 if (get_option('listeo_ai_search_debug_mode', false)) {
                     error_log("Listeo AI Search: Error processing chunk $chunk_id: " . $e->getMessage());
                 }
@@ -920,7 +955,9 @@ class Listeo_AI_Search_Database_Manager {
         if ($success_count === 0) {
             return array(
                 'success' => false,
-                'error' => 'Failed to generate embeddings for any chunks'
+                'error' => !empty($errors)
+                    ? 'Failed to generate embeddings for any chunks. Last error: ' . end($errors)
+                    : 'Failed to generate embeddings for any chunks'
             );
         }
 
@@ -995,11 +1032,17 @@ class Listeo_AI_Search_Database_Manager {
         }
 
         // Check embedding generation throttling
-        $delay_minutes = get_option('listeo_ai_search_embedding_delay', 5);
+        $delay_minutes = (int) apply_filters(
+            'listeo_ai_embedding_throttle_delay_minutes',
+            get_option('listeo_ai_search_embedding_delay', 5),
+            $post_id,
+            $post
+        );
+        $delay_minutes = max(0, $delay_minutes);
         if ($delay_minutes > 0) {
             $last_processing_key = 'listeo_ai_last_embedding_' . $post_id;
             $last_processing_time = get_transient($last_processing_key);
-            
+
             if ($last_processing_time !== false) {
                 // Still within throttle period - skip processing
                 if (get_option('listeo_ai_search_debug_mode', false)) {
@@ -1007,38 +1050,44 @@ class Listeo_AI_Search_Database_Manager {
                 }
                 return;
             }
-            
+
             // Set throttle marker to prevent rapid successive calls
             set_transient($last_processing_key, time(), $delay_minutes * MINUTE_IN_SECONDS);
         }
-        
-        // Get current content for hashing
-        $embedding_manager = new Listeo_AI_Search_Embedding_Manager($api_key);
-        $content = $embedding_manager->get_listing_content_for_embedding($post_id);
-        $content_hash = md5($content);
-        
-        global $wpdb;
-        $table_name = self::get_embeddings_table_name();
-        
-        // Check if we already have an embedding with the same content hash
-        $existing_hash = $wpdb->get_var($wpdb->prepare(
-            "SELECT content_hash FROM {$table_name} WHERE listing_id = %d",
-            $post_id
-        ));
-        
-        // Debug: Log hash comparison details
-        if (get_option('listeo_ai_search_debug_mode', false)) {
-            Listeo_AI_Search_Utility_Helper::debug_log("Listing {$post_id} - existing_hash: " . var_export($existing_hash, true) . ", new_hash: {$content_hash}");
-        }
-        
-        if ($existing_hash === $content_hash) {
-            // Content hasn't changed, no need to regenerate
+
+        $skip_hash_check = (bool) apply_filters('listeo_ai_skip_save_post_content_hash_check', false, $post_id, $post);
+
+        if (!$skip_hash_check) {
+            // Get current content for hashing
+            $embedding_manager = new Listeo_AI_Search_Embedding_Manager($api_key);
+            $content = $embedding_manager->get_listing_content_for_embedding($post_id);
+            $content_hash = md5($content);
+
+            global $wpdb;
+            $table_name = self::get_embeddings_table_name();
+
+            // Check if we already have an embedding with the same content hash
+            $existing_hash = $wpdb->get_var($wpdb->prepare(
+                "SELECT content_hash FROM {$table_name} WHERE listing_id = %d",
+                $post_id
+            ));
+
+            // Debug: Log hash comparison details
             if (get_option('listeo_ai_search_debug_mode', false)) {
-                Listeo_AI_Search_Utility_Helper::debug_log("Skipping embedding regeneration for listing {$post_id} - content hash unchanged", 'info');
+                Listeo_AI_Search_Utility_Helper::debug_log("Listing {$post_id} - existing_hash: " . var_export($existing_hash, true) . ", new_hash: {$content_hash}");
             }
-            return;
+
+            if ($existing_hash === $content_hash) {
+                // Content hasn't changed, no need to regenerate
+                if (get_option('listeo_ai_search_debug_mode', false)) {
+                    Listeo_AI_Search_Utility_Helper::debug_log("Skipping embedding regeneration for listing {$post_id} - content hash unchanged", 'info');
+                }
+                return;
+            }
+        } elseif (get_option('listeo_ai_search_debug_mode', false)) {
+            Listeo_AI_Search_Utility_Helper::debug_log("Skipping save-time content hash check for post {$post_id}", 'info');
         }
-        
+
         // Debug log: Successfully passed all checks, proceeding with embedding generation
         if (get_option('listeo_ai_search_debug_mode', false)) {
             Listeo_AI_Search_Utility_Helper::debug_log("Scheduling embedding regeneration for listing {$post_id} - passed throttling and content hash checks", 'info');
@@ -1050,8 +1099,20 @@ class Listeo_AI_Search_Database_Manager {
                 error_log("Listeo AI Search: Scheduling background processing for listing {$post_id}");
             }
             
+            $schedule_delay = max(0, (int) apply_filters('listeo_ai_embedding_schedule_delay', 0, $post_id, $post));
+            $event_args = array($post_id);
+
+            if ($schedule_delay > 0) {
+                while ($next_scheduled = wp_next_scheduled('listeo_ai_process_listing', $event_args)) {
+                    $unscheduled = wp_unschedule_event($next_scheduled, 'listeo_ai_process_listing', $event_args);
+                    if (!$unscheduled || is_wp_error($unscheduled)) {
+                        break;
+                    }
+                }
+            }
+
             // Use WordPress action to trigger background processing
-            wp_schedule_single_event(time(), 'listeo_ai_process_listing', array($post_id));
+            wp_schedule_single_event(time() + $schedule_delay, 'listeo_ai_process_listing', $event_args);
             
             if (get_option('listeo_ai_search_debug_mode', false)) {
                 error_log("Listeo AI Search: Background processing scheduled for listing {$post_id}");

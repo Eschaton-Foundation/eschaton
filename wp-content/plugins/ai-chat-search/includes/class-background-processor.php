@@ -52,24 +52,21 @@ class Listeo_AI_Background_Processor {
 
             $table_name = $wpdb->prefix . 'listeo_ai_embeddings';
 
+            // Preflight content before chunk cleanup so failed fetches preserve existing embeddings.
+            $content = self::collect_content($listing_id);
+            if (trim($content) === '') {
+                Listeo_AI_Search_Utility_Helper::debug_log("No content available for embedding for post $listing_id", 'warning');
+                return false;
+            }
+
             // Check if this post should be chunked
             if (Listeo_AI_Content_Chunker::should_chunk($listing_id)) {
                 return self::process_chunked_post($listing_id, $provider, $table_name);
             }
-
-            // Not chunked - use normal single embedding flow
-            // But first, clean up any existing chunks (post might have been shortened)
+            // Not chunked - use normal single embedding flow.
+            // Existing chunks are removed after the replacement embedding is stored.
             $existing_chunks = Listeo_AI_Content_Chunker::get_chunk_count($listing_id);
-            if ($existing_chunks > 0) {
-                Listeo_AI_Content_Chunker::delete_chunks_for_post($listing_id);
-                Listeo_AI_Search_Utility_Helper::debug_log(
-                    "Deleted $existing_chunks old chunks for post $listing_id (content now below threshold)",
-                    'info'
-                );
-            }
 
-            // Collect post content using factory pattern
-            $content = self::collect_content($listing_id);
             $content_hash = md5($content);
 
             // Check if we already have current embedding
@@ -104,13 +101,19 @@ class Listeo_AI_Background_Processor {
                 return false;
             }
 
+            if ($existing_chunks > 0) {
+                Listeo_AI_Content_Chunker::delete_chunks_for_post($listing_id);
+                Listeo_AI_Search_Utility_Helper::debug_log(
+                    "Deleted $existing_chunks old chunks for post $listing_id (content now below threshold)",
+                    'info'
+                );
+            }
+
             Listeo_AI_Search_Utility_Helper::debug_log("Successfully processed listing $listing_id", 'info');
             return true;
 
         } catch (Exception $e) {
-            if (get_option('listeo_ai_search_debug_mode', false)) {
-                error_log("Listeo AI Search: Error processing listing $listing_id - " . $e->getMessage());
-            }
+            error_log("Listeo AI Search: Error processing listing $listing_id - " . $e->getMessage());
             return false;
         }
     }
@@ -356,17 +359,15 @@ class Listeo_AI_Background_Processor {
         }
 
         $http_code = wp_remote_retrieve_response_code($response);
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $raw_body = wp_remote_retrieve_body($response);
+        $body = json_decode($raw_body, true);
 
         if (get_option('listeo_ai_search_debug_mode', false)) {
             Listeo_AI_Search_Utility_Helper::debug_log("API Response after {$duration}s: HTTP {$http_code}", 'info');
         }
 
         if ($http_code !== 200) {
-            $error_msg = "{$provider_name} API HTTP error: {$http_code}";
-            if (isset($body['error']['message'])) {
-                $error_msg .= " - " . $body['error']['message'];
-            }
+            $error_msg = Listeo_AI_Search_Embedding_Manager::format_api_error_message($provider_name, $http_code, $body, $raw_body);
             if (get_option('listeo_ai_search_debug_mode', false)) {
                 Listeo_AI_Search_Utility_Helper::debug_log("API HTTP Error: {$error_msg}", 'error');
             }
@@ -374,7 +375,7 @@ class Listeo_AI_Background_Processor {
         }
 
         if (isset($body['error'])) {
-            $error_msg = $provider_name . ' API error: ' . ($body['error']['message'] ?? 'Unknown error');
+            $error_msg = Listeo_AI_Search_Embedding_Manager::format_api_error_message($provider_name, $http_code, $body, $raw_body);
             if (get_option('listeo_ai_search_debug_mode', false)) {
                 Listeo_AI_Search_Utility_Helper::debug_log("API Response Error: {$error_msg}", 'error');
             }
@@ -385,7 +386,7 @@ class Listeo_AI_Background_Processor {
         $embedding = $provider->parse_embedding_response($body);
 
         if (!$embedding) {
-            $error_msg = $provider_name . ' API response missing embedding data';
+            $error_msg = Listeo_AI_Search_Embedding_Manager::format_api_error_message($provider_name, $http_code, $body, $raw_body);
             if (get_option('listeo_ai_search_debug_mode', false)) {
                 Listeo_AI_Search_Utility_Helper::debug_log("API Response Missing Data: " . json_encode($body), 'error');
             }

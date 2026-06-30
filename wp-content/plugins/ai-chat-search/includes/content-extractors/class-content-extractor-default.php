@@ -52,6 +52,11 @@ class Listeo_AI_Content_Extractor_Default {
             if (empty($content) && !empty($post->post_content)) {
                 $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
             }
+        } elseif (Listeo_AI_Content_Extractor_Factory::content_has_acf_blocks($post->post_content)) {
+            $content = Listeo_AI_Content_Extractor_Factory::render_acf_blocks_content($post);
+            if (empty($content) && !empty($post->post_content)) {
+                $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+            }
         } elseif (!empty($post->post_content)) {
             $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
         }

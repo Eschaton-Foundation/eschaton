@@ -108,8 +108,7 @@ class Listeo_AI_Search_Shortcode_Handler
                         // Use custom suggestions
                         $custom_suggestions = get_option('listeo_ai_search_custom_suggestions', '');
                         if (!empty($custom_suggestions)) {
-                            $suggestions = array_map('trim', explode(',', $custom_suggestions));
-                            $suggestions = array_filter($suggestions); // Remove empty items
+                            $suggestions = Listeo_AI_Search_Utility_Helper::parse_custom_suggestions($custom_suggestions);
                         }
                     } elseif ($suggestions_source === 'top_searches_10') {
                         // Use top 10 searches (no fallback - only show if we have real data)

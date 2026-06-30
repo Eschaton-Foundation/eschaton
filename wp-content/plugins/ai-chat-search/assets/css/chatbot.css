@@ -1650,6 +1650,10 @@ body .listeo-ai-contact-form-submit {
     border-color: #222 transparent transparent transparent;
 }
 
+.listeo-ai-tooltip.no-arrow::after {
+    display: none;
+}
+
 /* =============================================
    Typing Animation
    ============================================= */
@@ -1827,6 +1831,7 @@ body .listeo-ai-contact-form-submit {
 .listeo-floating-chat-widget.dark-mode .chat-image-bg-welcome-text h3 { 
     color: #fff  !important;
 }
+.listeo-floating-chat-widget.dark-mode .chat-image-bg-welcome-text,
 .listeo-floating-chat-widget.dark-mode  .chat-image-bg-welcome-text p { 
     color: #bbb  !important;
 }
@@ -1860,15 +1865,17 @@ body .listeo-ai-contact-form-submit {
     will-change: transform;
 }
 
+/* --silk-blur is set inline by silk-wave-bg.js; blur lives here as a CSS
+   filter because ctx.filter is not implemented in WebKit/Safari. */
 .listeo-silk-wave-canvas {
     display: block;
     width: 100%;
     height: calc(100% - 1px);
-    filter: contrast(1.3);
+    filter: blur(var(--silk-blur, 0px)) contrast(1.3);
 }
 
 .dark-mode .listeo-silk-wave-canvas {
-    filter: contrast(1.1);
+    filter: blur(var(--silk-blur, 0px)) contrast(1.1);
 }
 
 .listeo-silk-wave-grain {
@@ -2295,7 +2302,7 @@ div.listeo-ai-product-card .listeo-ai-listing-thumbnail a {
 }
 
 .listeo-ai-cart-checkout-btn {
-    color: #fff;
+    color: #fff !important;
     background: var(--ai-chat-primary-color, #0073ee);
     border: 1px solid transparent;
 }

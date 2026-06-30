@@ -484,6 +484,10 @@ class Listeo_AI_Search_Chat_History {
             $date_threshold
         ));
 
+        if ($deleted !== false) {
+            do_action('listeo_ai_chat_history_cleanup_complete', $days, $date_threshold, $deleted);
+        }
+
         return $deleted;
     }
 

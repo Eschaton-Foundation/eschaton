@@ -52,7 +52,7 @@
 
                 // Update the preview with button circle style
                 var btnColor = i18n.buttonColor || '#222222';
-                var imgStyle = 'width:' + iconSize + 'px;height:' + iconSize + 'px;max-width:' + iconSize + 'px;max-height:' + iconSize + 'px;object-fit:contain;';
+                var imgStyle = 'width:' + iconSize + 'px;height:' + iconSize + 'px;max-width:' + iconSize + 'px;max-height:' + iconSize + 'px;border-radius:100px;object-fit:contain;';
                 var previewHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
                     '<img src="' + attachment.url + '" alt="Custom icon" id="listeo-custom-icon-preview-img" style="' + imgStyle + '" /></div>';
                 $('#listeo-custom-icon-preview').html(previewHtml);
@@ -105,6 +105,7 @@
                     'height': size + 'px',
                     'max-width': size + 'px',
                     'max-height': size + 'px',
+                    'border-radius': '100px',
                     'object-fit': 'contain'
                 });
             }

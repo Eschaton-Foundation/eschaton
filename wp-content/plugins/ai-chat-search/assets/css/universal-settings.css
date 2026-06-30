@@ -65,10 +65,72 @@
     overflow: hidden;
 }
 
-.listeo-ai-custom-types-section > p {
-    margin: 0 0 16px 0;
+.listeo-ai-custom-types-section .custom-types-description {
+    margin: 0 0 16px;
     color: #666;
     font-size: 13px;
+    line-height: 1.4;
+}
+
+.listeo-ai-custom-tools-row {
+    display: block;
+}
+
+@media (min-width: 1000px) {
+    .listeo-ai-custom-tools-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .listeo-ai-custom-tools-row > .listeo-ai-custom-types-section,
+    .listeo-ai-custom-tools-row > .listeo-ai-custom-fields-config {
+        flex: 1 1 0;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+}
+
+/* Custom Fields Config */
+.listeo-ai-custom-fields-config {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 13px 15px;
+    padding-left: 20px;
+    margin: 0 0 24px;
+}
+
+.listeo-ai-custom-fields-config h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.listeo-ai-custom-fields-config p {
+    margin: 0;
+    color: #646970;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.listeo-ai-custom-fields-config .airs-button {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.listeo-ai-custom-fields-config .airs-button-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
 }
 
 .custom-types-checkboxes {
@@ -773,6 +835,181 @@
     white-space: nowrap;
 }
 
+/* Custom Fields Modal */
+.listeo-ai-custom-fields-modal-content {
+    max-width: 860px;
+}
+
+.custom-fields-modal-intro {
+    margin: 0 0 14px;
+    color: #50575e;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.custom-fields-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.custom-fields-controls select {
+    max-width: 320px;
+}
+
+.custom-fields-ai-helper {
+    display: block;
+    margin: 12px 0 14px;
+    padding: 12px 14px;
+    background: #f6f6f6;
+    border-radius: 6px;
+}
+
+.custom-fields-ai-helper strong {
+    display: block;
+    margin: 0 0 4px;
+    color: #111;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.custom-fields-ai-helper p {
+    margin: 0 0 10px;
+    color: #3f454b;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.custom-fields-ai-helper .button {
+    min-height: 26px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 5px !important;
+    font-size: 12px;
+    line-height: 24px;
+}
+
+.custom-fields-ai-status {
+    display: inline-block;
+    margin-left: 8px;
+    color: #50575e;
+    font-size: 12px;
+    line-height: 26px;
+    vertical-align: top;
+}
+
+.custom-fields-ai-status.is-success {
+    color: #008a20;
+}
+
+.custom-fields-ai-status.is-error {
+    color: #b32d2e;
+}
+
+.listeo-ai-custom-fields-list {
+    max-height: 460px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    background: #f9f9f9;
+}
+
+.custom-fields-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-field-checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 11px 12px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.custom-field-checkbox-item:hover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.custom-field-checkbox-item input[type="checkbox"] {
+    margin-top: 3px;
+}
+
+.custom-field-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.custom-field-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.custom-field-meta-key {
+    color: #1e1e1e;
+    word-break: break-word;
+}
+
+.custom-field-type,
+.custom-field-usage {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.custom-field-type {
+    background: #2271b115;
+    color: #2271b1;
+}
+
+.custom-field-usage {
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.custom-field-usage::after {
+    content: " posts";
+    font-weight: 400;
+    margin-left: 3px;
+}
+
+.custom-field-sample {
+    display: block;
+    margin-top: 6px;
+    color: #646970;
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.custom-fields-auto-note {
+    margin: 12px 0 0;
+}
+
+.custom-fields-integrated-notice p {
+    margin: 8px 4px;
+    color: #111;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
 /* Modal Footer */
 .listeo-ai-modal-footer {
     padding: 16px 24px;
@@ -930,6 +1167,16 @@
 
     .listeo-ai-modal-controls .button-group {
         flex-wrap: wrap;
+    }
+
+    .listeo-ai-custom-fields-config,
+    .custom-fields-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .custom-fields-controls select {
+        max-width: none;
     }
 
     .listing-type-grid {

@@ -91,6 +91,8 @@ class Admin_Chat_History {
                             <p class="airs-help-text"><?php _e('Conversations older than this will be automatically deleted by the weekly cleanup cron.', 'ai-chat-search'); ?></p>
                         </div>
 
+                        <?php do_action('ai_chat_search_chat_history_settings_fields'); ?>
+
                         <?php if (get_option('listeo_ai_chat_history_enabled', 0)): ?>
                         <!-- Export Chat History CSV -->
                         <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f8f9fa; border-radius: 6px;">
@@ -147,15 +149,22 @@ class Admin_Chat_History {
 
                 $btn.prop('disabled', true).text('<?php echo esc_js(__('Saving...', 'ai-chat-search')); ?>');
 
+                var data = {
+                    action: 'listeo_ai_save_settings',
+                    nonce: '<?php echo $nonce; ?>',
+                    listeo_ai_chat_history_enabled: $('input[name="listeo_ai_chat_history_enabled"]').is(':checked') ? 1 : 0,
+                    listeo_ai_chat_retention_days: $('#chat-history-retention-days').val()
+                };
+
+                var $translateEnabled = $('input[name="listeo_ai_chat_history_translate_enabled"]');
+                if ($translateEnabled.length) {
+                    data.listeo_ai_chat_history_translate_enabled = $translateEnabled.is(':checked') ? 1 : 0;
+                }
+
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'listeo_ai_save_settings',
-                        nonce: '<?php echo $nonce; ?>',
-                        listeo_ai_chat_history_enabled: $('input[name="listeo_ai_chat_history_enabled"]').is(':checked') ? 1 : 0,
-                        listeo_ai_chat_retention_days: $('#chat-history-retention-days').val()
-                    },
+                    data: data,
                     success: function(response) {
                         if (response.success) {
                             location.reload();
@@ -446,7 +455,7 @@ class Admin_Chat_History {
                     </div>
                 </div>
                 <div class="conversation-search-actions">
-                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('ID, IP or keyword', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" id="conversation-search-input" placeholder="<?php esc_attr_e('ID, IP, page or keyword', 'ai-chat-search'); ?>" style="width: 200px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px;">
                     <button type="button" id="conversation-search-btn" class="button button-small conversation-search-btn"><?php _e('Search', 'ai-chat-search'); ?></button>
                     <button type="button" id="conversation-search-clear" class="button button-small conversation-search-clear" style="display: none;"><?php _e('Clear', 'ai-chat-search'); ?></button>
                 </div>
@@ -694,6 +703,9 @@ class Admin_Chat_History {
         ?>
         <script>
         jQuery(document).ready(function($) {
+            var currentConversationSearch = '';
+            var currentConversationPageUrl = '';
+
             function escapeHtml(text) {
                 return $('<span>').text(text || '').html();
             }
@@ -748,14 +760,20 @@ class Admin_Chat_History {
                     .attr('data-loading', '1')
                     .html('<div class="airs-audit-loading"><span class="airs-spinner"></span></div>');
 
+                var data = {
+                    action: 'listeo_ai_load_conversation_messages',
+                    nonce: '<?php echo $nonce; ?>',
+                    conversation_id: conversationId
+                };
+
+                if (currentConversationPageUrl) {
+                    data.page_url_filter = currentConversationPageUrl;
+                }
+
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'listeo_ai_load_conversation_messages',
-                        nonce: '<?php echo $nonce; ?>',
-                        conversation_id: conversationId
-                    },
+                    data: data,
                     success: function(response) {
                         if (response.success) {
                             $messages.html(response.data.messages).attr('data-loaded', '1');
@@ -802,14 +820,24 @@ class Admin_Chat_History {
 
                 $container.html('<p style="text-align: center; padding: 40px;"><span class="airs-spinner"></span> Loading...</p>');
 
+                var data = {
+                    action: 'listeo_ai_load_chat_history',
+                    nonce: '<?php echo $nonce; ?>',
+                    page: page
+                };
+
+                if (currentConversationSearch) {
+                    data.search = currentConversationSearch;
+                }
+
+                if (currentConversationPageUrl) {
+                    data.page_url_filter = currentConversationPageUrl;
+                }
+
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'listeo_ai_load_chat_history',
-                        nonce: '<?php echo $nonce; ?>',
-                        page: page
-                    },
+                    data: data,
                     success: function(response) {
                         if (response.success) {
                             $container.html(response.data.conversations);
@@ -830,22 +858,30 @@ class Admin_Chat_History {
             });
 
             // Search conversations
-            function searchConversations(searchTerm) {
+            function searchConversations(searchTerm, pageUrlFilter) {
                 var $container = $('#listeo-history-conversations');
                 var $pagination = $('#listeo-history-pagination');
                 var $clearBtn = $('#conversation-search-clear');
+                var data = {
+                    action: 'listeo_ai_load_chat_history',
+                    nonce: '<?php echo $nonce; ?>',
+                    page: 1,
+                    search: searchTerm
+                };
+
+                currentConversationSearch = searchTerm || '';
+                currentConversationPageUrl = pageUrlFilter || '';
+
+                if (currentConversationPageUrl) {
+                    data.page_url_filter = currentConversationPageUrl;
+                }
 
                 $container.html('<p style="text-align: center; padding: 40px;"><span class="airs-spinner"></span> <?php _e('Searching...', 'ai-chat-search'); ?></p>');
 
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'listeo_ai_load_chat_history',
-                        nonce: '<?php echo $nonce; ?>',
-                        page: 1,
-                        search: searchTerm
-                    },
+                    data: data,
                     success: function(response) {
                         if (response.success) {
                             $container.html(response.data.conversations);
@@ -854,6 +890,8 @@ class Admin_Chat_History {
                             loadOpenConversationMessages($container);
                             if (searchTerm) {
                                 $clearBtn.show();
+                            } else {
+                                $clearBtn.hide();
                             }
                         } else {
                             $container.html('<p style="color: #d63638; text-align: center; padding: 20px;">' + response.data.message + '</p>');
@@ -883,6 +921,21 @@ class Admin_Chat_History {
                         searchConversations(searchTerm);
                     }
                 }
+            });
+
+            $(document).on('aiChatSearch:filterConversationsByPage', function(event, pageUrl) {
+                var searchTerm = $.trim(pageUrl || '');
+                var $container = $('#listeo-history-conversations');
+
+                if (!searchTerm || !$container.length) {
+                    return;
+                }
+
+                $('#conversation-search-input').val(searchTerm);
+                searchConversations(searchTerm, searchTerm);
+                $('html, body').animate({
+                    scrollTop: $container.offset().top - 100
+                }, 300);
             });
 
             // Clear search
@@ -976,13 +1029,62 @@ class Admin_Chat_History {
 
         $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
         $offset = ($page - 1) * self::PER_PAGE;
-        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $search = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
+        $page_url_filter = isset($_POST['page_url_filter'])
+            ? $this->normalize_page_url_filter(wp_unslash($_POST['page_url_filter']))
+            : '';
 
         global $wpdb;
         $table_name = Listeo_AI_Search_Chat_History::get_table_name();
+        $has_page_url_column = method_exists('Listeo_AI_Search_Chat_History', 'has_page_url_column') && Listeo_AI_Search_Chat_History::has_page_url_column();
 
-        if (!empty($search)) {
+        if (!empty($page_url_filter) && $has_page_url_column) {
+            $recent_conversations = $wpdb->get_results($wpdb->prepare(
+                "SELECT
+                    conversation_id,
+                    MIN(created_at) as first_message_at,
+                    MAX(created_at) as last_message_at,
+                    COUNT(*) as message_count,
+                    MAX(user_id) as user_id,
+                    MAX(ip_address) as ip_address
+                FROM {$table_name}
+                WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(page_url, '#', 1), '?', 1) = %s
+                GROUP BY conversation_id
+                ORDER BY last_message_at DESC
+                LIMIT %d OFFSET %d",
+                $page_url_filter,
+                self::PER_PAGE,
+                $offset
+            ), ARRAY_A);
+
+            $total_conversations = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT conversation_id)
+                FROM {$table_name}
+                WHERE SUBSTRING_INDEX(SUBSTRING_INDEX(page_url, '#', 1), '?', 1) = %s",
+                $page_url_filter
+            ));
+        } elseif (!empty($search)) {
             $search_like = '%' . $wpdb->esc_like($search) . '%';
+            $search_clauses = array(
+                'conversation_id LIKE %s',
+                'ip_address LIKE %s',
+                'user_message LIKE %s',
+                'assistant_message LIKE %s',
+            );
+            $search_values = array(
+                $search_like,
+                $search_like,
+                $search_like,
+                $search_like,
+            );
+
+            if ($has_page_url_column) {
+                $search_clauses[] = 'page_url LIKE %s';
+                $search_values[] = $search_like;
+            }
+
+            $search_where = implode(' OR ', $search_clauses);
+
             $recent_conversations = $wpdb->get_results($wpdb->prepare(
                 "SELECT
                     conversation_id,
@@ -992,24 +1094,16 @@ class Admin_Chat_History {
                     user_id,
                     MAX(ip_address) as ip_address
                 FROM {$table_name}
-                WHERE conversation_id LIKE %s OR ip_address LIKE %s OR user_message LIKE %s OR assistant_message LIKE %s
+                WHERE {$search_where}
                 GROUP BY conversation_id
                 ORDER BY last_message_at DESC
                 LIMIT %d OFFSET %d",
-                $search_like,
-                $search_like,
-                $search_like,
-                $search_like,
-                self::PER_PAGE,
-                $offset
+                array_merge($search_values, array(self::PER_PAGE, $offset))
             ), ARRAY_A);
 
             $total_conversations = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT conversation_id) FROM {$table_name} WHERE conversation_id LIKE %s OR ip_address LIKE %s OR user_message LIKE %s OR assistant_message LIKE %s",
-                $search_like,
-                $search_like,
-                $search_like,
-                $search_like
+                "SELECT COUNT(DISTINCT conversation_id) FROM {$table_name} WHERE {$search_where}",
+                $search_values
             ));
         } else {
             $recent_conversations = Listeo_AI_Search_Chat_History::get_recent_conversations(self::PER_PAGE, $offset);
@@ -1076,6 +1170,9 @@ class Admin_Chat_History {
         $conversation_id = isset($_POST['conversation_id'])
             ? sanitize_text_field(wp_unslash($_POST['conversation_id']))
             : '';
+        $page_url_filter = isset($_POST['page_url_filter'])
+            ? $this->normalize_page_url_filter(wp_unslash($_POST['page_url_filter']))
+            : '';
 
         if (empty($conversation_id)) {
             wp_send_json_error(array('message' => __('Missing conversation ID.', 'ai-chat-search')));
@@ -1083,6 +1180,20 @@ class Admin_Chat_History {
         }
 
         $messages = Listeo_AI_Search_Chat_History::get_conversation($conversation_id);
+
+        if (!empty($page_url_filter) && method_exists('Listeo_AI_Search_Chat_History', 'has_page_url_column') && Listeo_AI_Search_Chat_History::has_page_url_column()) {
+            global $wpdb;
+            $table_name = Listeo_AI_Search_Chat_History::get_table_name();
+            $messages = $wpdb->get_results($wpdb->prepare(
+                "SELECT *
+                FROM {$table_name}
+                WHERE conversation_id = %s
+                    AND SUBSTRING_INDEX(SUBSTRING_INDEX(page_url, '#', 1), '?', 1) = %s
+                ORDER BY created_at ASC",
+                $conversation_id,
+                $page_url_filter
+            ), ARRAY_A);
+        }
 
         ob_start();
         $this->render_conversation_messages($conversation_id, $messages);
@@ -1126,6 +1237,8 @@ class Admin_Chat_History {
         if (function_exists('listeo_ai_clear_all_cart_events')) {
             listeo_ai_clear_all_cart_events();
         }
+
+        do_action('listeo_ai_chat_history_cleared', $deleted);
 
         wp_send_json_success(array(
             'message' => sprintf(__('Successfully deleted %d chat records.', 'ai-chat-search'), $deleted),
@@ -1177,6 +1290,8 @@ class Admin_Chat_History {
             listeo_ai_clear_cart_events_for_conversation($conversation_id);
         }
 
+        do_action('listeo_ai_chat_history_conversation_deleted', $conversation_id, $deleted);
+
         wp_send_json_success(array(
             'message' => sprintf(__('Deleted %d message(s) from conversation.', 'ai-chat-search'), $deleted),
             'deleted' => $deleted
@@ -1203,6 +1318,27 @@ class Admin_Chat_History {
 
         Listeo_AI_Search_Chat_History::export_csv($days);
         exit;
+    }
+
+    /**
+     * Normalize a stored page URL for exact chat-history page filtering.
+     *
+     * @param string $url The page URL.
+     * @return string Normalized page URL.
+     */
+    private function normalize_page_url_filter($url) {
+        if (!is_string($url) || $url === '') {
+            return '';
+        }
+
+        $url = esc_url_raw(trim($url));
+        if ($url === '') {
+            return '';
+        }
+
+        $url = preg_replace('/[?#].*$/', '', $url);
+
+        return is_string($url) ? $url : '';
     }
 
     /**

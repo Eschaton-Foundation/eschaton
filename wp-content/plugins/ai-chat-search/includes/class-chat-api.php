@@ -2678,7 +2678,7 @@ class Listeo_AI_Search_Chat_API
                     "\n\n---\n\n";
                 $user_prompt .= "USER QUESTION: " . $original_question . "\n\n";
                 $user_prompt .=
-                    "Answer based ONLY on the content above. Include relevant links and cite your sources BUT DONT LINK TO PDF FILES THAT CONTAIN ?post_type=ai_pdf_document IN URL and DO NOT THEIR NAMES. If the content is NOT relevant to the question, simply say you couldn't find information about that topic - DO NOT list or describe the unrelated content you received.\n\n";
+                    "Answer based ONLY on the content above. Include relevant links and cite your sources unless ADDITIONAL NOTES explicitly say not to link or cite sources. BUT DONT LINK TO PDF FILES THAT CONTAIN ?post_type=ai_pdf_document IN URL and DO NOT THEIR NAMES. If the content is NOT relevant to the question, simply say you couldn't find information about that topic - DO NOT list or describe the unrelated content you received.\n\n";
 
                 if ($debug) {
                     error_log(
@@ -3253,7 +3253,7 @@ RESPONSE FORMAT:
 - Always use <ol> for lists where relevant;
 - Highlight important details with <strong> tags (numbers, names, features, requirements)
 - Keep responses concise (2-3 sentences per paragraph)
-- Add relevant links to sources when applicable
+- Use source links with <a href='url'>...</a> for non-PDF sources
 
 ALWAYS USE:
 - <p> multiple short paragraphs html tags often to structure your response;
@@ -3261,6 +3261,7 @@ ALWAYS USE:
 
 ANSWERING RULE:
 - YOUR ANSWER MAX LENGTH 100 words UNLESS SPECIFIED OTHERWISE IN ADDITIONAL NOTES
+- ALWAYS cite non-PDF sources with links unless ADDITIONAL NOTES explicitly say not to cite or link sources
 
 ========================================
 
@@ -3607,7 +3608,7 @@ ADDITIONAL NOTES:
         // ========================================
         $knowledge_sources = get_option('listeo_ai_knowledge_sources', array());
         if (!empty($knowledge_sources) && is_array($knowledge_sources)) {
-            $default_prompt .= "\n\n========================================\nADDITIONAL SOURCES:\nFor the topics below, add the corresponding post_ids to your search_universal_content call alongside your normal query.\n";
+            $default_prompt .= "\n\n========================================\nADDITIONAL SOURCES:\nFor the topics below, add the corresponding post_ids to your search_universal_content call only when the current user question clearly matches the listed topic.\n";
             foreach ($knowledge_sources as $source) {
                 if (!empty($source['topic']) && !empty($source['post_id'])) {
                     $default_prompt .= '- ' . $source['topic'] . ' → post ID ' . intval($source['post_id']) . ' ("' . $source['post_title'] . '")' . "\n";

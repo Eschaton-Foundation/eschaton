@@ -191,14 +191,15 @@ class Listeo_AI_Search_Embedding_Manager {
         }
 
         $response_code = wp_remote_retrieve_response_code($response);
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $raw_body = wp_remote_retrieve_body($response);
+        $body = json_decode($raw_body, true);
 
         // Log non-200 response codes
         if ($response_code !== 200) {
             error_log(sprintf(
                 "Listeo AI Search: Non-200 response code: %d, Body: %s",
                 $response_code,
-                substr(wp_remote_retrieve_body($response), 0, 500)
+                substr($raw_body, 0, 500)
             ));
         }
 
@@ -214,10 +215,18 @@ class Listeo_AI_Search_Embedding_Manager {
             );
         }
 
+        if ($response_code !== 200) {
+            $provider_name = $this->provider->get_provider_name();
+            $full_error = self::format_api_error_message($provider_name, $response_code, $body, $raw_body);
+
+            error_log("CRITICAL: Embedding API HTTP Error Response: " . $full_error);
+
+            throw new Exception($full_error);
+        }
+
         if (isset($body['error'])) {
             $provider_name = $this->provider->get_provider_name();
-            $error_message = is_array($body['error']) ? ($body['error']['message'] ?? 'Unknown error') : $body['error'];
-            $full_error = $provider_name . ' API error: ' . $error_message;
+            $full_error = self::format_api_error_message($provider_name, $response_code, $body, $raw_body);
 
             // Always log critical API errors
             error_log("CRITICAL: Embedding API Error Response: " . $full_error);
@@ -233,7 +242,57 @@ class Listeo_AI_Search_Embedding_Manager {
 
         // Rate limit already acquired atomically before the API call
 
-        return $this->provider->parse_embedding_response($body);
+        $embedding = $this->provider->parse_embedding_response($body);
+        if (!$embedding) {
+            $provider_name = $this->provider->get_provider_name();
+            $full_error = self::format_api_error_message($provider_name, $response_code, $body, $raw_body);
+
+            throw new Exception($full_error);
+        }
+
+        return $embedding;
+    }
+
+    /**
+     * Format the exact provider response into an error string safe for logs/admin UI.
+     *
+     * @param string $provider_name Provider display name.
+     * @param int    $http_code HTTP response code.
+     * @param array|null $body Decoded response body.
+     * @param string $raw_body Raw response body.
+     * @return string
+     */
+    public static function format_api_error_message($provider_name, $http_code, $body, $raw_body = '') {
+        $message = '';
+
+        if (is_array($body)) {
+            if (isset($body['error'])) {
+                if (is_array($body['error'])) {
+                    $message = $body['error']['message'] ?? wp_json_encode($body['error']);
+                } else {
+                    $message = (string) $body['error'];
+                }
+            } elseif (isset($body['message'])) {
+                $message = is_scalar($body['message']) ? (string) $body['message'] : wp_json_encode($body['message']);
+            } elseif (isset($body['detail'])) {
+                $message = is_scalar($body['detail']) ? (string) $body['detail'] : wp_json_encode($body['detail']);
+            }
+        }
+
+        if ($message === '' && is_string($raw_body) && trim($raw_body) !== '') {
+            $message = trim($raw_body);
+        }
+
+        if ($message === '') {
+            $message = 'Response did not include embedding data';
+        }
+
+        return sprintf(
+            '%s API HTTP %d: %s',
+            $provider_name,
+            (int) $http_code,
+            substr($message, 0, 1000)
+        );
     }
     
     /**

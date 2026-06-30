@@ -80,7 +80,7 @@ class Listeo_AI_Search_Updater {
         }
 
         // Check cache first
-        $update_data = get_transient($this->cache_key);
+        $update_data = $this->get_cached_update_data();
 
         if ($update_data === false) {
             // Cache expired or doesn't exist - fetch fresh data
@@ -88,7 +88,7 @@ class Listeo_AI_Search_Updater {
 
             if ($update_data !== false) {
                 // Cache the result for 24 hours
-                set_transient($this->cache_key, $update_data, $this->cache_interval);
+                $this->set_cached_update_data($update_data);
             }
         }
 
@@ -101,6 +101,49 @@ class Listeo_AI_Search_Updater {
         }
 
         return $transient;
+    }
+
+    /**
+     * Read cached update data.
+     *
+     * Stored in wp_options (not a transient) so it survives object-cache
+     * flushes; otherwise hosts with unstable object caches re-check on
+     * every request and hammer the update server.
+     *
+     * @return object|false Update data or false when missing/expired.
+     */
+    private function get_cached_update_data() {
+        $cached = get_option($this->cache_key);
+
+        if (
+            is_array($cached)
+            && isset($cached['data'], $cached['expires'])
+            && time() < (int) $cached['expires']
+        ) {
+            return $cached['data'];
+        }
+
+        return false;
+    }
+
+    /**
+     * Cache update data for the configured interval.
+     *
+     * @param object $update_data Update data object.
+     */
+    private function set_cached_update_data($update_data) {
+        update_option($this->cache_key, array(
+            'data' => $update_data,
+            'expires' => time() + $this->cache_interval,
+        ), false);
+    }
+
+    /**
+     * Clear cached update data (including the legacy transient).
+     */
+    private function clear_cached_update_data() {
+        delete_option($this->cache_key);
+        delete_transient($this->cache_key);
     }
 
     /**
@@ -195,10 +238,14 @@ class Listeo_AI_Search_Updater {
         }
 
         // Get cached update data
-        $update_data = get_transient($this->cache_key);
+        $update_data = $this->get_cached_update_data();
 
         if ($update_data === false) {
             $update_data = $this->fetch_update_info();
+
+            if ($update_data !== false) {
+                $this->set_cached_update_data($update_data);
+            }
         }
 
         if ($update_data) {
@@ -248,7 +295,7 @@ class Listeo_AI_Search_Updater {
         }
 
         // Delete cache to force fresh check
-        delete_transient($this->cache_key);
+        $this->clear_cached_update_data();
 
         // Clear WordPress plugin cache
         wp_clean_plugins_cache();
@@ -261,7 +308,7 @@ class Listeo_AI_Search_Updater {
         }
 
         // Cache the fresh data
-        set_transient($this->cache_key, $update_data, $this->cache_interval);
+        $this->set_cached_update_data($update_data);
 
         // Check if update is available
         $update_available = version_compare($this->current_version, $update_data->new_version, '<');
@@ -282,14 +329,15 @@ class Listeo_AI_Search_Updater {
      * @return array Update status
      */
     public static function force_check() {
-        delete_transient('ai_chat_search_update_data');
+        $updater = new self();
+
+        $updater->clear_cached_update_data();
         wp_clean_plugins_cache();
 
-        $updater = new self();
         $update_data = $updater->fetch_update_info();
 
         if ($update_data) {
-            set_transient('ai_chat_search_update_data', $update_data, DAY_IN_SECONDS);
+            $updater->set_cached_update_data($update_data);
             return array(
                 'success' => true,
                 'update_available' => version_compare(LISTEO_AI_SEARCH_VERSION, $update_data->new_version, '<'),

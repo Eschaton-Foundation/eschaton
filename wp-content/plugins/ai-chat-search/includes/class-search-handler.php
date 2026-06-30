@@ -441,6 +441,17 @@ class Listeo_AI_Search_Search_Handler {
                         return;
                     }
                     $response = Listeo_AI_Search_Database_Manager::generate_single_embedding($listing_id);
+                    if (isset($response['success']) && !$response['success']) {
+                        $error_message = $response['error'] ?? 'Unknown embedding error';
+                        wp_send_json(array(
+                            'success' => false,
+                            'message' => $error_message,
+                            'data'    => array(
+                                'message' => $error_message,
+                            ),
+                        ));
+                        return;
+                    }
                     break;
                     
                 case 'start_regeneration':

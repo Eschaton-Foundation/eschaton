@@ -34,8 +34,17 @@ class Listeo_AI_Content_Extractor_Post {
         $structured_content .= "TITLE: " . get_the_title($post_id) . ". ";
 
         // Content - preserve links for LLM context
-        if (!empty($post->post_content)) {
+        $content = '';
+        if (Listeo_AI_Content_Extractor_Factory::content_has_acf_blocks($post->post_content)) {
+            $content = Listeo_AI_Content_Extractor_Factory::render_acf_blocks_content($post);
+            if (empty($content) && !empty($post->post_content)) {
+                $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+            }
+        } elseif (!empty($post->post_content)) {
             $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+        }
+
+        if (!empty($content)) {
             $structured_content .= "CONTENT: " . $content . ". ";
         }
 

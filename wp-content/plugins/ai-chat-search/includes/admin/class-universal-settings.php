@@ -48,6 +48,9 @@ class Listeo_AI_Search_Universal_Settings {
         add_action('wp_ajax_listeo_ai_remove_custom_post_type', array($this, 'ajax_remove_custom_post_type'));
         add_action('wp_ajax_listeo_ai_get_custom_type_count', array($this, 'ajax_get_custom_type_count'));
         add_action('wp_ajax_listeo_ai_get_bulk_post_ids', array($this, 'ajax_get_bulk_post_ids'));
+        add_action('wp_ajax_listeo_ai_get_custom_fields_for_post_type', array($this, 'ajax_get_custom_fields_for_post_type'));
+        add_action('wp_ajax_listeo_ai_suggest_custom_fields_for_post_type', array($this, 'ajax_suggest_custom_fields_for_post_type'));
+        add_action('wp_ajax_listeo_ai_save_custom_fields_for_post_type', array($this, 'ajax_save_custom_fields_for_post_type'));
     }
 
     /**
@@ -137,6 +140,17 @@ class Listeo_AI_Search_Universal_Settings {
                 'verified' => __('Verified', 'ai-chat-search'),
                 'error_loading_posts' => __('Error loading posts', 'ai-chat-search'),
                 'error_loading_count' => __('Error loading content count', 'ai-chat-search'),
+                'configure_custom_fields' => __('Configure Custom Fields', 'ai-chat-search'),
+                'loading_custom_fields' => __('Loading custom fields...', 'ai-chat-search'),
+                'no_custom_fields' => __('No custom fields found for this post type.', 'ai-chat-search'),
+                'selected_fields' => __('selected fields', 'ai-chat-search'),
+                'retrain_required' => __('Retrain this content type to update AI context.', 'ai-chat-search'),
+                'listing_auto_fields' => __('Listing fields are selected automatically through the Listeo integration. No action is needed.', 'ai-chat-search'),
+                'auto_detecting_fields' => __('Detecting fields...', 'ai-chat-search'),
+                'auto_detected_fields' => __('Auto Detection selected suggested fields. Review them before saving.', 'ai-chat-search'),
+                'auto_detected_fields_inline' => __('Success. Suggestions applied.', 'ai-chat-search'),
+                'no_suggested_fields' => __('Auto Detection did not find fields to suggest.', 'ai-chat-search'),
+                'no_manual_custom_fields' => __('No custom selection has been saved for this post type yet.', 'ai-chat-search'),
             )
         ));
     }
@@ -295,7 +309,11 @@ class Listeo_AI_Search_Universal_Settings {
                 ?>
             </div>
 
+            <?php if (!empty($available_custom_types)): ?>
+            <div class="listeo-ai-custom-tools-row">
             <!-- Detected Custom Post Types Section -->
+            <?php endif; ?>
+
             <?php if (!empty($available_custom_types)):
                 // Check if custom post types feature is locked (FREE version)
                 $custom_types_locked = !AI_Chat_Search_Pro_Manager::is_pro_active();
@@ -318,8 +336,7 @@ class Listeo_AI_Search_Universal_Settings {
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </h3>
                 <div id="custom-types-content" class="collapsible-content" style="display: none;">
-                    <p><?php _e('Select custom post types to add to your training content. Once added, they will appear above as cards.', 'ai-chat-search'); ?></p>
-
+                    <p class="custom-types-description"><?php _e('Select custom post types to add to your training content. Once added, they will appear above as cards.', 'ai-chat-search'); ?></p>
                     <div class="custom-types-checkboxes <?php echo $custom_types_locked ? 'disabled' : ''; ?>">
                     <?php foreach ($available_custom_types as $custom_type): ?>
                         <label>
@@ -346,6 +363,10 @@ class Listeo_AI_Search_Universal_Settings {
                         <?php _e('Add Selected Types', 'ai-chat-search'); ?>
                     </button>
                 </div> <!-- Close collapsible-content -->
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($available_custom_types)): ?>
             </div>
             <?php endif; ?>
 
@@ -388,6 +409,83 @@ class Listeo_AI_Search_Universal_Settings {
                                 <?php _e('Train Now', 'ai-chat-search'); ?>
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render the advanced custom fields manager.
+     */
+    public function render_custom_fields_manager() {
+        $custom_field_post_types = $this->get_custom_field_configurable_post_types();
+        $listing_post_type = get_post_type_object('listing');
+        if ($listing_post_type) {
+            $custom_field_post_types = array('listing' => $listing_post_type) + $custom_field_post_types;
+        }
+
+        if (empty($custom_field_post_types)) {
+            return;
+        }
+
+        ?>
+        <div class="listeo-ai-custom-fields-config">
+            <div>
+                <h3><?php _e('Configure Custom Fields', 'ai-chat-search'); ?></h3>
+            </div>
+            <button type="button" id="configure-custom-fields-btn" class="airs-button airs-button-secondary">
+                <svg class="airs-button-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <?php _e('Manage Fields', 'ai-chat-search'); ?>
+            </button>
+        </div>
+
+        <div id="custom-fields-modal" class="listeo-ai-modal" style="display: none;">
+            <div class="listeo-ai-modal-overlay custom-fields-modal-close"></div>
+            <div class="listeo-ai-modal-content listeo-ai-custom-fields-modal-content">
+                <div class="listeo-ai-modal-header">
+                    <h2><?php _e('Configure Custom Fields', 'ai-chat-search'); ?></h2>
+                    <button type="button" class="custom-fields-modal-close listeo-ai-modal-close">
+                        <span class="dashicons dashicons-no-alt"></span>
+                    </button>
+                </div>
+                <div class="listeo-ai-modal-body">
+                    <p class="custom-fields-modal-intro"><?php _e('Choose extra custom fields for your post types so the AI can use this additional data in answers.', 'ai-chat-search'); ?></p>
+                    <div class="airs-help-text airs-blue" style="margin-bottom: 15px !important;">
+                        <strong><?php _e('Retraining required', 'ai-chat-search'); ?></strong><br>
+                        <?php _e('After changing custom fields, retrain the affected content type so the AI can use the updated data.', 'ai-chat-search'); ?>
+                    </div>
+                    <div class="listeo-ai-modal-controls custom-fields-controls">
+                        <label for="custom-fields-post-type" class="screen-reader-text"><?php _e('Post type', 'ai-chat-search'); ?></label>
+                        <select id="custom-fields-post-type" class="widefat">
+                            <?php foreach ($custom_field_post_types as $post_type_name => $post_type_obj): ?>
+                                <option value="<?php echo esc_attr($post_type_name); ?>">
+                                    <?php echo esc_html($post_type_obj->label); ?> (<?php echo esc_html($post_type_name); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="button-group">
+                            <button type="button" id="custom-fields-refresh" class="button button-small"><?php _e('Refresh', 'ai-chat-search'); ?></button>
+                            <button type="button" id="custom-fields-select-all" class="button button-small"><?php _e('Select All', 'ai-chat-search'); ?></button>
+                            <button type="button" id="custom-fields-deselect-all" class="button button-small"><?php _e('Deselect All', 'ai-chat-search'); ?></button>
+                        </div>
+                    </div>
+                    <div id="custom-fields-ai-helper" class="custom-fields-ai-helper">
+                        <strong><?php _e('Not sure which fields to choose?', 'ai-chat-search'); ?></strong>
+                        <p><?php _e('Let AI review the field names and examples, then suggest useful fields.', 'ai-chat-search'); ?></p>
+                        <button type="button" id="custom-fields-auto-detect" class="button button-secondary"><?php _e('Auto Detection', 'ai-chat-search'); ?></button>
+                        <span id="custom-fields-auto-detect-status" class="custom-fields-ai-status" aria-live="polite"></span>
+                    </div>
+                    <div id="custom-fields-list" class="listeo-ai-custom-fields-list">
+                        <p class="loading-message"><span class="airs-spinner" style="margin-right: 6px;"></span><?php _e('Select a post type to load custom fields.', 'ai-chat-search'); ?></p>
+                    </div>
+                </div>
+                <div class="listeo-ai-modal-footer">
+                    <span id="custom-fields-selection-count"></span>
+                    <div class="modal-footer-buttons">
+                        <button type="button" class="button custom-fields-modal-close"><?php _e('Cancel', 'ai-chat-search'); ?></button>
+                        <button type="button" class="button button-primary" id="custom-fields-save"><?php _e('Save Fields', 'ai-chat-search'); ?></button>
                     </div>
                 </div>
             </div>
@@ -498,22 +596,7 @@ class Listeo_AI_Search_Universal_Settings {
         // Check if locked (PRO feature)
         $is_locked = AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type);
 
-        // Get document count
-        $pdf_count = wp_count_posts($post_type);
-        $total = isset($pdf_count->publish) ? $pdf_count->publish : 0;
-
-        // Get indexed count
-        global $wpdb;
-        $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
-        $indexed = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT e.listing_id)
-             FROM {$embeddings_table} e
-             INNER JOIN {$wpdb->posts} p ON e.listing_id = p.ID
-             WHERE p.post_type = %s AND p.post_status = 'publish'",
-            $post_type
-        ));
-
-        $badge_class = $total > 0 ? 'has-content' : 'empty';
+        $badge_class = 'loading';
         ?>
         <div class="post-type-card pdf-card <?php echo $is_enabled ? 'enabled' : ''; ?> <?php echo $is_locked ? 'locked' : ''; ?>"
              data-post-type="<?php echo esc_attr($post_type); ?>">
@@ -533,7 +616,7 @@ class Listeo_AI_Search_Universal_Settings {
                             <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                         <?php else: ?>
                             <span class="custom-type-badge <?php echo $badge_class; ?>">
-                                <?php echo number_format($total); ?>
+                                <span class="airs-spinner airs-spinner--small"></span>
                             </span>
                         <?php endif; ?>
                     </h3>
@@ -705,6 +788,24 @@ class Listeo_AI_Search_Universal_Settings {
     private function get_post_type_stats($post_type) {
         global $wpdb;
 
+        if ($post_type === 'ai_pdf_document') {
+            $total = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT COALESCE(NULLIF(pm.meta_value, ''), 'Unknown'))
+                 FROM {$wpdb->posts} p
+                 LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_pdf_original_filename'
+                 WHERE p.post_type = %s
+                 AND p.post_status = 'publish'",
+                $post_type
+            ));
+
+            return array(
+                'total' => $total,
+                'indexed' => 0,
+                'pending' => $total,
+                'has_manual_selection' => false
+            );
+        }
+
         $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
         $chunk_post_type = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
 
@@ -818,6 +919,677 @@ class Listeo_AI_Search_Universal_Settings {
             'pending' => max(0, $total - $indexed),
             'has_manual_selection' => $has_manual_selection
         );
+    }
+
+    /**
+     * Get post types that can use explicit custom field selection.
+     *
+     * Listings are intentionally excluded because they use the dedicated Listeo extractor.
+     *
+     * @param array|null $post_types Optional post type objects already loaded for the UI.
+     * @return array
+     */
+    private function get_custom_field_configurable_post_types($post_types = null) {
+        if ($post_types === null) {
+            $custom_post_types_added = get_option('listeo_ai_search_custom_post_types', array());
+            if (!is_array($custom_post_types_added)) {
+                $custom_post_types_added = array();
+            }
+
+            $post_type_names = array_merge(array('post', 'page', 'product'), $custom_post_types_added);
+            $post_types = array();
+            foreach ($post_type_names as $post_type_name) {
+                $post_type_obj = get_post_type_object($post_type_name);
+                if ($post_type_obj) {
+                    $post_types[$post_type_name] = $post_type_obj;
+                }
+            }
+        }
+
+        $configurable = array();
+        foreach ($post_types as $post_type_name => $post_type_obj) {
+            if (!$this->is_custom_field_configurable_post_type($post_type_name)) {
+                continue;
+            }
+
+            $configurable[$post_type_name] = $post_type_obj;
+        }
+
+        return $configurable;
+    }
+
+    /**
+     * Check whether a post type may use the explicit custom field selector.
+     *
+     * @param string $post_type Post type.
+     * @return bool
+     */
+    private function is_custom_field_configurable_post_type($post_type) {
+        if (!post_type_exists($post_type)) {
+            return false;
+        }
+
+        $excluded_post_types = array(
+            'listing',
+            'ai_pdf_document',
+            'ai_external_page',
+            'ai_content_chunk',
+            'attachment',
+            'revision',
+            'nav_menu_item',
+        );
+
+        if (in_array($post_type, $excluded_post_types, true)) {
+            return false;
+        }
+
+        if (AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            return false;
+        }
+
+        $custom_post_types_added = get_option('listeo_ai_search_custom_post_types', array());
+        if (!is_array($custom_post_types_added)) {
+            $custom_post_types_added = array();
+        }
+
+        $allowed_post_types = array_merge(array('post', 'page', 'product'), $custom_post_types_added);
+
+        return in_array($post_type, $allowed_post_types, true);
+    }
+
+    /**
+     * Check whether Auto Config may inspect fields for a detected CPT before it is saved.
+     *
+     * This intentionally does not change the normal custom-fields modal rules.
+     *
+     * @param string $post_type Post type.
+     * @return bool
+     */
+    private function is_detected_custom_field_candidate_post_type($post_type) {
+        if (!post_type_exists($post_type)) {
+            return false;
+        }
+
+        if (class_exists('AI_Chat_Search_Pro_Manager') && AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            return false;
+        }
+
+        if (!class_exists('Listeo_AI_Search_Database_Manager')) {
+            return false;
+        }
+
+        $detected = Listeo_AI_Search_Database_Manager::get_detected_custom_post_types();
+        if (!is_array($detected)) {
+            return false;
+        }
+
+        foreach ($detected as $name => $data) {
+            $slug = is_array($data) && !empty($data['name']) ? sanitize_key((string) $data['name']) : sanitize_key((string) $name);
+            if ($slug === $post_type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Read saved custom field config in the normalized option shape.
+     *
+     * @return array
+     */
+    private function get_custom_fields_config() {
+        $config = get_option('listeo_ai_search_custom_meta_fields', array());
+
+        return is_array($config) ? $config : array();
+    }
+
+    /**
+     * Get selected custom fields for a post type.
+     *
+     * @param string $post_type Post type.
+     * @return array
+     */
+    private function get_selected_custom_fields_for_post_type($post_type) {
+        $config = $this->get_custom_fields_config();
+
+        if (!isset($config[$post_type]) || !is_array($config[$post_type])) {
+            return array();
+        }
+
+        if (isset($config[$post_type]['fields']) && is_array($config[$post_type]['fields'])) {
+            return array_values(array_filter(array_map('strval', $config[$post_type]['fields'])));
+        }
+
+        return array_values(array_filter(array_map('strval', $config[$post_type])));
+    }
+
+    /**
+     * Detect a compact value type label for the custom field UI.
+     *
+     * @param mixed $value Meta value.
+     * @return string
+     */
+    private function detect_meta_value_type($value) {
+        if ($value === null || $value === '') {
+            return 'empty';
+        }
+
+        if (is_serialized($value)) {
+            return 'serialized';
+        }
+
+        if (is_numeric($value)) {
+            return 'number';
+        }
+
+        if (is_string($value) && preg_match('/^\s*[\[{]/', $value) && json_decode($value, true) !== null) {
+            return 'json';
+        }
+
+        if (is_string($value) && preg_match('/<[^>]+>/', $value)) {
+            return 'html';
+        }
+
+        return 'text';
+    }
+
+    /**
+     * Format a sample meta value for display.
+     *
+     * @param mixed $value Meta value.
+     * @return string
+     */
+    private function format_meta_sample($value) {
+        if (is_serialized($value)) {
+            $value = maybe_unserialize($value);
+        } elseif (is_string($value) && preg_match('/^\s*[\[{]/', $value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+
+        if (is_array($value) || is_object($value)) {
+            $value = wp_json_encode($value);
+        }
+
+        $value = wp_strip_all_tags((string) $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        $value = trim($value);
+
+        if (strlen($value) > 260) {
+            $value = substr($value, 0, 260) . '...';
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get available custom fields for a configurable post type.
+     *
+     * @param string $post_type Post type.
+     * @param array  $args Optional behavior flags.
+     * @return array|WP_Error
+     */
+    public function get_available_custom_fields_for_post_type($post_type, $args = array()) {
+        $post_type = sanitize_text_field((string) $post_type);
+        $args = wp_parse_args($args, array(
+            'allow_detected_custom_type' => false,
+        ));
+
+        if (
+            !$this->is_custom_field_configurable_post_type($post_type) &&
+            (empty($args['allow_detected_custom_type']) || !$this->is_detected_custom_field_candidate_post_type($post_type))
+        ) {
+            return new WP_Error('invalid_post_type', __('Post type is not available for custom field selection', 'ai-chat-search'));
+        }
+
+        global $wpdb;
+
+        $where = array(
+            $wpdb->prepare('p.post_type = %s', $post_type),
+            "p.post_status = 'publish'",
+            "pm.meta_key <> ''",
+        );
+
+        if ($post_type === 'product') {
+            $where[] = "NOT EXISTS (
+                SELECT 1 FROM {$wpdb->term_relationships} tr
+                INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                WHERE tr.object_id = p.ID AND tt.taxonomy = 'product_cat' AND t.slug = 'listeo-booking'
+            )";
+        }
+
+        $where_clause = implode(' AND ', $where);
+        $rows = $wpdb->get_results(
+            "SELECT pm.meta_key,
+                    COUNT(DISTINCT pm.post_id) AS usage_count,
+                    MIN(CASE WHEN pm.meta_value <> '' THEN pm.meta_id ELSE NULL END) AS sample_meta_id
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+             WHERE {$where_clause}
+             GROUP BY pm.meta_key
+             ORDER BY pm.meta_key ASC",
+            ARRAY_A
+        );
+
+        $sample_ids = array();
+        foreach ($rows as $row) {
+            if (!empty($row['sample_meta_id'])) {
+                $sample_ids[] = (int) $row['sample_meta_id'];
+            }
+        }
+
+        $samples = array();
+        if (!empty($sample_ids)) {
+            $placeholders = implode(',', array_fill(0, count($sample_ids), '%d'));
+            $sample_rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE meta_id IN ({$placeholders})",
+                    ...$sample_ids
+                ),
+                ARRAY_A
+            );
+
+            foreach ($sample_rows as $sample_row) {
+                $samples[(int) $sample_row['meta_id']] = $sample_row['meta_value'];
+            }
+        }
+
+        $selected_fields = $this->get_selected_custom_fields_for_post_type($post_type);
+        $fields = array();
+
+        foreach ($rows as $row) {
+            $sample_id = !empty($row['sample_meta_id']) ? (int) $row['sample_meta_id'] : 0;
+            $sample_value = $sample_id && isset($samples[$sample_id]) ? $samples[$sample_id] : '';
+
+            $fields[] = array(
+                'meta_key' => $row['meta_key'],
+                'usage_count' => (int) $row['usage_count'],
+                'type' => $this->detect_meta_value_type($sample_value),
+                'sample' => $this->format_meta_sample($sample_value),
+                'selected' => in_array($row['meta_key'], $selected_fields, true),
+            );
+        }
+
+        return array(
+            'post_type' => $post_type,
+            'fields' => $fields,
+            'selected_fields' => $selected_fields,
+            'has_manual_config' => array_key_exists($post_type, $this->get_custom_fields_config()),
+        );
+    }
+
+    /**
+     * AJAX: Get custom fields for a post type.
+     */
+    public function ajax_get_custom_fields_for_post_type() {
+        check_ajax_referer('listeo_ai_universal_settings', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Insufficient permissions', 'ai-chat-search'));
+        }
+
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : '';
+        $result = $this->get_available_custom_fields_for_post_type($post_type);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Get the cheap suggestion model for the current provider.
+     *
+     * @param Listeo_AI_Provider $provider AI provider instance.
+     * @return string
+     */
+    private function get_custom_fields_suggestion_model($provider) {
+        switch ($provider->get_provider()) {
+            case 'openrouter':
+                return 'openai/gpt-5.4-nano';
+            case 'gemini':
+                return 'gemini-3.1-flash-lite';
+            case 'mistral':
+                return 'mistral-small-latest';
+            default:
+                return 'gpt-5.4-nano';
+        }
+    }
+
+    /**
+     * Normalize custom field data received from the UI for AI suggestions.
+     *
+     * @param mixed $raw_fields Raw fields.
+     * @return array
+     */
+    private function normalize_custom_fields_for_suggestion($raw_fields) {
+        if (!is_array($raw_fields)) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ($raw_fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $meta_key = isset($field['meta_key']) ? sanitize_text_field($field['meta_key']) : '';
+            if ($meta_key === '' || strlen($meta_key) > 255) {
+                continue;
+            }
+
+            $sample = isset($field['sample']) ? wp_strip_all_tags((string) $field['sample']) : '';
+            $sample = preg_replace('/\s+/', ' ', trim($sample));
+            if (strlen($sample) > 500) {
+                $sample = substr($sample, 0, 500);
+            }
+
+            $fields[] = array(
+                'meta_key' => $meta_key,
+                'type' => isset($field['type']) ? sanitize_text_field($field['type']) : '',
+                'usage_count' => isset($field['usage_count']) ? absint($field['usage_count']) : 0,
+                'sample' => $sample,
+            );
+
+            if (count($fields) >= 120) {
+                break;
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Parse AI custom field suggestions.
+     *
+     * @param array $data Provider response body.
+     * @param array $allowed_keys Allowed meta keys.
+     * @return array|WP_Error
+     */
+    private function parse_custom_fields_suggestion_response($data, $allowed_keys) {
+        if (empty($data['choices'][0]['message']['content'])) {
+            return new WP_Error('no_content', __('Empty response from provider', 'ai-chat-search'));
+        }
+
+        $content = trim($data['choices'][0]['message']['content']);
+        $content = preg_replace('/^```(?:json)?\s*|\s*```\s*$/m', '', $content);
+        $json = json_decode($content, true);
+
+        if (!is_array($json)) {
+            return new WP_Error('parse_failed', __('Could not parse Auto Detection response.', 'ai-chat-search'));
+        }
+
+        if (isset($json['fields']) && is_array($json['fields'])) {
+            $suggested = $json['fields'];
+        } elseif (isset($json['selected_fields']) && is_array($json['selected_fields'])) {
+            $suggested = $json['selected_fields'];
+        } elseif (array_values($json) === $json) {
+            $suggested = $json;
+        } else {
+            $suggested = array();
+        }
+
+        $allowed_lookup = array_fill_keys($allowed_keys, true);
+        $fields = array();
+        foreach ($suggested as $field) {
+            if (is_array($field) && isset($field['meta_key'])) {
+                $field = $field['meta_key'];
+            }
+
+            if (!is_string($field)) {
+                continue;
+            }
+
+            $field = sanitize_text_field($field);
+            if (isset($allowed_lookup[$field])) {
+                $fields[] = $field;
+            }
+        }
+
+        return array_values(array_unique($fields));
+    }
+
+    /**
+     * Suggest useful custom fields with the configured AI provider.
+     *
+     * @param string $post_type Post type.
+     * @param mixed  $raw_fields Optional field list. If omitted, fields are discovered first.
+     * @param array  $args Optional behavior flags.
+     * @return array|WP_Error
+     */
+    public function suggest_custom_fields_for_post_type($post_type, $raw_fields = null, $args = array()) {
+        $post_type = sanitize_text_field((string) $post_type);
+        $args = wp_parse_args($args, array(
+            'allow_detected_custom_type' => false,
+        ));
+
+        if (
+            !$this->is_custom_field_configurable_post_type($post_type) &&
+            (empty($args['allow_detected_custom_type']) || !$this->is_detected_custom_field_candidate_post_type($post_type))
+        ) {
+            return new WP_Error('invalid_post_type', __('Post type is not available for custom field selection', 'ai-chat-search'));
+        }
+
+        if ($raw_fields === null) {
+            $available_fields = $this->get_available_custom_fields_for_post_type($post_type, array(
+                'allow_detected_custom_type' => !empty($args['allow_detected_custom_type']),
+            ));
+            if (is_wp_error($available_fields)) {
+                return $available_fields;
+            }
+
+            $raw_fields = $available_fields['fields'];
+        }
+
+        $fields = $this->normalize_custom_fields_for_suggestion($raw_fields);
+
+        if (empty($fields)) {
+            return new WP_Error('no_fields', __('No custom fields available for Auto Detection.', 'ai-chat-search'));
+        }
+
+        $provider = new Listeo_AI_Provider();
+        if (empty($provider->get_api_key())) {
+            return new WP_Error('missing_api_key', __('No AI provider API key is configured.', 'ai-chat-search'));
+        }
+
+        $allowed_keys = wp_list_pluck($fields, 'meta_key');
+        $system = 'You help a WordPress admin choose custom fields that are useful for chatbot answers and search training. Return ONLY valid JSON in this exact shape: {"fields":["meta_key"]}. Select fields likely to contain human-readable content, product details, ingredients, tabs, descriptions, specifications, FAQs, or other useful text. Avoid technical IDs, hashes, counters, cache keys, SEO metadata, image IDs, layout settings, empty fields, and purely internal builder settings unless the sample clearly contains readable content. Select at most 12 fields.';
+        $user = wp_json_encode(array(
+            'post_type' => $post_type,
+            'fields' => $fields,
+        ));
+
+        $payload = array(
+            'model' => $this->get_custom_fields_suggestion_model($provider),
+            'messages' => array(
+                array('role' => 'system', 'content' => $system),
+                array('role' => 'user', 'content' => $user),
+            ),
+            'response_format' => array('type' => 'json_object'),
+        );
+
+        $payload = $provider->normalize_chat_payload($payload, array(
+            'max_tokens' => 900,
+            'temperature' => 0.1,
+            'reasoning' => 'low',
+        ));
+
+        $response = wp_remote_post($provider->get_endpoint('chat'), array(
+            'headers' => $provider->get_headers(),
+            'body' => wp_json_encode($payload),
+            'timeout' => 45,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        if ($code !== 200) {
+            return new WP_Error('provider_error', sprintf(__('AI provider error: HTTP %d', 'ai-chat-search'), $code));
+        }
+
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            return new WP_Error('invalid_response', __('Could not parse Auto Detection response.', 'ai-chat-search'));
+        }
+
+        $suggested_fields = $this->parse_custom_fields_suggestion_response($data, $allowed_keys);
+
+        if (is_wp_error($suggested_fields)) {
+            return $suggested_fields;
+        }
+
+        return array(
+            'suggested_fields' => $suggested_fields,
+            'model' => isset($data['model']) ? sanitize_text_field($data['model']) : $this->get_custom_fields_suggestion_model($provider),
+        );
+    }
+
+    /**
+     * AJAX: Suggest useful custom fields with the configured AI provider.
+     */
+    public function ajax_suggest_custom_fields_for_post_type() {
+        check_ajax_referer('listeo_ai_universal_settings', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Insufficient permissions', 'ai-chat-search'));
+        }
+
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : '';
+        $fields_json = isset($_POST['fields']) ? wp_unslash($_POST['fields']) : '';
+        $raw_fields = json_decode((string) $fields_json, true);
+        $result = $this->suggest_custom_fields_for_post_type($post_type, $raw_fields);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Save custom field selection for a post type.
+     *
+     * Empty field selections are saved only when allow_empty is explicitly true.
+     *
+     * @param string $post_type Post type.
+     * @param array  $raw_fields Raw selected field keys.
+     * @param array  $args Save options.
+     * @return array|WP_Error
+     */
+    public function save_custom_fields_for_post_type($post_type, $raw_fields = array(), $args = array()) {
+        $post_type = sanitize_text_field((string) $post_type);
+        if (!$this->is_custom_field_configurable_post_type($post_type)) {
+            return new WP_Error('invalid_post_type', __('Post type is not available for custom field selection', 'ai-chat-search'));
+        }
+
+        $args = wp_parse_args($args, array(
+            'reset' => false,
+            'allow_empty' => false,
+        ));
+
+        $config = $this->get_custom_fields_config();
+        $reset = (bool) $args['reset'];
+
+        if ($reset) {
+            unset($config[$post_type]);
+        } else {
+            $raw_fields = is_array($raw_fields) ? $raw_fields : array();
+            $fields = array();
+
+            foreach ($raw_fields as $field) {
+                if (is_array($field) || is_object($field)) {
+                    continue;
+                }
+
+                $field = sanitize_text_field($field);
+                $field = trim($field);
+
+                if ($field === '' || strlen($field) > 255) {
+                    continue;
+                }
+
+                $fields[] = $field;
+            }
+
+            $fields = array_values(array_unique($fields));
+
+            if (empty($fields) && !$args['allow_empty']) {
+                return new WP_Error('empty_fields_not_allowed', __('No custom fields selected.', 'ai-chat-search'));
+            }
+
+            if (!empty($fields)) {
+                $available_fields = $this->get_available_custom_fields_for_post_type($post_type);
+                if (is_wp_error($available_fields)) {
+                    return $available_fields;
+                }
+
+                $allowed_keys = array_fill_keys(wp_list_pluck($available_fields['fields'], 'meta_key'), true);
+                $invalid_fields = array();
+
+                foreach ($fields as $field) {
+                    if (!isset($allowed_keys[$field])) {
+                        $invalid_fields[] = $field;
+                    }
+                }
+
+                if (!empty($invalid_fields)) {
+                    return new WP_Error('invalid_fields', __('One or more selected custom fields are not available for this post type.', 'ai-chat-search'));
+                }
+            }
+
+            $config[$post_type] = array(
+                'fields' => $fields,
+                'updated_at' => time(),
+            );
+        }
+
+        unset($config['listing']);
+
+        update_option('listeo_ai_search_custom_meta_fields', $config, false);
+        wp_cache_delete('alloptions', 'options');
+        wp_cache_delete('listeo_ai_search_custom_meta_fields', 'options');
+
+        return array(
+            'message' => $reset
+                ? __('Custom field selection cleared.', 'ai-chat-search')
+                : __('Custom field selection saved. Retrain this content type to update AI context.', 'ai-chat-search'),
+            'post_type' => $post_type,
+            'selected_fields' => $reset ? array() : $config[$post_type]['fields'],
+            'has_manual_config' => !$reset,
+        );
+    }
+
+    /**
+     * AJAX: Save custom field selection for a post type.
+     */
+    public function ajax_save_custom_fields_for_post_type() {
+        check_ajax_referer('listeo_ai_universal_settings', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Insufficient permissions', 'ai-chat-search'));
+        }
+
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : '';
+        $reset = isset($_POST['reset']) && $_POST['reset'] === 'true';
+        $raw_fields = isset($_POST['fields']) ? (array) wp_unslash($_POST['fields']) : array();
+        $result = $this->save_custom_fields_for_post_type($post_type, $raw_fields, array(
+            'reset' => $reset,
+            'allow_empty' => true,
+        ));
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success($result);
     }
 
     /**
@@ -1483,6 +2255,12 @@ class Listeo_AI_Search_Universal_Settings {
         if (isset($manual_selections[$post_type])) {
             unset($manual_selections[$post_type]);
             update_option('listeo_ai_search_manual_selections', $manual_selections);
+        }
+
+        $custom_fields_config = $this->get_custom_fields_config();
+        if (isset($custom_fields_config[$post_type])) {
+            unset($custom_fields_config[$post_type]);
+            update_option('listeo_ai_search_custom_meta_fields', $custom_fields_config, false);
         }
 
         wp_send_json_success(array(

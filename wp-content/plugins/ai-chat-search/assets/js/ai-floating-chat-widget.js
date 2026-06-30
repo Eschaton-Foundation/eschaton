@@ -1,8 +1,27 @@
 (function () {
     'use strict';
 
-    var STORAGE_KEY_BUBBLE_DISMISSED = 'listeo_floating_chat_bubble_dismissed';
-    var STORAGE_KEY_CHAT_OPENED = 'listeo_floating_chat_opened';
+    function getStorageNamespace() {
+        var floatingConfig = (typeof listeoAiFloatingChatConfig !== 'undefined')
+            ? listeoAiFloatingChatConfig
+            : {};
+        var chatConfig = (typeof listeoAiChatConfig !== 'undefined')
+            ? listeoAiChatConfig
+            : {};
+        var namespace = chatConfig.storageNamespace || floatingConfig.storageNamespace || '';
+
+        return namespace ? String(namespace) : '';
+    }
+
+    function getScopedStorageKey(key) {
+        var namespace = getStorageNamespace();
+        return namespace ? key + '_' + namespace : key;
+    }
+
+    var STORAGE_KEY_BUBBLE_DISMISSED = getScopedStorageKey(
+        'listeo_floating_chat_bubble_dismissed'
+    );
+    var STORAGE_KEY_CHAT_OPENED = getScopedStorageKey('listeo_floating_chat_opened');
     var FADE_DURATION_MS = 300;
 
     function debugLog() {

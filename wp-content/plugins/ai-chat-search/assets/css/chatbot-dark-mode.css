@@ -127,16 +127,14 @@
     color: var(--chat-text) !important;
 }
 
-.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content a,
-.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content a strong {
-    color: var(--ai-chat-primary-color, #5fa8ff) !important;
-}
 
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content p,
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content {
     color:  var(--chat-text-muted);
 }
 
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content a,
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content a strong,
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-chat-message-content a:hover {
     color: #fff !important;
 }

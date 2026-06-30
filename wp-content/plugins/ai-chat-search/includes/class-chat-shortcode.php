@@ -447,17 +447,9 @@ class Listeo_AI_Search_Chat_Shortcode
                 "",
             );
             if (!empty($custom_suggestions)) {
-                $suggestions_array = array_map(
-                    "trim",
-                    explode(",", $custom_suggestions),
-                );
-                $suggestions_array = array_filter($suggestions_array); // Remove empty items
-
-                // Limit to the requested number
-                $suggestions = array_slice(
-                    $suggestions_array,
-                    0,
-                    intval($limit),
+                $suggestions = Listeo_AI_Search_Utility_Helper::parse_custom_suggestions(
+                    $custom_suggestions,
+                    intval($limit)
                 );
             }
         } elseif ($suggestions_source === "top_searches_10") {

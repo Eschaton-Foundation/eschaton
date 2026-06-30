@@ -297,7 +297,7 @@ class Listeo_AI_Provider {
      *
      * @return string Model name
      */
-    private function get_default_embedding_model() {
+    public function get_default_embedding_model() {
         if ($this->get_provider() === 'gemini') {
             return 'gemini-embedding-001';
         } elseif ($this->get_provider() === 'mistral') {
@@ -310,13 +310,44 @@ class Listeo_AI_Provider {
     }
 
     /**
+     * Check if an embedding model belongs to the given provider.
+     *
+     * @param string      $model    Model ID to check.
+     * @param string|null $provider Provider name, or current provider when null.
+     * @return bool
+     */
+    public function embedding_model_matches_provider($model, $provider = null) {
+        if (empty($model)) {
+            return false;
+        }
+
+        $provider = $provider ?: $this->get_provider();
+        $model = explode(':', $model, 2)[0];
+
+        if ($provider === 'openrouter') {
+            return strpos($model, '/') !== false;
+        }
+        if ($provider === 'openai') {
+            return strpos($model, '/') === false && strpos($model, 'text-embedding-') === 0;
+        }
+        if ($provider === 'gemini') {
+            return strpos($model, 'gemini-embedding') === 0;
+        }
+        if ($provider === 'mistral') {
+            return strpos($model, 'mistral-') === 0;
+        }
+
+        return false;
+    }
+
+    /**
      * Get embedding model name
      *
      * @return string Model name
      */
     public function get_embedding_model() {
         $parsed = $this->parse_embedding_option();
-        if (!empty($parsed['model'])) {
+        if (!empty($parsed['model']) && $this->embedding_model_matches_provider($parsed['model'])) {
             return $parsed['model'];
         }
         return $this->get_default_embedding_model();
@@ -374,6 +405,9 @@ class Listeo_AI_Provider {
      */
     public function prepare_embedding_payload($input) {
         $parsed = $this->parse_embedding_option();
+        if (!empty($parsed['model']) && !$this->embedding_model_matches_provider($parsed['model'])) {
+            $parsed = array('model' => '', 'dimensions' => null);
+        }
         $model  = $this->get_embedding_model();
         $dims   = $parsed['dimensions'];
 

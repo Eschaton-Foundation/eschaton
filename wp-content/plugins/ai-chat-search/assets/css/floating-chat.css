@@ -56,6 +56,7 @@
     z-index: 2;
     right: 0;
     bottom: 0;
+    top: initial !important;
     padding: 0;
 }
 
@@ -80,11 +81,12 @@
     max-height: 32px;
     width: auto;
     height: auto;
+    border-radius: 100px;
     object-fit: contain;
     transition: all 0.2s ease;
 }
 
-/* Icon toggle animations */
+/* Icon toggle positioning */
 .listeo-floating-icon-open,
 .listeo-floating-icon-close {
     position: absolute;
@@ -93,6 +95,33 @@
     transform: translate(-50%, -50%);
     width: 28px;
     height: 28px;
+}
+
+@supports selector(:has(*)) {
+    .listeo-floating-chat-button .listeo-floating-icon-open,
+    .listeo-floating-chat-button .listeo-floating-icon-close {
+        display: block !important;
+        pointer-events: none;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        will-change: opacity, transform;
+    }
+
+    .listeo-floating-chat-button .listeo-floating-icon-close {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0);
+    }
+
+    .listeo-floating-chat-widget:has(.listeo-floating-chat-popup[style*="display: block"]):not(:has(.listeo-floating-chat-popup[style*="opacity: 0"])) .listeo-floating-chat-button .listeo-floating-icon-open {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0);
+    }
+
+    .listeo-floating-chat-widget:has(.listeo-floating-chat-popup[style*="display: block"]):not(:has(.listeo-floating-chat-popup[style*="opacity: 0"])) .listeo-floating-chat-button .listeo-floating-icon-close {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 /* === Welcome Bubble === */

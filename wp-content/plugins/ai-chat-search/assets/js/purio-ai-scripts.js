@@ -28,6 +28,22 @@
     }
   };
 
+  const getStorageNamespace = function () {
+    if (
+      typeof listeoAiChatConfig !== "undefined" &&
+      listeoAiChatConfig.storageNamespace
+    ) {
+      return String(listeoAiChatConfig.storageNamespace);
+    }
+
+    return "";
+  };
+
+  const getScopedStorageKey = function (key) {
+    var namespace = getStorageNamespace();
+    return namespace ? key + "_" + namespace : key;
+  };
+
   /**
    * Get headers for REST API requests
    * Only includes X-WP-Nonce for logged-in users to prevent stale nonce errors
@@ -39,7 +55,7 @@
   const getRequestHeaders = function () {
     var headers = {
       "Content-Type": "application/json",
-      "X-Page-URL": window.location.href, // Track which page chat is used on
+      "X-Page-URL": window.listeoAiEmbedPageUrl || window.location.href, // page URL (host page when embedded via iframe)
     };
 
     // Only send nonce for logged-in users (they won't have cached pages)
@@ -353,6 +369,10 @@
 
     // Contact form submission handler
     $(document).on("submit", ".listeo-ai-contact-form-body", function (e) {
+      if ($(this).hasClass("listeo-ai-pre-chat-form-body")) {
+        return;
+      }
+
       e.preventDefault();
       var $form = $(this);
       var $overlay = $form.closest(".listeo-ai-contact-form-overlay");
@@ -368,9 +388,9 @@
       }
 
       // Get form data
-      var name = $form.find('input[name="name"]').val().trim();
-      var email = $form.find('input[name="email"]').val().trim();
-      var msgContent = $form.find('textarea[name="message"]').val().trim();
+      var name = ($form.find('input[name="name"]').val() || "").trim();
+      var email = ($form.find('input[name="email"]').val() || "").trim();
+      var msgContent = ($form.find('textarea[name="message"]').val() || "").trim();
 
       // Basic validation
       if (!name || !email || !msgContent) {
@@ -717,6 +737,7 @@
 
       var tooltip = getTooltip();
       tooltip.text(text);
+      tooltip.toggleClass('no-arrow', $el.hasClass('listeo-ai-chat-send-btn'));
 
       // Get element position relative to viewport (for fixed positioning)
       var rect = $el[0].getBoundingClientRect();
@@ -849,8 +870,9 @@
     this.chatConfig = null;
     this.isProcessing = false;
     this.configLoaded = false;
-    this.storageKey = "listeo_ai_chat_" + this.chatId;
-    this.rateLimitStorageKey = "listeo_chat_rate_limit";
+    this.storageKey = getScopedStorageKey("listeo_ai_chat_" + this.chatId);
+    this.rateLimitStorageKey = getScopedStorageKey("listeo_chat_rate_limit");
+    this.expandStateStorageKey = getScopedStorageKey("listeo_chat_expanded");
 
     // Generate unique session ID for conversation tracking
     this.sessionId = this.getOrCreateSessionId();
@@ -882,11 +904,15 @@
 
     // Loaded listing context (for single listing pages)
     this.loadedListing = null;
-    this.loadedListingStorageKey = "listeo_chat_loaded_listing_" + this.chatId;
+    this.loadedListingStorageKey = getScopedStorageKey(
+      "listeo_chat_loaded_listing_" + this.chatId,
+    );
 
     // Loaded product context (for single product pages - WooCommerce)
     this.loadedProduct = null;
-    this.loadedProductStorageKey = "listeo_chat_loaded_product_" + this.chatId;
+    this.loadedProductStorageKey = getScopedStorageKey(
+      "listeo_chat_loaded_product_" + this.chatId,
+    );
 
     // Track if chat has been expanded (for style 2)
     this.isExpanded = false;
@@ -897,6 +923,7 @@
     this.$imageInput = $wrapper.find(".listeo-ai-chat-image-input");
 
     // Pre-chat fields state
+    this.preChatRequired = false;
     this.preChatCompleted = false;
     this.preChatData = null; // Array of { label, value } once submitted
     this.preChatDataSent = false; // Whether header was already sent with first message
@@ -1198,6 +1225,22 @@
       // Allow sending if there's text OR an image
       if ((!message && !hasImage) || this.isProcessing) {
         return;
+      }
+
+      if (this.preChatRequired && !this.preChatCompleted) {
+        var $preChatForm = this.$wrapper.find(".listeo-ai-pre-chat-form:visible");
+
+        if ($preChatForm.length) {
+          var $firstInvalid = $preChatForm.find("input[data-field-label]").filter(function () {
+            var val = $(this).val().trim();
+            return !val || val.length < 2 || val.length > 200;
+          }).first();
+
+          ($firstInvalid.length ? $firstInvalid : $preChatForm.find("input[data-field-label]").first()).focus();
+          return;
+        }
+
+        this.preChatRequired = false;
       }
 
       // Check if config is still loading
@@ -3171,17 +3214,30 @@
             }
           }
 
-          // Add text response first
-          if (textResponse) {
-            self.addMessage("assistant", textResponse);
-          }
-
-          // Render grid below text (filtered or all results)
+          var gridHTML = "";
           if (displayResults.length > 0) {
-            var gridHTML = isProductSearch
+            gridHTML = isProductSearch
               ? self.formatProductsGrid(displayResults)
               : self.formatListingsGrid(displayResults);
+          }
+
+          var resultOrder =
+            listeoAiChatConfig.resultOrder === "answer_first"
+              ? "answer_first"
+              : "cards_first";
+
+          if (resultOrder === "cards_first" && gridHTML) {
             self.addMessage("assistant", gridHTML);
+            if (textResponse) {
+              self.addMessage("assistant", textResponse);
+            }
+          } else {
+            if (textResponse) {
+              self.addMessage("assistant", textResponse);
+            }
+            if (gridHTML) {
+              self.addMessage("assistant", gridHTML);
+            }
           }
 
           // Update history - MUST include complete tool calling sequence
@@ -3720,6 +3776,7 @@
           history: this.conversationHistory,
           messages: [],
           timestamp: Date.now(),
+          storageNamespace: getStorageNamespace(),
         };
 
         // Save message HTML for display (skip listing-action messages)
@@ -3768,6 +3825,17 @@
         }
 
         data = JSON.parse(data);
+
+        if (
+          getStorageNamespace() &&
+          data.storageNamespace !== getStorageNamespace()
+        ) {
+          debugLog("Conversation storage namespace mismatch - starting fresh");
+          localStorage.removeItem(this.storageKey);
+          this.$messages.empty();
+          this.showWelcome();
+          return;
+        }
 
         // Check if conversation is less than 24 hours old
         var hoursSinceLastMessage =
@@ -3838,13 +3906,19 @@
      * Get or create a unique session ID for conversation tracking
      */
     getOrCreateSessionId: function () {
-      var sessionKey = "listeo_ai_session_" + this.chatId;
+      var sessionKey = getScopedStorageKey("listeo_ai_session_" + this.chatId);
       var sessionId = localStorage.getItem(sessionKey);
+      var namespace = getStorageNamespace();
 
-      if (!sessionId) {
+      if (
+        !sessionId ||
+        (namespace && sessionId.indexOf(namespace + "_") !== 0)
+      ) {
         // Generate unique ID: timestamp + random string
         sessionId =
-          Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+          (namespace ? namespace + "_" : "") +
+          Date.now().toString(36) +
+          Math.random().toString(36).substr(2, 9);
         localStorage.setItem(sessionKey, sessionId);
       }
 
@@ -3888,7 +3962,10 @@
         $popup.toggleClass("is-expanded");
         var isExpanded = $popup.hasClass("is-expanded");
         // Remember preference in localStorage
-        localStorage.setItem("listeo_chat_expanded", isExpanded ? "1" : "0");
+        localStorage.setItem(
+          this.expandStateStorageKey,
+          isExpanded ? "1" : "0",
+        );
         debugLog("Chat expanded:", isExpanded);
       }
     },
@@ -3899,7 +3976,7 @@
     restoreExpandState: function () {
       var $popup = this.$wrapper.closest(".listeo-floating-chat-popup");
       if ($popup.length) {
-        var savedState = localStorage.getItem("listeo_chat_expanded");
+        var savedState = localStorage.getItem(this.expandStateStorageKey);
         if (savedState === "1") {
           $popup.addClass("is-expanded");
           debugLog("Restored expanded state from localStorage");
@@ -3913,7 +3990,9 @@
      */
     initPreChatForm: function () {
       var self = this;
-      var storageKey = "listeo_pre_chat_data_" + this.chatId;
+      var storageKey = getScopedStorageKey(
+        "listeo_pre_chat_data_" + this.chatId,
+      );
 
       // Check if already completed this session
       var savedData = sessionStorage.getItem(storageKey);
@@ -3935,6 +4014,7 @@
         return;
       }
 
+      self.preChatRequired = true;
       $form.detach().appendTo(self.$messages).show();
 
       // Disable send button with tooltip
@@ -3944,6 +4024,7 @@
       // Handle form submission
       $form.find(".listeo-ai-pre-chat-form-body").on("submit", function (e) {
         e.preventDefault();
+        e.stopPropagation();
 
         var $fields = $(this).find("input[data-field-label]");
         var allFilled = true;
@@ -3967,6 +4048,7 @@
 
         // Store data
         self.preChatData = data;
+        self.preChatRequired = false;
         self.preChatCompleted = true;
         self.preChatDataSent = false;
         sessionStorage.setItem(storageKey, JSON.stringify(data));
@@ -3990,7 +4072,7 @@
     getPreChatHeaders: function () {
       if (this.preChatData && !this.preChatDataSent) {
         this.preChatDataSent = true;
-        return { "X-Pre-Chat-Data": JSON.stringify(this.preChatData) };
+        return { "X-Pre-Chat-Data": encodeURIComponent(JSON.stringify(this.preChatData)) };
       }
       return {};
     },

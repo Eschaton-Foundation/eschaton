@@ -121,6 +121,11 @@
      * Update UI based on provider selection
      */
     function updateProviderUI(provider) {
+        if (window.listeo_ai_search_ajax) {
+            window.listeo_ai_search_ajax.current_provider = provider;
+        }
+        $(document).trigger('listeo_ai_provider_changed', [provider]);
+
         // Hide all provider fields and model groups
         $('.provider-field').hide();
         $('.model-group-openai, .model-group-gemini, .model-group-mistral, .model-group-openrouter').hide();
@@ -241,6 +246,10 @@
                             if (fieldName !== 'action' && fieldName !== 'nonce' && fieldName !== 'section') {
                                 $('input[type="hidden"][name="' + fieldName + '"]').val(fieldValue);
                             }
+                        });
+
+                        $.each((response.data && response.data.updated_settings) || {}, function(fieldName, fieldValue) {
+                            $('input[type="hidden"][name="' + fieldName + '"], select[name="' + fieldName + '"]').val(fieldValue);
                         });
                     } else {
                         AIRS.showMessage($message, 'error',

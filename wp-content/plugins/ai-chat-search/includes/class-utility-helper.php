@@ -16,6 +16,83 @@ if (!defined('ABSPATH')) {
 class Listeo_AI_Search_Utility_Helper {
 
     /**
+     * Sanitize the comma-separated custom search suggestions setting.
+     *
+     * @param string|array $value Raw suggestions value.
+     * @return string Normalized comma-separated suggestions.
+     */
+    public static function sanitize_custom_suggestions($value) {
+        if (is_array($value)) {
+            $value = implode(',', $value);
+        }
+
+        $value = is_string($value) ? wp_unslash($value) : '';
+        $items = preg_split('/[,\r\n]+/', $value);
+        $suggestions = array();
+
+        foreach ($items as $item) {
+            $item = preg_replace('/\s+/', ' ', trim($item));
+            $item = sanitize_text_field($item);
+
+            if ($item === '' || self::is_diagnostic_suggestion($item)) {
+                continue;
+            }
+
+            $suggestions[] = $item;
+        }
+
+        return implode(', ', array_values(array_unique($suggestions)));
+    }
+
+    /**
+     * Parse sanitized custom search suggestions into an array.
+     *
+     * @param string|array $value Raw suggestions value.
+     * @param int          $limit Maximum suggestions to return. 0 means no limit.
+     * @return array
+     */
+    public static function parse_custom_suggestions($value, $limit = 0) {
+        $sanitized = self::sanitize_custom_suggestions($value);
+
+        if ($sanitized === '') {
+            return array();
+        }
+
+        $suggestions = array_map('trim', explode(',', $sanitized));
+        $suggestions = array_filter($suggestions);
+
+        if ($limit > 0) {
+            $suggestions = array_slice($suggestions, 0, intval($limit));
+        }
+
+        return array_values($suggestions);
+    }
+
+    /**
+     * Detect PHP/WP-CLI diagnostic output that should never become a suggestion.
+     *
+     * @param string $suggestion Suggestion candidate.
+     * @return bool
+     */
+    private static function is_diagnostic_suggestion($suggestion) {
+        $patterns = array(
+            '/^(PHP\s+)?(Deprecated|Warning|Notice|Strict Standards|Fatal error|Parse error)\s*:/i',
+            '/^Stack trace:/i',
+            '/^#\d+\s+/',
+            '/\bphar:\/\/.*\bwp-cli\b/i',
+            '/\bwp-cli\/[0-9.]+\/bin\/wp\b/i',
+        );
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $suggestion)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Resolve the effective embedding provider from the stored embedding model.
      * OpenRouter routes models from multiple vendors, so we detect the underlying
      * provider from the model slug to apply correct similarity thresholds.
@@ -25,7 +102,12 @@ class Listeo_AI_Search_Utility_Helper {
      */
     public static function get_embedding_provider($embedding_model = null) {
         if ($embedding_model === null) {
-            $embedding_model = get_option('listeo_ai_embedding_model', '');
+            if (class_exists('Listeo_AI_Provider')) {
+                $provider = new Listeo_AI_Provider();
+                $embedding_model = $provider->get_embedding_model();
+            } else {
+                $embedding_model = get_option('listeo_ai_embedding_model', '');
+            }
         }
 
         if (empty($embedding_model)) {
@@ -599,7 +681,10 @@ class Listeo_AI_Search_Utility_Helper {
             'timestamp' => $ts,
             'site_url' => home_url()
         ));
-        $s = hash_hmac('sha256', $p, '21727d78f2ff78a2a4e2fa85ca342c03');
+        // Public HMAC salt shared with Pro license proxy requests. It ships
+        // with the plugin, so audits should not treat it as a credential.
+        $public_hmac_salt = '21727d78f2ff78a2a4e2fa85ca342c03';
+        $s = hash_hmac('sha256', $p, $public_hmac_salt);
 
         $r = static::_rq('https://purethemes.net/wp-json/purethemes-license-proxy/v1/proxy', $p, $s, $ts);
 

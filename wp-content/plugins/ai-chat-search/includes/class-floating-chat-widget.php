@@ -38,6 +38,20 @@ class Listeo_AI_Search_Floating_Chat_Widget
     }
 
     /**
+     * Get filtered frontend storage namespace shared with the main chat config.
+     */
+    private function get_storage_namespace()
+    {
+        $chat_js_config = function_exists('listeo_ai_get_chat_js_config')
+            ? listeo_ai_get_chat_js_config()
+            : [];
+
+        return isset($chat_js_config['storageNamespace'])
+            ? (string) $chat_js_config['storageNamespace']
+            : '';
+    }
+
+    /**
      * Enqueue widget assets
      */
     public function enqueue_widget_assets()
@@ -184,6 +198,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
         // Localize chat config on the script that's guaranteed to be enqueued
         $config_handle = $lazy_load ? "listeo-ai-floating-chat" : "listeo-ai-chat";
         listeo_ai_localize_chat_config($config_handle);
+        $storage_namespace = $this->get_storage_namespace();
 
         // Get welcome bubble message for floating widget
         $welcome_bubble_message = get_option(
@@ -215,6 +230,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
                 "fa-robot",
             ),
             "keepChatOpened" => get_option("listeo_ai_floating_keep_chat_opened", 0) ? true : false,
+            "storageNamespace" => $storage_namespace,
             "strings" => [
                 "openChat" => __("Open chat", "ai-chat-search"),
                 "closeChat" => __("Close chat", "ai-chat-search"),
@@ -293,6 +309,12 @@ class Listeo_AI_Search_Floating_Chat_Widget
      */
     public function render_floating_widget()
     {
+        static $rendered = false;
+
+        if ($rendered) {
+            return;
+        }
+
         // Only render if widget is enabled
         if (!get_option("listeo_ai_floating_chat_enabled", 0)) {
             return;
@@ -324,6 +346,8 @@ class Listeo_AI_Search_Floating_Chat_Widget
         if (apply_filters('listeo_ai_chat_should_block_ip', false)) {
             return;
         }
+
+        $rendered = true;
 
         // Get settings
         $chat_title = get_option(
@@ -364,6 +388,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Get color scheme for dark mode
         $color_scheme = get_option('listeo_ai_color_scheme', 'light');
+        $storage_namespace = $this->get_storage_namespace();
+        $welcome_bubble_storage_key = 'listeo_floating_chat_bubble_dismissed'
+            . ($storage_namespace ? '_' . $storage_namespace : '');
 
         // Get widget position
         $widget_position = get_option('listeo_ai_floating_position', 'right');
@@ -480,7 +507,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
             <script>
                 (function() {
                     var bubble = document.getElementById('listeo-floating-welcome-bubble');
-                    var dismissed = localStorage.getItem('listeo_floating_chat_bubble_dismissed');
+                    var dismissed = localStorage.getItem('<?php echo esc_js($welcome_bubble_storage_key); ?>');
                     if (dismissed !== 'true' && bubble) {
                         bubble.classList.remove('hidden');
                     }

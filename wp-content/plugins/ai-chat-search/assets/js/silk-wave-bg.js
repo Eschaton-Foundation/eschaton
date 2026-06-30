@@ -13,6 +13,24 @@ var ListeoSilkWave = (function() {
 
     var instance = null;
 
+    // WebKit/Safari does not implement ctx.filter. The property is absent
+    // from the prototype there, so a naive set-and-read-back test false-
+    // positives (the assignment creates an expando that reads back fine) —
+    // check the prototype first, then verify the setter actually accepts it.
+    var SUPPORTS_CTX_FILTER = (function() {
+        try {
+            if (typeof CanvasRenderingContext2D === 'undefined' ||
+                !('filter' in CanvasRenderingContext2D.prototype)) {
+                return false;
+            }
+            var c = document.createElement('canvas').getContext('2d');
+            c.filter = 'blur(2px)';
+            return c.filter === 'blur(2px)';
+        } catch (e) {
+            return false;
+        }
+    })();
+
     // Hardcoded wave parameters
     var CFG = {
         waves: 4,
@@ -20,6 +38,9 @@ var ListeoSilkWave = (function() {
         curviness: 3,
         softness: 0.5,
         blur: 25,
+        // Safari/WebKit fallback blurs the whole composite via CSS, which
+        // reads stronger than Chrome's per-layer ctx.filter — scale it down.
+        cssBlurScale: 0.55,
         speed: 0.7,
         flow: 1.05,
         grain: 0.15
@@ -91,7 +112,7 @@ var ListeoSilkWave = (function() {
             + Math.sin(x*0.3+t*1.8+seed*3.2)*0.4;
     }
 
-    function buildPath(wi, time, numW, W, H) {
+    function buildPath(wi, time, numW, W, H, bleed) {
         var pts = [], segs = 80;
         var baseY = H * (0.15 + 0.7 * (wi / (numW - 0.5)));
         var seed = wi * 3.7;
@@ -99,7 +120,7 @@ var ListeoSilkWave = (function() {
         var amp = H * CFG.amplitude * ampBoost * (0.6 + 0.8 * Math.sin(seed));
         for (var j = 0; j <= segs; j++) {
             var t = j / segs;
-            pts.push({ x: t * W, y: baseY + waveFunc(t * CFG.curviness * Math.PI, time * CFG.flow, seed) * amp * 0.5 });
+            pts.push({ x: -bleed + t * (W + 2 * bleed), y: baseY + waveFunc(t * CFG.curviness * Math.PI, time * CFG.flow, seed) * amp * 0.5 });
         }
         return pts;
     }
@@ -107,21 +128,23 @@ var ListeoSilkWave = (function() {
     /**
      * Draw a single frame of the wave animation.
      */
-    function drawFrame(ctx, W, H, time, cc, grain) {
-        // Background gradient
+    function drawFrame(ctx, W, H, time, cc, grain, bleed) {
+        // Background gradient (covers the bleed margin too)
         var bg = ctx.createLinearGradient(0, 0, W * 0.5, H);
         bg.addColorStop(0, rgb(cc.c1));
         bg.addColorStop(0.5, rgb(lerpC(cc.c1, cc.c2, 0.5)));
         bg.addColorStop(1, rgb(lerpC(cc.c2, cc.c3, 0.3)));
         ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillRect(-bleed, -bleed, W + 2 * bleed, H + 2 * bleed);
 
-        // Scale blur proportionally to canvas height (reference: 400px)
+        // Scale blur proportionally to canvas height (reference: 400px).
+        // Safari fallback: blur comes from the CSS filter on the canvas
+        // element (--silk-blur, set in resize) instead.
         var scaledBlur = CFG.blur * (H / 400);
-        if (scaledBlur > 0) ctx.filter = 'blur(' + scaledBlur + 'px)';
+        if (SUPPORTS_CTX_FILTER && scaledBlur > 0) ctx.filter = 'blur(' + scaledBlur + 'px)';
 
         for (var wi = 0; wi < CFG.waves; wi++) {
-            var path = buildPath(wi, time, CFG.waves, W, H);
+            var path = buildPath(wi, time, CFG.waves, W, H, bleed);
             var ct = wi / (CFG.waves - 1);
             var wc;
             if (ct < 0.33) wc = lerpC(cc.c1, cc.c2, ct / 0.33);
@@ -178,21 +201,21 @@ var ListeoSilkWave = (function() {
             ctx.stroke();
         }
 
-        ctx.filter = 'none';
+        if (SUPPORTS_CTX_FILTER) ctx.filter = 'none';
 
         // Vignette top-right
         var vg = ctx.createRadialGradient(W * 0.8, 0, 0, W * 0.8, 0, W * 0.7);
         vg.addColorStop(0, rgb(cc.c1, 0.3));
         vg.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = vg;
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillRect(-bleed, -bleed, W + 2 * bleed, H + 2 * bleed);
 
         // Glow bottom-left
         var gl = ctx.createRadialGradient(W * 0.1, H, 0, W * 0.1, H, W * 0.6);
         gl.addColorStop(0, rgb(cc.c4, 0.15));
         gl.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = gl;
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillRect(-bleed, -bleed, W + 2 * bleed, H + 2 * bleed);
 
         if (grain) grain.style.opacity = CFG.grain;
     }
@@ -216,9 +239,12 @@ var ListeoSilkWave = (function() {
         // Pre-compute colors once
         var cc = computeColors(currentColor, isDark);
 
-        // Create wrapper (positioned absolute, overflow hidden, behind content)
+        // Create wrapper (positioned absolute, overflow hidden, behind content).
+        // Styles are inlined so it works in contexts that don't load chatbot.css
+        // (e.g. the admin preview).
         var wrap = document.createElement('div');
         wrap.className = 'listeo-silk-wave-wrap';
+        wrap.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;border-radius:inherit;';
 
         var canvas = document.createElement('canvas');
         canvas.className = 'listeo-silk-wave-canvas';
@@ -231,16 +257,36 @@ var ListeoSilkWave = (function() {
         headerEl.appendChild(grain);
 
         var ctx = canvas.getContext('2d');
-        var W = 0, H = 0, time = 0, raf = null, running = true, skipFrame = false;
+        var W = 0, H = 0, bleed = 0, time = 0, raf = null, running = true, skipFrame = false;
 
         function resize() {
             var dpr = Math.min(window.devicePixelRatio || 1, 2);
             var rect = wrap.getBoundingClientRect();
             W = rect.width; H = rect.height;
             if (W > 0 && H > 0) {
-                canvas.width = W * dpr;
-                canvas.height = H * dpr;
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                if (SUPPORTS_CTX_FILTER) {
+                    // Native path: blur is applied per-frame via ctx.filter.
+                    bleed = 0;
+                    canvas.width = W * dpr;
+                    canvas.height = H * dpr;
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                } else {
+                    // Safari/WebKit fallback: ctx.filter is a no-op there, so
+                    // blur via CSS filter on the canvas element instead. The
+                    // canvas is oversized by a bleed margin and clipped by the
+                    // wrapper, keeping the blurred edges out of view.
+                    var scaledBlur = CFG.blur * (H / 400) * CFG.cssBlurScale;
+                    bleed = Math.ceil(scaledBlur * 3);
+                    canvas.width = (W + 2 * bleed) * dpr;
+                    canvas.height = (H + 2 * bleed) * dpr;
+                    canvas.style.position = 'absolute';
+                    canvas.style.top = -bleed + 'px';
+                    canvas.style.left = -bleed + 'px';
+                    canvas.style.width = (W + 2 * bleed) + 'px';
+                    canvas.style.height = (H + 2 * bleed) + 'px';
+                    canvas.style.setProperty('--silk-blur', scaledBlur + 'px');
+                    ctx.setTransform(dpr, 0, 0, dpr, bleed * dpr, bleed * dpr);
+                }
             }
         }
 
@@ -262,7 +308,7 @@ var ListeoSilkWave = (function() {
             // Prevent floating point drift over long sessions
             if (time > 10000) time = 0;
 
-            drawFrame(ctx, W, H, time, cc, grain);
+            drawFrame(ctx, W, H, time, cc, grain, bleed);
             raf = requestAnimationFrame(draw);
         }
 

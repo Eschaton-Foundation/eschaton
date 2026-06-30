@@ -1,0 +1,572 @@
+<svg id="purio-logo-animated" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="61" height="61" viewBox="0 0 61 61" role="img" aria-label="PurioChat">
+  <defs>
+    <linearGradient id="linear-gradient" x1="0.5" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#ebf5fd"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="0.853" y1="0.935" x2="0.337" y2="0.091" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#0060ff"/>
+      <stop offset="0" stop-color="#0061c9"/>
+      <stop offset="1" stop-color="#3b85ff"/>
+    </linearGradient>
+    <filter id="purio-laser-glow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="1.1" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <style>
+    svg {
+      cursor: pointer;
+    }
+
+    .purio-eye-track {
+      transform: translate(var(--purio-eye-x, 0px), var(--purio-eye-y, 0px));
+      transition: transform 140ms ease-out;
+    }
+
+    .purio-eye {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    svg.is-random-blinking .purio-eye {
+      animation: purio-blink 220ms ease-in-out 1;
+    }
+
+    svg.is-near-winking .purio-eye {
+      animation: none;
+      transform: scaleY(1);
+    }
+
+    svg.is-near-winking .purio-eye-right {
+      animation: purio-wink 650ms ease-in-out 1;
+    }
+
+    .purio-laser {
+      filter: url(#purio-laser-glow);
+      opacity: 0;
+      pointer-events: none;
+      stroke-dasharray: 44;
+      stroke-dashoffset: 44;
+      stroke-linecap: round;
+    }
+
+    svg.is-laser-eyed .purio-laser {
+      animation: purio-laser-fire 620ms ease-out 1;
+    }
+
+    svg.is-laser-eyed .purio-laser-core {
+      animation: purio-laser-fire 620ms ease-out 1;
+    }
+
+    .purio-laser-flame {
+      filter: url(#purio-laser-glow);
+      opacity: 0;
+      pointer-events: none;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .purio-laser-spark {
+      opacity: 0;
+      stroke-linecap: round;
+    }
+
+    .purio-laser-chip {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    svg.is-laser-eyed .purio-laser-flame {
+      animation: purio-edge-burn 620ms ease-out 1;
+    }
+
+    svg.is-laser-eyed .purio-spark-a {
+      animation: purio-spark-streak 520ms ease-out 40ms 1;
+    }
+
+    svg.is-laser-eyed .purio-spark-b {
+      animation: purio-spark-streak 500ms ease-out 90ms 1;
+    }
+
+    svg.is-laser-eyed .purio-spark-c {
+      animation: purio-spark-streak 430ms ease-out 130ms 1;
+    }
+
+    svg.is-laser-eyed .purio-spark-d {
+      animation: purio-spark-streak 390ms ease-out 180ms 1;
+    }
+
+    svg.is-laser-eyed .purio-laser-chip {
+      animation: purio-hot-chip 500ms ease-out 80ms 1;
+    }
+
+    @keyframes purio-blink {
+      0%, 100% {
+        transform: scaleY(1);
+      }
+
+      50% {
+        transform: scaleY(0.08);
+      }
+    }
+
+    @keyframes purio-wink {
+      0%, 100% {
+        transform: scaleY(1);
+      }
+
+      28%, 52% {
+        transform: scaleY(0.08);
+      }
+    }
+
+    @keyframes purio-laser-fire {
+      0% {
+        opacity: 0;
+        stroke-dashoffset: 44;
+      }
+
+      18%, 72% {
+        opacity: 1;
+        stroke-dashoffset: 0;
+      }
+
+      100% {
+        opacity: 0;
+        stroke-dashoffset: -16;
+      }
+    }
+
+    @keyframes purio-edge-burn {
+      0%, 8% {
+        opacity: 0;
+        transform: scale(0.45);
+      }
+
+      18%, 50% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(0.72);
+      }
+    }
+
+    @keyframes purio-spark-streak {
+      0% {
+        opacity: 0;
+        stroke-dasharray: 0 14;
+      }
+
+      22%, 60% {
+        opacity: 1;
+        stroke-dasharray: 9 14;
+      }
+
+      100% {
+        opacity: 0;
+        stroke-dasharray: 0 14;
+      }
+    }
+
+    @keyframes purio-hot-chip {
+      0% {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+
+      30%, 70% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(0.35);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .purio-eye,
+      svg.is-random-blinking .purio-eye,
+      svg.is-near-winking .purio-eye-right,
+      svg.is-laser-eyed .purio-laser-flame,
+      svg.is-laser-eyed .purio-laser-spark,
+      svg.is-laser-eyed .purio-laser-chip {
+        animation: none;
+      }
+
+      .purio-eye-track {
+        transform: translate(0, 0);
+        transition: none;
+      }
+    }
+  </style>
+  <g id="Group_14" data-name="Group 14" transform="translate(-0.201)">
+    <rect id="Rectangle_1" data-name="Rectangle 1" width="61" height="61" transform="translate(0.201)" fill="url(#linear-gradient)"/>
+    <g id="Group_2" data-name="Group 2" transform="translate(10.002 15.715)">
+      <path id="Path_23" data-name="Path 23" d="M10.692,5.478l5.889,3.655L0,4.113,7.123,0Z" transform="translate(21.987 32.109) rotate(-60)" fill="#3b85ff"/>
+      <path id="Path_24" data-name="Path 24" d="M13.041,0H28.981a13.041,13.041,0,1,1,0,26.083H13.041A13.041,13.041,0,0,1,13.041,0Z" fill="url(#linear-gradient-2)"/>
+      <path id="Path_25" data-name="Path 25" d="M7.245,0H23.185a7.245,7.245,0,1,1,0,14.49H7.245A7.245,7.245,0,0,1,7.245,0Z" transform="translate(5.796 5.796)" fill="#f5fafe"/>
+      <g class="purio-eye-track">
+        <g class="purio-eye purio-eye-left">
+          <path id="Path_26" data-name="Path 26" d="M2.9,0A2.9,2.9,0,1,1,0,2.9,2.9,2.9,0,0,1,2.9,0Z" transform="translate(11.592 10.143)" fill="#0060ff"/>
+        </g>
+      </g>
+      <g class="purio-eye-track">
+        <g class="purio-eye purio-eye-right">
+          <path id="Path_27" data-name="Path 27" d="M2.9,0A2.9,2.9,0,1,1,0,2.9,2.9,2.9,0,0,1,2.9,0Z" transform="translate(24.634 10.143)" fill="#0060ff"/>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g class="purio-laser-group" aria-hidden="true">
+    <path class="purio-laser" data-laser-eye="left" d="M24.494 28.758L60.8 21.6" fill="none" stroke="#ff1f4f" stroke-width="3.2"/>
+    <path class="purio-laser purio-laser-core" data-laser-eye="left" d="M24.494 28.758L60.8 21.6" fill="none" stroke="#ffd6df" stroke-width="1"/>
+    <path class="purio-laser" data-laser-eye="right" d="M37.536 28.758L60.8 33.5" fill="none" stroke="#ff1f4f" stroke-width="3.2"/>
+    <path class="purio-laser purio-laser-core" data-laser-eye="right" d="M37.536 28.758L60.8 33.5" fill="none" stroke="#ffd6df" stroke-width="1"/>
+    <g data-laser-flame="left" transform="translate(60.8 21.6)">
+      <g class="purio-laser-flame">
+        <path d="M0.2,-3.4C-2.2,-2.1 -2.2,2.1 0.2,3.4C-4.1,3.1 -7.2,1.8 -9.1,0C-7.2,-1.8 -4.1,-3.1 0.2,-3.4Z" fill="#ff3b30"/>
+        <path d="M-0.2,-1.8C-1.8,-1.1 -1.8,1.1 -0.2,1.8C-3.3,1.7 -5.3,0.9 -6.7,0C-5.3,-0.9 -3.3,-1.7 -0.2,-1.8Z" fill="#fff2a8"/>
+        <path class="purio-laser-spark purio-spark-a" d="M-0.8,-0.2L-16.4,-5.8" fill="none" stroke="#fff2a8" stroke-width="1.15"/>
+        <path class="purio-laser-spark purio-spark-b" d="M-1.1,0.9L-18.1,3.9" fill="none" stroke="#ffd166" stroke-width="1.25"/>
+        <path class="purio-laser-spark purio-spark-c" d="M-0.4,-1.5L-9.8,-11.6" fill="none" stroke="#ff8a00" stroke-width="1"/>
+        <path class="purio-laser-spark purio-spark-d" d="M-0.4,1.6L-9.4,11.2" fill="none" stroke="#fff2a8" stroke-width="0.95"/>
+        <circle class="purio-laser-chip" cx="-17.4" cy="-6.4" r="0.75" fill="#fff2a8"/>
+        <circle class="purio-laser-chip" cx="-19.1" cy="4.2" r="0.7" fill="#ff8a00"/>
+        <circle class="purio-laser-chip" cx="-10.4" cy="-12.4" r="0.55" fill="#ffd166"/>
+        <circle class="purio-laser-chip" cx="-9.8" cy="11.9" r="0.5" fill="#fff2a8"/>
+      </g>
+    </g>
+    <g data-laser-flame="right" transform="translate(60.8 33.5)">
+      <g class="purio-laser-flame">
+        <path d="M0.2,-3.4C-2.2,-2.1 -2.2,2.1 0.2,3.4C-4.1,3.1 -7.2,1.8 -9.1,0C-7.2,-1.8 -4.1,-3.1 0.2,-3.4Z" fill="#ff3b30"/>
+        <path d="M-0.2,-1.8C-1.8,-1.1 -1.8,1.1 -0.2,1.8C-3.3,1.7 -5.3,0.9 -6.7,0C-5.3,-0.9 -3.3,-1.7 -0.2,-1.8Z" fill="#fff2a8"/>
+        <path class="purio-laser-spark purio-spark-a" d="M-0.8,-0.2L-16.4,-5.8" fill="none" stroke="#fff2a8" stroke-width="1.15"/>
+        <path class="purio-laser-spark purio-spark-b" d="M-1.1,0.9L-18.1,3.9" fill="none" stroke="#ffd166" stroke-width="1.25"/>
+        <path class="purio-laser-spark purio-spark-c" d="M-0.4,-1.5L-9.8,-11.6" fill="none" stroke="#ff8a00" stroke-width="1"/>
+        <path class="purio-laser-spark purio-spark-d" d="M-0.4,1.6L-9.4,11.2" fill="none" stroke="#fff2a8" stroke-width="0.95"/>
+        <circle class="purio-laser-chip" cx="-17.4" cy="-6.4" r="0.75" fill="#fff2a8"/>
+        <circle class="purio-laser-chip" cx="-19.1" cy="4.2" r="0.7" fill="#ff8a00"/>
+        <circle class="purio-laser-chip" cx="-10.4" cy="-12.4" r="0.55" fill="#ffd166"/>
+        <circle class="purio-laser-chip" cx="-9.8" cy="11.9" r="0.5" fill="#fff2a8"/>
+      </g>
+    </g>
+  </g>
+  <script type="application/ecmascript"><![CDATA[
+    (function () {
+      var svg = document.currentScript && document.currentScript.ownerSVGElement;
+      var pointerDocuments = [document];
+      var reducedMotion;
+
+      if (!svg) {
+        return;
+      }
+
+      reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reducedMotion) {
+        return;
+      }
+
+      try {
+        if (window.parent && window.parent !== window && window.parent.document) {
+          pointerDocuments.push(window.parent.document);
+        }
+      } catch (error) {}
+
+      var faceCenterX = 31.015;
+      var faceCenterY = 28.758;
+      var viewBoxSize = 61;
+      var enterInfluencePx = 300;
+      var leaveInfluencePx = 360;
+      var fullStrengthUntilPx = 220;
+      var maxX = 2.05;
+      var maxY = 1.2;
+      var frame = null;
+      var lastEvent = null;
+      var lastEventUsesParentCoords = false;
+      var isNear = false;
+      var lastNearWinkAt = 0;
+      var nearWinkCooldownMs = 9000;
+      var blinkTimeout = null;
+      var laserTimeout = null;
+      var laserEyes = {
+        left: { x: 24.494, y: 28.758 },
+        right: { x: 37.536, y: 28.758 }
+      };
+      var requestFrame = window.requestAnimationFrame || function (callback) {
+        return window.setTimeout(callback, 16);
+      };
+
+      function setOffset(x, y) {
+        svg.style.setProperty('--purio-eye-x', x.toFixed(2) + 'px');
+        svg.style.setProperty('--purio-eye-y', y.toFixed(2) + 'px');
+      }
+
+      function resetEyes() {
+        lastEvent = null;
+        isNear = false;
+        setOffset(0, 0);
+      }
+
+      function getFrameRect() {
+        try {
+          if (window.frameElement) {
+            return window.frameElement.getBoundingClientRect();
+          }
+        } catch (error) {}
+
+        return null;
+      }
+
+      function getFaceScreenCenter(useParentCoords) {
+        var rect = svg.getBoundingClientRect();
+        var frameRect = useParentCoords ? getFrameRect() : null;
+        var x = rect.left + (rect.width * (faceCenterX / viewBoxSize));
+        var y = rect.top + (rect.height * (faceCenterY / viewBoxSize));
+
+        if (frameRect) {
+          x += frameRect.left;
+          y += frameRect.top;
+        }
+
+        return { x: x, y: y };
+      }
+
+      function updateEyes() {
+        var center;
+        var dx;
+        var dy;
+        var distance;
+        var fade;
+
+        frame = null;
+
+        if (!lastEvent) {
+          return;
+        }
+
+        center = getFaceScreenCenter(lastEventUsesParentCoords);
+        dx = lastEvent.clientX - center.x;
+        dy = lastEvent.clientY - center.y;
+        distance = Math.sqrt((dx * dx) + (dy * dy));
+
+        if (distance < 0.01) {
+          setOffset(0, 0);
+          return;
+        }
+
+        if (distance > leaveInfluencePx) {
+          resetEyes();
+          return;
+        }
+
+        if (distance > enterInfluencePx) {
+          setOffset(0, 0);
+          return;
+        }
+
+        if (!isNear) {
+          isNear = true;
+          playNearWink();
+        }
+
+        fade = 1;
+        if (distance > fullStrengthUntilPx) {
+          fade = Math.max(0, 1 - ((distance - fullStrengthUntilPx) / (enterInfluencePx - fullStrengthUntilPx)));
+        }
+
+        setOffset((dx / distance) * maxX * fade, (dy / distance) * maxY * fade);
+      }
+
+      function handlePointerMove(event) {
+        var eventDocument = event.target && event.target.ownerDocument ? event.target.ownerDocument : document;
+
+        lastEvent = event;
+        lastEventUsesParentCoords = eventDocument !== document;
+
+        if (frame === null) {
+          frame = requestFrame(updateEyes);
+        }
+      }
+
+      function clearRandomBlink() {
+        if (blinkTimeout !== null) {
+          window.clearTimeout(blinkTimeout);
+          blinkTimeout = null;
+        }
+      }
+
+      function scheduleRandomBlink() {
+        clearRandomBlink();
+        blinkTimeout = window.setTimeout(playRandomBlink, 3600 + (Math.random() * 7600));
+      }
+
+      function playRandomBlink() {
+        if (svg.classList.contains('is-near-winking')) {
+          scheduleRandomBlink();
+          return;
+        }
+
+        svg.classList.remove('is-random-blinking');
+        svg.getBoundingClientRect();
+        svg.classList.add('is-random-blinking');
+
+        window.setTimeout(function () {
+          svg.classList.remove('is-random-blinking');
+          scheduleRandomBlink();
+        }, 260);
+      }
+
+      function playNearWink() {
+        var now = Date.now();
+
+        if (svg.classList.contains('is-near-winking')) {
+          return;
+        }
+
+        if (now - lastNearWinkAt < nearWinkCooldownMs) {
+          return;
+        }
+
+        lastNearWinkAt = now;
+        svg.classList.remove('is-near-winking');
+        svg.getBoundingClientRect();
+        svg.classList.add('is-near-winking');
+
+        window.setTimeout(function () {
+          svg.classList.remove('is-near-winking');
+        }, 700);
+      }
+
+      function formatLaserPath(start, end) {
+        return 'M' + start.x.toFixed(3) + ' ' + start.y.toFixed(3) + 'L' + end.x.toFixed(3) + ' ' + end.y.toFixed(3);
+      }
+
+      function getLaserEdgePoint(start, offsetX, offsetY) {
+        var min = 0.7;
+        var max = 60.3;
+        var candidates = [];
+        var t;
+
+        if (offsetX > 0) {
+          candidates.push((max - start.x) / offsetX);
+        } else if (offsetX < 0) {
+          candidates.push((min - start.x) / offsetX);
+        }
+
+        if (offsetY > 0) {
+          candidates.push((max - start.y) / offsetY);
+        } else if (offsetY < 0) {
+          candidates.push((min - start.y) / offsetY);
+        }
+
+        t = candidates.reduce(function (best, candidate) {
+          if (candidate > 0 && candidate < best) {
+            return candidate;
+          }
+
+          return best;
+        }, 1);
+
+        return {
+          x: start.x + (offsetX * t),
+          y: start.y + (offsetY * t)
+        };
+      }
+
+      function setLaserPathAndFlame(eyeName, offsetX, offsetY) {
+        var start = laserEyes[eyeName];
+        var end = {
+          x: start.x + offsetX,
+          y: start.y + offsetY
+        };
+        var edge = getLaserEdgePoint(start, offsetX, offsetY);
+        var flame = svg.querySelector('[data-laser-flame="' + eyeName + '"]');
+        var angle = Math.atan2(offsetY, offsetX) * (180 / Math.PI);
+
+        svg.querySelectorAll('[data-laser-eye="' + eyeName + '"]').forEach(function (laser) {
+          laser.setAttribute('d', formatLaserPath(start, end));
+        });
+
+        if (flame) {
+          flame.setAttribute('transform', 'translate(' + edge.x.toFixed(3) + ' ' + edge.y.toFixed(3) + ') rotate(' + angle.toFixed(2) + ')');
+        }
+      }
+
+      function setLaserDirection(event) {
+        var targetEvent = event && typeof event.clientX === 'number' ? event : lastEvent;
+        var eventDocument = targetEvent && targetEvent.target && targetEvent.target.ownerDocument ? targetEvent.target.ownerDocument : document;
+        var usesParentCoords = targetEvent ? eventDocument !== document : lastEventUsesParentCoords;
+        var center;
+        var dx;
+        var dy;
+        var distance;
+        var length = 78;
+        var offsetX;
+        var offsetY;
+
+        if (!targetEvent) {
+          offsetX = length;
+          offsetY = 0;
+        } else {
+          center = getFaceScreenCenter(usesParentCoords);
+          dx = targetEvent.clientX - center.x;
+          dy = targetEvent.clientY - center.y;
+          distance = Math.sqrt((dx * dx) + (dy * dy));
+
+          if (distance < 0.01) {
+            dx = 1;
+            dy = 0;
+            distance = 1;
+          }
+
+          offsetX = (dx / distance) * length;
+          offsetY = (dy / distance) * length;
+        }
+
+        setLaserPathAndFlame('left', offsetX, offsetY);
+        setLaserPathAndFlame('right', offsetX, offsetY);
+      }
+
+      function playLaserEyes(event) {
+        if (laserTimeout !== null) {
+          window.clearTimeout(laserTimeout);
+          laserTimeout = null;
+        }
+
+        setLaserDirection(event);
+        svg.classList.remove('is-laser-eyed');
+        svg.getBoundingClientRect();
+        svg.classList.add('is-laser-eyed');
+
+        laserTimeout = window.setTimeout(function () {
+          svg.classList.remove('is-laser-eyed');
+          laserTimeout = null;
+        }, 680);
+      }
+
+      pointerDocuments.forEach(function (pointerDocument) {
+        pointerDocument.addEventListener('pointermove', handlePointerMove, { passive: true });
+        pointerDocument.addEventListener('pointerleave', resetEyes);
+      });
+
+      svg.addEventListener('click', playLaserEyes);
+
+      window.addEventListener('blur', function () {
+        resetEyes();
+        scheduleRandomBlink();
+      });
+
+      scheduleRandomBlink();
+    }());
+  ]]></script>
+</svg>

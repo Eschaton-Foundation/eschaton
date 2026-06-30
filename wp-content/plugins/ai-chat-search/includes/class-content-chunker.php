@@ -170,18 +170,39 @@ class Listeo_AI_Content_Chunker {
      * @return int Character count
      */
     public static function get_char_count($post_id) {
-        $post = get_post($post_id);
-        if (!$post) {
-            return 0;
-        }
-
-        // Use same cleaning as create_chunks() for consistent char count
-        $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+        $content = self::get_source_content_for_chunking($post_id);
         return self::count_chars_utf8($content);
     }
 
     /**
-     * Get word count for post content (uses raw post_content)
+     * Get the source text used for chunking.
+     *
+     * @param int $post_id Post ID.
+     * @return string
+     */
+    private static function get_source_content_for_chunking($post_id) {
+        $post = get_post($post_id);
+        if (!$post) {
+            return '';
+        }
+
+        // Use same cleaning as create_chunks() for consistent char count.
+        $content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($post->post_content);
+
+        /**
+         * Filter the source text used to decide and create content chunks.
+         *
+         * @param string  $content Default cleaned post content.
+         * @param int     $post_id Post ID.
+         * @param WP_Post $post    Post object.
+         */
+        $content = apply_filters('listeo_ai_chunk_source_content', $content, $post_id, $post);
+
+        return is_string($content) ? $content : '';
+    }
+
+    /**
+     * Get word count for the same source text used by chunking.
      *
      * Uses UTF-8 aware counting to properly handle Cyrillic, CJK, and other
      * non-ASCII languages where PHP's str_word_count() fails.
@@ -195,7 +216,7 @@ class Listeo_AI_Content_Chunker {
             return 0;
         }
 
-        $content = strip_tags($post->post_content);
+        $content = self::get_source_content_for_chunking($post_id);
         return self::count_words_utf8($content);
     }
 
@@ -537,9 +558,8 @@ class Listeo_AI_Content_Chunker {
         // Delete existing chunks first
         self::delete_chunks_for_post($parent_id);
 
-        // Use RAW post_content for chunking (not extractor which truncates to 8000 chars)
-        // Preserve links for LLM context
-        $raw_content = Listeo_AI_Content_Extractor_Factory::preserve_links_and_strip_tags($parent->post_content);
+        // Use source content for chunking (not extractor which truncates to 8000 chars).
+        $raw_content = self::get_source_content_for_chunking($parent_id);
 
         $char_count = self::count_chars_utf8($raw_content);
         $num_chunks = self::calculate_chunk_count($char_count);
