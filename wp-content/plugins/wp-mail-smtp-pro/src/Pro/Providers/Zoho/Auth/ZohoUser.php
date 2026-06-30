@@ -132,14 +132,40 @@ class ZohoUser implements ResourceOwnerInterface {
 	 */
 	protected function processAvailableSendEmailDetails() {
 
-		foreach ( $this->response['data'] as $data ) {
-			foreach ( $data['sendMailDetails'] as $details ) {
-				$this->availableSendEmailDetails[ $details['fromAddress'] ] = [ // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-					'email'        => $details['fromAddress'],
-					'display_name' => $details['displayName'],
-					'account_id'   => $data['accountId'],
-				];
+		if ( empty( $this->response['data'] ) || ! is_array( $this->response['data'] ) ) {
+			return;
+		}
+
+		foreach ( $this->response['data'] as $account ) {
+			$this->processAccountSendMailDetails( $account );
+		}
+	}
+
+	/**
+	 * Prepare the available email addresses for a single Zoho account from the API response.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param mixed $account A single account entry from the Zoho API response.
+	 */
+	protected function processAccountSendMailDetails( $account ) {
+
+		if ( ! is_array( $account ) || empty( $account['sendMailDetails'] ) || ! is_array( $account['sendMailDetails'] ) ) {
+			return;
+		}
+
+		$account_id = isset( $account['accountId'] ) ? $account['accountId'] : '';
+
+		foreach ( $account['sendMailDetails'] as $details ) {
+			if ( ! is_array( $details ) || ! isset( $details['fromAddress'], $details['displayName'] ) ) {
+				continue;
 			}
+
+			$this->availableSendEmailDetails[ $details['fromAddress'] ] = [ // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				'email'        => $details['fromAddress'],
+				'display_name' => $details['displayName'],
+				'account_id'   => $account_id,
+			];
 		}
 	}
 }

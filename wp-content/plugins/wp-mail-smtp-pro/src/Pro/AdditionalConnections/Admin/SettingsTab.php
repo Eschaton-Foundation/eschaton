@@ -4,6 +4,7 @@ namespace WPMailSMTP\Pro\AdditionalConnections\Admin;
 
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\Admin\Pages\AdditionalConnectionsTab;
+use WPMailSMTP\EmailSendingDebug;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\AdditionalConnections\AdditionalConnections;
 use WPMailSMTP\Pro\AdditionalConnections\Connection;
@@ -302,9 +303,7 @@ class SettingsTab extends AdditionalConnectionsTab {
 
 				<?php if ( $is_singular ) : ?>
 					<a href="<?php echo esc_url( $this->get_connections_list_url() ); ?>" class="wp-mail-smtp-additional-connections-header__back-link">
-						<svg width="13" height="12" viewBox="0 0 13 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M12.8125 5.1875V6.8125H3.21875L6.40625 10L5.59375 11.5938L0 6L5.59375 0.40625L6.40625 2L3.21875 5.1875H12.8125Z" fill="currentColor"/>
-						</svg>
+						<span aria-hidden="true" class="wpms:icon-[fa6-solid--arrow-left-long] wpms:w-[13px] wpms:h-[12px] wpms:shrink-0"></span>
 						<?php esc_html_e( 'Back to All Connections', 'wp-mail-smtp-pro' ); ?>
 					</a>
 				<?php endif; ?>
@@ -340,6 +339,7 @@ class SettingsTab extends AdditionalConnectionsTab {
 						<a href="<?php echo esc_url( $this->get_connection_url( 'edit', $connection->get_id() ) ); ?>" class="wp-mail-smtp-additional-connections-list__link">
 							<?php echo esc_html( $connection->get_title() ); ?>
 						</a>
+						<?php $this->display_connection_error_icon( $connection->get_id() ); ?>
 						<a href="<?php echo esc_url( $this->get_connection_url( 'edit', $connection->get_id() ) ); ?>" class="wp-mail-smtp-additional-connections-list__btn wp-mail-smtp-btn wp-mail-smtp-btn-md wp-mail-smtp-btn-grey">
 							<i class="dashicons dashicons-edit"></i>
 						</a>
@@ -348,6 +348,31 @@ class SettingsTab extends AdditionalConnectionsTab {
 			</ul>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Output the inline error icon next to a failing connection's name in the list.
+	 *
+	 * Renders nothing when the connection has no record in `EmailSendingDebug`.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 */
+	private function display_connection_error_icon( $connection_id ) {
+
+		$record = EmailSendingDebug::get( $connection_id );
+
+		if ( empty( $record ) ) {
+			return;
+		}
+
+		$label = esc_html__( 'Last email send via this connection failed.', 'wp-mail-smtp-pro' );
+
+		printf(
+			'<span class="wp-mail-smtp-email-sending-errors-icon wpms:icon-[fa6-solid--circle-exclamation] wpms:ml-[10px] wpms:w-[16px] wpms:h-[16px] wpms:shrink-0 wpms:text-error" role="img" aria-label="%1$s" title="%1$s"></span>',
+			esc_attr( $label )
+		);
 	}
 
 	/**

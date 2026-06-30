@@ -3,6 +3,7 @@
 namespace WPMailSMTP\Pro\Emails\Logs\Admin;
 
 use WPMailSMTP\Admin\Area;
+use WPMailSMTP\Admin\EmailSendingErrors\Registry;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Pro\Emails\Logs\Attachments\Attachments;
 use WPMailSMTP\Pro\Emails\Logs\Email;
@@ -276,6 +277,24 @@ class SinglePage extends PageAbstract {
 
 			<div class="inside">
 
+				<?php
+				$troubleshoot_url = '';
+
+				if ( $email->has_error() ) {
+					$error_code  = $email->get_error_code();
+					$mailer_slug = $email->get_mailer();
+
+					if ( ! empty( $error_code ) && ! empty( $mailer_slug ) ) {
+						$troubleshoot_url = (string) ( new Registry() )->doc_url_for( $mailer_slug, $error_code );
+					}
+				}
+				?>
+				<?php if ( ! empty( $troubleshoot_url ) ) : ?>
+					<a href="<?php echo esc_url( $troubleshoot_url ); ?>" class="button button-primary" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'Open Troubleshoot Guide', 'wp-mail-smtp-pro' ); ?>
+					</a>
+				<?php endif; ?>
+
 				<button class="button js-wp-mail-smtp-pro-logs-close-extra-details">
 					<?php esc_html_e( 'Hide Technical Details', 'wp-mail-smtp-pro' ); ?>
 				</button>
@@ -480,7 +499,7 @@ class SinglePage extends PageAbstract {
 								wp_nonce_url( wp_mail_smtp()->get_admin()->get_admin_page_url( Area::SLUG . '-logs' ), 'wp_mail_smtp_pro_logs_log_preview' )
 							);
 							?>
-							<a href="<?php echo esc_url( $preview_url ); ?>" title="<?php echo esc_attr( $email->get_subject() ); ?>" class="thickbox wp-mail-smtp-btn wp-mail-smtp-btn-md wp-mail-smtp-btn-orange email-preview">
+							<a href="<?php echo esc_url( $preview_url ); ?>" title="<?php echo Email::esc_subject_attr( $email->get_subject() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" class="thickbox wp-mail-smtp-btn wp-mail-smtp-btn-md wp-mail-smtp-btn-orange email-preview">
 								<?php esc_html_e( 'View Email', 'wp-mail-smtp-pro' ); ?>
 							</a>
 						<?php } ?>

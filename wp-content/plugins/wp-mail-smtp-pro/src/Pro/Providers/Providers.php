@@ -2,9 +2,10 @@
 
 namespace WPMailSMTP\Pro\Providers;
 
+use WP_Error;
 use WPMailSMTP\Admin\ConnectionSettings;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Admin\SetupWizard;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\MailCatcherInterface;
 use WPMailSMTP\Pro\Providers\AmazonSES\Auth as SESAuth;
@@ -124,24 +125,33 @@ class Providers {
 			$error_code    = sanitize_text_field( wp_unslash( $_GET['error'] ) );
 			$error_message = sanitize_text_field( wp_unslash( $_GET['error_description'] ) );
 
-			Debug::set( 'Mailer: Outlook' . WP::EOL . Helpers::format_error_message( $error_message, $error_code ) );
+			$event_id = DebugEvents::add( 'Mailer: Outlook' . WP::EOL . Helpers::format_error_message( $error_message, $error_code ) );
 
-			$url = add_query_arg( 'error', 'microsoft_unsuccessful_oauth', $redirect_url );
+			$url = add_query_arg(
+				[
+					'error'          => 'microsoft_unsuccessful_oauth',
+					'debug_event_id' => $event_id,
+				],
+				$redirect_url
+			);
 		} elseif ( ! isset( $_GET['code'] ) ) {
 			$url = add_query_arg( 'error', 'microsoft_no_code', $redirect_url );
 		} else {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput
 			$code = preg_replace( '/[^a-zA-Z0-9_\-.]/', '', $_GET['code'] );
 
-			Debug::clear();
-			// Save the code.
-			$auth->process_auth( $code );
-			$auth->get_client( true );
+			$result = $auth->process_auth( $code );
 
-			$error = Debug::get_last();
+			if ( $result instanceof WP_Error ) {
+				$event_id = DebugEvents::add( 'Mailer: Outlook' . WP::EOL . $result->get_error_message() );
 
-			if ( ! empty( $error ) ) {
-				$url = add_query_arg( 'error', 'microsoft_unsuccessful_oauth', $redirect_url );
+				$url = add_query_arg(
+					[
+						'error'          => 'microsoft_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
+					$redirect_url
+				);
 			} else {
 				$url = add_query_arg( 'success', 'microsoft_site_linked', $redirect_url );
 
@@ -163,7 +173,7 @@ class Providers {
 	 */
 	private function allow_auth_request() {
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			return false;
 		}
 
@@ -279,6 +289,10 @@ class Providers {
 
 		$generic_error = esc_html__( 'Something went wrong. Please try again later.', 'wp-mail-smtp-pro' );
 
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
+			wp_send_json_error( esc_html__( 'You don\'t have the permission to perform this action.', 'wp-mail-smtp-pro' ) );
+		}
+
 		// Verify nonce existence. Actual nonce verification happens below.
 		if ( ! isset( $_POST['nonce'] ) ) {
 			wp_send_json_error( $generic_error );
@@ -345,11 +359,10 @@ class Providers {
 						SESOptions::prepare_domain_dkim_records_notice( $value, $domain_dkim_tokens, $connection )
 					);
 				} else {
-					$error = Debug::get_last();
-					Debug::clear();
+					$error = $ses->get_last_error();
 
 					wp_send_json_error(
-						esc_html( $error )
+						$error instanceof WP_Error ? esc_html( $error->get_error_message() ) : $generic_error
 					);
 				}
 
@@ -386,11 +399,10 @@ class Providers {
 						)
 					);
 				} else {
-					$error = Debug::get_last();
-					Debug::clear();
+					$error = $ses->get_last_error();
 
 					wp_send_json_error(
-						esc_html( $error )
+						$error instanceof WP_Error ? esc_html( $error->get_error_message() ) : $generic_error
 					);
 				}
 

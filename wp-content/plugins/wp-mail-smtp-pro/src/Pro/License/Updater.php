@@ -3,6 +3,7 @@
 namespace WPMailSMTP\Pro\License;
 
 use stdClass;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\WP;
 
@@ -12,6 +13,13 @@ use WPMailSMTP\WP;
  * @since 1.5.0
  */
 class Updater {
+
+	/**
+	 * Production updater API URL.
+	 *
+	 * @since 4.9.0
+	 */
+	const UPDATER_API_URL = 'https://wpmailsmtpapi.com/license/v1';
 
 	/**
 	 * Plugin name.
@@ -56,7 +64,7 @@ class Updater {
 	 *
 	 * @var string
 	 */
-	public $remote_url = 'https://wpmailsmtpapi.com/license/v1';
+	public $remote_url = self::UPDATER_API_URL;
 
 	/**
 	 * Version number of the plugin.
@@ -169,6 +177,26 @@ class Updater {
 
 		// Infuse the update object with our data if the version from the remote API is newer.
 		if ( isset( $this->update->new_version ) && version_compare( $this->version, $this->update->new_version, '<' ) ) {
+
+			$package = isset( $this->update->package ) ? $this->update->package : '';
+
+			// Refuse to offer an update whose package URL is not from our update host.
+			if ( ! $this->is_valid_package_url( $package ) ) {
+				$host = wp_parse_url( $package, PHP_URL_HOST );
+
+				DebugEvents::add_throttled(
+					sprintf(
+						'Plugin update rejected: package URL host "%s" failed validation.',
+						is_string( $host ) ? $host : 'unknown'
+					),
+					'wp_mail_smtp_pro_invalid_update_package_url'
+				);
+
+				$value->no_update[ $this->plugin_path ] = $this->get_no_update();
+
+				return $value;
+			}
+
 			// The $plugin_update object contains new_version, package, slug and last_update keys.
 			$this->update->old_version             = $this->version;
 			$this->update->plugin                  = $this->plugin_path;
@@ -252,12 +280,33 @@ class Updater {
 		$api->last_updated          = isset( $this->info->last_updated ) ? $this->info->last_updated : '';
 		$api->homepage              = isset( $this->info->homepage ) ? $this->info->homepage : '';
 		$api->sections['changelog'] = isset( $this->info->changelog ) ? $this->info->changelog : '';
-		$api->download_link         = isset( $this->info->download_link ) ? $this->info->download_link : '';
+		$api->download_link         = $this->get_validated_download_link();
 		$api->active_installs       = isset( $this->info->active_installs ) ? $this->info->active_installs : '';
 		$api->banners               = isset( $this->info->banners ) ? (array) $this->info->banners : '';
 
 		// Return the new API object with our custom data.
 		return $api;
+	}
+
+	/**
+	 * Return the plugin-info download link only if it passes URL validation.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return string Empty string when the link is missing or invalid.
+	 */
+	private function get_validated_download_link() {
+
+		$download_link = isset( $this->info->download_link ) ? $this->info->download_link : '';
+
+		if (
+			$download_link === '' ||
+			! $this->is_valid_package_url( $download_link )
+		) {
+			return '';
+		}
+
+		return $download_link;
 	}
 
 	/**
@@ -320,6 +369,51 @@ class Updater {
 
 		// Return the json decoded content.
 		return $response_body;
+	}
+
+	/**
+	 * Validate that a download package URL points at our production update host.
+	 *
+	 * Enforced only under the production updater URL; custom environments are
+	 * exempt. Exact normalized host equality.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $url The package/download URL to validate.
+	 *
+	 * @return bool
+	 */
+	public function is_valid_package_url( $url ) {
+
+		/**
+		 * Recovery hatch: bypass package URL validation via wp-config.php or mu-plugin.
+		 *
+		 * @since 4.9.0
+		 *
+		 * @param bool   $skip Whether to skip validation. Default false.
+		 * @param string $url  The package URL being validated.
+		 */
+		if ( apply_filters( 'wp_mail_smtp_pro_license_updater_skip_package_url_validation', false, $url ) ) {
+			return true;
+		}
+
+		// Enforced only under the production updater URL; custom environments are exempt.
+		if ( $this->remote_url !== self::UPDATER_API_URL ) {
+			return true;
+		}
+
+		if ( ! is_string( $url ) || $url === '' ) {
+			return false;
+		}
+
+		$package = wp_parse_url( $url );
+
+		if ( empty( $package['scheme'] ) || empty( $package['host'] ) ) {
+			return false;
+		}
+
+		return strtolower( $package['scheme'] ) === 'https'
+			&& strtolower( $package['host'] ) === 'wpmailsmtpapi.com';
 	}
 
 	/**

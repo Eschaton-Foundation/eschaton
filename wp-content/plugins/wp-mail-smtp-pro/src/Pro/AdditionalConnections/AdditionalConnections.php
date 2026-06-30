@@ -242,7 +242,7 @@ class AdditionalConnections {
 		 */
 		return apply_filters(
 			'wp_mail_smtp_pro_additional_connections_get_manage_capability',
-			wp_mail_smtp()->get_capability_manage_options()
+			wp_mail_smtp()->get_capability_manage_global_options()
 		);
 	}
 

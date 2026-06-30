@@ -2,8 +2,9 @@
 
 namespace WPMailSMTP\Pro\Providers\Outlook;
 
+use WP_Error;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Providers\AuthAbstract;
 use WPMailSMTP\Vendor\League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -130,24 +131,15 @@ class Auth extends AuthAbstract {
 			return $this->client;
 		}
 
+		$access_token = null;
+
 		if ( ! empty( $this->options['access_token'] ) ) {
 			$access_token = new AccessToken( (array) $this->options['access_token'] );
 		}
 
-		// We don't have tokens but have auth code.
-		if (
-			$this->is_auth_required() &&
-			! empty( $this->options['auth_code'] )
-		) {
-
-			// Try to get an access token using the authorization code grant.
-			$this->obtain_access_token();
-		} else { // We have tokens.
-
-			// Update the old token if needed.
-			if ( ! empty( $access_token ) && $access_token->hasExpired() ) {
-				$this->refresh_access_token( $access_token );
-			}
+		// Refresh expired token if needed.
+		if ( ! empty( $access_token ) && $access_token->hasExpired() ) {
+			$this->refresh_access_token( $access_token );
 		}
 
 		return $this->client;
@@ -157,26 +149,32 @@ class Auth extends AuthAbstract {
 	 * Try to get an access token using the authorization code grant.
 	 *
 	 * @since 3.4.0
+	 * @since 4.9.0 Returns WP_Error on failure (carrying debug_event_id) or true on success.
+	 *                  Accepts the auth code as a parameter instead of reading from options.
+	 *
+	 * @param string $code The authorization code returned by Microsoft.
+	 *
+	 * @return WP_Error|true
 	 */
-	private function obtain_access_token() {
+	private function obtain_access_token( $code ) {
 
-		if ( empty( $this->options['auth_code'] ) ) {
-			return;
+		if ( empty( $code ) ) {
+			return new WP_Error(
+				'wp_mail_smtp_outlook_auth_missing_code',
+				esc_html__( 'Authorization code is missing.', 'wp-mail-smtp-pro' )
+			);
 		}
 
 		try {
 			$access_token = $this->client->getAccessToken(
 				'authorization_code',
-				[ 'code' => $this->options['auth_code'] ]
+				[ 'code' => $code ]
 			);
 
 			$this->update_access_token( $access_token->jsonSerialize() );
 			$this->update_refresh_token( $access_token->getRefreshToken() );
 			$this->update_user_details( $access_token );
 			$this->update_scopes( $this->get_scopes() );
-
-			// Reset Auth code. It's valid for 5 minutes anyway.
-			$this->update_auth_code( '' );
 
 			// Set from email address.
 			$all          = $this->connection_options->get_all();
@@ -188,25 +186,16 @@ class Auth extends AuthAbstract {
 
 			$this->connection_options->set( $all, false, true );
 
-			Debug::clear();
+			return true;
 		} catch ( IdentityProviderException $e ) {
 			$response = $e->getResponseBody();
 
-			Debug::set(
-				'Mailer: Outlook' . WP::EOL .
+			return new WP_Error(
+				'outlook_auth_failed',
 				Helpers::format_error_message( $response['error_description'], $response['error'] )
 			);
-
-			// Reset Auth code. It's valid for 5 minutes anyway.
-			$this->update_auth_code( '' );
 		} catch ( Exception $e ) { // Catch any other general exceptions just in case.
-			Debug::set(
-				'Mailer: Outlook' . WP::EOL .
-				$e->getMessage()
-			);
-
-			// Reset Auth code. It's valid for 5 minutes anyway.
-			$this->update_auth_code( '' );
+			return new WP_Error( 'outlook_auth_failed', $e->getMessage() );
 		}
 	}
 
@@ -231,14 +220,16 @@ class Auth extends AuthAbstract {
 		} catch ( IdentityProviderException $e ) {
 			$response = $e->getResponseBody();
 
-			Debug::set(
+			DebugEvents::add_throttled(
 				'Mailer: Outlook' . WP::EOL .
-				Helpers::format_error_message( $response['error_description'], $response['error'] )
+				Helpers::format_error_message( $response['error_description'], $response['error'] ),
+				'outlook_refresh_error_' . $this->connection->get_id()
 			);
 		} catch ( Exception $e ) { // Catch any other general exception just in case.
-			Debug::set(
+			DebugEvents::add_throttled(
 				'Mailer: Outlook' . WP::EOL .
-				$e->getMessage()
+				$e->getMessage(),
+				'outlook_refresh_error_' . $this->connection->get_id()
 			);
 		}
 	}
@@ -260,20 +251,20 @@ class Auth extends AuthAbstract {
 	 * Check and process the auth code for this provider.
 	 *
 	 * @since 1.5.0
+	 * @since 4.9.0 Returns WP_Error on failure (carrying debug_event_id) or true on success.
+	 *                  The auth code is no longer persisted to the database — exchange is
+	 *                  fully request-bound.
 	 *
-	 * @param string $code Auth code.
+	 * @param string $code The authorization code returned by Microsoft.
 	 *
-	 * @throws IdentityProviderException Emits exception on requests failure.
+	 * @return WP_Error|true
 	 */
 	public function process_auth( $code ) {
 
-		$this->update_auth_code( $code );
-
-		// Remove old errors.
-		Debug::clear();
-
-		// Retrieve the token and user details, save errors if any.
+		// Ensure the SDK client is initialized.
 		$this->get_client();
+
+		return $this->obtain_access_token( $code );
 	}
 
 	/**
@@ -359,16 +350,13 @@ class Auth extends AuthAbstract {
 		} catch ( IdentityProviderException $e ) {
 			$response = $e->getResponseBody();
 
-			Debug::set(
+			DebugEvents::add(
 				'Mailer: Outlook (requesting user details)' . WP::EOL .
 				Helpers::format_error_message( $response['error_description'], $response['error'] )
 			);
-
-			// Reset Auth code. It's valid for 5 minutes anyway.
-			$this->update_auth_code( '' );
 		} catch ( Exception $e ) {
 			// Catch general any other exception just in case.
-			Debug::set(
+			DebugEvents::add(
 				'Mailer: Outlook (requesting user details)' . WP::EOL .
 				$e->getMessage()
 			);

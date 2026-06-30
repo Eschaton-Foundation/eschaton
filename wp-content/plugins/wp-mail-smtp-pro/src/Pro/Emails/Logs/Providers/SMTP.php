@@ -147,11 +147,16 @@ class SMTP {
 	 * Process the failed email sending.
 	 *
 	 * @since 2.1.0
+	 * @since 4.9.0 Added $error_code param, persisted on the log entry so the
+	 *                  EmailSendingErrors Registry can resolve a troubleshoot-guide URL.
+	 * @since 4.9.0 Added $error_key param (composite canonical key: mailer:category:code).
 	 *
-	 * @param int             $email_id The Email ID.
-	 * @param WP_Error|string $error    The WP Error or error message.
+	 * @param int             $email_id   The Email ID.
+	 * @param WP_Error|string $error      The WP Error or error message.
+	 * @param string          $error_code Structured error code captured at send-failure time.
+	 * @param string          $error_key  Composite canonical error key (mailer:category:code).
 	 */
-	public function failed( $email_id, $error ) {
+	public function failed( $email_id, $error, $error_code = '', $error_key = '' ) {
 
 		if ( empty( $email_id ) ) {
 			return;
@@ -172,6 +177,8 @@ class SMTP {
 
 			$email
 				->set_error_text( $error )
+				->set_error_code( $error_code )
+				->set_error_key( $error_key )
 				->set_status( Email::STATUS_UNSENT )
 				->save();
 		} catch ( \Exception $e ) { //phpcs:ignore

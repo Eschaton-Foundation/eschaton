@@ -41,7 +41,7 @@ class Provider {
 		check_ajax_referer( 'wp-mail-smtp-pro-admin', 'nonce' );
 
 		// Check nonce and capabilities.
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error(
 				[ 'message' => esc_html__( 'You do not have permission to perform this action.', 'wp-mail-smtp-pro' ) ]
 			);

@@ -96,6 +96,26 @@ class Email {
 	protected $error_text = '';
 
 	/**
+	 * Structured mailer error code (e.g. "cURL error 60", "421"). Captured
+	 * alongside `error_text` and used by the EmailSendingErrors Registry to
+	 * surface a troubleshoot-guide link on the single-log page.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var string
+	 */
+	protected $error_code = '';
+
+	/**
+	 * Composite error key ({response}:{code}:{message}) captured when an email failed.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var string
+	 */
+	protected $error_key = '';
+
+	/**
 	 * @since 1.5.0
 	 *
 	 * @var string
@@ -165,6 +185,17 @@ class Email {
 	protected $parent_id = 0;
 
 	/**
+	 * Single-slot in-memory cache of the most recently saved Email. Consulted by
+	 * populate_email() as a fallback when a post-write SELECT hits a stale read
+	 * replica and returns no row.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var Email|null
+	 */
+	protected static $last_saved = null;
+
+	/**
 	 * Retrieve a particular email when constructing the object.
 	 *
 	 * @since 1.5.0
@@ -174,6 +205,19 @@ class Email {
 	public function __construct( $id_or_row = null ) {
 
 		$this->populate_email( $id_or_row );
+	}
+
+	/**
+	 * Deep-clone object-typed properties so the cache slot stays isolated from
+	 * subsequent mutations on the original instance.
+	 *
+	 * @since 4.9.0
+	 */
+	public function __clone() {
+
+		if ( $this->date_sent instanceof DateTime ) {
+			$this->date_sent = clone $this->date_sent;
+		}
 	}
 
 	/**
@@ -216,6 +260,22 @@ class Email {
 		if ( $email !== null ) {
 			foreach ( get_object_vars( $email ) as $key => $value ) {
 				$this->{$key} = $value;
+			}
+		}
+
+		// Stale-replica fallback: if we were asked to load by id, the DB returned
+		// nothing, but the in-memory slot holds a snapshot of that id from earlier
+		// in this request, populate from the snapshot. Keeps post-write reads
+		// reliable on hosts where read replicas haven't caught up with the writer.
+		if (
+			(int) $this->id === 0
+			&& is_numeric( $id_or_row )
+			&& (int) $id_or_row > 0
+			&& self::$last_saved !== null
+			&& (int) self::$last_saved->id === (int) $id_or_row
+		) {
+			foreach ( get_object_vars( self::$last_saved ) as $prop => $value ) {
+				$this->{$prop} = $value;
 			}
 		}
 	}
@@ -277,6 +337,35 @@ class Email {
 	public function get_subject() {
 
 		return $this->subject;
+	}
+
+	/**
+	 * Render-safe subject for HTML attribute output.
+	 *
+	 * Double-encodes any entities in the supplied subject so values that
+	 * survived the storage-side wp_kses() strip (which leaves entities
+	 * intact) cannot smuggle live markup through esc_attr() into data-* or
+	 * title attributes that JavaScript later reads and writes via innerHTML
+	 * sinks.
+	 *
+	 * Static so call sites that hold a plain subject string (the Reports
+	 * stats aggregation groups by subject and has no Email instance per row)
+	 * can use it directly.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $subject Subject string as stored.
+	 *
+	 * @return string
+	 */
+	public static function esc_subject_attr( $subject ) {
+
+		return htmlspecialchars(
+			(string) $subject,
+			ENT_QUOTES,
+			get_bloginfo( 'charset' ),
+			true /* $double_encode */
+		);
 	}
 
 	/**
@@ -378,6 +467,30 @@ class Email {
 	public function get_error_text() {
 
 		return $this->error_text;
+	}
+
+	/**
+	 * Structured error code captured when an email failed to send.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return string
+	 */
+	public function get_error_code() {
+
+		return $this->error_code;
+	}
+
+	/**
+	 * Composite error key captured when an email failed to send.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return string
+	 */
+	public function get_error_key() {
+
+		return $this->error_key;
 	}
 
 	/**
@@ -717,6 +830,38 @@ class Email {
 	}
 
 	/**
+	 * Set the structured error code captured at send-failure time.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $error_code The structured mailer error code.
+	 *
+	 * @return Email
+	 */
+	public function set_error_code( $error_code ) {
+
+		$this->error_code = sanitize_text_field( $error_code );
+
+		return $this;
+	}
+
+	/**
+	 * Set the composite error key captured at send-failure time.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $error_key The composite error key.
+	 *
+	 * @return Email
+	 */
+	public function set_error_key( $error_key ) {
+
+		$this->error_key = sanitize_text_field( $error_key );
+
+		return $this;
+	}
+
+	/**
 	 * Set the email content and try to define whether it has HTML or not.
 	 *
 	 * @since 1.5.0
@@ -937,6 +1082,8 @@ class Email {
 					'people'         => $this->people,
 					'headers'        => $this->headers,
 					'error_text'     => $this->error_text,
+					'error_code'     => $this->error_code,
+					'error_key'      => $this->error_key,
 					'content_plain'  => $this->content_plain,
 					'content_html'   => $this->content_html,
 					'status'         => $this->status,
@@ -956,6 +1103,8 @@ class Email {
 					'%s', // people.
 					'%s', // headers.
 					'%s', // error_text.
+					'%s', // error_code.
+					'%s', // error_key.
 					'%s', // content_plain.
 					'%s', // content_html.
 					'%s', // status.
@@ -982,6 +1131,8 @@ class Email {
 					'people'         => $this->people,
 					'headers'        => $this->headers,
 					'error_text'     => $this->error_text,
+					'error_code'     => $this->error_code,
+					'error_key'      => $this->error_key,
 					'content_plain'  => $this->content_plain,
 					'content_html'   => $this->content_html,
 					'status'         => $this->status,
@@ -998,6 +1149,8 @@ class Email {
 					'%s', // people.
 					'%s', // headers.
 					'%s', // error_text.
+					'%s', // error_code.
+					'%s', // error_key.
 					'%s', // content_plain.
 					'%s', // content_html.
 					'%s', // status.
@@ -1011,6 +1164,17 @@ class Email {
 			);
 
 			$email_id = $wpdb->insert_id;
+		}
+
+		// Snapshot the just-saved state. populate_email() falls back to this slot
+		// when a subsequent DB read for the same id returns nothing (stale read
+		// replica). Bounded to one entry per request — only the latest save's
+		// data is kept. The clone keeps the cached snapshot isolated from any
+		// further mutations to $this.
+		if ( (int) $email_id > 0 ) {
+			$snapshot         = clone $this;
+			$snapshot->id     = (int) $email_id;
+			self::$last_saved = $snapshot;
 		}
 
 		try {

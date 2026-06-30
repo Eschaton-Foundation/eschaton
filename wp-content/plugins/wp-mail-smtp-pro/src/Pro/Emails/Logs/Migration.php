@@ -21,7 +21,7 @@ class Migration extends MigrationAbstract {
 	 *
 	 * @since 1.5.0
 	 */
-	const DB_VERSION = 12;
+	const DB_VERSION = 14;
 
 	/**
 	 * Option key where we save the current DB version for Logs functionality.
@@ -393,6 +393,55 @@ class Migration extends MigrationAbstract {
 		// Save the current version to DB.
 		if ( $result !== false ) {
 			$this->update_db_ver( 12 );
+		}
+	}
+
+	/**
+	 * Add the `error_code` column to the DB table for storing structured
+	 * mailer error codes (e.g. "cURL error 60", "421"). Powers the
+	 * EmailSendingErrors troubleshoot-guide lookup on the single-log page.
+	 *
+	 * @since 4.9.0
+	 */
+	protected function migrate_to_13() {
+
+		$this->maybe_required_older_migrations( 13 );
+
+		global $wpdb;
+
+		$table = Logs::get_table_name();
+
+		$sql = "ALTER TABLE `$table` ADD `error_code` VARCHAR(64) NULL AFTER `error_text`;";
+
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Save the current version to DB.
+		if ( $result !== false ) {
+			$this->update_db_ver( 13 );
+		}
+	}
+
+	/**
+	 * Add the `error_key` column to the DB table for storing the composite
+	 * error key ({response}:{code}:{message}) used by the troubleshoot-guide lookup.
+	 *
+	 * @since 4.9.0
+	 */
+	protected function migrate_to_14() {
+
+		$this->maybe_required_older_migrations( 14 );
+
+		global $wpdb;
+
+		$table = Logs::get_table_name();
+
+		$sql = "ALTER TABLE `$table` ADD `error_key` VARCHAR(64) NULL AFTER `error_code`;";
+
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Save the current version to DB.
+		if ( $result !== false ) {
+			$this->update_db_ver( 14 );
 		}
 	}
 

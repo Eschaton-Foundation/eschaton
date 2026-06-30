@@ -308,7 +308,7 @@ class Table extends \WP_List_Table {
 			$actions[] = '<span class="view">
 							<a href="' . esc_url( $this->get_item_link( $item, 'view' ) ) . '"
 								class="thickbox email-preview"
-								title="' . esc_attr( $item->get_subject() ) . '">' .
+								title="' . Email::esc_subject_attr( $item->get_subject() ) . '">' .
 								esc_html__( 'View Email', 'wp-mail-smtp-pro' ) .
 							'</a>
 						</span>';

@@ -465,9 +465,15 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 
 			app.loadSingleStats( subject, timespan, date ).done( function( data ) {
 
-				// Update heading.
-				const $dismissIcon = '<i class="dashicons dashicons-dismiss js-wp-mail-smtp-reset-stats"></i>';
-				el.$reportsTitle.html( subject + $dismissIcon );
+				// Build the dismiss icon as a detached DOM node so the subject
+				// can be rendered with .text(). Defense-in-depth: even if a
+				// future render site stops double-encoding the data-subject
+				// attribute, .text() blocks innerHTML execution at the sink.
+				var $dismissIcon = $( '<i>', {
+					'class': 'dashicons dashicons-dismiss js-wp-mail-smtp-reset-stats'
+				} );
+
+				el.$reportsTitle.text( subject ).append( $dismissIcon );
 
 				// Update totals and chart.
 				app.updateTotalsUI( data.totals );
@@ -547,7 +553,7 @@ var WPMailSMTPEmailReports = window.WPMailSMTPEmailReports || ( function( docume
 		updateTotalsUI: function( totals ) {
 
 			// Skip UI update if the totals object is empty.
-			if ( totals === null ) {
+			if ( ! totals ) {
 				return;
 			}
 

@@ -6,6 +6,7 @@ use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Alerts\Alert;
 use WPMailSMTP\Pro\Alerts\Alerts;
+use WPMailSMTP\Pro\Alerts\Handlers\CanValidateWebhookUrlTrait;
 use WPMailSMTP\Pro\Alerts\Handlers\HandlerInterface;
 use WPMailSMTP\WP;
 
@@ -15,6 +16,13 @@ use WPMailSMTP\WP;
  * @since 4.1.0
  */
 class Handler implements HandlerInterface {
+
+	/**
+	 * Webhook URL validation trait.
+	 *
+	 * @since 4.9.0
+	 */
+	use CanValidateWebhookUrlTrait;
 
 	/**
 	 * Whether current handler can handle provided alert.
@@ -74,6 +82,7 @@ class Handler implements HandlerInterface {
 			$webhook_url = $connection['webhook_url'];
 
 			$args = [
+				'method'  => 'POST',
 				'timeout' => MINUTE_IN_SECONDS,
 				'headers' => [
 					'Content-Type' => 'application/json',
@@ -109,7 +118,14 @@ class Handler implements HandlerInterface {
 			 */
 			$args = apply_filters( 'wp_mail_smtp_pro_alerts_providers_teams_webhook_handler_handle_request_args', $args, $connection, $alert );
 
-			$response      = wp_remote_post( $webhook_url, $args );
+			$response = $this->safe_webhook_request( $webhook_url, $args );
+
+			if ( $response === false ) {
+				$errors[] = esc_html__( 'Webhook URL points to an internal-network address and was rejected.', 'wp-mail-smtp-pro' );
+
+				continue;
+			}
+
 			$response_code = wp_remote_retrieve_response_code( $response );
 
 			if ( $response_code === 200 ) {
@@ -121,7 +137,7 @@ class Handler implements HandlerInterface {
 
 		DebugEvents::add_debug( esc_html__( 'Microsoft Teams Webhook alert request was sent.', 'wp-mail-smtp-pro' ) );
 
-		if ( ! empty( $errors ) && DebugEvents::is_debug_enabled() ) {
+		if ( ! empty( $errors ) ) {
 			DebugEvents::add( esc_html__( 'Alert: Microsoft Teams Webhook.', 'wp-mail-smtp-pro' ) . WP::EOL . implode( WP::EOL, array_unique( $errors ) ) );
 		}
 

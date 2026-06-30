@@ -271,9 +271,28 @@ class Zoho extends AbstractProvider {
 	 */
 	protected function checkResponse( ResponseInterface $response, $data ) {
 
-		$responseData = $this->parseResponse( $response ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
-		if ( array_key_exists( 'error', $responseData ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
-			throw new IdentityProviderException( $responseData['error'], $response->getStatusCode(), $response ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+		// A non-JSON body is parsed to a string; there is nothing to inspect.
+		if ( ! is_array( $data ) ) {
+			return;
+		}
+
+		// OAuth token endpoint errors use a top-level "error" key.
+		if ( array_key_exists( 'error', $data ) ) {
+			throw new IdentityProviderException( $data['error'], $response->getStatusCode(), $response ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		}
+
+		// The Zoho Mail API reports the real status in the body's `status.code`,
+		// often alongside an HTTP 200.
+		if ( isset( $data['status']['code'] ) && (int) $data['status']['code'] >= 400 ) {
+			$message = '';
+
+			if ( isset( $data['data']['moreInfo'] ) && is_string( $data['data']['moreInfo'] ) ) {
+				$message = $data['data']['moreInfo'];
+			} elseif ( isset( $data['status']['description'] ) && is_string( $data['status']['description'] ) ) {
+				$message = $data['status']['description'];
+			}
+
+			throw new IdentityProviderException( $message, (int) $data['status']['code'], $response ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

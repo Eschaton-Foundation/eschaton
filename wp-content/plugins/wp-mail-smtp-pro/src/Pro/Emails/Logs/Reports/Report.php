@@ -107,6 +107,11 @@ class Report {
 			$processed['search'] = sanitize_text_field( $params['search'] );
 		}
 
+		// Mailer.
+		if ( ! empty( $params['mailer'] ) && is_string( $params['mailer'] ) ) {
+			$processed['mailer'] = sanitize_text_field( $params['mailer'] );
+		}
+
 		// Order.
 		if (
 			! empty( $params['order'] ) &&
@@ -748,6 +753,11 @@ class Report {
 				$this->get_from_date()->format( 'Y-m-d H:i:s' ),
 				$this->get_to_date()->format( 'Y-m-d H:i:s' )
 			);
+		}
+
+		// Mailer.
+		if ( ! empty( $this->params['mailer'] ) ) {
+			$where[] = $wpdb->prepare( 'mailer = %s', $this->params['mailer'] );
 		}
 
 		// Exclude waiting emails from reports.

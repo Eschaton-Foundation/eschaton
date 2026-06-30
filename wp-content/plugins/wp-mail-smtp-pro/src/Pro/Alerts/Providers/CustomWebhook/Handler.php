@@ -4,8 +4,10 @@ namespace WPMailSMTP\Pro\Alerts\Providers\CustomWebhook;
 
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Options;
+use WPMailSMTP\WP;
 use WPMailSMTP\Pro\Alerts\Alert;
 use WPMailSMTP\Pro\Alerts\Alerts;
+use WPMailSMTP\Pro\Alerts\Handlers\CanValidateWebhookUrlTrait;
 use WPMailSMTP\Pro\Alerts\Handlers\HandlerInterface;
 
 /**
@@ -14,6 +16,13 @@ use WPMailSMTP\Pro\Alerts\Handlers\HandlerInterface;
  * @since 3.5.0
  */
 class Handler implements HandlerInterface {
+
+	/**
+	 * Webhook URL validation trait.
+	 *
+	 * @since 4.9.0
+	 */
+	use CanValidateWebhookUrlTrait;
 
 	/**
 	 * Whether current handler can handle provided alert.
@@ -48,7 +57,7 @@ class Handler implements HandlerInterface {
 	 *
 	 * @return bool
 	 */
-	public function handle( Alert $alert ) {
+	public function handle( Alert $alert ) { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks, Generic.Metrics.CyclomaticComplexity.TooHigh
 
 		$connections = (array) Options::init()->get( 'alert_custom_webhook', 'connections' );
 
@@ -65,6 +74,9 @@ class Handler implements HandlerInterface {
 		if ( empty( $connections ) ) {
 			return false;
 		}
+
+		$result = false;
+		$errors = [];
 
 		foreach ( $connections as $connection ) {
 			$webhook_url = $connection['webhook_url'];
@@ -91,12 +103,50 @@ class Handler implements HandlerInterface {
 			 */
 			$args = apply_filters( 'wp_mail_smtp_pro_alerts_providers_custom_webhook_handler_handle_request_args', $args, $connection, $alert );
 
-			wp_remote_request( $webhook_url, $args );
+			$allow_internal_host = static function ( $is_external, $host, $url ) use ( $webhook_url ) {
+				return $url === $webhook_url ? true : $is_external;
+			};
+
+			$allow_configured_port = static function ( $ports, $host, $url ) use ( $webhook_url ) {
+				if ( $url !== $webhook_url ) {
+					return $ports;
+				}
+
+				$port = wp_parse_url( $webhook_url, PHP_URL_PORT );
+
+				return $port ? array_merge( (array) $ports, [ (int) $port ] ) : $ports;
+			};
+
+			add_filter( 'http_request_host_is_external', $allow_internal_host, 10, 3 );
+			add_filter( 'http_allowed_safe_ports', $allow_configured_port, 10, 3 );
+
+			$response = $this->safe_webhook_request( $webhook_url, $args );
+
+			remove_filter( 'http_request_host_is_external', $allow_internal_host, 10 );
+			remove_filter( 'http_allowed_safe_ports', $allow_configured_port, 10 );
+
+			if ( $response === false ) {
+				$errors[] = esc_html__( 'Webhook URL points to an internal-network address and was rejected.', 'wp-mail-smtp-pro' );
+
+				continue;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+
+			if ( $response_code === 200 ) {
+				$result = true;
+			} else {
+				$errors[] = WP::wp_remote_get_response_error_message( $response );
+			}
 		}
 
-		DebugEvents::add_debug( esc_html__( 'Custom Webhook alert requests were processed.', 'wp-mail-smtp-pro' ) );
+		DebugEvents::add_debug( esc_html__( 'Custom Webhook alert request was sent.', 'wp-mail-smtp-pro' ) );
 
-		return true;
+		if ( ! empty( $errors ) ) {
+			DebugEvents::add( esc_html__( 'Alert: Custom Webhook.', 'wp-mail-smtp-pro' ) . WP::EOL . implode( WP::EOL, array_unique( $errors ) ) );
+		}
+
+		return $result;
 	}
 
 	/**

@@ -5,9 +5,9 @@ namespace WPMailSMTP\Pro\Providers\Outlook\OneClick;
 use Exception;
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\ConnectionSettings;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Admin\SetupWizard;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\Pro\Providers\Outlook\OneClick\Auth\Client;
 use WPMailSMTP\Pro\Providers\Outlook\Options;
@@ -139,13 +139,14 @@ class Auth extends AuthAbstract {
 
 			$this->connection_options->set( $all, false, true );
 		} catch ( Exception $e ) { // Catch any other general exception just in case.
-			Debug::set(
+			DebugEvents::add_throttled(
 				'Mailer: Outlook' . WP::EOL .
 				sprintf(
 					/* translators: %1$s - exception message. */
 					esc_html__( 'Failed to refresh access token. %1$s', 'wp-mail-smtp-pro' ),
 					$e->getMessage()
-				)
+				),
+				'outlook_refresh_error_' . $this->connection->get_id()
 			);
 
 			if ( $e->getCode() === 401 ) {
@@ -230,6 +231,7 @@ class Auth extends AuthAbstract {
 			wp_safe_redirect(
 				add_query_arg( 'error', 'oauth_invalid_state', $redirect_url )
 			);
+			exit;
 		}
 
 		[ $nonce ] = array_pad( explode( '-', $state ), 1, false );
@@ -250,12 +252,14 @@ class Auth extends AuthAbstract {
 		$authorization_code = ! empty( $_GET['authorization_code'] ) ? sanitize_text_field( wp_unslash( $_GET['authorization_code'] ) ) : '';
 
 		if ( empty( $authorization_code ) ) {
-			Debug::set( esc_html__( 'Microsoft authorization error. Authorization code is empty.', 'wp-mail-smtp-pro' ) );
+			$event_id = DebugEvents::add( esc_html__( 'Microsoft authorization error. Authorization code is empty.', 'wp-mail-smtp-pro' ) );
 
 			wp_safe_redirect(
 				add_query_arg(
-					'error',
-					'outlook_one_click_setup_unsuccessful_oauth',
+					[
+						'error'          => 'outlook_one_click_setup_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
 					$redirect_url
 				)
 			);
@@ -266,9 +270,6 @@ class Auth extends AuthAbstract {
 		try {
 			$this->get_tokens( $authorization_code );
 
-			// Clear debug log on success auth.
-			Debug::clear();
-
 			wp_safe_redirect(
 				add_query_arg(
 					'success',
@@ -278,7 +279,7 @@ class Auth extends AuthAbstract {
 			);
 			exit;
 		} catch ( Exception $e ) { // Catch any other general exception just in case.
-			Debug::set(
+			$event_id = DebugEvents::add(
 				'Mailer: Outlook' . WP::EOL .
 				sprintf(
 					/* translators: %1$s - exception message. */
@@ -289,8 +290,10 @@ class Auth extends AuthAbstract {
 
 			wp_safe_redirect(
 				add_query_arg(
-					'error',
-					'outlook_one_click_setup_unsuccessful_oauth',
+					[
+						'error'          => 'outlook_one_click_setup_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
 					$redirect_url
 				)
 			);

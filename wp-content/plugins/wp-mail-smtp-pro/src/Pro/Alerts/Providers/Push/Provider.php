@@ -119,7 +119,7 @@ class Provider {
 	public function process_ajax() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh,Generic.Metrics.CyclomaticComplexity.MaxExceeded
 
 		if (
-			! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ||
+			! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ||
 			! check_ajax_referer( self::AJAX_ACTION, false, false )
 		) {
 			wp_send_json_error();
@@ -489,7 +489,7 @@ class Provider {
 	public function admin_enqueue_assets() {
 
 		// Bail if not admin.
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			return;
 		}
 
@@ -532,7 +532,7 @@ class Provider {
 		// or push notifications are disabled.
 		if (
 			! is_user_logged_in() ||
-			! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ||
+			! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ||
 			! $this->is_enabled()
 		) {
 			return;

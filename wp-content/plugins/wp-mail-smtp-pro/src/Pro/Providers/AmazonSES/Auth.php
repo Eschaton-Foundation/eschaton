@@ -2,10 +2,10 @@
 
 namespace WPMailSMTP\Pro\Providers\AmazonSES;
 
+use WP_Error;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Vendor\Aws\Ses\SesClient;
 use WPMailSMTP\Vendor\Aws\SesV2\SesV2Client;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Providers\AuthAbstract;
 
 /**
@@ -67,6 +67,19 @@ class Auth extends AuthAbstract {
 	protected $registered_email_addresses;
 
 	/**
+	 * The last error captured by a public API method on this instance.
+	 *
+	 * Set to a WP_Error when an SES API call throws; cleared to null at the start of
+	 * each public do_* method. Lets callers read a connection-scoped error directly
+	 * from the instance instead of via the global Debug bag.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var WP_Error|null
+	 */
+	private $last_error = null;
+
+	/**
 	 * Auth constructor.
 	 *
 	 * @since 1.5.0
@@ -116,6 +129,21 @@ class Auth extends AuthAbstract {
 		}
 
 		return $this->registered_email_addresses;
+	}
+
+	/**
+	 * Get the last error captured by an API call on this instance.
+	 *
+	 * Returns null when the most recent public API call on this instance succeeded
+	 * (or no call has been made yet).
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return WP_Error|null
+	 */
+	public function get_last_error() {
+
+		return $this->last_error;
 	}
 
 	/**
@@ -299,6 +327,14 @@ class Auth extends AuthAbstract {
 		// Suppress PHP deprecation warnings.
 		$args['suppress_php_deprecation_warning'] = true;
 
+		// Disable AWS shared config files if open_basedir restriction would prevent access.
+		// This prevents PHP warnings when the SDK tries to read ~/.aws/config or ~/.aws/credentials.
+		// Only override when `wp_mail_smtp_providers_auth_aws_get_client_args` filter hasn't taken
+		// a stance — an explicit `true` (or `false`) from the caller wins over our auto-detection.
+		if ( ! array_key_exists( 'use_aws_shared_config_files', $args ) && $this->is_aws_shared_config_restricted() ) {
+			$args['use_aws_shared_config_files'] = false;
+		}
+
 		$this->client[ $version ] = $version === 'v1' ? new SesClient( $args ) : new SesV2Client( $args );
 
 		return $this->client[ $version ];
@@ -373,6 +409,8 @@ class Auth extends AuthAbstract {
 	 */
 	private function fetch_identities() {
 
+		$this->last_error = null;
+
 		try {
 			$identities_response = $this->get_client( 'v2' )->listEmailIdentities();
 			$identities          = $identities_response->get( 'EmailIdentities' );
@@ -385,13 +423,9 @@ class Auth extends AuthAbstract {
 			);
 
 		} catch ( \Exception $e ) {
-			Debug::set( $e->getMessage() );
+			$this->last_error = new WP_Error( 'wp_mail_smtp_ses_fetch_identities_failed', $e->getMessage() );
 
 			return [];
-		}
-
-		if ( ! empty( $identities ) ) {
-			Debug::clear();
 		}
 
 		return $identities;
@@ -454,18 +488,18 @@ class Auth extends AuthAbstract {
 	 *
 	 * @param string $domain Domain name.
 	 *
-	 * @return array|\WP_Error
+	 * @return array|WP_Error
 	 */
 	public function get_dkim_tokens( $domain ) {
 
 		try {
 			$attributes = $this->get_dkim_verification_attributes( $domain );
 		} catch ( \Exception $e ) {
-			return new \WP_Error( $e->getCode(), $e->getMessage() );
+			return new WP_Error( $e->getCode(), $e->getMessage() );
 		}
 
 		if ( empty( $attributes ) || empty( current( $attributes )['DkimTokens'] ) ) {
-			return new \WP_Error(
+			return new WP_Error(
 				'disabled_dkim',
 				sprintf(
 					esc_html__( /* translators: %s - domain name. */
@@ -491,10 +525,12 @@ class Auth extends AuthAbstract {
 	 */
 	public function do_verify_domain_dkim( $domain ) {
 
+		$this->last_error = null;
+
 		try {
 			$response = $this->get_client()->verifyDomainDkim( [ 'Domain' => $domain ] );
 		} catch ( \Exception $e ) {
-			Debug::set( $e->getMessage() );
+			$this->last_error = new WP_Error( 'wp_mail_smtp_ses_verify_domain_dkim_failed', $e->getMessage() );
 
 			return false;
 		}
@@ -503,8 +539,6 @@ class Auth extends AuthAbstract {
 			is_object( $response ) &&
 			! empty( $response->get( 'DkimTokens' ) )
 		) {
-			Debug::clear();
-
 			return $response->get( 'DkimTokens' );
 		}
 
@@ -523,10 +557,12 @@ class Auth extends AuthAbstract {
 	 */
 	public function do_verify_email( $email ) {
 
+		$this->last_error = null;
+
 		try {
 			$response = $this->get_client()->verifyEmailAddress( [ 'EmailAddress' => $email ] );
 		} catch ( \Exception $e ) {
-			Debug::set( $e->getMessage() );
+			$this->last_error = new WP_Error( 'wp_mail_smtp_ses_verify_email_failed', $e->getMessage() );
 
 			return false;
 		}
@@ -535,8 +571,6 @@ class Auth extends AuthAbstract {
 			is_object( $response ) &&
 			! empty( $response )
 		) {
-			Debug::clear();
-
 			return true;
 		}
 
@@ -554,10 +588,12 @@ class Auth extends AuthAbstract {
 	 */
 	public function do_delete_identity( $identity ) {
 
+		$this->last_error = null;
+
 		try {
 			$response = $this->get_client()->deleteIdentity( [ 'Identity' => $identity ] );
 		} catch ( \Exception $e ) {
-			Debug::set( $e->getMessage() );
+			$this->last_error = new WP_Error( 'wp_mail_smtp_ses_delete_identity_failed', $e->getMessage() );
 
 			return false;
 		}
@@ -566,8 +602,6 @@ class Auth extends AuthAbstract {
 			is_object( $response ) &&
 			! empty( $response )
 		) {
-			Debug::clear();
-
 			return true;
 		}
 
@@ -596,6 +630,85 @@ class Auth extends AuthAbstract {
 	public function is_auth_required() {
 
 		return false;
+	}
+
+	/**
+	 * Check if open_basedir restriction would prevent access to AWS shared config files.
+	 *
+	 * This prevents PHP warnings when the SDK tries to read ~/.aws/config or ~/.aws/credentials
+	 * on servers where open_basedir restriction is in effect.
+	 *
+	 * Logic mirrors AWS SDK's AbstractConfigurationProvider::getDefaultConfigFilename().
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return bool True if shared config files are restricted, false otherwise.
+	 */
+	private function is_aws_shared_config_restricted() {
+
+		// Get config file path the same way SDK does.
+		$aws_config_file = $this->get_aws_config_filename();
+
+		// Use @ to suppress open_basedir warnings during the check itself.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		return ! @is_readable( $aws_config_file );
+	}
+
+	/**
+	 * Get AWS config filename using the same logic as AWS SDK.
+	 *
+	 * Mirrors AWS SDK's AbstractConfigurationProvider::getDefaultConfigFilename()
+	 * and AbstractConfigurationProvider::getHomeDir().
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return string Config file path.
+	 */
+	private function get_aws_config_filename() {
+
+		// First check if AWS_CONFIG_FILE env variable is set.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv
+		$filename = getenv( 'AWS_CONFIG_FILE' );
+
+		if ( ! empty( $filename ) ) {
+			return $filename;
+		}
+
+		// Match SDK: with no resolvable home, fall back to a leading-slash path so the
+		// readability check still runs and predictably fails closed.
+		return ( $this->get_aws_home_dir() ?? '' ) . '/.aws/config';
+	}
+
+	/**
+	 * Get AWS home directory using the same logic as AWS SDK.
+	 *
+	 * Mirrors AWS SDK's AbstractConfigurationProvider::getHomeDir().
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return string|null Home directory path or null if cannot be determined.
+	 */
+	private function get_aws_home_dir() {
+
+		// On Linux/Unix-like systems, use the HOME environment variable.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv
+		$home_dir = getenv( 'HOME' );
+
+		if ( ! empty( $home_dir ) ) {
+			return $home_dir;
+		}
+
+		// Get the HOMEDRIVE and HOMEPATH values for Windows hosts.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv
+		$home_drive = getenv( 'HOMEDRIVE' );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv
+		$home_path = getenv( 'HOMEPATH' );
+
+		if ( ! empty( $home_drive ) && ! empty( $home_path ) ) {
+			return $home_drive . $home_path;
+		}
+
+		return null;
 	}
 
 	/**
@@ -661,10 +774,12 @@ class Auth extends AuthAbstract {
 
 		_deprecated_function( __METHOD__, '3.3.0', self::class . '::do_verify_domain_dkim' );
 
+		$this->last_error = null;
+
 		try {
 			$response = $this->get_client()->verifyDomainIdentity( [ 'Domain' => $domain ] );
 		} catch ( \Exception $e ) {
-			Debug::set( $e->getMessage() );
+			$this->last_error = new WP_Error( 'wp_mail_smtp_ses_verify_domain_failed', $e->getMessage() );
 
 			return false;
 		}
@@ -673,8 +788,6 @@ class Auth extends AuthAbstract {
 			is_object( $response ) &&
 			! empty( $response->get( 'VerificationToken' ) )
 		) {
-			Debug::clear();
-
 			return $response->get( 'VerificationToken' );
 		}
 

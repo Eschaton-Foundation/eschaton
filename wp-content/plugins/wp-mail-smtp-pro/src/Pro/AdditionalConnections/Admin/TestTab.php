@@ -54,6 +54,35 @@ class TestTab {
 
 		// Add a primary connection to the list as a first item.
 		array_unshift( $connections, $primary_connection );
+
+		// Pre-select the connection from (in priority order):
+		// 1. The just-submitted POST value, so the page reload after a test keeps
+		// the connection the user picked.
+		// 2. ?connection_id=<id> from the URL — set by the EmailSendingErrors
+		// banner's "Send Test Email" CTA so the test runs through the
+		// connection that had the failure.
+		// Falls back to primary in every other case. Each candidate is validated
+		// against the list of configured connections before being honored.
+		// Read-only sticky-form lookahead during form render. Nonce verification fires on submit in TestTab::process_post().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+		$posted_id = isset( $_POST['wp-mail-smtp']['test']['connection'] ) ? sanitize_key( wp_unslash( $_POST['wp-mail-smtp']['test']['connection'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$requested_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+		$selected_id  = $primary_connection->get_id();
+
+		foreach ( [ $posted_id, $requested_id ] as $candidate ) {
+			if ( $candidate === '' ) {
+				continue;
+			}
+
+			foreach ( $connections as $connection ) {
+				if ( $connection->get_id() === $candidate ) {
+					$selected_id = $candidate;
+
+					break 2;
+				}
+			}
+		}
 		?>
 		<div id="wp-mail-smtp-setting-row-test_email_connection" class="wp-mail-smtp-setting-row wp-mail-smtp-clear">
 			<div class="wp-mail-smtp-setting-label">
@@ -67,7 +96,7 @@ class TestTab {
 						<label for="wp-mail-smtp-setting-test_email_connection_<?php echo esc_attr( $connection->get_id() ); ?>">
 							<input type="radio" id="wp-mail-smtp-setting-test_email_connection_<?php echo esc_attr( $connection->get_id() ); ?>"
 										 name="wp-mail-smtp[test][connection]" value="<?php echo esc_attr( $connection->get_id() ); ?>"
-										 <?php checked( $primary_connection->get_id(), $connection->get_id() ); ?>
+										 <?php checked( $selected_id, $connection->get_id() ); ?>
 							/>
 							<span><?php echo esc_html( $connection->get_title() ); ?></span>
 						</label>

@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Pro;
 
-use WPMailSMTP\Debug;
+use WPMailSMTP\EmailSendingDebug;
 use WPMailSMTP\Pro\Alerts\Alerts;
 use WPMailSMTP\WP;
 use Exception;
@@ -68,6 +68,15 @@ trait MailCatcherTrait {
 			$alert_type    = Alerts::FAILED_EMAIL;
 			$error_message = $this->latest_error;
 
+			// Capture before the backup re-entry overwrites Logs::current_email_id.
+			$email_logs     = wp_mail_smtp()->get_pro()->get_logs();
+			$primary_log_id = $email_logs->get_current_email_id();
+
+			$primary_debug = [
+				'email_log_id' => $primary_log_id,
+			];
+			$backup_debug = [];
+
 			if ( $backup_connections->is_ready() ) {
 				self::$is_backup_connection = true;
 				$is_backup_sent             = $backup_connections->send_email();
@@ -75,8 +84,6 @@ trait MailCatcherTrait {
 
 				if ( $is_backup_sent ) {
 					$alert_type = Alerts::FAILED_PRIMARY_EMAIL;
-
-					$debug_error_message = esc_html__( 'Your Site failed to send an email via the Primary connection, but the email was sent successfully via the Backup connection.', 'wp-mail-smtp-pro' );
 				} else {
 					$alert_type           = Alerts::FAILED_BACKUP_EMAIL;
 					$backup_error_message = $this->latest_error;
@@ -89,17 +96,26 @@ trait MailCatcherTrait {
 							__( 'Backup connection', 'wp-mail-smtp-pro' ) . WP::EOL . $backup_error_message
 						);
 					}
-
-					$debug_error_message = esc_html__( 'Your Site failed to send an email via Primary and Backup connection.', 'wp-mail-smtp-pro' );
 				}
 
-				$debug_error_message .= WP::EOL . WP::EOL . $error_message;
+				// Primary record: 'sent' when the backup was rescued.
+				if ( $is_backup_sent ) {
+					$primary_debug['status'] = 'sent';
+				} else {
+					$backup_debug['email_log_id'] = $email_logs->get_current_email_id();
+				}
+			}
 
-				Debug::set( $debug_error_message );
+			$backup_connection = $connections_manager->get_mail_backup_connection();
+
+			EmailSendingDebug::merge( $connection->get_id(), $primary_debug );
+
+			if ( ! empty( $backup_debug ) && $backup_connection ) {
+				EmailSendingDebug::merge( $backup_connection->get_id(), $backup_debug );
 			}
 
 			// Process alerts.
-			( new Alerts() )->handle_failed_email( $error_message, $this, $connection->get_mailer_slug(), $alert_type );
+			( new Alerts() )->handle_failed_email( $error_message, $this, $connection->get_mailer_slug(), $alert_type, $primary_log_id );
 		}
 
 		$connections_manager->reset_mail_connection();

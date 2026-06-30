@@ -2,8 +2,11 @@
 
 namespace WPMailSMTP\Pro;
 
-use WPMailSMTP\Debug;
+use WP_Error;
 use WPMailSMTP\Options;
+use WPMailSMTP\Pro\Abilities\EmailLogs\GetEmailLogAbility;
+use WPMailSMTP\Pro\Abilities\EmailLogs\ListEmailLogsAbility;
+use WPMailSMTP\Pro\Abilities\Stats\GetEmailStatsAbility;
 use WPMailSMTP\Pro\AdditionalConnections\AdditionalConnections;
 use WPMailSMTP\Pro\Admin\Area;
 use WPMailSMTP\Pro\Admin\DashboardWidget;
@@ -22,6 +25,7 @@ use WPMailSMTP\Pro\Emails\TestEmail;
 use WPMailSMTP\Pro\ProductApi\ProductApi;
 use WPMailSMTP\Pro\Providers\AmazonSES\Options as SESOptions;
 use WPMailSMTP\Pro\SmartRouting\SmartRouting;
+use WPMailSMTP\Pro\WPCLI\Options\Registry as WPCLIOptionsRegistry;
 use WPMailSMTP\WP;
 
 /**
@@ -145,6 +149,9 @@ class Pro {
 		// Initialize upgrades.
 		( new Upgrade() )->hooks();
 
+		// Initialize WP-CLI options args registry.
+		( new WPCLIOptionsRegistry() )->hooks();
+
 		// Usage tracking hooks.
 		add_filter( 'wp_mail_smtp_usage_tracking_get_data', [ $this, 'usage_tracking_get_data' ] );
 		add_filter( 'wp_mail_smtp_admin_pages_misc_tab_show_usage_tracking_setting', '__return_false' );
@@ -220,6 +227,14 @@ class Pro {
 
 				return $options;
 			}
+		);
+
+		wp_mail_smtp()->get_abilities_registrar()->add(
+			[
+				ListEmailLogsAbility::class,
+				GetEmailLogAbility::class,
+				GetEmailStatsAbility::class,
+			]
 		);
 	}
 
@@ -757,7 +772,7 @@ class Pro {
 
 		switch ( $error ) {
 			case 'oauth_invalid_connection':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. The connection was not found. Please try again.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
@@ -765,7 +780,7 @@ class Pro {
 
 			case 'microsoft_no_code':
 			case 'zoho_no_code':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. The authorization code is missing. Please try again.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
@@ -773,28 +788,28 @@ class Pro {
 
 			case 'microsoft_invalid_nonce':
 			case 'zoho_invalid_nonce':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. The nonce is invalid. Please try again.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
 				break;
 
 			case 'microsoft_unsuccessful_oauth':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. Please recheck your Client ID and Client Secret and try again.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
 				break;
 
 			case 'zoho_no_clients':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. Please make sure that you have Client ID and Client Secret both valid and saved.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
 				break;
 
 			case 'zoho_access_denied':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 				/* translators: %s - error code, returned by Zoho API. */
 					sprintf( esc_html__( 'There was an error while processing the authentication request: %s. Please try again.', 'wp-mail-smtp-pro' ), '<code>' . esc_html( $error ) . '</code>' ),
 					WP::ADMIN_NOTICE_ERROR
@@ -802,7 +817,7 @@ class Pro {
 				break;
 
 			case 'zoho_unsuccessful_oauth':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request. Please recheck your Region, Client ID and Client Secret and try again.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
@@ -810,7 +825,7 @@ class Pro {
 
 			case 'google_one_click_setup_unsuccessful_oauth':
 			case 'outlook_one_click_setup_unsuccessful_oauth':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'There was an error while processing the authentication request.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_ERROR
 				);
@@ -819,28 +834,28 @@ class Pro {
 
 		switch ( $success ) {
 			case 'microsoft_site_linked':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'You have successfully linked the current site with your Microsoft API project. Now you can start sending emails through Outlook.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_SUCCESS
 				);
 				break;
 
 			case 'zoho_site_linked':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'You have successfully linked the current site with your Zoho Mail API project. Now you can start sending emails through Zoho Mail.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_SUCCESS
 				);
 				break;
 
 			case 'google_one_click_setup_site_linked':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'You have successfully connected your site with your Gmail account. This site will now send emails via your Gmail account.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_SUCCESS
 				);
 				break;
 
 			case 'outlook_one_click_setup_site_linked':
-				WP::add_admin_notice(
+				WP::add_admin_notice_with_debug(
 					esc_html__( 'You have successfully connected your site with your Outlook account. This site will now send emails via your Outlook account.', 'wp-mail-smtp-pro' ),
 					WP::ADMIN_NOTICE_SUCCESS
 				);
@@ -1082,7 +1097,7 @@ class Pro {
 
 		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error();
 		}
 
@@ -1101,12 +1116,10 @@ class Pro {
 		$table = new \WPMailSMTP\Pro\Providers\AmazonSES\IdentitiesTable();
 		$table->prepare_items();
 
-		$error = Debug::get_last();
+		$error = $table->get_last_error();
 
-		if ( ! $table->has_items() && ! empty( $error ) ) {
-			Debug::clear();
-
-			wp_send_json_error( $error );
+		if ( ! $table->has_items() && $error instanceof WP_Error ) {
+			wp_send_json_error( $error->get_error_message() );
 		}
 
 		wp_send_json_success(
@@ -1126,7 +1139,7 @@ class Pro {
 
 		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error();
 		}
 
@@ -1164,11 +1177,12 @@ class Pro {
 				]
 			);
 		} else {
-			$error = Debug::get_last();
-			Debug::clear();
+			$error = $ses->get_last_error();
 
 			wp_send_json_error(
-				esc_html( $error )
+				$error instanceof WP_Error
+					? esc_html( $error->get_error_message() )
+					: esc_html__( 'Something went wrong. Please try again later.', 'wp-mail-smtp-pro' )
 			);
 		}
 	}
@@ -1215,7 +1229,7 @@ class Pro {
 
 		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error( esc_html__( 'You don\'t have the permission to perform this action.', 'wp-mail-smtp-pro' ) );
 		}
 

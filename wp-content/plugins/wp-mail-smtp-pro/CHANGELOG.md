@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.9.0] - 2026-06-24
+
+### Added:
+- WP-CLI commands to configure WP Mail SMTP from the command line, including SMTP and API-key mailer setup, individual setting management, and alert provider configuration.
+- Code Snippets tab on the Tools page to browse, preview, and install WP Mail SMTP's WPCode snippets.
+- Support for the WordPress Abilities API (WordPress 6.9), letting connected tools and AI assistants securely read your email logs, sending statistics, and debug events.
+- Your Pro license now activates automatically after installing the plugin.
+- A one-click option to deactivate a conflicting plugin directly from the conflict notice.
+- Confirmation prompt before enabling the "Hide Email Delivery Errors" option, so the setting is not turned on by accident.
+
+### Changed:
+- Improved error handling and troubleshooting guidance when an email fails to send.
+- Updated Action Scheduler library to 4.0.0.
+
+### Fixed:
+- The WPMS_LOG_BLOCKED_EMAILS constant in wp-config.php did not affect the Log Blocked Emails setting; defining the constant now correctly enforces the value, disables the option in the admin area, and shows a notice indicating it is set by a constant.
+- AWS SES mailer triggered a PHP `is_readable()` warning when reading AWS config files on servers with an `open_basedir` restriction.
+- Failed email alerts linked to the wrong Email Log entry when a backup mailer succeeded after the primary failed; the alert now links to the failed primary's Email Log entry instead of the backup's success entry.
+- Hosts using database read replicas could show duplicate Email Log entries and missing error details.
+- Alert notifications flooded scheduled actions and external channels during provider outages; automatic alerts are now limited to one notification every 5 minutes.
+- The "Last week" stat in the Lite weekly summary email showed the just-started current week's count instead of the actual previous week's total, because the email is sent on Monday at 2pm.
+- Connecting the Zoho mailer could trigger a fatal error when Zoho returned an unexpected account response.
+- Hardened permission checks and request handling across several admin and alert features to address potential security issues.
+
 ## [4.8.0] - 2026-04-16
 ### Added:
 - SendLayer Quick Connect - allows connecting to SendLayer without DNS setup in 2 minutes.

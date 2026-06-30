@@ -84,6 +84,8 @@ class License {
 
 		$this->register_updater();
 		$this->hooks();
+
+		( new BundledLicense() )->hooks();
 	}
 
 	/**
@@ -169,7 +171,7 @@ class License {
 			wp_send_json_error( $generic_error );
 		}
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error( $generic_error );
 		}
 
@@ -782,7 +784,7 @@ class License {
 	public function notices( $below_h2 = false ) {
 
 		// Only users with sufficient capability can see the notices.
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			return;
 		}
 

@@ -174,12 +174,31 @@ class EmailsCollection implements \Countable, \Iterator {
 			$processed['ids'] = array_unique( array_filter( array_map( 'intval', array_values( $params['ids'] ) ) ) );
 		}
 
-		// Status.
-		if (
-			isset( $params['status'] ) &&
-			in_array( $params['status'], self::STATUSES, true )
-		) {
-			$processed['status'] = intval( $params['status'] );
+		// Status. Accepts a single int, or an array of ints for a multi-status
+		// match (e.g. "sent" spanning STATUS_SENT and STATUS_DELIVERED).
+		if ( isset( $params['status'] ) ) {
+			if ( is_array( $params['status'] ) ) {
+				$statuses = array_values(
+					array_filter(
+						array_map( 'intval', $params['status'] ),
+						static function ( $status ) {
+
+							return in_array( $status, self::STATUSES, true );
+						}
+					)
+				);
+
+				if ( ! empty( $statuses ) ) {
+					$processed['status'] = $statuses;
+				}
+			} elseif ( in_array( $params['status'], self::STATUSES, true ) ) {
+				$processed['status'] = intval( $params['status'] );
+			}
+		}
+
+		// Mailer.
+		if ( ! empty( $params['mailer'] ) && is_string( $params['mailer'] ) ) {
+			$processed['mailer'] = sanitize_text_field( $params['mailer'] );
 		}
 
 		// Search.
@@ -314,7 +333,20 @@ class EmailsCollection implements \Countable, \Iterator {
 		 * Status.
 		 */
 		if ( isset( $this->params['status'] ) ) {
-			$where[] = $wpdb->prepare( 'status = %d', $this->params['status'] );
+			if ( is_array( $this->params['status'] ) ) {
+				$placeholders = implode( ', ', array_fill( 0, count( $this->params['status'] ), '%d' ) );
+
+				$where[] = $wpdb->prepare( "status IN ( {$placeholders} )", $this->params['status'] ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			} else {
+				$where[] = $wpdb->prepare( 'status = %d', $this->params['status'] );
+			}
+		}
+
+		/*
+		 * Mailer.
+		 */
+		if ( ! empty( $this->params['mailer'] ) ) {
+			$where[] = $wpdb->prepare( 'mailer = %s', $this->params['mailer'] );
 		}
 
 		/*

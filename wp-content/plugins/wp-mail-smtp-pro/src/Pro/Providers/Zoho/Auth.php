@@ -2,13 +2,15 @@
 
 namespace WPMailSMTP\Pro\Providers\Zoho;
 
+use WP_Error;
 use WPMailSMTP\Admin\ConnectionSettings;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Admin\SetupWizard;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessToken;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Pro\Providers\Zoho\Auth\Zoho;
 use WPMailSMTP\Providers\AuthAbstract;
+use WPMailSMTP\WP;
 
 /**
  * Class Auth
@@ -72,63 +74,74 @@ class Auth extends AuthAbstract {
 
 		if ( ! empty( $this->options['access_token'] ) ) {
 			$access_token = new AccessToken( (array) $this->options['access_token'] );
-		}
 
-		// We don't have tokens but have auth code.
-		if (
-			$this->is_auth_required() &&
-			! empty( $this->options['auth_code'] )
-		) {
-			// Try to get an access token using the authorization code grant.
-			try {
-				/**
-				 * The access token.
-				 *
-				 * @var AccessToken $access_token
-				 */
-				$access_token = $this->client->getAccessToken(
-					'authorization_code',
-					[
-						'code'  => $this->options['auth_code'],
-						'scope' => implode( ',', $this->client->default_scopes ),
-						'state' => $this->client->getState(),
-					]
-				);
-
-				$this->update_access_token( $access_token->jsonSerialize() );
-				$this->update_refresh_token( $access_token->getRefreshToken() );
-				$this->update_user_details( $access_token );
-
-				Debug::clear();
-			} catch ( \Exception $e ) {
-				$this->process_exception( $e );
-			} finally {
-				// Reset Auth code. It's valid for a short amount of time anyway.
-				$this->update_auth_code( '' );
-			}
-		} else {
-			/*
-			 * We have tokens.
-			 */
-
-			// Update the old token if needed.
-			if ( ! empty( $access_token ) && $access_token->hasExpired() ) {
-
-				try {
-					$refresh_token    = ! empty( $this->options['refresh_token'] ) ? $this->options['refresh_token'] : '';
-					$new_access_token = $this->client->getAccessToken(
-						'refresh_token',
-						[ 'refresh_token' => $refresh_token ]
-					);
-
-					$this->update_access_token( $new_access_token->jsonSerialize() );
-				} catch ( \Exception $e ) {
-					$this->process_exception( $e );
-				}
+			// Refresh expired token if needed.
+			if ( $access_token->hasExpired() ) {
+				$this->refresh_access_token( $access_token );
 			}
 		}
 
 		return $this->client;
+	}
+
+	/**
+	 * Try to get an access token using the authorization code grant.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $code The authorization code returned by Zoho.
+	 *
+	 * @return WP_Error|true
+	 */
+	private function obtain_access_token( $code ) {
+
+		if ( empty( $code ) ) {
+			return true;
+		}
+
+		try {
+			$access_token = $this->client->getAccessToken(
+				'authorization_code',
+				[
+					'code'  => $code,
+					'scope' => implode( ',', $this->client->default_scopes ),
+					'state' => $this->client->getState(),
+				]
+			);
+
+			$this->update_access_token( $access_token->jsonSerialize() );
+			$this->update_refresh_token( $access_token->getRefreshToken() );
+			$this->update_user_details( $access_token );
+
+			return true;
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'zoho_auth_failed', $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Refresh expired access token.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param AccessToken $access_token Expired access token.
+	 */
+	private function refresh_access_token( $access_token ) {
+
+		try {
+			$refresh_token    = ! empty( $this->options['refresh_token'] ) ? $this->options['refresh_token'] : '';
+			$new_access_token = $this->client->getAccessToken(
+				'refresh_token',
+				[ 'refresh_token' => $refresh_token ]
+			);
+
+			$this->update_access_token( $new_access_token->jsonSerialize() );
+		} catch ( \Exception $e ) {
+			DebugEvents::add_throttled(
+				'Mailer: Zoho Mail' . WP::EOL . $e->getMessage(),
+				'zoho_refresh_error_' . $this->connection->get_id()
+			);
+		}
 	}
 
 	/**
@@ -183,7 +196,7 @@ class Auth extends AuthAbstract {
 				$user             = array_values( $available_emails )[0];
 			}
 		} catch ( \Exception $e ) {
-			$this->process_exception( $e );
+			DebugEvents::add( 'Mailer: Zoho Mail' . WP::EOL . $e->getMessage() );
 		}
 
 		// To save in DB.
@@ -230,6 +243,7 @@ class Auth extends AuthAbstract {
 			wp_safe_redirect(
 				add_query_arg( 'error', 'oauth_invalid_state', $redirect_url )
 			);
+			exit;
 		}
 
 		list( $nonce ) = array_pad( explode( '-', $state ), 1, false );
@@ -277,29 +291,32 @@ class Auth extends AuthAbstract {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$code = isset( $_GET['code'] ) ? $_GET['code'] : '';
 
-		// Try to save the auth code.
-		if ( ! empty( $code ) ) {
-			Debug::clear();
-			$this->update_auth_code( $code );
-			$this->get_client( true );
-
-			$error = Debug::get_last();
-
-			if ( ! empty( $error ) ) {
-				wp_safe_redirect(
-					add_query_arg(
-						'error',
-						'zoho_unsuccessful_oauth',
-						$redirect_url
-					)
-				);
-				exit;
-			}
-		} else {
+		if ( empty( $code ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					'error',
 					'zoho_no_code',
+					$redirect_url
+				)
+			);
+			exit;
+		}
+
+		// Ensure the SDK client is initialized.
+		$this->get_client();
+
+		// Exchange the auth code for an access token.
+		$result = $this->obtain_access_token( $code );
+
+		if ( $result instanceof WP_Error ) {
+			$event_id = DebugEvents::add( 'Mailer: Zoho Mail' . WP::EOL . $result->get_error_message() );
+
+			wp_safe_redirect(
+				add_query_arg(
+					[
+						'error'          => 'zoho_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
 					$redirect_url
 				)
 			);
@@ -335,18 +352,4 @@ class Auth extends AuthAbstract {
 		parent::update_access_token( $token );
 	}
 
-	/**
-	 * Process the general exception.
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param \Exception $exception The exception.
-	 */
-	private function process_exception( $exception ) {
-
-		Debug::set(
-			'Mailer: Zoho Mail' . "\r\n" .
-			$exception->getMessage()
-		);
-	}
 }

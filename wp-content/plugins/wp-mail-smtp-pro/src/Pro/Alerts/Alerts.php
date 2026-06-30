@@ -61,6 +61,17 @@ class Alerts {
 	const HARD_BOUNCED_EMAIL = 'hard_bounced_email';
 
 	/**
+	 * Transient key for the global alert-dispatch throttle. While this transient
+	 * is set, automatic alert dispatch via handle_failed_email() and
+	 * handle_hard_bounced_email() is suppressed.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var string
+	 */
+	const ALERT_THROTTLE_TRANSIENT = 'wp_mail_smtp_alert_throttle_lock';
+
+	/**
 	 * Register hooks.
 	 *
 	 * @since 3.5.0
@@ -124,13 +135,15 @@ class Alerts {
 	 * @since 3.5.0
 	 * @since 3.8.0 Included `mailer` array containing the primary and backup mailer slugs in the data
 	 *                  passed to the notifier task.
+	 * @since 4.9.0 Added the `$log_id` parameter.
 	 *
 	 * @param string               $error_message Error message.
 	 * @param MailCatcherInterface $mailcatcher   The MailCatcher object.
 	 * @param string               $mail_mailer   Current mailer slug.
 	 * @param string               $failure_type  Failure type.
+	 * @param int|null             $log_id        Log row id to link to. Falls back to the current email id when null.
 	 */
-	public function handle_failed_email( $error_message, $mailcatcher, $mail_mailer, $failure_type = self::FAILED_EMAIL ) {
+	public function handle_failed_email( $error_message, $mailcatcher, $mail_mailer, $failure_type = self::FAILED_EMAIL, $log_id = null ) {
 
 		$allowed_types = [
 			self::FAILED_EMAIL,
@@ -146,6 +159,10 @@ class Alerts {
 			$mailcatcher->is_setup_wizard_test_email() ||
 			! in_array( $failure_type, $allowed_types, true )
 		) {
+			return;
+		}
+
+		if ( ! $this->try_throttle_lock() ) {
 			return;
 		}
 
@@ -182,13 +199,13 @@ class Alerts {
 			);
 		}
 
-		$current_email_id = wp_mail_smtp()->get_pro()->get_logs()->get_current_email_id();
+		$log_id = $log_id ?? wp_mail_smtp()->get_pro()->get_logs()->get_current_email_id();
 
-		if ( ! empty( $current_email_id ) ) {
-			$data['log_id']   = $current_email_id;
+		if ( ! empty( $log_id ) ) {
+			$data['log_id']   = $log_id;
 			$data['log_link'] = add_query_arg(
 				[
-					'email_id' => $current_email_id,
+					'email_id' => $log_id,
 					'mode'     => 'view',
 				],
 				wp_mail_smtp()->get_admin()->get_admin_page_url( Area::SLUG . '-logs' )
@@ -219,6 +236,10 @@ class Alerts {
 			! Options::init()->get( 'alert_events', 'email_hard_bounced' ) ||
 			$email->is_test()
 		) {
+			return;
+		}
+
+		if ( ! $this->try_throttle_lock() ) {
 			return;
 		}
 
@@ -254,6 +275,47 @@ class Alerts {
 	}
 
 	/**
+	 * Try to acquire the alert-dispatch throttle lock for the current window.
+	 *
+	 * Returns true exactly once per TTL window and false for the remainder.
+	 * Both handle_failed_email() and handle_hard_bounced_email() gate on this
+	 * before queueing a NotifierTask — during a flood, only the first failure
+	 * in the window dispatches; subsequent failures are silently suppressed.
+	 *
+	 * When the filtered TTL is <= 0, the throttle is disabled: every call
+	 * returns true and no transient is stored.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return bool
+	 */
+	private function try_throttle_lock() {
+
+		/**
+		 * Filters the alert-dispatch throttle TTL, in seconds.
+		 *
+		 * Set to 0 or a negative value to disable throttling.
+		 *
+		 * @since 4.9.0
+		 *
+		 * @param int $ttl Throttle window length in seconds.
+		 */
+		$ttl = (int) apply_filters( 'wp_mail_smtp_pro_alerts_try_throttle_lock_ttl', MINUTE_IN_SECONDS * 5 );
+
+		if ( $ttl <= 0 ) {
+			return true;
+		}
+
+		if ( get_transient( self::ALERT_THROTTLE_TRANSIENT ) ) {
+			return false;
+		}
+
+		set_transient( self::ALERT_THROTTLE_TRANSIENT, 1, $ttl );
+
+		return true;
+	}
+
+	/**
 	 * Handle the AJAX action for the test alerts button.
 	 *
 	 * @since 3.9.0
@@ -261,6 +323,10 @@ class Alerts {
 	 * @param string $data Array of submitted data.
 	 */
 	public function process_ajax_test_alerts_data( $data ) {
+
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
+			return $data;
+		}
 
 		// Bail if no alerts channel is enabled.
 		if ( ! $this->is_enabled() ) {

@@ -35,6 +35,18 @@ class IdentitiesTable extends \WP_List_Table {
 	private $connection;
 
 	/**
+	 * The SES Auth instance used to fetch identities.
+	 *
+	 * Held as a property so callers can read its last error after prepare_items()
+	 * via {@see self::get_last_error()}.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @var Auth|null
+	 */
+	private $auth = null;
+
+	/**
 	 * Set up a constructor that references the parent constructor.
 	 * Using the parent reference to set some default configs.
 	 *
@@ -60,12 +72,12 @@ class IdentitiesTable extends \WP_List_Table {
 
 		// Set parent defaults.
 		parent::__construct(
-			array(
+			[
 				'singular' => 'ses-identity',
 				'plural'   => 'ses-identities',
 				'ajax'     => true,
 				'screen'   => $this->screen,
-			)
+			]
 		);
 	}
 
@@ -155,10 +167,25 @@ class IdentitiesTable extends \WP_List_Table {
 	public function prepare_items() {
 
 		// Define our column headers.
-		$this->_column_headers = array( $this->get_columns(), array(), $this->get_sortable_columns() );
+		$this->_column_headers = [ $this->get_columns(), [], $this->get_sortable_columns() ];
 
 		// Get the data from AWS SES API.
 		$this->items = $this->get_items();
+	}
+
+	/**
+	 * Get the last error captured by the underlying SES Auth instance.
+	 *
+	 * Available after {@see self::prepare_items()} has run. Returns null when no
+	 * Auth call has been made or the most recent one succeeded.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return WP_Error|null
+	 */
+	public function get_last_error() {
+
+		return $this->auth instanceof Auth ? $this->auth->get_last_error() : null;
 	}
 
 	/**
@@ -170,14 +197,14 @@ class IdentitiesTable extends \WP_List_Table {
 	 */
 	protected function get_items() {
 
-		$auth = new Auth( $this->connection );
+		$this->auth = new Auth( $this->connection );
 
-		if ( ! $auth->is_connection_ready() ) {
+		if ( ! $this->auth->is_connection_ready() ) {
 			return [];
 		}
 
-		$domains = $auth->get_registered_domains();
-		$emails  = $auth->get_registered_emails();
+		$domains = $this->auth->get_registered_domains();
+		$emails  = $this->auth->get_registered_emails();
 		$data    = [];
 
 		foreach ( $domains as $identity_value => $identity_data ) {

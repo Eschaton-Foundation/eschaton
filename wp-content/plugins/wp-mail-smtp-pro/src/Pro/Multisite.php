@@ -4,7 +4,7 @@ namespace WPMailSMTP\Pro;
 
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
-use WPMailSMTP\Debug;
+use WPMailSMTP\EmailSendingDebug;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Tasks\LicenseCheckTask;
 use WPMailSMTP\Tasks\NotificationsUpdateTask;
@@ -72,19 +72,14 @@ class Multisite {
 		// Maybe change the admin bar menu item link for network-wide setting.
 		add_filter( 'wp_mail_smtp_admin_adminbarmenu_main_menu_href', [ $this, 'maybe_change_main_menu_admin_bar_menu_href' ] );
 
-		// Maybe change the email delivery error notice for network-wide setting.
-		add_filter(
-			'wp_mail_smtp_core_display_general_notices_email_delivery_error_notice',
-			[ $this, 'maybe_change_email_deliver_error_notice' ]
-		);
-		add_filter(
-			'wp_mail_smtp_core_display_general_notices_email_delivery_error_notice_footer',
-			[ $this, 'add_clear_error_notices_button' ]
-		);
-		add_action( 'wp_ajax_wp_mail_smtp_pro_multisite_clear_error_notices', [ $this, 'clear_error_notices_callback' ] );
-
 		// Maybe disable notifications for sub-sites.
 		add_filter( 'wp_mail_smtp_admin_notifications_has_access', [ $this, 'maybe_disable_notifications' ] );
+
+		// Aggregated network-admin notice for subsites with email sending failures.
+		add_action( 'network_admin_notices', [ $this, 'render_aggregated_subsite_errors' ] );
+
+		// AJAX handler for the "Clear these errors" link in the aggregated notice.
+		add_action( 'wp_ajax_wp_mail_smtp_pro_multisite_clear_error_notices', [ $this, 'clear_aggregated_error_notices_callback' ] );
 
 		if ( is_network_admin() ) {
 
@@ -482,10 +477,10 @@ class Multisite {
 		}
 
 		return add_query_arg(
-			array(
+			[
 				'page' => Area::SLUG,
 				'tab'  => 'auth',
-			),
+			],
 			WP::admin_url()
 		);
 	}
@@ -602,58 +597,6 @@ class Multisite {
 	}
 
 	/**
-	 * Loop through all network sub-sites and collect the last email delivery errors for each and output
-	 * a concatenated string.
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param string $notice Default error string.
-	 *
-	 * @return string
-	 */
-	public function maybe_change_email_deliver_error_notice( $notice ) {
-
-		if ( ! WP::use_global_plugin_settings() || ! is_network_admin() ) {
-			return $notice;
-		}
-
-		$unique_notices = [];
-		$output_notices = [];
-
-		foreach ( get_sites() as $site ) {
-			$site_debug = get_blog_option( $site->blog_id, Debug::OPTION_KEY, [] );
-
-			if ( ! is_array( $site_debug ) ) {
-				$site_debug = (array) $site_debug;
-			}
-
-			if ( ! empty( $site_debug ) && is_array( $site_debug ) ) {
-				$error = end( $site_debug );
-
-				if ( is_int( $error ) ) {
-					switch_to_blog( $site->blog_id );
-					$debug_messages = DebugEvents::get_debug_messages( $error );
-					$error          = ! empty( $debug_messages[0] ) ? $debug_messages[0] : '';
-					restore_current_blog();
-				}
-
-				if ( ! in_array( $error, $unique_notices, true ) ) {
-					$site_info        = get_blog_details( [ 'blog_id' => $site->blog_id ] );
-					$output_notices[] = sprintf(
-						'<strong>%1$s</strong> - <a href="%2$s" target="_blank">%2$s</a><br>%3$s',
-						esc_html( $site_info->blogname ),
-						esc_url( get_admin_url( $site->blog_id ) ),
-						$error
-					);
-					$unique_notices[] = $error;
-				}
-			}
-		}
-
-		return implode( PHP_EOL . PHP_EOL, $output_notices );
-	}
-
-	/**
 	 * Maybe disable notifications for multisite sub-sites.
 	 *
 	 * @since 2.3.0
@@ -689,49 +632,6 @@ class Multisite {
 		}
 
 		return $key;
-	}
-
-	/**
-	 * Add the "clear error notices" button/link to the email delivery error admin notice for network-wide enabled WPMS.
-	 *
-	 * @since 2.6.0
-	 *
-	 * @return string
-	 */
-	public function add_clear_error_notices_button() {
-
-		if (
-			! is_network_admin() ||
-			! WP::use_global_plugin_settings()
-		) {
-			return;
-		}
-
-		return '<p><a href="#" class="js-wp-mail-smtp-clear-network-wide-error-notices">' . esc_html__( 'Clear these errors', 'wp-mail-smtp-pro' ) . '</a></p>';
-	}
-
-	/**
-	 * AJAX callback for the "clear error notices" button for network-wide enabled WPMS.
-	 *
-	 * @since 2.6.0
-	 */
-	public function clear_error_notices_callback() {
-
-		check_ajax_referer( 'wp-mail-smtp-pro-admin' );
-
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
-			wp_send_json_error();
-		}
-
-		if ( ! WP::use_global_plugin_settings() || ! is_multisite() ) {
-			wp_send_json_error();
-		}
-
-		foreach ( get_sites() as $site ) {
-			update_blog_option( $site->blog_id, Debug::OPTION_KEY, [] );
-		}
-
-		wp_send_json_success();
 	}
 
 	/**
@@ -977,5 +877,169 @@ class Multisite {
 		}
 
 		return $tasks;
+	}
+
+	/**
+	 * Render the aggregated network-admin notice listing every subsite whose
+	 * primary connection has a failed email sending record.
+	 *
+	 * Scope is primary-connection-only — additional connection errors are not
+	 * surfaced in the network admin view.
+	 *
+	 * @since 4.9.0
+	 */
+	public function render_aggregated_subsite_errors() {
+
+		if ( ! WP::use_global_plugin_settings() || ! is_network_admin() ) {
+			return;
+		}
+
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
+			return;
+		}
+
+		$errors = $this->collect_subsite_primary_errors();
+
+		if ( empty( $errors ) ) {
+			return;
+		}
+
+		$rows = [];
+
+		foreach ( $errors as $error ) {
+			$rows[] = sprintf(
+				'<strong>%1$s</strong> - <a href="%2$s" target="_blank">%2$s</a><br>%3$s: %4$s',
+				esc_html( $error['name'] ),
+				esc_url( $error['url'] ),
+				esc_html( $error['mailer_title'] ),
+				esc_html( $error['error_message'] )
+			);
+		}
+
+		?>
+		<div class="notice <?php echo esc_attr( WP::ADMIN_NOTICE_ERROR ); ?>">
+			<p>
+				<?php
+				echo wp_kses(
+					__( '<strong>Heads up!</strong> The last email your site attempted to send was unsuccessful.', 'wp-mail-smtp-pro' ),
+					[ 'strong' => [] ]
+				);
+				?>
+			</p>
+			<blockquote>
+				<pre><?php echo wp_kses_post( implode( PHP_EOL . PHP_EOL, $rows ) ); ?></pre>
+			</blockquote>
+			<p>
+				<a href="#" class="js-wp-mail-smtp-clear-network-wide-error-notices">
+					<?php esc_html_e( 'Clear these errors', 'wp-mail-smtp-pro' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Collect failed primary-connection records across every subsite.
+	 *
+	 * Reads each subsite's EmailSendingDebug option directly via
+	 * `get_blog_option()` and filters down to records with
+	 * `status: failed` and `context: regular`. The mailer title is resolved
+	 * inside a `switch_to_blog`/`restore_current_blog` pair because the
+	 * provider title can be subsite-specific.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @return array List of `[ 'blog_id', 'name', 'url', 'mailer_title', 'error_message' ]` rows.
+	 */
+	private function collect_subsite_primary_errors() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded -- Linear guard chain over the per-site failure record; collapsing the guards would obscure the schema checks.
+
+		$rows = [];
+
+		foreach ( get_sites() as $site ) {
+			$option = get_blog_option( $site->blog_id, EmailSendingDebug::OPTION_KEY, [] );
+			$record = is_array( $option ) && isset( $option['primary'] ) ? $option['primary'] : null;
+
+			if ( ! is_array( $record ) ) {
+				continue;
+			}
+
+			if ( ! isset( $record['status'], $record['context'] ) ) {
+				continue;
+			}
+
+			if ( $record['status'] !== 'failed' || $record['context'] !== 'regular' ) {
+				continue;
+			}
+
+			$mailer_slug = isset( $record['mailer'] ) ? (string) $record['mailer'] : '';
+
+			switch_to_blog( $site->blog_id );
+
+			$site_details = get_blog_details( $site->blog_id );
+			$site_name    = ( $site_details && ! empty( $site_details->blogname ) ) ? $site_details->blogname : $site->domain;
+			$site_url     = get_admin_url( $site->blog_id );
+
+			$mailer_title = '';
+
+			if ( $mailer_slug !== '' ) {
+				$provider = wp_mail_smtp()->get_providers()->get_options( $mailer_slug );
+
+				if ( $provider !== null ) {
+					$mailer_title = $provider->get_title();
+				}
+			}
+
+			if ( $mailer_title === '' ) {
+				$mailer_title = $mailer_slug;
+			}
+
+			restore_current_blog();
+
+			$rows[] = [
+				'blog_id'       => (int) $site->blog_id,
+				'name'          => $site_name,
+				'url'           => $site_url,
+				'mailer_title'  => $mailer_title,
+				'error_message' => isset( $record['error_message'] ) ? (string) $record['error_message'] : '',
+			];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * AJAX handler: clear the primary-connection failure record on every subsite.
+	 *
+	 * Only the `primary` key is unset on each subsite's EmailSendingDebug
+	 * option — additional-connection records are preserved so their per-site
+	 * banners remain intact.
+	 *
+	 * @since 4.9.0
+	 */
+	public function clear_aggregated_error_notices_callback() {
+
+		check_ajax_referer( 'wp-mail-smtp-pro-admin' );
+
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
+			wp_send_json_error();
+		}
+
+		if ( ! WP::use_global_plugin_settings() || ! is_multisite() ) {
+			wp_send_json_error();
+		}
+
+		foreach ( get_sites() as $site ) {
+			$option = get_blog_option( $site->blog_id, EmailSendingDebug::OPTION_KEY, [] );
+
+			if ( ! is_array( $option ) || ! isset( $option['primary'] ) ) {
+				continue;
+			}
+
+			unset( $option['primary'] );
+
+			update_blog_option( $site->blog_id, EmailSendingDebug::OPTION_KEY, $option );
+		}
+
+		wp_send_json_success();
 	}
 }

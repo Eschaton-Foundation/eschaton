@@ -4,7 +4,6 @@ namespace WPMailSMTP\Pro\Providers\Zoho;
 
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Providers\OptionsAbstract;
 
@@ -270,7 +269,7 @@ class Options extends OptionsAbstract {
 	 */
 	public function process_provider_remove() {
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			return;
 		}
 
@@ -295,8 +294,6 @@ class Options extends OptionsAbstract {
 		}
 
 		$this->connection_options->set( $old_opt );
-
-		Debug::clear();
 	}
 
 	/**

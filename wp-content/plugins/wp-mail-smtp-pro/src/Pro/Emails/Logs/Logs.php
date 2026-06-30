@@ -126,7 +126,7 @@ class Logs {
 			add_action( 'wp_mail_smtp_mailcatcher_send_after', [ $this, 'process_log_save' ], 10, 2 );
 
 			// Log email errors.
-			add_action( 'wp_mail_smtp_mailcatcher_send_failed', [ $this, 'process_smtp_fails' ] );
+			add_action( 'wp_mail_smtp_mailcatcher_send_failed', [ $this, 'process_smtp_fails' ], 10, 7 );
 
 			// Process AJAX request for deleting all logs.
 			add_action( 'wp_ajax_wp_mail_smtp_delete_all_log_entries', [ $this, 'process_ajax_delete_all_log_entries' ] );
@@ -386,6 +386,9 @@ class Logs {
 			switch ( $key ) {
 				case 'enabled':
 					$return = defined( 'WPMS_LOGS_ENABLED' );
+					break;
+				case 'log_blocked_emails':
+					$return = defined( 'WPMS_LOG_BLOCKED_EMAILS' );
 					break;
 				case 'log_email_content':
 					$return = defined( 'WPMS_LOGS_LOG_EMAIL_CONTENT' );
@@ -736,7 +739,20 @@ class Logs {
 			return;
 		}
 
+		if ( ! current_user_can( $this->get_manage_capability() ) ) {
+			wp_die( esc_html__( 'You don\'t have the capability to perform this action.', 'wp-mail-smtp-pro' ) );
+		}
+
 		$email = new Email( intval( $_GET['email_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+
+		// The preview response renders stored email HTML in a same-origin
+		// admin document. A strict CSP blocks script execution from any
+		// source, including entity-smuggled payloads from upstream carriers
+		// and importer history, while leaving inline CSS and images intact.
+		// frame-ancestors 'self' keeps the response embeddable in our own
+		// Thickbox + PrintPreview iframe wrappers (both already point here)
+		// and blocks cross-origin framing.
+		header( "Content-Security-Policy: script-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'self';" );
 
 		// It's a raw HTML (with html/body tags), so print as is.
 		echo $email->is_html() ?
@@ -970,21 +986,29 @@ class Logs {
 	 *
 	 * @since 2.1.0
 	 * @since 4.0.0 Added API based mailers error processing.
+	 * @since 4.9.0 Added $response_code, $connection, and $error_key params.
 	 *
-	 * @param WP_Error|string $error The WP Error or error message.
+	 * @param WP_Error|string      $error         The WP Error or error message.
+	 * @param MailCatcherInterface $mailcatcher   The MailCatcher instance (unused here).
+	 * @param string               $mailer_slug   Mailer slug as passed by the hook (unused here; we
+	 *                                            resolve from the connection to stay backward compatible).
+	 * @param string               $error_code    Structured error code captured at send-failure time.
+	 * @param int                  $response_code HTTP/SMTP response code (unused here).
+	 * @param ConnectionInterface  $connection     Connection instance (unused here).
+	 * @param string               $error_key     Composite canonical error key (mailer:category:code).
 	 */
-	public function process_smtp_fails( $error ) {
+	public function process_smtp_fails( $error, $mailcatcher = null, $mailer_slug = '', $error_code = '', $response_code = 0, $connection = null, $error_key = '' ) {
 
 		if ( ! $this->is_valid_db() ) {
 			return;
 		}
 
-		$mailer_slug = wp_mail_smtp()->get_connections_manager()->get_mail_connection()->get_mailer_slug();
+		$resolved_mailer_slug = wp_mail_smtp()->get_connections_manager()->get_mail_connection()->get_mailer_slug();
 
-		if ( in_array( $mailer_slug, [ 'smtp', 'pepipost', 'mail' ], true ) ) {
-			( new SMTP() )->failed( $this->get_current_email_id(), $error );
+		if ( in_array( $resolved_mailer_slug, [ 'smtp', 'pepipost', 'mail' ], true ) ) {
+			( new SMTP() )->failed( $this->get_current_email_id(), $error, $error_code, $error_key );
 		} else {
-			( new Common() )->failed( $this->get_current_email_id(), $error );
+			( new Common() )->failed( $this->get_current_email_id(), $error, $error_code, $error_key );
 		}
 	}
 

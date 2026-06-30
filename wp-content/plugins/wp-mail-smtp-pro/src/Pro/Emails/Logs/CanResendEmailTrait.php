@@ -4,7 +4,7 @@ namespace WPMailSMTP\Pro\Emails\Logs;
 
 use WP_Error;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
+use WPMailSMTP\EmailSendingDebug;
 use WPMailSMTP\Pro\Emails\Logs\Attachments\Attachments;
 use WPMailSMTP\Pro\Tasks\Logs\ResendTask;
 
@@ -90,7 +90,12 @@ trait CanResendEmailTrait {
 		$this->processing_email = null;
 
 		if ( $is_sent === false ) {
-			return new WP_Error( 'email_send_error', Debug::get_last() );
+			$debug_message = EmailSendingDebug::get_message( $connection->get_id() );
+			$error_message = ! empty( $debug_message )
+				? $debug_message
+				: esc_html__( 'Email failed to send.', 'wp-mail-smtp-pro' );
+
+			return new WP_Error( 'email_send_error', $error_message );
 		}
 
 		return $is_sent;

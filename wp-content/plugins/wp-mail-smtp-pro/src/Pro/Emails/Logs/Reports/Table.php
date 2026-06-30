@@ -4,6 +4,7 @@ namespace WPMailSMTP\Pro\Emails\Logs\Reports;
 
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Helpers\Helpers;
+use WPMailSMTP\Pro\Emails\Logs\Email;
 
 if ( ! class_exists( 'WP_List_Table', false ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
@@ -116,7 +117,7 @@ class Table extends \WP_List_Table {
 
 		return sprintf(
 			'<a href="#" class="subject-toggle-single-stats" data-subject="%1$s">%2$s</a>',
-			esc_attr( $item['subject'] ),
+			Email::esc_subject_attr( $item['subject'] ),
 			esc_html( $item['subject'] )
 		);
 	}
@@ -257,7 +258,7 @@ class Table extends \WP_List_Table {
 
 		return sprintf(
 			'<div class="wp-mail-smtp-toggle-single-stats-btn-container"><button type="button" class="js-wp-mail-smtp-toggle-single-stats" data-subject="%s"><i class="dashicons dashicons-chart-line"></i></button></div>',
-			esc_attr( $item['subject'] )
+			Email::esc_subject_attr( $item['subject'] )
 		);
 	}
 

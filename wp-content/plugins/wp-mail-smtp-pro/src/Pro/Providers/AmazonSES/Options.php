@@ -2,8 +2,8 @@
 
 namespace WPMailSMTP\Pro\Providers\AmazonSES;
 
+use WP_Error;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Geo;
 use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Providers\OptionsAbstract;
@@ -250,12 +250,11 @@ class Options extends OptionsAbstract {
 
 		$table->prepare_items();
 
-		$error = Debug::get_last();
+		$error = $table->get_last_error();
 
-		if ( ! $table->has_items() && ! empty( $error ) ) {
+		if ( ! $table->has_items() && $error instanceof WP_Error ) {
 			// Display an error message to a user.
-			echo '<p class="inline-notice inline-error">' . esc_html( $error ) . '</p>';
-			Debug::clear();
+			echo '<p class="inline-notice inline-error">' . esc_html( $error->get_error_message() ) . '</p>';
 
 			return ob_get_clean();
 		}

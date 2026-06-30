@@ -38,7 +38,7 @@ class EMLData extends AbstractData {
 					sprintf( /* translators: %1$d - email log ID; %2$s - error message. */
 						esc_html__( 'Email #%1$s was skipped. Reason: %2$s.', 'wp-mail-smtp-pro' ),
 						$email->get_id(),
-						$e->getMessage()
+						esc_html( $e->getMessage() )
 					),
 					'warning'
 				);

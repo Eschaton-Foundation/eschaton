@@ -54,6 +54,10 @@ class Provider {
 		add_filter(
 			'wp_mail_smtp_admin_pages_auth_tab_process_auth_connection',
 			function ( $connection ) {
+				if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
+					return $connection;
+				}
+
 				if (
 					$connection instanceof ConnectionInterface &&
 					$connection->get_mailer_slug() === 'gmail'
@@ -335,7 +339,7 @@ class Provider {
 
 		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
 
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_options() ) ) {
+		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
 			wp_send_json_error();
 		}
 

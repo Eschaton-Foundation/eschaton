@@ -4,9 +4,9 @@ namespace WPMailSMTP\Pro\Providers\Gmail;
 
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\ConnectionSettings;
+use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Admin\SetupWizard;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Debug;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\Pro\Providers\Gmail\Api\Client;
 use WPMailSMTP\Pro\Providers\Gmail\Api\OneTimeToken;
@@ -142,12 +142,14 @@ class Auth extends AuthAbstract {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( empty( $key ) || empty( $token ) ) {
-			Debug::set( esc_html__( 'Google authorization error. Missing required arguments.', 'wp-mail-smtp-pro' ) );
+			$event_id = DebugEvents::add( esc_html__( 'Google authorization error. Missing required arguments.', 'wp-mail-smtp-pro' ) );
 
 			wp_safe_redirect(
 				add_query_arg(
-					'error',
-					'google_one_click_setup_unsuccessful_oauth',
+					[
+						'error'          => 'google_one_click_setup_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
 					$redirect_url
 				)
 			);
@@ -179,7 +181,7 @@ class Auth extends AuthAbstract {
 		if ( is_wp_error( $is_valid ) ) {
 			$error = $is_valid->get_error_message();
 
-			Debug::set(
+			$event_id = DebugEvents::add(
 				sprintf( /* Translators: %1$s the error code passed from Google. */
 					esc_html__( 'Google authorization error. %1$s', 'wp-mail-smtp-pro' ),
 					esc_html( $error )
@@ -188,8 +190,10 @@ class Auth extends AuthAbstract {
 
 			wp_safe_redirect(
 				add_query_arg(
-					'error',
-					'google_one_click_setup_unsuccessful_oauth',
+					[
+						'error'          => 'google_one_click_setup_unsuccessful_oauth',
+						'debug_event_id' => $event_id,
+					],
 					$redirect_url
 				)
 			);
@@ -203,9 +207,6 @@ class Auth extends AuthAbstract {
 		$all['mail']['from_email'] = $user_email;
 
 		$this->connection_options->set( $all, false, true );
-
-		// Clear debug log on success auth.
-		Debug::clear();
 
 		wp_safe_redirect(
 			add_query_arg(

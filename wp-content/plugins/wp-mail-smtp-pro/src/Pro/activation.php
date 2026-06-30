@@ -5,6 +5,8 @@
  * This file will be included/executed in Core::init_early().
  */
 
+use WPMailSMTP\Pro\License\BundledLicense;
+
 /**
  * Pro plugin activation hook.
  * The lower priority (20) will allow the lite version (Core) to perform its activation steps first.
@@ -44,6 +46,21 @@ add_action(
 		$upgrader = new Language_Pack_Upgrader( new Automatic_Upgrader_Skin() );
 
 		$upgrader->bulk_upgrade( $to_update );
+	},
+	20
+);
+
+/**
+ * Arm bundled-license auto-activation.
+ *
+ * Only writes a pending flag locally, no HTTP. The remote verify runs
+ * later on an admin page load.
+ */
+add_action(
+	'activate_' . plugin_basename( WPMS_PLUGIN_FILE ),
+	function () {
+
+		( new BundledLicense() )->set_pending_on_activation();
 	},
 	20
 );
