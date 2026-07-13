@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80
+class ComposerStaticInit966ef796e64b29e8165b28cd4ecf5a93
 {
     public static $prefixLengthsPsr4 = array (
         'C' =>
@@ -328,10 +328,13 @@ class ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\CurlFactoryInterface' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/CurlFactoryInterface.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\CurlHandler' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/CurlHandler.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\CurlMultiHandler' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php',
+        'YoastSEO_Vendor\\GuzzleHttp\\Handler\\CurlShareHandleState' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/CurlShareHandleState.php',
+        'YoastSEO_Vendor\\GuzzleHttp\\Handler\\CurlVersion' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/CurlVersion.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\EasyHandle' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/EasyHandle.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\HeaderProcessor' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/HeaderProcessor.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\MockHandler' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/MockHandler.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\Proxy' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/Proxy.php',
+        'YoastSEO_Vendor\\GuzzleHttp\\Handler\\ProxyEnvironment' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/ProxyEnvironment.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Handler\\StreamHandler' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Handler/StreamHandler.php',
         'YoastSEO_Vendor\\GuzzleHttp\\MessageFormatter' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/MessageFormatter.php',
         'YoastSEO_Vendor\\GuzzleHttp\\MessageFormatterInterface' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/MessageFormatterInterface.php',
@@ -374,6 +377,7 @@ class ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Query' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Query.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Request' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Request.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Response' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Response.php',
+        'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Rfc3986' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Rfc3986.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Rfc7230' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Rfc7230.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\ServerRequest' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/ServerRequest.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Psr7\\Stream' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/psr7/src/Stream.php',
@@ -389,6 +393,7 @@ class ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80
         'YoastSEO_Vendor\\GuzzleHttp\\RequestOptions' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/RequestOptions.php',
         'YoastSEO_Vendor\\GuzzleHttp\\RetryMiddleware' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/RetryMiddleware.php',
         'YoastSEO_Vendor\\GuzzleHttp\\TransferStats' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/TransferStats.php',
+        'YoastSEO_Vendor\\GuzzleHttp\\TransportSharing' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/TransportSharing.php',
         'YoastSEO_Vendor\\GuzzleHttp\\Utils' => __DIR__ . '/../..' . '/vendor_prefixed/guzzlehttp/guzzle/src/Utils.php',
         'YoastSEO_Vendor\\League\\OAuth2\\Client\\Grant\\AbstractGrant' => __DIR__ . '/../..' . '/vendor_prefixed/league/oauth2-client/src/Grant/AbstractGrant.php',
         'YoastSEO_Vendor\\League\\OAuth2\\Client\\Grant\\AuthorizationCode' => __DIR__ . '/../..' . '/vendor_prefixed/league/oauth2-client/src/Grant/AuthorizationCode.php',
@@ -1666,9 +1671,9 @@ class ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit44b6cfc1e4d940476922dba2e590eb80::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit966ef796e64b29e8165b28cd4ecf5a93::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit966ef796e64b29e8165b28cd4ecf5a93::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit966ef796e64b29e8165b28cd4ecf5a93::$classMap;
 
         }, null, ClassLoader::class);
     }
