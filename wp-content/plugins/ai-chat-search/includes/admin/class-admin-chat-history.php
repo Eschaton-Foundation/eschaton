@@ -650,6 +650,7 @@ class Admin_Chat_History {
      * @param array $messages Messages in the conversation
      */
     private function render_conversation_messages($conversation_id, $messages) {
+        $messages = apply_filters('listeo_ai_chat_history_display_messages', $messages, $conversation_id);
         if (empty($messages)) {
             echo '<p style="text-align: center; padding: 24px; color: #666;">' . esc_html__('No messages found for this conversation.', 'ai-chat-search') . '</p>';
             return;
@@ -660,6 +661,47 @@ class Admin_Chat_History {
         do_action('ai_chat_search_conversation_messages_before', $messages, $conversation_id);
         ?>
         <?php foreach ($messages as $msg): ?>
+            <?php if (!empty($msg['_purio_live_type'])): ?>
+                <?php $live_type = sanitize_key($msg['_purio_live_type']); ?>
+                <?php if ('system' === $live_type): ?>
+                    <div class="airs-chat-msg airs-chat-msg-system">
+                        <div class="airs-chat-msg-head">
+                            <span class="airs-chat-msg-name"><?php esc_html_e('System', 'ai-chat-search'); ?></span>
+                            <span class="airs-chat-msg-time"><?php echo esc_html(date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at']))); ?></span>
+                        </div>
+                        <div class="airs-chat-msg-body"><?php echo nl2br(esc_html(trim($msg['content']))); ?></div>
+                    </div>
+                <?php elseif ('agent' === $live_type): ?>
+                    <div class="airs-chat-msg airs-chat-msg-assistant airs-chat-msg-human">
+                        <div class="airs-chat-msg-head">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 20.25a7 7 0 0 1 14 0"></path></svg>
+                            <span class="airs-chat-msg-name"><?php esc_html_e('Human', 'ai-chat-search'); ?></span>
+                            <?php if (!empty($msg['sender_name'])): ?>
+                                <span class="airs-chat-msg-time"><?php echo esc_html($msg['sender_name']); ?></span>
+                                <span class="airs-chat-msg-sep">&bull;</span>
+                            <?php endif; ?>
+                            <span class="airs-chat-msg-time"><?php echo esc_html(date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at']))); ?></span>
+                        </div>
+                        <div class="airs-chat-msg-body"><?php echo nl2br(esc_html(trim($msg['content']))); ?></div>
+                    </div>
+                <?php else: ?>
+                    <div class="airs-chat-msg airs-chat-msg-user">
+                        <div class="airs-chat-msg-head">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span class="airs-chat-msg-name"><?php esc_html_e('User', 'ai-chat-search'); ?></span>
+                            <span class="airs-chat-msg-time"><?php echo esc_html(date_i18n('M j, ' . get_option('time_format'), strtotime($msg['created_at']))); ?></span>
+                            <?php if (!empty($msg['page_url'])): ?>
+                                <span class="airs-chat-msg-sep">&bull;</span>
+                                <a href="<?php echo esc_url($msg['page_url']); ?>" target="_blank" rel="noopener noreferrer" class="airs-chat-page-link">
+                                    <span class="airs-chat-page-link-text"><?php echo esc_html($this->get_page_title_from_url($msg['page_url'])); ?></span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        <div class="airs-chat-msg-body"><?php echo nl2br(esc_html(trim($msg['content']))); ?></div>
+                    </div>
+                <?php endif; ?>
+                <?php continue; ?>
+            <?php endif; ?>
             <div class="airs-chat-msg airs-chat-msg-user">
                 <div class="airs-chat-msg-head">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>

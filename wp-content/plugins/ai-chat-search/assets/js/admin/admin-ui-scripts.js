@@ -547,7 +547,31 @@
     function initColorPicker() {
         if (!$.fn.wpColorPicker) return;
 
-        $('.airs-color-picker').wpColorPicker();
+        $('.airs-color-picker').each(function() {
+            var $picker = $(this);
+            var options = {};
+
+            if ($picker.is('#listeo_ai_floating_animated_avatar_color')) {
+                options = {
+                    mode: 'hsv',
+                    controls: {
+                        horiz: 's',
+                        vert: 'v',
+                        strip: 'h'
+                    }
+                };
+            }
+
+            $picker.wpColorPicker(options);
+
+            if ($picker.is('#listeo_ai_floating_animated_avatar_color')) {
+                $picker.iris('option', 'controls', {
+                    horiz: 's',
+                    vert: 'v',
+                    strip: 'h'
+                });
+            }
+        });
 
         // Add Select/Apply button and hex input next to each swatch
         $('.airs-color-picker').each(function() {

@@ -864,6 +864,28 @@ class Listeo_AI_Search_Chat_API
         $request_id = 'unknown';
 
         try {
+            $handoff_error = apply_filters(
+                'listeo_ai_chat_handoff_block_ai_request',
+                null,
+                $request
+            );
+            if (is_wp_error($handoff_error)) {
+                $handoff_error_data = $handoff_error->get_error_data();
+                $handoff_status = is_array($handoff_error_data) && isset($handoff_error_data['status'])
+                    ? (int) $handoff_error_data['status']
+                    : 409;
+                return new WP_REST_Response(
+                    [
+                        'success' => false,
+                        'error' => [
+                            'message' => $handoff_error->get_error_message(),
+                            'type' => $handoff_error->get_error_code(),
+                        ],
+                    ],
+                    $handoff_status
+                );
+            }
+
             // Generate unique request ID for tracing errors across frontend/backend logs
             $request_id = substr(md5(uniqid("proxy_", true)), 0, 8);
         $client_ip = Listeo_AI_Search_Utility_Helper::get_client_ip_secure();
@@ -971,6 +993,9 @@ class Listeo_AI_Search_Chat_API
 
         if (is_array($raw_messages)) {
             foreach ($raw_messages as $msg) {
+                if (!empty($msg['purio_live_handoff'])) {
+                    continue;
+                }
                 if (
                     isset($msg["role"]) &&
                     in_array($msg["role"], $allowed_roles, true)
@@ -1061,6 +1086,12 @@ class Listeo_AI_Search_Chat_API
                         isset($msg["tool_calls"])
                     ) {
                         $clean_msg["tool_calls"] = $msg["tool_calls"];
+                        if ( isset( $msg['responses_reasoning'] ) ) {
+                            $reasoning_items = $provider->normalize_responses_reasoning_items( $msg['responses_reasoning'] );
+                            if ( ! empty( $reasoning_items ) ) {
+                                $clean_msg['responses_reasoning'] = $reasoning_items;
+                            }
+                        }
                     }
 
                     // Preserve tool_call_id for tool responses (required by OpenAI)
@@ -1077,6 +1108,12 @@ class Listeo_AI_Search_Chat_API
                 }
             }
         }
+
+        $messages = apply_filters(
+            'listeo_ai_chat_messages_before_request',
+            $messages,
+            $request
+        );
 
         // SECURITY: Limit message history to prevent input token abuse
         // Base: 12 messages when listing/product enabled, 6 otherwise
@@ -1301,6 +1338,7 @@ class Listeo_AI_Search_Chat_API
         $filter_candidates = $request->get_param("filter_candidates");
         $relevant_ids = null;
         $filter_tool_choice = null;
+        $filter_tools = null;
 
         if (!empty($filter_candidates)) {
             $filter_tool = [
@@ -1322,10 +1360,20 @@ class Listeo_AI_Search_Chat_API
                 ],
             ];
 
-            if (!is_array($tools)) {
-                $tools = [];
+            if ($provider->is_native_openai_gpt56()) {
+                // GPT-5.6 rejects a continuation when its previous function call
+                // is missing from the newly declared tool set. Keep the original
+                // catalog for the forced filter call, but leave the text fallback
+                // tool-free so it cannot start another tool chain.
+                $filter_tools = self::get_listeo_tools();
+                $filter_tools[] = $filter_tool;
+            } else {
+                if (!is_array($tools)) {
+                    $tools = [];
+                }
+                $tools[] = $filter_tool;
+                $filter_tools = $tools;
             }
-            $tools[] = $filter_tool;
 
             // Force the model to call filter_results (used for the filter call only)
             $filter_tool_choice = [
@@ -1508,10 +1556,6 @@ class Listeo_AI_Search_Chat_API
             error_log("================================================");
         }
 
-        // Get provider-specific endpoint and headers
-        $endpoint = $provider->get_endpoint("chat");
-        $headers = $provider->get_headers();
-
         // When filtering, make a lightweight filter call first with minimal prompt,
         // then a text call with the full system prompt.
         $api_payload = $payload;
@@ -1528,15 +1572,10 @@ class Listeo_AI_Search_Chat_API
                 ["role" => "system", "content" => $minimal_filter_prompt]
             ], $conversation_messages);
 
-            $filter_payload = $provider->prepare_chat_payload($filter_messages, $tools, $filter_tool_choice);
+            $filter_payload = $provider->prepare_chat_payload($filter_messages, $filter_tools, $filter_tool_choice);
             $filter_payload = $provider->normalize_chat_payload($filter_payload, ['max_tokens' => 500]);
 
-            $filter_response = wp_remote_post($endpoint, [
-                "headers" => $headers,
-                "body" => wp_json_encode($filter_payload),
-                "timeout" => 60,
-                "data_format" => "body",
-            ]);
+            $filter_response = $provider->request_chat($filter_payload, 60);
 
             $filter_tool_call = null;
             $filter_assistant_msg = null;
@@ -1611,12 +1650,7 @@ class Listeo_AI_Search_Chat_API
         }
 
         // Make request to AI API server-side
-        $response = wp_remote_post($endpoint, [
-            "headers" => $headers,
-            "body" => wp_json_encode($api_payload),
-            "timeout" => 60,
-            "data_format" => "body",
-        ]);
+        $response = $provider->request_chat($api_payload, 60);
 
         // Check for WordPress HTTP errors - ALWAYS log these
         if (is_wp_error($response)) {
@@ -1713,6 +1747,7 @@ class Listeo_AI_Search_Chat_API
         }
 
         // Handle tool_calls server-side via filter (e.g., webhook execution)
+        $live_handoff_result = null;
         if (
             $response_code === 200 &&
             isset($response_data["choices"][0]["message"]["tool_calls"])
@@ -1739,6 +1774,10 @@ class Listeo_AI_Search_Chat_API
                 );
 
                 if ($tool_result !== null) {
+                    if (!empty($tool_result['handoff_started']) || !empty($tool_result['handoff_requires_identity'])) {
+                        $live_handoff_result = $tool_result;
+                    }
+
                     // Append assistant tool_call + result, make second AI call for final response
                     $assistant_msg = $response_data["choices"][0]["message"];
                     if (count($tool_calls) > 1) {
@@ -1761,15 +1800,7 @@ class Listeo_AI_Search_Chat_API
                     $second_payload = $provider->prepare_chat_payload($second_messages);
                     $second_payload = $provider->normalize_chat_payload($second_payload, ["max_tokens" => 3000]);
 
-                    $second_endpoint = $provider->get_endpoint("chat");
-                    $second_headers = $provider->get_headers();
-
-                    $second_response = wp_remote_post($second_endpoint, [
-                        "headers" => $second_headers,
-                        "body" => wp_json_encode($second_payload),
-                        "timeout" => 60,
-                        "data_format" => "body",
-                    ]);
+                    $second_response = $provider->request_chat($second_payload, 60);
 
                     $second_body = null;
                     if (!is_wp_error($second_response) && wp_remote_retrieve_response_code($second_response) === 200) {
@@ -1798,6 +1829,33 @@ class Listeo_AI_Search_Chat_API
                     break;
                 }
             }
+        }
+
+        // A human may have claimed the thread while the provider request was in flight.
+        // Skip this check for the handoff tool's own acknowledgement response.
+        if ($live_handoff_result === null) {
+            $late_handoff_error = apply_filters(
+                'listeo_ai_chat_handoff_block_ai_request',
+                null,
+                $request
+            );
+            if (is_wp_error($late_handoff_error)) {
+                $late_error_data = $late_handoff_error->get_error_data();
+                $late_status = is_array($late_error_data) && isset($late_error_data['status'])
+                    ? (int) $late_error_data['status']
+                    : 409;
+                return new WP_REST_Response(
+                    [
+                        'success' => false,
+                        'error' => [
+                            'message' => $late_handoff_error->get_error_message(),
+                            'type' => $late_handoff_error->get_error_code(),
+                        ],
+                    ],
+                    $late_status
+                );
+            }
+            do_action('listeo_ai_chat_exchange_completed', $request, $response_data);
         }
 
         // Track chatbot stats (lightweight - only on successful responses)
@@ -1839,6 +1897,10 @@ class Listeo_AI_Search_Chat_API
         // Inject relevant_ids from forced function calling into the response
         if ($relevant_ids !== null && $response_code === 200) {
             $response_data["relevant_ids"] = $relevant_ids;
+        }
+
+        if ($live_handoff_result !== null && $response_code === 200) {
+            $response_data['purio_live_handoff'] = $live_handoff_result;
         }
 
         // Return OpenAI response to frontend
@@ -2202,6 +2264,28 @@ class Listeo_AI_Search_Chat_API
     {
         $start_time = microtime(true);
 
+        $handoff_error = apply_filters(
+            'listeo_ai_chat_handoff_block_ai_request',
+            null,
+            $request
+        );
+        if (is_wp_error($handoff_error)) {
+            $handoff_error_data = $handoff_error->get_error_data();
+            $handoff_status = is_array($handoff_error_data) && isset($handoff_error_data['status'])
+                ? (int) $handoff_error_data['status']
+                : 409;
+            return new WP_REST_Response(
+                [
+                    'success' => false,
+                    'error' => [
+                        'message' => $handoff_error->get_error_message(),
+                        'type' => $handoff_error->get_error_code(),
+                    ],
+                ],
+                $handoff_status
+            );
+        }
+
         // Generate unique request ID for tracing errors across frontend/backend logs
         $request_id = substr(md5(uniqid("rag_", true)), 0, 8);
         $client_ip = Listeo_AI_Search_Utility_Helper::get_client_ip_secure();
@@ -2256,6 +2340,11 @@ class Listeo_AI_Search_Chat_API
         }
 
         $chat_history = $request->get_param("chat_history") ?: [];
+        $chat_history = apply_filters(
+            'listeo_ai_rag_chat_history_before_request',
+            $chat_history,
+            $request
+        );
 
         // Limit chat history to reduce token usage, respecting context length setting
         $context_length = get_option('listeo_ai_chat_context_length', 'normal');
@@ -2774,15 +2863,7 @@ class Listeo_AI_Search_Chat_API
                 error_log("===============================================");
             }
 
-            // Get provider-specific endpoint and headers
-            $endpoint = $provider->get_endpoint("chat");
-            $headers = $provider->get_headers();
-
-            $response = wp_remote_post($endpoint, [
-                "headers" => $headers,
-                "body" => wp_json_encode($api_payload),
-                "timeout" => 60,
-            ]);
+            $response = $provider->request_chat($api_payload, 60);
 
             if (is_wp_error($response)) {
                 throw new Exception(
@@ -2831,6 +2912,30 @@ class Listeo_AI_Search_Chat_API
                     "Empty response from " . $provider->get_provider_name(),
                 );
             }
+
+            // Prevent a late AI answer after a human claimed the conversation.
+            $late_handoff_error = apply_filters(
+                'listeo_ai_chat_handoff_block_ai_request',
+                null,
+                $request
+            );
+            if (is_wp_error($late_handoff_error)) {
+                $late_error_data = $late_handoff_error->get_error_data();
+                $late_status = is_array($late_error_data) && isset($late_error_data['status'])
+                    ? (int) $late_error_data['status']
+                    : 409;
+                return new WP_REST_Response(
+                    [
+                        'success' => false,
+                        'error' => [
+                            'message' => $late_handoff_error->get_error_message(),
+                            'type' => $late_handoff_error->get_error_code(),
+                        ],
+                    ],
+                    $late_status
+                );
+            }
+            do_action('listeo_ai_chat_exchange_completed', $request, $response_data);
 
             // Track usage stats
             if ($response_code === 200) {

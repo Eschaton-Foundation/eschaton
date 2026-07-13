@@ -45,6 +45,16 @@
         } catch (e) {}
     }
 
+    function dispatchWidgetState(popup, eventName, chatId) {
+        if (!popup) return;
+        try {
+            popup.dispatchEvent(new CustomEvent(eventName, {
+                bubbles: true,
+                detail: { chatId: chatId }
+            }));
+        } catch (e) {}
+    }
+
     function ListeoFloatingChatWidget() {
         this.button = document.getElementById('listeo-floating-chat-button');
         this.popup = document.getElementById('listeo-floating-chat-popup');
@@ -155,6 +165,7 @@
         if (this.iconClose) this.iconClose.style.display = '';
 
         this.isOpen = true;
+        dispatchWidgetState(this.popup, 'listeo-floating-chat-opened', 'listeo-floating-chat-instance');
 
         if (!this.chatInitialized) {
             this.chatInitialized = true;
@@ -182,6 +193,7 @@
     ListeoFloatingChatWidget.prototype.closeChat = function () {
         var self = this;
         this.isOpen = false;
+        dispatchWidgetState(this.popup, 'listeo-floating-chat-closed', 'listeo-floating-chat-instance');
 
         if (this.popup) {
             this.popup.style.transition = 'opacity ' + FADE_DURATION_MS + 'ms';

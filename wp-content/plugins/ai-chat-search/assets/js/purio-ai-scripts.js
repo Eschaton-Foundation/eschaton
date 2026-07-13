@@ -233,8 +233,8 @@
   /**
    * Strip the "openai/" namespace prefix used by OpenRouter so that model
    * comparisons below (startsWith "gpt-5", "gpt-", "o1/o3/o4") still work
-   * for slugs like "openai/gpt-5-mini" the same way they work for the bare
-   * "gpt-5-mini" used when OpenAI is the direct provider.
+   * for slugs like "openai/gpt-5.4-mini" the same way they work for the bare
+   * "gpt-5.4-mini" used when OpenAI is the direct provider.
    * @param {string} model
    * @returns {string}
    */
@@ -252,7 +252,7 @@
    * helper mirrors the server logic so the browser console can still show what
    * reasoning setting is in effect per request.
    *
-   * @param {string} model  — full model slug (e.g. "openai/gpt-5-mini")
+   * @param {string} model  — full model slug (e.g. "openai/gpt-5.4-mini")
    * @returns {string}      — "minimal" | "none" | "(model default)" | "(native)"
    */
   const computeServerReasoning = function (model) {
@@ -278,6 +278,26 @@
   const logApiRequest = function (payload, model) {
     var params = { server_reasoning: computeServerReasoning(model) };
     debugLog("🚀 API REQUEST | Model:", model || "(server-side)", "| Params:", params);
+  };
+
+  const pruneEmptyOptionalToolArgs = function (args, optionalKeys) {
+    var cleaned = $.extend({}, args);
+
+    optionalKeys.forEach(function (key) {
+      if (!Object.prototype.hasOwnProperty.call(cleaned, key)) {
+        return;
+      }
+
+      if (
+        cleaned[key] === null ||
+        typeof cleaned[key] === "undefined" ||
+        cleaned[key] === ""
+      ) {
+        delete cleaned[key];
+      }
+    });
+
+    return cleaned;
   };
 
   /**
@@ -313,6 +333,7 @@
       "</span>"
     );
   };
+  window.purioChatGenerateLoaderHTML = generateLoaderHTML;
 
   /**
    * Log cart event for chat history tracking (fire-and-forget)
@@ -869,6 +890,7 @@
     this.conversationHistory = [];
     this.chatConfig = null;
     this.isProcessing = false;
+    this.activeChatRequest = null;
     this.configLoaded = false;
     this.storageKey = getScopedStorageKey("listeo_ai_chat_" + this.chatId);
     this.rateLimitStorageKey = getScopedStorageKey("listeo_chat_rate_limit");
@@ -878,6 +900,7 @@
     this.sessionId = this.getOrCreateSessionId();
     // Store on wrapper for global handlers (e.g., cart button click)
     $wrapper.data("session-id", this.sessionId);
+    $wrapper.data("listeo-ai-chat-instance", this);
 
     // Read per-instance hideImages setting from data attribute (overrides global config)
     var dataHideImages = $wrapper.data("hide-images");
@@ -929,6 +952,13 @@
     this.preChatDataSent = false; // Whether header was already sent with first message
 
     this.init();
+
+    if (
+      window.PurioChatLiveHandoff &&
+      typeof window.PurioChatLiveHandoff.attach === "function"
+    ) {
+      window.PurioChatLiveHandoff.attach(this);
+    }
   }
 
   ListeoAIChat.prototype = {
@@ -1227,6 +1257,14 @@
         return;
       }
 
+      if (
+        window.PurioChatLiveHandoff &&
+        typeof window.PurioChatLiveHandoff.handleSend === "function" &&
+        window.PurioChatLiveHandoff.handleSend(this, message, hasImage)
+      ) {
+        return;
+      }
+
       if (this.preChatRequired && !this.preChatCompleted) {
         var $preChatForm = this.$wrapper.find(".listeo-ai-pre-chat-form:visible");
 
@@ -1301,8 +1339,10 @@
         // Hide quick buttons after first message if configured
         if (listeoAiChatConfig.quickButtonsVisibility === "hide_after_first") {
           var $quickBtns = self.$wrapper.find(".listeo-ai-chat-quick-buttons");
-          $quickBtns.find(".listeo-ai-quick-btn").fadeOut(150);
-          $quickBtns.delay(150).slideUp(200);
+          $quickBtns.find(".listeo-ai-quick-btn").not(".purio-live-handoff-request").fadeOut(150);
+          if (!$quickBtns.find(".purio-live-handoff-request:not([hidden])").length) {
+            $quickBtns.delay(150).slideUp(200);
+          }
           debugLog("[Quick Buttons] Hidden after first message");
         }
 
@@ -1409,14 +1449,24 @@
       logApiRequest(payload, self.chatConfig.model);
 
       // Send to OpenAI - no retry to avoid duplicate paid provider calls
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/chat-proxy",
           method: "POST",
           headers: $.extend({}, getRequestHeaders(), {
             "X-Session-ID": self.sessionId,
-          }, self.getPreChatHeaders()),
+          }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
+            ? window.PurioChatLiveHandoff.getHeaders(self)
+            : {}, self.getPreChatHeaders()),
           data: JSON.stringify(payload),
           success: function (data) {
+            if (
+              window.PurioChatLiveHandoff &&
+              typeof window.PurioChatLiveHandoff.handleAIResponse === "function" &&
+              window.PurioChatLiveHandoff.handleAIResponse(self, data, loadingId, "chat-proxy", userMessage)
+            ) {
+              return;
+            }
+
             // Check if response indicates an error (success: false)
             if (data.success === false) {
               var errorDetail =
@@ -1486,6 +1536,13 @@
             }
           },
           error: function (xhr) {
+            if (
+              window.PurioChatLiveHandoff &&
+              typeof window.PurioChatLiveHandoff.handleAIError === "function" &&
+              window.PurioChatLiveHandoff.handleAIError(self, xhr, loadingId)
+            ) {
+              return;
+            }
             var errorInfo = analyzeError(xhr, "chat-proxy");
             self.$messages.find("#" + loadingId).remove();
             self.addMessage(
@@ -1533,9 +1590,22 @@
             generateLoaderHTML(listeoAiChatConfig.strings.searchingListings),
           );
 
-        var searchArgs = $.extend({}, functionArgs, { source: "chatbot" });
+        var searchArgs = pruneEmptyOptionalToolArgs(functionArgs, [
+          "location",
+          "radius",
+          "category",
+          "features",
+          "listing_type",
+          "rating",
+          "price_min",
+          "price_max",
+          "open_now",
+          "date_start",
+          "date_end",
+        ]);
+        searchArgs.source = "chatbot";
 
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/listeo-hybrid-search",
           method: "POST",
           contentType: "application/json",
@@ -1664,12 +1734,14 @@
         });
 
           // No IIFE wrapper needed - no retry
-          $.ajax({
+          self.activeChatRequest = $.ajax({
             url: listeoAiChatConfig.apiBase + "/rag-chat",
             method: "POST",
             headers: $.extend({}, getRequestHeaders(), {
               "X-Session-ID": self.sessionId,
-            }, self.getPreChatHeaders()),
+            }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
+              ? window.PurioChatLiveHandoff.getHeaders(self)
+              : {}, self.getPreChatHeaders()),
             data: JSON.stringify({
               query: functionArgs.query,
               original_question: self.extractTextFromMessage(userMessage), // Text only, no images
@@ -1679,6 +1751,13 @@
               post_ids: functionArgs.post_ids || null, // Specific post IDs to search within
             }),
             success: function (response) {
+              if (
+                window.PurioChatLiveHandoff &&
+                typeof window.PurioChatLiveHandoff.handleAIResponse === "function" &&
+                window.PurioChatLiveHandoff.handleAIResponse(self, response, loadingId, "rag-chat", userMessage)
+              ) {
+                return;
+              }
               if (response.success) {
                 debugLog(
                   "RAG response received:",
@@ -1741,6 +1820,13 @@
               }
             },
             error: function (xhr) {
+                if (
+                  window.PurioChatLiveHandoff &&
+                  typeof window.PurioChatLiveHandoff.handleAIError === "function" &&
+                  window.PurioChatLiveHandoff.handleAIError(self, xhr, loadingId)
+                ) {
+                  return;
+                }
                 // No retry - XHR error may mean the provider already processed (and billed) the request
                 var errorInfo = analyzeError(xhr, "rag-universal-search");
                 self.$messages.find("#" + loadingId).remove();
@@ -1760,9 +1846,18 @@
             generateLoaderHTML(listeoAiChatConfig.strings.searchingProducts),
           );
 
-        var productSearchArgs = $.extend({}, functionArgs, { source: "chatbot" });
+        var productSearchArgs = pruneEmptyOptionalToolArgs(functionArgs, [
+          "price_min",
+          "price_max",
+          "in_stock",
+          "on_sale",
+          "rating",
+          "sku",
+          "category",
+        ]);
+        productSearchArgs.source = "chatbot";
 
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/woocommerce-product-search",
           method: "POST",
           contentType: "application/json",
@@ -1888,7 +1983,7 @@
         // Add product to cart via AI tool
         debugLog("Adding to cart via AI tool", functionArgs);
 
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.ajaxUrl,
           method: "POST",
           data: {
@@ -1973,7 +2068,7 @@
             ),
           );
 
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/contact-form",
           method: "POST",
           headers: getRequestHeaders(),
@@ -2105,7 +2200,9 @@
       var contextMultipliers = { short: 1, normal: 2, long: 6 };
       var ctxMul = contextMultipliers[listeoAiChatConfig && listeoAiChatConfig.contextLength || 'normal'] || 3;
       var recentHistory = [];
-      var historySlice = self.conversationHistory.slice(-(6 * ctxMul));
+      var historySlice = self.conversationHistory.filter(function (message) {
+        return !message.purio_live_handoff;
+      }).slice(-(6 * ctxMul));
       historySlice.forEach(function (msg) {
         recentHistory.push({ role: msg.role, content: msg.content });
       });
@@ -2137,14 +2234,24 @@
       debugLog("===== END SYSTEM PROMPT =====");
 
       // No retry to avoid duplicate paid provider calls
-        $.ajax({
+        self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/rag-chat",
           method: "POST",
           headers: $.extend({}, getRequestHeaders(), {
             "X-Session-ID": self.sessionId,
-          }),
+          }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
+            ? window.PurioChatLiveHandoff.getHeaders(self)
+            : {}),
           data: JSON.stringify(payload),
           success: function (response) {
+            if (
+              window.PurioChatLiveHandoff &&
+              typeof window.PurioChatLiveHandoff.handleAIResponse === "function" &&
+              window.PurioChatLiveHandoff.handleAIResponse(self, response, loadingId, "rag-chat", userMessage)
+            ) {
+              return;
+            }
+
             debugLog("===== RAG ENDPOINT RESPONSE =====");
             debugLog("✅ Response received");
             debugLog("📄 Full response:", response);
@@ -2231,6 +2338,13 @@
             debugLog("✅ RAG flow completed successfully");
           },
           error: function (xhr) {
+              if (
+                window.PurioChatLiveHandoff &&
+                typeof window.PurioChatLiveHandoff.handleAIError === "function" &&
+                window.PurioChatLiveHandoff.handleAIError(self, xhr, loadingId)
+              ) {
+                return;
+              }
               var errorInfo = analyzeError(xhr, "rag-chat");
               self.$messages.find("#" + loadingId).remove();
               self.addMessage(
@@ -2490,9 +2604,12 @@
       // FIX: Always validate history, not just when slicing
       // Previously, history <= maxMessages was returned without validation,
       // causing API errors when corrupted tool_calls sequences existed
-      var sliced = this.conversationHistory.length <= maxMessages
-        ? this.conversationHistory.slice() // Copy to avoid mutating original
-        : this.conversationHistory.slice(-maxMessages);
+      var aiVisibleHistory = this.conversationHistory.filter(function (message) {
+        return !message.purio_live_handoff;
+      });
+      var sliced = aiVisibleHistory.length <= maxMessages
+        ? aiVisibleHistory.slice() // Copy to avoid mutating original
+        : aiVisibleHistory.slice(-maxMessages);
 
       // Remove any orphaned 'tool' messages at the start (tool without preceding assistant)
       while (sliced.length > 0 && sliced[0].role === "tool") {
@@ -2939,9 +3056,18 @@
         method: "POST",
         headers: $.extend({}, getRequestHeaders(), {
           "X-Session-ID": self.sessionId,
-        }),
+        }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
+          ? window.PurioChatLiveHandoff.getHeaders(self)
+          : {}),
         data: JSON.stringify(payload),
         success: function (data) {
+          if (
+            window.PurioChatLiveHandoff &&
+            typeof window.PurioChatLiveHandoff.handleAIResponse === "function" &&
+            window.PurioChatLiveHandoff.handleAIResponse(self, data, loadingId, "chat-proxy", userMessage)
+          ) {
+            return;
+          }
           var finalMessage = data.choices[0].message.content;
 
           // Check for empty content
@@ -2981,6 +3107,13 @@
           self.$sendBtn.prop("disabled", false);
         },
         error: function (xhr) {
+          if (
+            window.PurioChatLiveHandoff &&
+            typeof window.PurioChatLiveHandoff.handleAIError === "function" &&
+            window.PurioChatLiveHandoff.handleAIError(self, xhr, loadingId)
+          ) {
+            return;
+          }
           var errorInfo = analyzeError(xhr, "getDetailsResponse");
           self.$messages.find("#" + loadingId).remove();
           self.addMessage("system", errorInfo.userMessage);
@@ -3160,9 +3293,18 @@
         method: "POST",
         headers: $.extend({}, getRequestHeaders(), {
           "X-Session-ID": self.sessionId,
-        }),
+        }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
+          ? window.PurioChatLiveHandoff.getHeaders(self)
+          : {}),
         data: JSON.stringify(payload),
         success: function (data) {
+          if (
+            window.PurioChatLiveHandoff &&
+            typeof window.PurioChatLiveHandoff.handleAIResponse === "function" &&
+            window.PurioChatLiveHandoff.handleAIResponse(self, data, loadingId, "chat-proxy", userMessage)
+          ) {
+            return;
+          }
           var finalMessage =
             data.choices && data.choices[0] && data.choices[0].message
               ? data.choices[0].message.content
@@ -3259,6 +3401,13 @@
           self.$sendBtn.prop("disabled", false);
         },
         error: function (xhr) {
+          if (
+            window.PurioChatLiveHandoff &&
+            typeof window.PurioChatLiveHandoff.handleAIError === "function" &&
+            window.PurioChatLiveHandoff.handleAIError(self, xhr, loadingId)
+          ) {
+            return;
+          }
           var errorInfo = analyzeError(xhr, "getFinalResponse");
           self.$messages.find("#" + loadingId).remove();
           self.addMessage("system", errorInfo.userMessage);
@@ -3874,8 +4023,10 @@
           // Hide quick buttons if there are existing messages and setting is "hide_after_first"
           if (listeoAiChatConfig.quickButtonsVisibility === "hide_after_first") {
             var $quickBtns = this.$wrapper.find(".listeo-ai-chat-quick-buttons");
-            $quickBtns.find(".listeo-ai-quick-btn").hide();
-            $quickBtns.hide();
+            $quickBtns.find(".listeo-ai-quick-btn").not(".purio-live-handoff-request").hide();
+            if (!$quickBtns.find(".purio-live-handoff-request:not([hidden])").length) {
+              $quickBtns.hide();
+            }
             debugLog("[Quick Buttons] Hidden (existing conversation loaded)");
           }
 
@@ -4081,6 +4232,18 @@
      * Clear conversation
      */
     clearConversation: function () {
+      if (this.activeChatRequest && typeof this.activeChatRequest.abort === "function") {
+        this.activeChatRequest.abort();
+      }
+      this.activeChatRequest = null;
+      this.isProcessing = false;
+      this.$sendBtn.prop("disabled", false);
+
+      // A new conversation must not inherit a pending or active human handoff.
+      if (window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.reset === "function") {
+        window.PurioChatLiveHandoff.reset(this);
+      }
+
       // Clear localStorage
       localStorage.removeItem(this.storageKey);
 

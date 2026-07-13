@@ -359,7 +359,7 @@ class Listeo_AI_Provider {
      * @return string Model name
      */
     public function get_chat_model() {
-        $stored = get_option('listeo_ai_chat_model', '');
+        $stored = $this->normalize_model(get_option('listeo_ai_chat_model', ''));
         if ($this->get_provider() === 'gemini') {
             return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3-flash-preview';
         } elseif ($this->get_provider() === 'mistral') {
@@ -470,11 +470,11 @@ class Listeo_AI_Provider {
     /**
      * Strip OpenRouter namespace prefix from a model slug.
      *
-     * OpenRouter uses namespaced slugs like 'openai/gpt-5.1', 'google/gemini-3-flash-preview'.
+     * OpenRouter uses namespaced slugs like 'openai/gpt-5.6-terra', 'google/gemini-3-flash-preview'.
      * This helper returns the bare model ID without the vendor prefix.
      *
      * @param string $model Full model slug.
-     * @return string Bare model ID (e.g. 'gpt-5.1').
+     * @return string Bare model ID (e.g. 'gpt-5.6-terra').
      */
     public function get_bare_model( $model ) {
         if ( ! is_string( $model ) || $model === '' ) {
@@ -495,7 +495,57 @@ class Listeo_AI_Provider {
     }
 
     /**
-     * Apply model ID mappings (e.g. broken model remaps).
+     * Check whether this request uses the native OpenAI GPT-5.6 family.
+     *
+     * OpenRouter and the trial gateway keep their existing compatibility path.
+     *
+     * @param string|null $model Optional model slug. Defaults to the chat model.
+     * @return bool
+     */
+    public function is_native_openai_gpt56( $model = null ) {
+        if ( $this->get_provider() !== 'openai' ) {
+            return false;
+        }
+
+        $model = $model !== null ? $model : $this->get_chat_model();
+        $bare  = $this->get_bare_model( $model );
+
+        return strpos( $bare, 'gpt-5.6-' ) === 0;
+    }
+
+    /**
+     * Return the supported replacement for a retired chat model.
+     *
+     * @param string $model Full or bare model slug.
+     * @return string Replacement slug, or the original slug when still supported.
+     */
+    public static function get_retired_model_replacement( $model ) {
+        if ( ! is_string( $model ) || $model === '' ) {
+            return $model;
+        }
+
+        $replacements = array(
+            'gpt-5-mini'                       => 'gpt-5.4-mini',
+            'gpt-5-chat-latest'                => 'gpt-5.6-terra',
+            'gpt-5.1'                          => 'gpt-5.6-terra',
+            'gpt-5.2'                          => 'gpt-5.6-terra',
+            'gpt-5.3-chat-latest'              => 'gpt-5.6-terra',
+            'gpt-5.4'                          => 'gpt-5.6-terra',
+            'openai/gpt-5-mini'                => 'openai/gpt-5.4-mini',
+            'openai/gpt-5-chat-latest'         => 'openai/gpt-5.6-terra',
+            'openai/gpt-5.1'                   => 'openai/gpt-5.6-terra',
+            'openai/gpt-5.2'                   => 'openai/gpt-5.6-terra',
+            'openai/gpt-5.3-chat-latest'       => 'openai/gpt-5.6-terra',
+            'openai/gpt-5.4'                   => 'openai/gpt-5.6-terra',
+        );
+
+        return isset( $replacements[ $model ] )
+            ? $replacements[ $model ]
+            : $model;
+    }
+
+    /**
+     * Apply model ID mappings for renamed and retired models.
      *
      * @param string $model Full model slug (may include openai/ prefix).
      * @return string Mapped model slug.
@@ -504,9 +554,6 @@ class Listeo_AI_Provider {
         if ( ! is_string( $model ) || $model === '' ) {
             return $model;
         }
-        $has_prefix = strpos( $model, 'openai/' ) === 0;
-        $bare = $this->get_bare_model( $model );
-
         if ( $model === 'gemini-3.1-flash-lite-preview' ) {
             return 'gemini-3.1-flash-lite';
         }
@@ -515,12 +562,7 @@ class Listeo_AI_Provider {
             return 'google/gemini-3.1-flash-lite';
         }
 
-        // GPT-5.2 has broken tool calling - map to 5.1
-        if ( $bare === 'gpt-5.2' ) {
-            return $has_prefix ? 'openai/gpt-5.1' : 'gpt-5.1';
-        }
-
-        return $model;
+        return self::get_retired_model_replacement( $model );
     }
 
     /**
@@ -531,7 +573,7 @@ class Listeo_AI_Provider {
      *   - temperature inclusion/exclusion (GPT-5 ignores it)
      *   - reasoning_effort per model (GPT-5.x, Gemini 3.x)
      *   - OpenRouter reasoning override (object form: reasoning: {effort: ...})
-     *   - Model ID remaps (GPT-5.2 -> 5.1)
+     *   - Model ID remaps for renamed and retired models
      *
      * @param array $payload Base payload with at minimum 'model' and 'messages'.
      * @param array $options {
@@ -580,6 +622,10 @@ class Listeo_AI_Provider {
                     $effective_reasoning = 'none';
                 }
                 $payload['reasoning_effort'] = $effective_reasoning;
+            } elseif ( $this->is_native_openai_gpt56( $model ) ) {
+                $payload['reasoning_effort'] = get_option( 'listeo_ai_gpt56_reasoning', 0 )
+                    ? 'low'
+                    : 'none';
             } elseif ( $bare === 'gpt-5.1' ) {
                 $payload['reasoning_effort'] = 'none';
             } elseif ( $bare === 'gpt-5-mini' ) {
@@ -614,6 +660,347 @@ class Listeo_AI_Provider {
         }
 
         return $payload;
+    }
+
+    /**
+     * Send a chat request through the provider's appropriate API.
+     *
+     * Direct OpenAI GPT-5.6 requests use the Responses API. The rest of the
+     * plugin keeps its existing Chat Completions payload and response shape.
+     *
+     * @param array $payload Normalized Chat Completions payload.
+     * @param int   $timeout Request timeout in seconds.
+     * @return array|WP_Error WordPress HTTP response.
+     */
+    public function request_chat( array $payload, $timeout = 60 ) {
+        if ( ! $this->is_native_openai_gpt56( isset( $payload['model'] ) ? $payload['model'] : null ) ) {
+            return wp_remote_post( $this->get_endpoint( 'chat' ), array(
+                'headers'     => $this->get_headers(),
+                'body'        => wp_json_encode( $payload ),
+                'timeout'     => $timeout,
+                'data_format' => 'body',
+            ) );
+        }
+
+        $response = wp_remote_post( 'https://api.openai.com/v1/responses', array(
+            'headers'     => $this->get_headers(),
+            'body'        => wp_json_encode( $this->convert_chat_payload_to_responses( $payload ) ),
+            'timeout'     => $timeout,
+            'data_format' => 'body',
+        ) );
+
+        if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+            return $response;
+        }
+
+        $response_data = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( is_array( $response_data ) ) {
+            $response['body'] = wp_json_encode( $this->convert_responses_to_chat_response( $response_data ) );
+        }
+
+        return $response;
+    }
+
+    /**
+     * Convert the plugin's Chat Completions payload to a Responses API payload.
+     *
+     * @param array $payload Chat Completions payload.
+     * @return array Responses API payload.
+     */
+    private function convert_chat_payload_to_responses( array $payload ) {
+        $responses_payload = array(
+            'model' => $payload['model'],
+            'input' => array(),
+            'store' => false,
+        );
+        $instructions = array();
+
+        foreach ( $payload['messages'] as $message ) {
+            $role    = isset( $message['role'] ) ? $message['role'] : '';
+            $content = isset( $message['content'] ) ? $message['content'] : '';
+
+            if ( $role === 'system' ) {
+                if ( is_string( $content ) && $content !== '' ) {
+                    $instructions[] = $content;
+                }
+                continue;
+            }
+
+            if ( $role === 'tool' && ! empty( $message['tool_call_id'] ) ) {
+                $responses_payload['input'][] = array(
+                    'type'    => 'function_call_output',
+                    'call_id' => $message['tool_call_id'],
+                    'output'  => is_string( $content ) ? $content : wp_json_encode( $content ),
+                );
+                continue;
+            }
+
+            if ( in_array( $role, array( 'user', 'assistant' ), true ) && $content !== '' && $content !== null ) {
+                $responses_payload['input'][] = array(
+                    'role'    => $role,
+                    'content' => $this->convert_message_content_to_responses( $content, $role ),
+                );
+            }
+
+            if (
+                $role === 'assistant' &&
+                isset( $payload['reasoning_effort'] ) &&
+                $payload['reasoning_effort'] !== 'none' &&
+                ! empty( $message['responses_reasoning'] )
+            ) {
+                foreach ( $this->normalize_responses_reasoning_items( $message['responses_reasoning'] ) as $reasoning_item ) {
+                    $responses_payload['input'][] = $reasoning_item;
+                }
+            }
+
+            if ( $role === 'assistant' && ! empty( $message['tool_calls'] ) ) {
+                foreach ( $message['tool_calls'] as $tool_call ) {
+                    if ( empty( $tool_call['id'] ) || empty( $tool_call['function']['name'] ) ) {
+                        continue;
+                    }
+                    $responses_payload['input'][] = array(
+                        'type'      => 'function_call',
+                        'call_id'   => $tool_call['id'],
+                        'name'      => $tool_call['function']['name'],
+                        'arguments' => isset( $tool_call['function']['arguments'] ) ? $tool_call['function']['arguments'] : '{}',
+                    );
+                }
+            }
+        }
+
+        if ( ! empty( $instructions ) ) {
+            $responses_payload['instructions'] = implode( "\n\n", $instructions );
+        }
+
+        if ( ! empty( $payload['tools'] ) ) {
+            $responses_payload['tools'] = array();
+            foreach ( $payload['tools'] as $tool ) {
+                if ( empty( $tool['function']['name'] ) ) {
+                    continue;
+                }
+                $function = $tool['function'];
+                $responses_payload['tools'][] = array(
+                    'type'        => 'function',
+                    'name'        => $function['name'],
+                    'description' => isset( $function['description'] ) ? $function['description'] : '',
+                    'parameters'  => isset( $function['parameters'] ) ? $function['parameters'] : array( 'type' => 'object' ),
+                    'strict'      => false,
+                );
+            }
+        }
+
+        if ( isset( $payload['tool_choice'] ) ) {
+            $tool_choice = $payload['tool_choice'];
+            if ( is_array( $tool_choice ) && ! empty( $tool_choice['function']['name'] ) ) {
+                $tool_choice = array(
+                    'type' => 'function',
+                    'name' => $tool_choice['function']['name'],
+                );
+            }
+            $responses_payload['tool_choice'] = $tool_choice;
+        }
+
+        if ( isset( $payload['parallel_tool_calls'] ) ) {
+            $responses_payload['parallel_tool_calls'] = (bool) $payload['parallel_tool_calls'];
+        }
+        if ( isset( $payload['max_completion_tokens'] ) ) {
+            $responses_payload['max_output_tokens'] = (int) $payload['max_completion_tokens'];
+        }
+        if ( isset( $payload['reasoning_effort'] ) ) {
+            $responses_payload['reasoning'] = array( 'effort' => $payload['reasoning_effort'] );
+            if ( $payload['reasoning_effort'] !== 'none' ) {
+                $responses_payload['include'] = array( 'reasoning.encrypted_content' );
+            }
+        }
+        if ( isset( $payload['response_format'] ) ) {
+            $responses_payload['text'] = array( 'format' => $payload['response_format'] );
+        }
+
+        return $responses_payload;
+    }
+
+    /**
+     * Convert multimodal Chat Completions content to Responses content parts.
+     *
+     * @param string|array $content Message content.
+     * @param string       $role Message role.
+     * @return string|array Responses message content.
+     */
+    private function convert_message_content_to_responses( $content, $role ) {
+        if ( ! is_array( $content ) ) {
+            return $content;
+        }
+
+        $converted = array();
+        foreach ( $content as $part ) {
+            if ( ! is_array( $part ) || empty( $part['type'] ) ) {
+                continue;
+            }
+            if ( $part['type'] === 'text' && isset( $part['text'] ) ) {
+                $converted[] = array(
+                    'type' => $role === 'assistant' ? 'output_text' : 'input_text',
+                    'text' => $part['text'],
+                );
+            } elseif ( $part['type'] === 'image_url' && isset( $part['image_url']['url'] ) ) {
+                $image = array(
+                    'type'      => 'input_image',
+                    'image_url' => $part['image_url']['url'],
+                );
+                if ( isset( $part['image_url']['detail'] ) ) {
+                    $image['detail'] = $part['image_url']['detail'];
+                }
+                $converted[] = $image;
+            }
+        }
+
+        return $converted;
+    }
+
+    /**
+     * Validate reasoning items before replaying them to the Responses API.
+     *
+     * @param mixed $items Candidate Responses reasoning items.
+     * @return array Validated reasoning items.
+     */
+    public function normalize_responses_reasoning_items( $items ) {
+        if ( ! is_array( $items ) ) {
+            return array();
+        }
+
+        $normalized          = array();
+        $remaining_text      = 32768;
+        $remaining_encrypted = 2097152;
+        foreach ( $items as $item ) {
+            if ( count( $normalized ) >= 8 ) {
+                break;
+            }
+            if ( ! is_array( $item ) || ! isset( $item['type'] ) || $item['type'] !== 'reasoning' ) {
+                continue;
+            }
+            if ( empty( $item['id'] ) || ! is_string( $item['id'] ) || strlen( $item['id'] ) > 200 ) {
+                continue;
+            }
+
+            $item_id = sanitize_text_field( $item['id'] );
+            if ( $item_id === '' ) {
+                continue;
+            }
+
+            $reasoning_item = array(
+                'type' => 'reasoning',
+                'id'   => $item_id,
+            );
+
+            foreach ( array( 'summary' => 'summary_text', 'content' => 'reasoning_text' ) as $field => $part_type ) {
+                if ( ! isset( $item[ $field ] ) || ! is_array( $item[ $field ] ) ) {
+                    continue;
+                }
+                $reasoning_item[ $field ] = array();
+                foreach ( $item[ $field ] as $part ) {
+                    if ( $remaining_text <= 0 ) {
+                        break;
+                    }
+                    if ( ! is_array( $part ) || ! isset( $part['type'], $part['text'] ) || $part['type'] !== $part_type || ! is_string( $part['text'] ) ) {
+                        continue;
+                    }
+                    $text = substr( $part['text'], 0, $remaining_text );
+                    $reasoning_item[ $field ][] = array(
+                        'type' => $part_type,
+                        'text' => sanitize_textarea_field( $text ),
+                    );
+                    $remaining_text -= strlen( $text );
+                    if ( $remaining_text <= 0 ) {
+                        break;
+                    }
+                }
+            }
+
+            if ( isset( $item['encrypted_content'] ) && is_string( $item['encrypted_content'] ) ) {
+                $encrypted_length = strlen( $item['encrypted_content'] );
+                if ( $encrypted_length <= $remaining_encrypted ) {
+                    $reasoning_item['encrypted_content'] = $item['encrypted_content'];
+                    $remaining_encrypted -= $encrypted_length;
+                }
+            }
+            if ( isset( $item['status'] ) && in_array( $item['status'], array( 'completed', 'in_progress', 'incomplete' ), true ) ) {
+                $reasoning_item['status'] = $item['status'];
+            }
+
+            $normalized[] = $reasoning_item;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Convert a Responses API result to the existing Chat Completions shape.
+     *
+     * @param array $response Responses API response.
+     * @return array Chat Completions-compatible response.
+     */
+    private function convert_responses_to_chat_response( array $response ) {
+        $content         = '';
+        $tool_calls      = array();
+        $reasoning_items = array();
+
+        foreach ( isset( $response['output'] ) ? $response['output'] : array() as $item ) {
+            if ( isset( $item['type'] ) && $item['type'] === 'reasoning' ) {
+                $reasoning_items[] = $item;
+                continue;
+            }
+            if ( isset( $item['type'] ) && $item['type'] === 'function_call' ) {
+                $tool_calls[] = array(
+                    'id'       => ! empty( $item['call_id'] ) ? $item['call_id'] : $item['id'],
+                    'type'     => 'function',
+                    'function' => array(
+                        'name'      => $item['name'],
+                        'arguments' => isset( $item['arguments'] ) ? $item['arguments'] : '{}',
+                    ),
+                );
+                continue;
+            }
+
+            if ( ! isset( $item['type'] ) || $item['type'] !== 'message' || empty( $item['content'] ) ) {
+                continue;
+            }
+            foreach ( $item['content'] as $part ) {
+                if ( isset( $part['type'], $part['text'] ) && $part['type'] === 'output_text' ) {
+                    $content .= $part['text'];
+                } elseif ( isset( $part['type'], $part['refusal'] ) && $part['type'] === 'refusal' ) {
+                    $content .= $part['refusal'];
+                }
+            }
+        }
+
+        $message = array(
+            'role'    => 'assistant',
+            'content' => $content !== '' ? $content : null,
+        );
+        if ( ! empty( $tool_calls ) ) {
+            $message['tool_calls'] = $tool_calls;
+            $reasoning_items = $this->normalize_responses_reasoning_items( $reasoning_items );
+            if ( ! empty( $reasoning_items ) ) {
+                $message['responses_reasoning'] = $reasoning_items;
+            }
+        }
+
+        $usage = isset( $response['usage'] ) ? $response['usage'] : array();
+        return array(
+            'id'      => isset( $response['id'] ) ? $response['id'] : '',
+            'object'  => 'chat.completion',
+            'created' => isset( $response['created_at'] ) ? (int) $response['created_at'] : time(),
+            'model'   => isset( $response['model'] ) ? $response['model'] : '',
+            'choices' => array(array(
+                'index'         => 0,
+                'message'       => $message,
+                'finish_reason' => ! empty( $tool_calls ) ? 'tool_calls' : ( isset( $response['status'] ) && $response['status'] === 'incomplete' ? 'length' : 'stop' ),
+            )),
+            'usage'   => array(
+                'prompt_tokens'     => isset( $usage['input_tokens'] ) ? $usage['input_tokens'] : 0,
+                'completion_tokens' => isset( $usage['output_tokens'] ) ? $usage['output_tokens'] : 0,
+                'total_tokens'      => isset( $usage['total_tokens'] ) ? $usage['total_tokens'] : 0,
+            ),
+        );
     }
 
     /**

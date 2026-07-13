@@ -12,6 +12,7 @@
 
     var i18n = window.listeo_ai_search_i18n || {};
     var customIconFrame;
+    var animatedIconFrame;
     var chatAvatarFrame;
 
     /**
@@ -29,12 +30,12 @@
 
             // Create the media frame
             customIconFrame = wp.media({
-                title: i18n.selectCustomIcon || 'Select Custom Icon',
+                title: i18n.selectCustomIcon || 'Select Button Icon / Image',
                 button: {
-                    text: i18n.useThisIcon || 'Use this icon'
+                    text: i18n.useThisIcon || 'Use this icon / image'
                 },
                 library: {
-                    type: ['image/svg+xml', 'image/png']
+                    type: 'image'
                 },
                 multiple: false
             });
@@ -56,10 +57,14 @@
                 var previewHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
                     '<img src="' + attachment.url + '" alt="Custom icon" id="listeo-custom-icon-preview-img" style="' + imgStyle + '" /></div>';
                 $('#listeo-custom-icon-preview').html(previewHtml);
+                $('.airs-floating-button-preview-simple')
+                    .empty()
+                    .append($('<img>').attr('src', attachment.url).attr('alt', ''));
+                $(document).trigger('purio-floating-icon-changed');
 
                 // Show remove button if it doesn't exist
                 if ($('#listeo-remove-custom-icon').length === 0) {
-                    $('.airs-media-buttons').append(
+                    $('#listeo-upload-custom-icon').closest('.airs-media-buttons').append(
                         '<button type="button" class="airs-button airs-button-secondary" id="listeo-remove-custom-icon" style="margin-left: 5px;">' +
                         (i18n.remove || 'Remove') + '</button>'
                     );
@@ -86,6 +91,10 @@
             var placeholderHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
                 '<img src="' + pluginUrl + 'assets/icons/chat.svg" alt="Default icon" width="28" height="28" /></div>';
             $('#listeo-custom-icon-preview').html(placeholderHtml);
+            $('.airs-floating-button-preview-simple').html(
+                '<img src="' + pluginUrl + 'assets/icons/chat.svg" alt="" width="16" height="16" />'
+            );
+            $(document).trigger('purio-floating-icon-changed');
 
             // Hide the icon size input
             $('#listeo-custom-icon-size-wrapper').hide();
@@ -109,6 +118,68 @@
                     'object-fit': 'contain'
                 });
             }
+            $(document).trigger('purio-floating-icon-changed');
+        });
+    }
+
+    /**
+     * Initialize the animated button icon uploader.
+     */
+    function initAnimatedIconUploader() {
+        $('#listeo-upload-animated-icon').on('click', function(e) {
+            e.preventDefault();
+
+            if (animatedIconFrame) {
+                animatedIconFrame.open();
+                return;
+            }
+
+            animatedIconFrame = wp.media({
+                title: i18n.selectAnimatedIcon || 'Select Animated Button Icon',
+                button: {
+                    text: i18n.useAnimatedIcon || 'Use this icon'
+                },
+                library: {
+                    type: ['image/svg+xml', 'image/png']
+                },
+                multiple: false
+            });
+
+            animatedIconFrame.on('select', function() {
+                var attachment = animatedIconFrame.state().get('selection').first().toJSON();
+
+                $('#listeo_ai_floating_animated_icon').val(attachment.id);
+                $('#listeo-animated-icon-source').attr('src', attachment.url);
+                $('#listeo-animated-icon-size-wrapper').show();
+
+                if ($('#listeo-remove-animated-icon').length === 0) {
+                    $('#listeo-upload-animated-icon').after(
+                        '<button type="button" class="airs-button airs-button-secondary" id="listeo-remove-animated-icon" style="margin-left: 5px;">' +
+                        (i18n.remove || 'Remove') + '</button>'
+                    );
+                }
+
+                $(document).trigger('purio-floating-icon-changed');
+            });
+
+            animatedIconFrame.open();
+        });
+
+        $(document).on('click', '#listeo-remove-animated-icon', function(e) {
+            e.preventDefault();
+
+            $('#listeo_ai_floating_animated_icon').val('');
+            $('#listeo-animated-icon-source').attr(
+                'src',
+                (i18n.pluginUrl || '') + 'assets/icons/chat.svg'
+            );
+            $('#listeo-animated-icon-size-wrapper').hide();
+            $(this).remove();
+            $(document).trigger('purio-floating-icon-changed');
+        });
+
+        $(document).on('input change', '#listeo_ai_floating_animated_icon_size', function() {
+            $(document).trigger('purio-floating-icon-changed');
         });
     }
 
@@ -262,6 +333,7 @@
         }
 
         initCustomIconUploader();
+        initAnimatedIconUploader();
         initChatAvatarUploader();
         initHeaderBgUploader();
 

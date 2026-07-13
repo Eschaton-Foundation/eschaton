@@ -52,6 +52,24 @@ class Listeo_AI_Search_Floating_Chat_Widget
     }
 
     /**
+     * Get the floating button style, mapping the retired image mode to simple.
+     */
+    private function get_button_style()
+    {
+        $style = get_option("listeo_ai_floating_button_style", false);
+        return $style === "animated" ? "animated" : "simple";
+    }
+
+    /**
+     * Get the animated floating button style.
+     */
+    private function get_animated_avatar_style()
+    {
+        $style = get_option("listeo_ai_floating_animated_avatar_style", "flare");
+        return in_array($style, ["flare", "nova"], true) ? $style : "flare";
+    }
+
+    /**
      * Enqueue widget assets
      */
     public function enqueue_widget_assets()
@@ -117,6 +135,37 @@ class Listeo_AI_Search_Floating_Chat_Widget
             ["listeo-ai-chat"],
             LISTEO_AI_SEARCH_VERSION,
         );
+
+        $button_style = $this->get_button_style();
+        if ($button_style === "animated") {
+            wp_enqueue_style(
+                "purio-avatar",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/purio-avatar.css",
+                ["listeo-ai-floating-chat"],
+                LISTEO_AI_SEARCH_VERSION,
+            );
+            wp_enqueue_script(
+                "purio-avatar",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-avatar.js",
+                [],
+                LISTEO_AI_SEARCH_VERSION,
+                false,
+            );
+            $avatar_color = sanitize_hex_color(
+                get_option(
+                    "listeo_ai_floating_animated_avatar_color",
+                    "#006aff",
+                ),
+            );
+            wp_localize_script(
+                "purio-avatar",
+                "purioAvatarFrontendConfig",
+                [
+                    "color" => $avatar_color ?: "#006aff",
+                    "style" => $this->get_animated_avatar_style(),
+                ],
+            );
+        }
 
         // User-defined custom CSS from Developer & Debug Options.
         // Stripped of HTML tags as defense-in-depth (also sanitized on save).
@@ -220,6 +269,8 @@ class Listeo_AI_Search_Floating_Chat_Widget
             if (AI_Chat_Search_Pro_Manager::is_pro_active() && get_option('listeo_ai_chat_enable_speech', 0)) {
                 $lazy_scripts[] = defined('AI_CHAT_SEARCH_PRO_URL') ? AI_CHAT_SEARCH_PRO_URL . "assets/js/speech-to-text.js" : '';
             }
+
+            $lazy_scripts = apply_filters('listeo_ai_floating_lazy_scripts', $lazy_scripts);
         }
 
         // Localize script for floating widget
@@ -358,6 +409,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
         $custom_icon_id = intval(
             get_option("listeo_ai_floating_custom_icon", 0),
         );
+        $button_style = $this->get_button_style();
 
         // Get chat avatar
         $chat_avatar_id = intval(get_option("listeo_ai_chat_avatar", 0));
@@ -410,7 +462,37 @@ class Listeo_AI_Search_Floating_Chat_Widget
         $custom_icon_url = $custom_icon_id
             ? wp_get_attachment_image_url($custom_icon_id, "full")
             : "";
-        $use_custom_icon = !empty($custom_icon_url);
+        $use_custom_icon = $button_style === "simple" && !empty($custom_icon_url);
+        $use_animated_avatar = $button_style === "animated";
+        $animated_avatar_style = $this->get_animated_avatar_style();
+        $animated_avatar_color = sanitize_hex_color(
+            get_option(
+                "listeo_ai_floating_animated_avatar_color",
+                "#006aff",
+            ),
+        );
+        if (empty($animated_avatar_color)) {
+            $animated_avatar_color = "#006aff";
+        }
+        $animated_speed = get_option(
+            "listeo_ai_floating_animated_speed",
+            "normal",
+        );
+        if (!in_array($animated_speed, ["slow", "normal", "fast"], true)) {
+            $animated_speed = "normal";
+        }
+        $animated_icon_id = intval(
+            get_option("listeo_ai_floating_animated_icon", 0),
+        );
+        $animated_icon_url = $animated_icon_id
+            ? wp_get_attachment_image_url($animated_icon_id, "full")
+            : LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/chat.svg";
+        $animated_icon_size = $animated_icon_id
+            ? absint(
+                get_option("listeo_ai_floating_animated_icon_size", 28),
+            )
+            : 28;
+        $animated_icon_size = max(8, min(38, $animated_icon_size));
         $custom_icon_size = absint(get_option('listeo_ai_floating_custom_icon_size', 32));
         if ($custom_icon_size < 1) {
             $custom_icon_size = 32;
@@ -517,13 +599,27 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
             <!-- Floating Button -->
             <button
-                class="listeo-floating-chat-button <?php echo $use_custom_icon
-                    ? "has-custom-icon"
+                class="listeo-floating-chat-button<?php echo $use_custom_icon
+                    ? " has-custom-icon"
+                    : ""; ?><?php echo $use_animated_avatar
+                    ? " has-animated-avatar"
                     : ""; ?>"
                 id="listeo-floating-chat-button"
                 aria-label="<?php esc_attr_e("Open chat", "ai-chat-search"); ?>"
+                <?php if ($use_animated_avatar): ?>style="background: radial-gradient(circle, <?php echo esc_attr($animated_avatar_color); ?> 0, <?php echo esc_attr($animated_avatar_color); ?> 27px, transparent 28px) !important;"<?php endif; ?>
             >
-                <?php if ($use_custom_icon): ?>
+                <?php if ($use_animated_avatar): ?>
+                    <span class="pcha-avatar pcha-<?php echo esc_attr(
+                        $animated_avatar_style,
+                    ); ?> pcha-speed-<?php echo esc_attr(
+    $animated_speed,
+); ?> listeo-floating-animated-avatar listeo-floating-icon-open" data-pcha-color="<?php echo esc_attr(
+    $animated_avatar_color,
+); ?>" style="--pcha-size: 60px" aria-hidden="true">
+                        <span class="pcha-orb"><span class="pcha-scene"><span class="pcha-blob pcha-b1"></span><span class="pcha-blob pcha-b2"></span><span class="pcha-blob pcha-b3"></span></span><span class="pcha-grain"></span></span>
+                    </span>
+                    <img src="<?php echo esc_url($animated_icon_url); ?>" alt="" class="listeo-floating-animated-button-icon" style="width: <?php echo esc_attr($animated_icon_size); ?>px; height: <?php echo esc_attr($animated_icon_size); ?>px;" aria-hidden="true" />
+                <?php elseif ($use_custom_icon): ?>
                     <img src="<?php echo esc_url(
                         $custom_icon_url,
                     ); ?>" alt="Chat" class="listeo-floating-custom-icon listeo-floating-icon-open" />

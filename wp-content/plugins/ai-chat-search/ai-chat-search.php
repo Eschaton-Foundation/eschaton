@@ -3,7 +3,7 @@
  * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.2.4
+ * Version: 2.2.6
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,8 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.2.4");
+define("LISTEO_AI_SEARCH_VERSION", "2.2.6");
+define("LISTEO_AI_LIVE_HANDOFF_INTEGRATION_VERSION", 1);
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
 
@@ -100,6 +101,7 @@ class Listeo_AI_Search
      */
     public function init()
     {
+        $this->maybe_migrate_retired_chat_model();
         $this->ensure_typing_animation_enabled();
 
         // Register external pages CPT (Pro feature - hidden CPT for storing scraped web pages)
@@ -116,6 +118,7 @@ class Listeo_AI_Search
         $this->shortcode_handler = new Listeo_AI_Search_Shortcode_Handler();
         $this->admin_interface = new Listeo_AI_Search_Admin_Interface();
         if (is_admin()) {
+            new Listeo_AI_Search_Free_Live_Chat_Upgrade();
             new Listeo_AI_Search_Free_License_Upgrade();
         }
 
@@ -183,6 +186,40 @@ class Listeo_AI_Search
             // Update stored version
             update_option("listeo_ai_search_version", LISTEO_AI_SEARCH_VERSION);
         }
+    }
+
+    /**
+     * Replace retired chat models once per model catalog migration.
+     */
+    private function maybe_migrate_retired_chat_model()
+    {
+        $migration_version = 1;
+        $installed_version = (int) get_option(
+            "listeo_ai_chat_model_migration_version",
+            0,
+        );
+
+        if ($installed_version >= $migration_version) {
+            return;
+        }
+
+        $stored_model = get_option("listeo_ai_chat_model", "");
+        $replacement = Listeo_AI_Provider::get_retired_model_replacement(
+            $stored_model,
+        );
+
+        if (
+            $replacement !== $stored_model &&
+            !update_option("listeo_ai_chat_model", $replacement)
+        ) {
+            return;
+        }
+
+        update_option(
+            "listeo_ai_chat_model_migration_version",
+            $migration_version,
+            false,
+        );
     }
 
     /**
@@ -255,6 +292,8 @@ class Listeo_AI_Search
             "includes/admin/class-admin-interface.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-free-license-upgrade.php";
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/admin/class-free-live-chat-upgrade.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-universal-settings.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -809,7 +848,13 @@ class Listeo_AI_Search
             // Floating widget settings
             "listeo_ai_floating_chat_enabled" => 1,
             "listeo_ai_floating_button_icon" => "default",
+            "listeo_ai_floating_button_style" => "simple",
             "listeo_ai_floating_custom_icon" => 0,
+            "listeo_ai_floating_animated_avatar_style" => "flare",
+            "listeo_ai_floating_animated_avatar_color" => "#006aff",
+            "listeo_ai_floating_animated_speed" => "normal",
+            "listeo_ai_floating_animated_icon" => 0,
+            "listeo_ai_floating_animated_icon_size" => 28,
             "listeo_ai_floating_welcome_bubble" => __(
                 "Hi! How can I help you?",
                 "ai-chat-search",

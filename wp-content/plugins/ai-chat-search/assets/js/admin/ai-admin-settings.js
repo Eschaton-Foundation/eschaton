@@ -117,6 +117,14 @@
         $('#listeo_ai_search_provider').val(provider).trigger('change');
     }
 
+    function updateGpt56ReasoningVisibility() {
+        var provider = $('#listeo_ai_search_provider').val() || '';
+        var model = $('#listeo_ai_chat_model').val() || '';
+        $('#gpt56-reasoning-field').toggle(
+            provider === 'openai' && model.indexOf('gpt-5.6-') === 0
+        );
+    }
+
     /**
      * Update UI based on provider selection
      */
@@ -136,7 +144,7 @@
                 modelGroup: 'model-group-openai',
                 label: i18n.openaiModel || 'OpenAI Model',
                 help: i18n.openaiModelHelp || 'Select the OpenAI model for chat responses.',
-                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5-chat-latest', 'gpt-5.1', 'gpt-5.2', 'gpt-5.3-chat-latest', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5'],
+                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
                 default: 'gpt-5.4-mini'
             },
             gemini: {
@@ -162,8 +170,8 @@
                 help: i18n.openrouterModelHelp || 'Select an OpenRouter model for chat responses.',
                 // Any vendor/model slug is considered valid — OpenRouter has 300+ models.
                 // This list only governs auto-reset when switching into the openrouter provider.
-                models: ['openai/gpt-5-mini', 'openai/gpt-5.1', 'openai/gpt-5.3-chat-latest', 'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.5-flash', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
-                default: 'openai/gpt-5.4-mini'
+                models: ['openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-5.6-luna', 'openai/gpt-5.6-terra', 'openai/gpt-5.6-sol', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.5-flash', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
+                default: 'openai/gpt-5.6-luna'
             }
         };
 
@@ -180,6 +188,8 @@
                 $('#listeo_ai_chat_model').val(config.default).trigger('change');
             }
         }
+
+        updateGpt56ReasoningVisibility();
     }
 
     /**
@@ -203,10 +213,12 @@
                 $('#gemini-3-warning').hide();
             }
             checkMultimodal();
+            updateGpt56ReasoningVisibility();
         });
 
         $(document).on('change', '#listeo_ai_chat_enable_speech, #listeo_ai_chat_enable_image_input', checkMultimodal);
         checkMultimodal();
+        updateGpt56ReasoningVisibility();
     }
 
     /**

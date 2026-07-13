@@ -1,0 +1,281 @@
+/**
+ * PurioChat animated avatar component.
+ * One size variable scales the component; four color variables skin it.
+ */
+.pcha-avatar {
+    --pcha-a: #ffb37b;
+    --pcha-b: #ffdcaa;
+    --pcha-c: #fffaf2;
+    --pcha-d: #e97c38;
+    --pcha-t1: 7.65s;
+    --pcha-t2: 3.825s;
+    --pcha-nova-peak-brightness: 1.8;
+    --pcha-nova-peak-glow: 0.9;
+    font-size: var(--pcha-size, 48px);
+    position: relative;
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    flex: none;
+    line-height: 0;
+}
+
+.pcha-speed-slow {
+    --pcha-t1: 15.3s;
+    --pcha-t2: 7.65s;
+}
+
+.pcha-speed-normal {
+    --pcha-t1: 7.65s;
+    --pcha-t2: 3.825s;
+}
+
+.pcha-speed-fast {
+    --pcha-t1: 3.825s;
+    --pcha-t2: 1.9125s;
+}
+
+.pcha-orb {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    -webkit-mask-image: radial-gradient(circle, #fff 99%, transparent 100%);
+    mask-image: radial-gradient(circle, #fff 99%, transparent 100%);
+    isolation: isolate;
+}
+
+.pcha-orb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0.02em rgba(0, 0, 0, 0.05),
+        inset 0 -0.09em 0.22em rgba(0, 0, 0, 0.1),
+        inset 0 0.05em 0.16em rgba(255, 255, 255, 0.28);
+    pointer-events: none;
+}
+
+.pcha-scene {
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    animation: pcha-orbit var(--pcha-t1) steps(230) infinite;
+    will-change: transform;
+}
+
+.pcha-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(0.075em);
+    will-change: transform;
+    animation: pcha-wobble var(--pcha-t2) steps(29) infinite;
+}
+
+.pcha-b2 {
+    animation-duration: calc(var(--pcha-t2) * 1.35);
+    animation-delay: -4s;
+}
+
+.pcha-b3 {
+    animation-duration: calc(var(--pcha-t2) * 0.8);
+    animation-delay: -8s;
+    animation-direction: reverse;
+}
+
+.pcha-grain {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 0.8em 0.8em;
+    mix-blend-mode: overlay;
+    opacity: 0.78;
+    pointer-events: none;
+}
+
+.pcha-flare .pcha-scene {
+    background: radial-gradient(120% 120% at 50% 18%, var(--pcha-c) 0%, var(--pcha-a) 58%, var(--pcha-d) 115%);
+}
+
+.pcha-flare .pcha-b1 {
+    width: 0.85em;
+    height: 0.85em;
+    left: 8%;
+    top: 2%;
+    background: radial-gradient(closest-side, var(--pcha-c), transparent 72%);
+    opacity: 1;
+    filter: blur(0.075em) brightness(1.08);
+    animation: none;
+}
+
+.pcha-flare .pcha-b2 {
+    display: none;
+    width: 0.65em;
+    height: 0.65em;
+    right: -4%;
+    top: 36%;
+    background: radial-gradient(closest-side, var(--pcha-b), transparent 72%);
+    opacity: 0.84;
+    filter: blur(0.4em);
+    animation: none;
+}
+
+.pcha-flare .pcha-b3 {
+    width: 0.78em;
+    height: 0.78em;
+    left: 18%;
+    bottom: -14%;
+    background: radial-gradient(closest-side, var(--pcha-d), transparent 72%);
+    opacity: 0.78;
+    animation-name: pcha-edge-drift;
+    animation-timing-function: ease-in-out;
+}
+
+.pcha-nova .pcha-scene {
+    background: linear-gradient(178deg, var(--pcha-b) 0%, var(--pcha-a) 58%, var(--pcha-d) 108%);
+    animation-name: pcha-sway;
+    animation-duration: 4s;
+    animation-timing-function: steps(61);
+}
+
+.pcha-nova.pcha-speed-slow .pcha-scene {
+    animation-duration: 9s;
+    animation-timing-function: steps(136);
+}
+
+.pcha-nova.pcha-speed-fast .pcha-scene {
+    animation-duration: 2.5s;
+    animation-timing-function: steps(38);
+}
+
+.pcha-nova .pcha-b1 {
+    width: 1em;
+    height: 0.5em;
+    left: 10%;
+    top: 16%;
+    background: radial-gradient(closest-side, var(--pcha-c) 20%, transparent 76%);
+    filter: blur(0.06em);
+    opacity: 0.95;
+    animation-name: pcha-core;
+    animation-timing-function: steps(58);
+}
+
+.pcha-nova .pcha-b2 {
+    width: 0.6em;
+    height: 0.4em;
+    left: 8%;
+    top: 27%;
+    background: radial-gradient(closest-side, var(--pcha-c), transparent 74%);
+    opacity: 0.7;
+    animation-name: pcha-nova-small-drift;
+    animation-timing-function: ease-in-out;
+}
+
+.pcha-nova .pcha-b3 {
+    width: 0.8em;
+    height: 0.6em;
+    right: 0;
+    bottom: -8%;
+    background: radial-gradient(closest-side, var(--pcha-d), transparent 74%);
+    opacity: 0.5;
+}
+
+@keyframes pcha-orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pcha-sway {
+    0%, 100% { transform: rotate(-9deg); }
+    50% { transform: rotate(9deg); }
+}
+
+@keyframes pcha-wobble {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(0.1em, -0.08em) scale(1.3); }
+    50% { transform: translate(-0.07em, 0.1em) scale(0.78); }
+    75% { transform: translate(-0.09em, -0.06em) scale(1.16); }
+}
+
+@keyframes pcha-nova-small-drift {
+    0%, 100% { transform: translate(-0.03em, -0.02em) scale(0.94); }
+    50% { transform: translate(0.04em, 0.04em) scale(1.14); }
+}
+
+@keyframes pcha-edge-drift {
+    0%, 100% { transform: translate(-0.04em, 0.1em) scale(0.92); }
+    25% { transform: translate(0.08em, 0.13em) scale(1); }
+    50% { transform: translate(0.16em, 0.09em) scale(0.88); }
+    75% { transform: translate(0.04em, 0.16em) scale(1.03); }
+}
+
+@keyframes pcha-core {
+    0%, 100% {
+        transform: scale(0.96, 0.96);
+        filter: blur(0.06em) brightness(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+    }
+    50% {
+        transform: scale(1.65, 1.05);
+        filter: blur(0.06em) brightness(var(--pcha-nova-peak-brightness)) drop-shadow(0 0 0.12em rgba(255, 255, 255, var(--pcha-nova-peak-glow)));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pcha-avatar,
+    .pcha-avatar * {
+        animation: none !important;
+    }
+}
+
+.pcha-tab-hidden .pcha-avatar,
+.pcha-tab-hidden .pcha-avatar * {
+    animation-play-state: paused !important;
+}
+
+#listeo-floating-chat-button .listeo-floating-animated-avatar {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 60px !important;
+    height: 60px !important;
+    pointer-events: none;
+}
+
+#listeo-floating-chat-button.has-animated-avatar .listeo-floating-animated-avatar {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+}
+
+#listeo-floating-chat-button.has-animated-avatar .listeo-floating-animated-button-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    max-width: 38px;
+    max-height: 38px;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#listeo-floating-chat-button.has-animated-avatar.is-chat-open .listeo-floating-animated-button-icon {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+#listeo-floating-chat-button.has-animated-avatar:not(.is-chat-open) .listeo-floating-icon-close {
+    display: block !important;
+    opacity: 0 !important;
+    transform: translate(-50%, -50%) scale(0) !important;
+}
+
+#listeo-floating-chat-button.has-animated-avatar.is-chat-open .listeo-floating-icon-close {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+    z-index: 3;
+}

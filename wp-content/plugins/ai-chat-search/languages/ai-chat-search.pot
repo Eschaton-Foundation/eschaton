@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: PurioChat 2.2.4\n"
+"Project-Id-Version: PurioChat 2.2.6\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-08T21:06:59+00:00\n"
+"POT-Creation-Date: 2026-07-09T21:09:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ai-chat-search\n"
@@ -4184,7 +4184,8 @@ msgid ""
 msgstr ""
 
 #: includes/admin/class-free-license-upgrade.php:130
-msgid "Paste your license key below — Pro installs and activates automatically."
+msgid ""
+"Paste your license key below — Pro installs and activates automatically."
 msgstr ""
 
 #: includes/admin/class-free-license-upgrade.php:135
@@ -4196,11 +4197,15 @@ msgid "One-click upgrade"
 msgstr ""
 
 #: includes/admin/class-free-license-upgrade.php:138
-msgid "No download is needed. Your license key will activate the installed Pro plugin."
+msgid ""
+"No download is needed. Your license key will activate the installed Pro "
+"plugin."
 msgstr ""
 
 #: includes/admin/class-free-license-upgrade.php:142
-msgid "Enter your key to install Pro automatically. Settings and trained data stay intact."
+msgid ""
+"Enter your key to install Pro automatically. Settings and trained data stay "
+"intact."
 msgstr ""
 
 #: includes/admin/class-free-license-upgrade.php:147
@@ -5519,7 +5524,9 @@ msgid "Embed on any website (copy &amp; paste script)"
 msgstr ""
 
 #: ai-chat-search-pro/includes/class-embed-widget.php:370
-msgid "When enabled, you get a one-line script that adds the chat bubble to any external page - plain HTML, another CMS, anywhere - without WordPress."
+msgid ""
+"When enabled, you get a one-line script that adds the chat bubble to any "
+"external page - plain HTML, another CMS, anywhere - without WordPress."
 msgstr ""
 
 #: ai-chat-search-pro/includes/class-embed-widget.php:378
@@ -5539,7 +5546,9 @@ msgid "Allowed domains (optional)"
 msgstr ""
 
 #: ai-chat-search-pro/includes/class-embed-widget.php:391
-msgid "One domain per line. Leave empty to allow the widget on any site. When set, the chat only loads when embedded on these domains."
+msgid ""
+"One domain per line. Leave empty to allow the widget on any site. When set, "
+"the chat only loads when embedded on these domains."
 msgstr ""
 
 #: ai-chat-search-pro/includes/class-embed-widget.php:394
@@ -5559,5 +5568,909 @@ msgid "Cards first"
 msgstr ""
 
 #: ai-chat-search/includes/admin/class-admin-interface.php:7406
-msgid "Choose whether listing/product cards appear before or after the AI answer."
+msgid ""
+"Choose whether listing/product cards appear before or after the AI answer."
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:51
+msgid "Send the daily Chat Insights digest to the site administrator."
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:84
+msgid "Send daily email digest"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:85
+msgid ""
+"Sends newly generated Chat Insights to the site administrator every day at "
+"08:00 in the site timezone."
+msgstr ""
+
+#. translators: %s: Site name.
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:301
+#, php-format
+msgid "[%s] Daily Chat Insights"
+msgstr ""
+
+#. translators: 1: Digest start date and time, 2: Digest end date and time.
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:450
+#, php-format
+msgid "Insights generated from %1$s to %2$s"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:463
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:486
+msgid "Daily Chat Insights"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:521
+msgid "Latest conversations"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:526
+msgid "No new Chat Insights were generated during this period."
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:546
+msgid "Untitled conversation"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:571
+msgid "View Chat Insights dashboard"
+msgstr ""
+
+#: ai-chat-search-pro/includes/class-daily-chat-insights-email.php:575
+msgid "Sent by PurioChat to the site administrator."
+msgstr ""
+
+#: includes/admin/class-admin-chat-history.php:458
+msgid "ID, IP, page or keyword"
+msgstr ""
+
+#: includes/admin/class-admin-chat-history.php:678
+msgid "Human"
+msgstr ""
+
+#. Plugin Name of the plugin
+#: ai-chat-search-pro.php
+msgid "PurioChat Pro"
+msgstr ""
+
+#. Description of the plugin
+#: ai-chat-search-pro.php
+msgid ""
+"Premium features for PurioChat plugin - Unlimited post types, full "
+"conversation logs, and priority support"
+msgstr ""
+
+#: includes/class-live-handoff.php:141 includes/class-live-handoff.php:1326
+#: includes/class-live-handoff.php:1460 includes/class-live-handoff.php:1566
+#: includes/class-live-handoff.php:1575 includes/live-handoff/admin-page.php:18
+msgid "Human Live Chat"
+msgstr ""
+
+#: includes/class-live-handoff.php:545
+msgid "A human agent is not currently connected."
+msgstr ""
+
+#: includes/class-live-handoff.php:566
+msgid "Human chat ended. The AI assistant is back."
+msgstr ""
+
+#: includes/class-live-handoff.php:1476
+msgid "End human chat"
+msgstr ""
+
+#: includes/class-live-handoff.php:263
+msgid "Live conversations are not available."
+msgstr ""
+
+#: includes/class-live-handoff.php:275 includes/class-live-handoff.php:284
+msgid "Invalid live conversation credentials."
+msgstr ""
+
+#: includes/class-live-handoff.php:350
+msgid "Too many live conversation sessions. Please try again later."
+msgstr ""
+
+#: includes/class-live-handoff.php:382
+msgid "Could not start the live conversation."
+msgstr ""
+
+#: includes/class-live-handoff.php:396
+msgid "Please provide your name and email before requesting a human."
+msgstr ""
+
+#: includes/class-live-handoff.php:469
+msgid "Messages are handled by the AI until a human handoff is requested."
+msgstr ""
+
+#: includes/class-live-handoff.php:479 includes/class-live-handoff.php:900
+msgid "Message cannot be empty."
+msgstr ""
+
+#: includes/class-live-handoff.php:506
+msgid "Could not close the live conversation."
+msgstr ""
+
+#: includes/class-live-handoff.php:509
+msgid "Visitor started a new conversation."
+msgstr ""
+
+#: includes/class-live-handoff.php:547
+msgid "Could not save the message."
+msgstr ""
+
+#: includes/class-live-handoff.php:596
+msgid "The conversation state changed. Please refresh and try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:654 includes/class-live-handoff.php:1088
+#: includes/class-live-handoff.php:1332
+msgid "No human operators are currently online."
+msgstr ""
+
+#: includes/class-live-handoff.php:658
+msgid "Human support is currently busy. Please try again later."
+msgstr ""
+
+#: includes/class-live-handoff.php:675
+msgid "The conversation state changed. Please try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:677 includes/class-live-handoff.php:1333
+msgid "Waiting for a human…"
+msgstr ""
+
+#: includes/class-live-handoff.php:720
+msgid ""
+"No one is available right now, so the AI assistant will continue helping. "
+"Your request has been saved for the team."
+msgstr ""
+
+#: includes/class-live-handoff.php:694
+#, php-format
+msgid "[%s] Visitor is waiting for a human agent"
+msgstr ""
+
+#: includes/class-live-handoff.php:904 includes/class-live-handoff.php:928
+msgid "Visitor waiting for human support"
+msgstr ""
+
+#: includes/class-live-handoff.php:932
+msgid "A visitor requested a human and is still waiting in Live Chat."
+msgstr ""
+
+#: includes/class-live-handoff.php:941
+msgid "View visitor page"
+msgstr ""
+
+#: includes/class-live-handoff.php:951
+msgid "Open Live Chat"
+msgstr ""
+
+#: includes/class-live-handoff.php:955
+msgid "Sent by PurioChat to your Live Chat notification addresses."
+msgstr ""
+
+#: includes/class-live-handoff.php:789 includes/class-live-handoff.php:832
+#: includes/class-live-handoff.php:861 includes/class-live-handoff.php:889
+#: includes/class-live-handoff.php:926
+msgid "Conversation not found."
+msgstr ""
+
+#: includes/class-live-handoff.php:844
+msgid "This AI conversation is no longer available to take over."
+msgstr ""
+
+#: includes/class-live-handoff.php:848 includes/class-live-handoff.php:877
+#, php-format
+msgid "%s joined the chat."
+msgstr ""
+
+#: includes/class-live-handoff.php:873
+msgid "This conversation has already been claimed."
+msgstr ""
+
+#: includes/class-live-handoff.php:892
+msgid "Claim this conversation before replying."
+msgstr ""
+
+#: includes/class-live-handoff.php:931
+msgid "This conversation cannot be returned to AI."
+msgstr ""
+
+#: includes/class-live-handoff.php:951
+msgid "The conversation state changed. Please refresh."
+msgstr ""
+
+#: includes/class-live-handoff.php:953
+msgid "Conversation returned to the AI assistant."
+msgstr ""
+
+#: includes/class-live-handoff.php:990 includes/class-live-handoff.php:1329
+#: includes/class-live-handoff.php:1430
+msgid "Human agent"
+msgstr ""
+
+#: includes/class-live-handoff.php:999 includes/class-live-handoff.php:1021
+msgid "Too many live conversation requests. Please wait and try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:1055
+msgid ""
+"Request a human agent when the visitor explicitly asks for a person or needs "
+"help only a human can provide."
+msgstr ""
+
+#: includes/class-live-handoff.php:1059
+msgid "Short reason for the handoff."
+msgstr ""
+
+#: includes/class-live-handoff.php:1072
+msgid ""
+"HUMAN HANDOFF: You can call request_human_handoff(reason) when the visitor "
+"explicitly asks to speak with a human or the request genuinely requires a "
+"human. Do not ask for their name or email in chat; the interface collects "
+"those details before completing the handoff. Do not promise a response time. "
+"After calling the tool, do not add a separate transfer or waiting message "
+"because the chat interface shows the handoff status."
+msgstr ""
+
+#: includes/class-live-handoff.php:1075
+msgid "ADDITIONAL HUMAN HANDOFF INSTRUCTIONS FROM ADMIN:"
+msgstr ""
+
+#: includes/class-live-handoff.php:1095
+msgid ""
+"The live conversation session is not ready. Ask the visitor to use the human "
+"handoff button."
+msgstr ""
+
+#: includes/class-live-handoff.php:1106
+msgid "Name and email are required before handoff."
+msgstr ""
+
+#: includes/class-live-handoff.php:1129
+msgid "Handoff started. Do not send a separate transfer message."
+msgstr ""
+
+#: includes/class-live-handoff.php:1155
+msgid "Waiting for a human agent. You can send more details while you wait."
+msgstr ""
+
+#: includes/class-live-handoff.php:1156
+msgid "A human agent is handling this conversation."
+msgstr ""
+
+#: includes/class-live-handoff.php:1327
+msgid "Message could not be sent. Please try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:1328
+msgid "Image attachments are not available during human support."
+msgstr ""
+
+#: includes/class-live-handoff.php:1330
+msgid "The conversation was returned to the AI assistant."
+msgstr ""
+
+#: includes/class-live-handoff.php:1331
+msgid "Live chat could not start. Please try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:1334
+msgid "Contact details form is unavailable."
+msgstr ""
+
+#: includes/class-live-handoff.php:1335
+msgid "Too many live conversation requests. Please wait a minute and try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:1347
+msgid "Before we connect you"
+msgstr ""
+
+#: includes/class-live-handoff.php:1350
+msgid "Name"
+msgstr ""
+
+#: includes/class-live-handoff.php:1355
+msgid "Email"
+msgstr ""
+
+#: includes/class-live-handoff.php:1361
+msgid "Continue to human support"
+msgstr ""
+
+#: includes/class-live-handoff.php:1415
+msgid "Live"
+msgstr ""
+
+#: includes/class-live-handoff.php:1416
+msgid "Reconnecting…"
+msgstr ""
+
+#: includes/class-live-handoff.php:1417
+#: includes/class-live-handoff.php:935
+#: includes/live-handoff/admin-page.php:110
+msgid "Visitor"
+msgstr ""
+
+#: includes/class-live-handoff.php:1418
+msgid "Now"
+msgstr ""
+
+#: includes/class-live-handoff.php:1419
+#, php-format
+msgid "%d minute ago"
+msgstr ""
+
+#: includes/class-live-handoff.php:1420
+#, php-format
+msgid "%d minutes ago"
+msgstr ""
+
+#: includes/class-live-handoff.php:1421
+#, php-format
+msgid "%d hour ago"
+msgstr ""
+
+#: includes/class-live-handoff.php:1423
+#, php-format
+msgid "%d day ago"
+msgstr ""
+
+#: includes/class-live-handoff.php:1424
+#, php-format
+msgid "%d days ago"
+msgstr ""
+
+#: includes/class-live-handoff.php:1425
+msgid "No messages yet"
+msgstr ""
+
+#: includes/class-live-handoff.php:1426
+msgid "Unread"
+msgstr ""
+
+#: includes/class-live-handoff.php:1427
+msgid "Assigned to"
+msgstr ""
+
+#: includes/class-live-handoff.php:1428
+msgid "Human help requested"
+msgstr ""
+
+#: includes/class-live-handoff.php:1432 includes/live-handoff/admin-page.php:70
+msgid "Waiting for human"
+msgstr ""
+
+#: includes/class-live-handoff.php:1433
+msgid "Human active"
+msgstr ""
+
+#: includes/class-live-handoff.php:1434
+msgid "AI active"
+msgstr ""
+
+#: includes/class-live-handoff.php:1435
+msgid "Past live chat"
+msgstr ""
+
+#: includes/class-live-handoff.php:1436
+msgid "Type a reply…"
+msgstr ""
+
+#: includes/class-live-handoff.php:1437
+#: includes/live-handoff/admin-page.php:125
+msgid "Reply to claim this conversation…"
+msgstr ""
+
+#: includes/class-live-handoff.php:1438
+msgid "Take over this conversation to reply…"
+msgstr ""
+
+#: includes/class-live-handoff.php:1439
+msgid "Past live conversations are read-only."
+msgstr ""
+
+#: includes/class-live-handoff.php:1440
+msgid "This conversation is assigned to another operator."
+msgstr ""
+
+#: includes/class-live-handoff.php:1441
+msgid "Select a conversation first."
+msgstr ""
+
+#: includes/class-live-handoff.php:1442
+msgid ""
+"Return this conversation to the AI assistant? The AI will answer the "
+"visitor’s next message."
+msgstr ""
+
+#: includes/class-live-handoff.php:1443
+msgid "Reject this handoff request and return the conversation to AI?"
+msgstr ""
+
+#: includes/class-live-handoff.php:1444
+msgid "Browser notifications unavailable"
+msgstr ""
+
+#: includes/class-live-handoff.php:1445
+msgid "Browser notifications enabled."
+msgstr ""
+
+#: includes/class-live-handoff.php:1446
+msgid "Browser notifications blocked"
+msgstr ""
+
+#: includes/class-live-handoff.php:1447 includes/live-handoff/admin-page.php:58
+#: includes/live-handoff/admin-page.php:264
+msgid "Enable browser notifications"
+msgstr ""
+
+#: includes/class-live-handoff.php:1448
+msgid "PurioChat test notification"
+msgstr ""
+
+#: includes/class-live-handoff.php:1449
+msgid "Browser notifications are working."
+msgstr ""
+
+#: includes/class-live-handoff.php:1450
+msgid "Test notification sent."
+msgstr ""
+
+#: includes/class-live-handoff.php:1451
+msgid "Allow browser notifications first."
+msgstr ""
+
+#: includes/class-live-handoff.php:1452
+msgid "A visitor is waiting for a human agent."
+msgstr ""
+
+#: includes/class-live-handoff.php:1453
+msgid "Sending…"
+msgstr ""
+
+#: includes/class-live-handoff.php:1454
+msgid "Test email sent."
+msgstr ""
+
+#: includes/class-live-handoff.php:1455
+msgid "Link copied."
+msgstr ""
+
+#: includes/class-live-handoff.php:1456
+msgid "Enter at least 2 characters."
+msgstr ""
+
+#: includes/class-live-handoff.php:1457
+msgid "No users found."
+msgstr ""
+
+#: includes/class-live-handoff.php:1458
+msgid "Could not search users. Please try again."
+msgstr ""
+
+#: includes/class-live-handoff.php:1459
+#: includes/live-handoff/admin-page.php:244
+msgid "No operators selected yet."
+msgstr ""
+
+#: includes/class-live-handoff.php:1467 includes/class-live-handoff.php:1485
+#: includes/class-live-handoff.php:1515 includes/class-live-handoff.php:1516
+#: includes/class-live-handoff.php:1530 includes/class-live-handoff.php:1531
+#: includes/class-live-handoff.php:1543 includes/class-live-handoff.php:1559
+msgid "Live Chat"
+msgstr ""
+
+#: includes/class-live-handoff.php:1497
+msgid "Live Chat settings saved."
+msgstr ""
+
+#: includes/class-live-handoff.php:1548
+msgid "You are not allowed to access Live Chat."
+msgstr ""
+
+#: includes/class-live-handoff.php:1599
+msgid "You are not allowed to manage live conversations."
+msgstr ""
+
+#: includes/class-live-handoff.php:1692
+msgid "PurioChat live conversation test notification"
+msgstr ""
+
+#: includes/class-live-handoff.php:1692
+msgid "Email notifications for live conversations are working."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:40
+msgid "Live Chat is currently off."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:40
+msgid "An administrator must enable it before conversations can be received."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:40
+msgid "Enable it in Live Chat settings below to start receiving conversations."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:53
+msgid "Inbox"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:54
+msgid "Monitor waiting, active, and recently active AI conversations."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:62
+msgid "Connecting…"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:74
+msgid "Active"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:78
+msgid "Live AI conversations"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:82
+msgid "Past Live Conversations"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:89
+msgid "No conversations yet"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:90
+msgid ""
+"Waiting, active, AI, and past live conversations will appear here "
+"automatically."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:99
+msgid "Select Conversation"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:105
+msgid "Back to conversations"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:115
+msgid "Take over"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:116
+msgid "Reject"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:117
+msgid "Return to AI"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:124
+msgid "Reply to visitor"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:146
+msgid "Live Chat settings"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:147
+msgid "Control how visitors and the AI can reach a human operator."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:161
+msgid "Enable Live Chat"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:162
+msgid ""
+"Master switch. Enables the operator inbox, notifications, manual takeover, "
+"and the optional escalation methods below."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:173
+msgid "Show visitor handoff button"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:174
+msgid ""
+"Adds the handoff quick action to the chat. AI escalation remains available "
+"when this is off."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:178
+msgid "Button text"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:180
+msgid "Button preview"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:194
+msgid "Allow automatic AI escalation"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:195
+msgid ""
+"Gives the AI a handoff tool and prompt rule. The visitor button remains "
+"available when this is off."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:199
+msgid "Additional AI handoff instructions"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:200
+msgid ""
+"e.g. Escalate billing disputes immediately. Do not escalate general product "
+"questions unless the visitor explicitly asks for a person."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:201
+msgid ""
+"Extra rules for when the AI should request a human. Fixed safety and "
+"availability rules still apply. Maximum 1,000 characters."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:206
+msgid "When handoff requests are available"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:207
+msgid ""
+"Choose whether visitors can request a person at any time or only while a "
+"Live Chat inbox is open."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:209
+msgid "Always allow handoff requests"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:210
+msgid "Only while an operator is online"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:213
+msgid "Always allow:"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:213
+msgid ""
+"Visitors can request help at any time. We email immediately when nobody is "
+"online, or after 15 seconds if an online operator has not joined. After one "
+"minute, the AI continues helping."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:214
+msgid "Only while online:"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:214
+msgid ""
+"The button and AI handoff tool are available only while an authorized "
+"operator has the inbox open. If nobody joins within 15 seconds, we email the "
+"team."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:219
+msgid "Live Chat operators"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:220
+msgid ""
+"Allow selected WordPress users to open the Live Chat inbox and reply. They "
+"cannot access these settings. Administrators already have access."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:221
+msgid "Employee inbox link"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:224
+msgid "Copy link"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:227
+msgid "Find a WordPress user"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:228
+msgid "Search by name, username or email…"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:230
+msgid "Selected operators"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:251
+msgid "Notification email addresses"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:252
+msgid ""
+"Email these addresses once per request: immediately when nobody is online, "
+"or after 15 seconds if the chat remains unclaimed."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:258
+msgid "Separate multiple addresses with commas."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:255
+msgid "Send test email"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:273
+msgid "Emails might not work, no SMTP plugin"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:261
+msgid "Browser alerts"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:262
+msgid ""
+"Show a desktop notification while the Live Chat inbox is open. Unclaimed "
+"requests also trigger the configured email fallback."
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:265
+msgid "Test notification"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:269
+msgid "Play a sound"
+msgstr ""
+
+#: includes/live-handoff/admin-page.php:278
+msgid "Save settings"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:114
+msgid "Hand conversations from AI to your team without leaving the chat."
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:124
+msgid "Michael Brown"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:124
+msgid "Can someone check my order?"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:128
+msgid "Anna Kowalska"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:128
+msgid "I need help with my booking."
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:133 class-free-live-chat-upgrade.php:139
+msgid "Sophia Martinez"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:133
+msgid "Thanks, that solved it."
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:142
+msgid "Could you help me update the delivery address?"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:143
+msgid "Of course. I am checking that for you now."
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:145
+msgid "Type a message…"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:152
+msgid "Add Human Live Chat"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:153
+msgid ""
+"Let visitors request a person, allow AI to escalate, and reply from a shared "
+"WordPress inbox."
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:155
+msgid "Browser, sound, and offline email alerts"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:156
+msgid "Manual takeover with complete conversation history"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:157
+msgid "Access for selected WordPress users"
+msgstr ""
+
+#: class-free-live-chat-upgrade.php:137
+msgid "United States"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8363
+msgid "Floating Button Style"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8392
+msgid "Choose the appearance of the button that opens the chat."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8595
+msgid "Animation Style"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8597
+msgid "Flare"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8597
+msgid "Nova"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8407
+#: includes/admin/class-admin-interface.php:8606
+msgid "Button Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8411
+msgid "Background color for the simple floating button and chat action buttons."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8436
+msgid "Button image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3650
+msgid "Select Button Icon / Image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3654
+msgid "Use this icon / image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8420
+msgid "Button Icon / Image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8437
+msgid "Choose Icon / Image"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8448
+msgid "Icon / Image Size (px)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8451
+msgid "Controls the icon or image size inside the 60px floating button."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3669
+msgid "Select Animated Button Icon"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8526
+msgid "Choose SVG / PNG"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8545
+msgid "Speed"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8547
+msgid "Slow"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:8547
+msgid "Fast"
 msgstr ""

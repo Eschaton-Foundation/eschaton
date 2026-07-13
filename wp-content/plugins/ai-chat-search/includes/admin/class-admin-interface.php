@@ -107,6 +107,14 @@ class Listeo_AI_Search_Admin_Interface
                 "description" =>
                     "Enable model reasoning for OpenRouter (off = faster, on = better answers for complex questions)",
             ],
+            "listeo_ai_gpt56_reasoning" => [
+                "type" => "checkbox",
+                "section" => "ai-chat-config",
+                "sanitize" => "intval",
+                "default" => 0,
+                "description" =>
+                    "Enable low reasoning effort for direct OpenAI GPT-5.6 models",
+            ],
             "listeo_ai_search_debug_mode" => [
                 "type" => "checkbox",
                 "section" => "developer-debug",
@@ -459,6 +467,14 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => "default",
                 "description" => "Button icon style",
             ],
+            "listeo_ai_floating_button_style" => [
+                "type" => "select",
+                "section" => "ai-chat-config",
+                "sanitize" => "sanitize_text_field",
+                "default" => "simple",
+                "description" =>
+                    "Floating button style (simple or animated)",
+            ],
             "listeo_ai_floating_custom_icon" => [
                 "type" => "number",
                 "section" => "ai-chat-config",
@@ -473,6 +489,41 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => 32,
                 "description" =>
                     "Custom icon size in pixels (overrides width/height/max-width/max-height)",
+            ],
+            "listeo_ai_floating_animated_avatar_style" => [
+                "type" => "select",
+                "section" => "ai-chat-config",
+                "sanitize" => "sanitize_text_field",
+                "default" => "flare",
+                "description" => "Animated floating button avatar style",
+            ],
+            "listeo_ai_floating_animated_avatar_color" => [
+                "type" => "color",
+                "section" => "ai-chat-config",
+                "sanitize" => "sanitize_hex_color",
+                "default" => "#006aff",
+                "description" => "Animated floating button avatar color",
+            ],
+            "listeo_ai_floating_animated_speed" => [
+                "type" => "select",
+                "section" => "ai-chat-config",
+                "sanitize" => "sanitize_text_field",
+                "default" => "normal",
+                "description" => "Animated floating button speed",
+            ],
+            "listeo_ai_floating_animated_icon" => [
+                "type" => "number",
+                "section" => "ai-chat-config",
+                "sanitize" => "intval",
+                "default" => 0,
+                "description" => "Animated floating button icon attachment ID",
+            ],
+            "listeo_ai_floating_animated_icon_size" => [
+                "type" => "number",
+                "section" => "ai-chat-config",
+                "sanitize" => "absint",
+                "default" => 28,
+                "description" => "Animated floating button icon size",
             ],
             "listeo_ai_floating_welcome_bubble" => [
                 "type" => "wysiwyg",
@@ -684,7 +735,7 @@ class Listeo_AI_Search_Admin_Interface
      * appearance:base-select (Chrome 135+) — on older browsers the <img> is
      * stripped by the native select renderer and only the text label shows.
      *
-     * @param string $model_slug OpenRouter model slug (e.g. 'openai/gpt-5-mini')
+     * @param string $model_slug OpenRouter model slug (e.g. 'openai/gpt-5.6-terra')
      * @return string Icon URL, or empty string if vendor is unknown.
      */
     private function get_openrouter_vendor_icon_url($model_slug)
@@ -913,6 +964,27 @@ class Listeo_AI_Search_Admin_Interface
                 : "cards_first";
         }
 
+        if ($key === "listeo_ai_floating_button_style") {
+            if ($value === "image") {
+                return "simple";
+            }
+            return in_array($value, ["simple", "animated"], true)
+                ? $value
+                : "simple";
+        }
+
+        if ($key === "listeo_ai_floating_animated_avatar_style") {
+            return in_array($value, ["flare", "nova"], true)
+                ? $value
+                : "flare";
+        }
+
+        if ($key === "listeo_ai_floating_animated_speed") {
+            return in_array($value, ["slow", "normal", "fast"], true)
+                ? $value
+                : "normal";
+        }
+
         if ($key === "listeo_ai_search_custom_suggestions") {
             return Listeo_AI_Search_Utility_Helper::sanitize_custom_suggestions(
                 $value
@@ -921,7 +993,8 @@ class Listeo_AI_Search_Admin_Interface
 
         if (
             $key === "listeo_ai_floating_button_color" ||
-            $key === "listeo_ai_primary_color"
+            $key === "listeo_ai_primary_color" ||
+            $key === "listeo_ai_floating_animated_avatar_color"
         ) {
             $sanitized = sanitize_hex_color($value);
             return empty($sanitized) ? $config["default"] : $sanitized;
@@ -1705,6 +1778,12 @@ class Listeo_AI_Search_Admin_Interface
                 // REFACTORED: Use centralized sanitization from registry
                 $value = $this->sanitize_setting($setting, $_POST[$setting]);
 
+                if ($setting === "listeo_ai_chat_model") {
+                    $value = Listeo_AI_Provider::get_retired_model_replacement(
+                        $value,
+                    );
+                }
+
                 if (
                     in_array($setting, $this->get_secret_setting_keys(), true)
                 ) {
@@ -1746,15 +1825,12 @@ class Listeo_AI_Search_Admin_Interface
                         "gpt-4.1-nano",
                         "gpt-4.1-mini",
                         "gpt-4.1",
-                        "gpt-5-mini",
-                        "gpt-5-chat-latest",
-                        "gpt-5.1",
-                        "gpt-5.2",
-                        "gpt-5.3-chat-latest",
-                        "gpt-5.4",
                         "gpt-5.4-mini",
                         "gpt-5.4-nano",
                         "gpt-5.5",
+                        "gpt-5.6-luna",
+                        "gpt-5.6-terra",
+                        "gpt-5.6-sol",
                     ];
                     $gemini_models = [
                         "gemini-2.5-flash",
@@ -1813,10 +1889,10 @@ class Listeo_AI_Search_Admin_Interface
                     elseif ($value === "openrouter" && !$is_openrouter_model) {
                         update_option(
                             "listeo_ai_chat_model",
-                            "openai/gpt-5.4-mini",
+                            "openai/gpt-5.6-luna",
                         );
                         $updated_settings["listeo_ai_chat_model"] =
-                            "openai/gpt-5.4-mini";
+                            "openai/gpt-5.6-luna";
                     }
 
                     $provider_obj = new Listeo_AI_Provider($value);
@@ -3136,6 +3212,13 @@ class Listeo_AI_Search_Admin_Interface
             LISTEO_AI_SEARCH_VERSION,
         );
 
+        wp_enqueue_style(
+            "purio-avatar",
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/purio-avatar.css",
+            ["ai-chat-search-admin"],
+            LISTEO_AI_SEARCH_VERSION,
+        );
+
         // Enqueue jQuery (it should already be loaded, but just to be sure)
         wp_enqueue_script("jquery");
 
@@ -3207,6 +3290,22 @@ class Listeo_AI_Search_Admin_Interface
             "airs-admin-media",
             $js_base_url . "admin-media.js",
             ["jquery", "airs-admin-core"],
+            $js_version,
+            true,
+        );
+
+        wp_enqueue_script(
+            "purio-avatar",
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-avatar.js",
+            [],
+            $js_version,
+            true,
+        );
+
+        wp_enqueue_script(
+            "airs-floating-button-style",
+            $js_base_url . "floating-button-style.js",
+            ["jquery", "purio-avatar"],
             $js_version,
             true,
         );
@@ -3575,8 +3674,16 @@ class Listeo_AI_Search_Admin_Interface
             "processing" => __("Processing", "ai-chat-search"),
 
             // Media uploader
-            "selectCustomIcon" => __("Select Custom Icon", "ai-chat-search"),
-            "useThisIcon" => __("Use this icon", "ai-chat-search"),
+            "selectCustomIcon" => __(
+                "Select Button Icon / Image",
+                "ai-chat-search",
+            ),
+            "useThisIcon" => __("Use this icon / image", "ai-chat-search"),
+            "selectAnimatedIcon" => __(
+                "Select Animated Button Icon",
+                "ai-chat-search",
+            ),
+            "useAnimatedIcon" => __("Use this icon", "ai-chat-search"),
             "selectChatAvatar" => __("Select Chat Avatar", "ai-chat-search"),
             "useThisImage" => __("Use this image", "ai-chat-search"),
             "remove" => __("Remove", "ai-chat-search"),
@@ -4612,18 +4719,13 @@ class Listeo_AI_Search_Admin_Interface
                                 $openai_models = [
                                     "gpt-4.1-mini" => "GPT-4.1 Mini (Fast & Good)",
                                     "gpt-4.1" => "GPT-4.1 (Smart, non-reasoning)",
-                                    "gpt-5-mini" => "GPT-5 Mini (Fast & Good)",
-                                    "gpt-5-chat-latest" => "GPT-5 (Smart)",
-                                    "gpt-5.1" => "GPT-5.1 (High Intelligence)",
-                                    "gpt-5.2" => "GPT-5.2 (High Intelligence)",
-                                    "gpt-5.3-chat-latest" =>
-                                        "GPT-5.3 (High Intelligence)",
-                                    "gpt-5.4" =>
-                                        "GPT-5.4 (High Intelligence - Latest)",
                                     "gpt-5.4-mini" => "GPT-5.4 Mini (Fast & Smart)",
                                     "gpt-5.4-nano" =>
                                         "GPT-5.4 Nano (Fastest & Cheapest)",
-                                    "gpt-5.5" => "GPT-5.5 (Latest)",
+                                    "gpt-5.5" => "GPT-5.5",
+                                    "gpt-5.6-luna" => "GPT-5.6 Luna",
+                                    "gpt-5.6-terra" => "GPT-5.6 Terra",
+                                    "gpt-5.6-sol" => "GPT-5.6 Sol",
                                 ];
                                 foreach ($openai_models as $slug => $label) {
                                     $render_model_option($slug, $label);
@@ -4681,13 +4783,12 @@ class Listeo_AI_Search_Admin_Interface
                                 <?php
                                 $openrouter_models = [
                                     // OpenAI
-                                    "openai/gpt-5-mini" => "GPT-5 Mini",
-                                    "openai/gpt-5.1" => "GPT-5.1",
-                                    "openai/gpt-5.3-chat-latest" => "GPT-5.3",
-                                    "openai/gpt-5.4" => "GPT-5.4",
                                     "openai/gpt-5.4-mini" => "GPT-5.4 Mini",
                                     "openai/gpt-5.4-nano" => "GPT-5.4 Nano",
                                     "openai/gpt-5.5" => "GPT-5.5",
+                                    "openai/gpt-5.6-luna" => "GPT-5.6 Luna",
+                                    "openai/gpt-5.6-terra" => "GPT-5.6 Terra",
+                                    "openai/gpt-5.6-sol" => "GPT-5.6 Sol",
                                     "openai/gpt-4.1" => "GPT-4.1",
                                     "openai/gpt-4.1-mini" => "GPT-4.1 Mini",
                                     // Anthropic
@@ -4744,6 +4845,28 @@ class Listeo_AI_Search_Admin_Interface
                                 ?>
                             </optgroup>
                         </select>
+                            <!-- GPT-5.6 reasoning toggle (direct OpenAI only) -->
+                            <div id="gpt56-reasoning-field" style="<?php echo $current_provider === "openai" && strpos($model, "gpt-5.6-") === 0
+                                ? ""
+                                : "display:none;"; ?>">
+                                <label class="airs-checkbox-label" style="margin-top: 8px; white-space: nowrap;">
+                                    <input type="checkbox" name="listeo_ai_gpt56_reasoning" value="1" <?php checked(
+                                        get_option("listeo_ai_gpt56_reasoning", 0),
+                                        1,
+                                    ); ?> />
+                                    <span class="airs-checkbox-custom"></span>
+                                    <span class="airs-checkbox-text"><?php _e(
+                                        "Enable reasoning",
+                                        "ai-chat-search",
+                                    ); ?> <span class="airs-hint-icon" data-tooltip="<?php esc_attr_e(
+     "Uses low reasoning effort. Disable for no reasoning and faster responses.",
+     "ai-chat-search",
+ ); ?>" aria-label="<?php esc_attr_e(
+    "More info",
+    "ai-chat-search",
+); ?>" tabindex="0">?</span></span>
+                                </label>
+                            </div>
                             <!-- OpenRouter reasoning toggle (same row as model dropdown, shown only when provider = openrouter) -->
                             <div class="provider-field provider-openrouter" style="<?php echo $current_provider !==
                             "openrouter"
@@ -7968,21 +8091,6 @@ class Listeo_AI_Search_Admin_Interface
                     ); ?>
                     <div class="airs-form-row airs-group-block" style="display: flex; flex-wrap: wrap; gap: 0 30px; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; padding-bottom: 15px;">
                         <div class="airs-form-col" style="flex: 1;">
-                            <label for="listeo_ai_floating_button_color" class="airs-label" style="font-weight: 500; font-size: 13px; margin-bottom: 6px;">
-                                <?php _e("Buttons Color", "ai-chat-search"); ?>
-                            </label>
-                            <input type="text" id="listeo_ai_floating_button_color" name="listeo_ai_floating_button_color" value="<?php echo esc_attr(
-                                get_option(
-                                    "listeo_ai_floating_button_color",
-                                    "#222222",
-                                ),
-                            ); ?>" class="airs-input airs-color-picker" data-default-color="#222222" />
-                            <p class="airs-help-text"><?php _e(
-                                "Floating button, send button, context button.",
-                                "ai-chat-search",
-                            ); ?></p>
-                        </div>
-                        <div class="airs-form-col" style="flex: 1;">
                             <label for="listeo_ai_primary_color" class="airs-label" style="font-weight: 500; font-size: 13px; margin-bottom: 6px;">
                                 <?php _e("Primary Color", "ai-chat-search"); ?>
                             </label>
@@ -8229,86 +8337,316 @@ class Listeo_AI_Search_Admin_Interface
             </div>
             <div class="airs-card-body">
 
-                <!-- Enable Floating Widget & Custom Icon -->
+                <!-- Enable Floating Widget & Button Style -->
                 <div class="airs-form-group">
-                    <div class="airs-form-row" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div class="airs-form-col" style="flex: 1;">
-                            <div class="airs-form-row" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                                <div class="airs-form-col" style="flex: 1; min-width: 200px;">
-                                    <label class="airs-checkbox-label">
-                                        <input type="checkbox" name="listeo_ai_floating_chat_enabled" value="1" <?php checked(
-                                            get_option(
-                                                "listeo_ai_floating_chat_enabled",
-                                                0,
-                                            ),
-                                            1,
-                                        ); ?> />
-                                        <span class="airs-checkbox-custom"></span>
-                                        <span class="airs-checkbox-text">
-                                            <?php _e(
-                                                "Enable Floating Chat Widget",
-                                                "ai-chat-search",
-                                            ); ?>
-                                            <small><?php _e(
-                                                "Show a floating chat button on all pages.",
-                                                "ai-chat-search",
-                                            ); ?></small>
-                                            <?php $widget_position = get_option(
-                                                "listeo_ai_floating_position",
-                                                "right",
-                                            ); ?>
-                                            <span class="airs-position-toggle" style="margin-top: 6px;" onclick="event.preventDefault(); event.stopPropagation();">
-                                                <button type="button" class="airs-position-btn<?php echo $widget_position ===
-                                                "left"
-                                                    ? " active"
-                                                    : ""; ?>" data-value="left">
-                                                    <?php _e(
-                                                        "Left",
-                                                        "ai-chat-search",
-                                                    ); ?>
-                                                </button>
-                                                <button type="button" class="airs-position-btn<?php echo $widget_position ===
-                                                "right"
-                                                    ? " active"
-                                                    : ""; ?>" data-value="right">
-                                                    <?php _e(
-                                                        "Right",
-                                                        "ai-chat-search",
-                                                    ); ?>
-                                                </button>
-                                                <input type="hidden" name="listeo_ai_floating_position" id="listeo_ai_floating_position" value="<?php echo esc_attr(
-                                                    $widget_position,
-                                                ); ?>" />
-                                            </span>
-                                        </span>
-                                    </label>
-                                </div>
+                    <?php
+                    $custom_icon_id = intval(
+                        get_option("listeo_ai_floating_custom_icon", 0),
+                    );
+                    $stored_button_style = get_option(
+                        "listeo_ai_floating_button_style",
+                        false,
+                    );
+                    $button_style = $stored_button_style === "animated"
+                        ? "animated"
+                        : "simple";
+                    if (
+                        !in_array(
+                            $button_style,
+                            ["simple", "animated"],
+                            true,
+                        )
+                    ) {
+                        $button_style = "simple";
+                    }
+                    $animated_avatar_style = get_option(
+                        "listeo_ai_floating_animated_avatar_style",
+                        "flare",
+                    );
+                    if (
+                        !in_array(
+                            $animated_avatar_style,
+                            ["flare", "nova"],
+                            true,
+                        )
+                    ) {
+                        $animated_avatar_style = "flare";
+                    }
+                    $animated_avatar_color = sanitize_hex_color(
+                        get_option(
+                            "listeo_ai_floating_animated_avatar_color",
+                            "#006aff",
+                        ),
+                    );
+                    if (!$animated_avatar_color) {
+                        $animated_avatar_color = "#006aff";
+                    }
+                    $animated_speed = get_option(
+                        "listeo_ai_floating_animated_speed",
+                        "normal",
+                    );
+                    if (
+                        !in_array(
+                            $animated_speed,
+                            ["slow", "normal", "fast"],
+                            true,
+                        )
+                    ) {
+                        $animated_speed = "normal";
+                    }
+                    $animated_icon_id = intval(
+                        get_option("listeo_ai_floating_animated_icon", 0),
+                    );
+                    $animated_icon_url = $animated_icon_id
+                        ? wp_get_attachment_image_url(
+                            $animated_icon_id,
+                            "thumbnail",
+                        )
+                        : LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/chat.svg";
+                    $animated_icon_size = $animated_icon_id
+                        ? absint(
+                            get_option(
+                                "listeo_ai_floating_animated_icon_size",
+                                28,
+                            ),
+                        )
+                        : 28;
+                    $animated_icon_size = max(
+                        8,
+                        min(38, $animated_icon_size),
+                    );
+                    ?>
+                    <div class="airs-floating-widget-top-layout">
+                        <div class="airs-floating-widget-style-column">
+                    <label class="airs-label">
+                        <?php _e("Floating Button Style", "ai-chat-search"); ?>
+                    </label>
+                    <div class="airs-floating-button-style-toggle">
+                        <button type="button" class="airs-floating-button-style-btn<?php echo $button_style === "simple" ? " active" : ""; ?>" data-value="simple" title="<?php esc_attr_e("Simple", "ai-chat-search"); ?>">
+                            <span class="airs-floating-button-style-preview airs-floating-button-preview-simple">
+                                <?php if ($custom_icon_id): ?>
+                                    <?php echo wp_get_attachment_image($custom_icon_id, "thumbnail", false, ["alt" => ""]); ?>
+                                <?php else: ?>
+                                    <img src="<?php echo esc_url(LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/chat.svg"); ?>" alt="" width="16" height="16" />
+                                <?php endif; ?>
+                            </span>
+                            <span><?php _e("Simple", "ai-chat-search"); ?></span>
+                        </button>
+                        <button type="button" class="airs-floating-button-style-btn<?php echo $button_style === "animated" ? " active" : ""; ?>" data-value="animated" title="<?php esc_attr_e("Animated", "ai-chat-search"); ?>">
+                            <span class="airs-floating-button-style-preview airs-floating-button-preview-animated">
+                                <span class="pcha-avatar pcha-<?php echo esc_attr($animated_avatar_style); ?>" data-pcha-color="<?php echo esc_attr($animated_avatar_color); ?>" style="--pcha-size: 32px" aria-hidden="true">
+                                    <span class="pcha-orb"><span class="pcha-scene"><span class="pcha-blob pcha-b1"></span><span class="pcha-blob pcha-b2"></span><span class="pcha-blob pcha-b3"></span></span><span class="pcha-grain"></span></span>
+                                </span>
+                            </span>
+                            <span><?php _e("Animated", "ai-chat-search"); ?></span>
+                        </button>
+                        <input type="hidden" name="listeo_ai_floating_button_style" id="listeo_ai_floating_button_style" value="<?php echo esc_attr($button_style); ?>" />
+                    </div>
+                    <p class="airs-help-text"><?php _e(
+                        "Choose the appearance of the button that opens the chat.",
+                        "ai-chat-search",
+                    ); ?></p>
 
-                                <div class="airs-form-col" style="flex: 1; min-width: 200px;">
-                                    <label class="airs-checkbox-label">
-                                        <input type="checkbox" name="listeo_ai_floating_keep_chat_opened" value="1" <?php checked(
-                                            get_option(
-                                                "listeo_ai_floating_keep_chat_opened",
-                                                0,
-                                            ),
-                                            1,
-                                        ); ?> />
-                                        <span class="airs-checkbox-custom"></span>
-                                        <span class="airs-checkbox-text">
-                                            <?php _e(
-                                                "Keep Chat Open Between Pages",
-                                                "ai-chat-search",
-                                            ); ?>
-                                            <small><?php _e(
-                                                "Remember open/closed state when user navigates between pages.",
-                                                "ai-chat-search",
-                                            ); ?></small>
-                                        </span>
+                    <?php
+                    $custom_icon_url = $custom_icon_id
+                        ? wp_get_attachment_image_url(
+                            $custom_icon_id,
+                            "thumbnail",
+                        )
+                        : "";
+                    $button_color = get_option(
+                        "listeo_ai_floating_button_color",
+                        "#222222",
+                    );
+                    $custom_icon_size = absint(
+                        get_option(
+                            "listeo_ai_floating_custom_icon_size",
+                            32,
+                        ),
+                    );
+                    if ($custom_icon_size < 1) {
+                        $custom_icon_size = 32;
+                    }
+                    ?>
+
+                    <div id="airs-floating-button-simple-panel" class="airs-floating-button-options-panel airs-group-block"<?php echo $button_style !== "simple" ? ' style="display: none;"' : ""; ?>>
+                        <div class="airs-floating-button-panel-layout">
+                            <div>
+                                <label for="listeo_ai_floating_button_color" class="airs-label">
+                                    <?php _e("Button Color", "ai-chat-search"); ?>
+                                </label>
+                                <input type="text" id="listeo_ai_floating_button_color" name="listeo_ai_floating_button_color" value="<?php echo esc_attr($button_color); ?>" class="airs-input airs-color-picker" data-default-color="#222222" />
+                                <p class="airs-help-text"><?php _e(
+                                    "Background color for the simple floating button and chat action buttons.",
+                                    "ai-chat-search",
+                                ); ?></p>
+                            </div>
+                            <div>
+                                <label for="listeo_ai_floating_custom_icon" class="airs-label">
+                                    <?php _e("Button Icon / Image", "ai-chat-search"); ?>
+                                </label>
+                                <div class="airs-media-upload">
+                                    <input type="hidden" id="listeo_ai_floating_custom_icon" name="listeo_ai_floating_custom_icon" value="<?php echo esc_attr($custom_icon_id); ?>" />
+                                    <div class="airs-media-preview" id="listeo-custom-icon-preview">
+                                        <?php if ($custom_icon_url): ?>
+                                            <div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: <?php echo esc_attr($button_color); ?>; border-radius: 100px; display: flex; align-items: center; justify-content: center;">
+                                                <img src="<?php echo esc_url($custom_icon_url); ?>" alt="<?php esc_attr_e("Button image", "ai-chat-search"); ?>" id="listeo-custom-icon-preview-img" style="width: <?php echo esc_attr($custom_icon_size); ?>px; height: <?php echo esc_attr($custom_icon_size); ?>px; max-width: <?php echo esc_attr($custom_icon_size); ?>px; max-height: <?php echo esc_attr($custom_icon_size); ?>px; border-radius: 100px; object-fit: contain;" />
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: <?php echo esc_attr($button_color); ?>; border-radius: 100px; display: flex; align-items: center; justify-content: center;">
+                                                <img src="<?php echo esc_url(LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/chat.svg"); ?>" alt="" width="28" height="28" />
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="airs-media-buttons" style="margin-top: 10px;">
+                                        <button type="button" class="airs-button airs-button-secondary" id="listeo-upload-custom-icon">
+                                            <?php _e("Choose Icon / Image", "ai-chat-search"); ?>
+                                        </button>
+                                        <?php if ($custom_icon_id): ?>
+                                            <button type="button" class="airs-button airs-button-secondary" id="listeo-remove-custom-icon" style="margin-left: 5px;">
+                                                <?php _e("Remove", "ai-chat-search"); ?>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div id="listeo-custom-icon-size-wrapper"<?php echo $custom_icon_id ? "" : ' style="display: none;"'; ?>>
+                                    <label for="listeo_ai_floating_custom_icon_size" class="airs-label" style="margin-top: 15px;">
+                                        <?php _e("Icon / Image Size (px)", "ai-chat-search"); ?>
                                     </label>
+                                    <input type="number" id="listeo_ai_floating_custom_icon_size" name="listeo_ai_floating_custom_icon_size" value="<?php echo esc_attr($custom_icon_size); ?>" class="airs-input" min="8" max="100" step="1" placeholder="32" />
+                                    <p class="airs-help-text"><?php _e(
+                                        "Controls the icon or image size inside the 60px floating button.",
+                                        "ai-chat-search",
+                                    ); ?></p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <label for="listeo_ai_floating_welcome_bubble" class="airs-label" style="margin-top: 25px;">
+                    <div id="airs-floating-button-animated-panel" class="airs-floating-button-options-panel airs-group-block"<?php echo $button_style !== "animated" ? ' style="display: none;"' : ""; ?>>
+                        <div class="airs-floating-button-panel-layout">
+                            <div>
+                                <div class="airs-floating-animation-controls">
+                                    <div>
+                                        <label class="airs-label"><?php _e("Animation Style", "ai-chat-search"); ?></label>
+                                        <div class="airs-floating-avatar-style-toggle">
+                                            <?php foreach (["flare" => __("Flare", "ai-chat-search"), "nova" => __("Nova", "ai-chat-search")] as $avatar_style => $avatar_style_label): ?>
+                                                <button type="button" class="airs-floating-avatar-style-btn<?php echo $animated_avatar_style === $avatar_style ? " active" : ""; ?>" data-value="<?php echo esc_attr($avatar_style); ?>">
+                                                    <?php echo esc_html($avatar_style_label); ?>
+                                                </button>
+                                            <?php endforeach; ?>
+                                            <input type="hidden" name="listeo_ai_floating_animated_avatar_style" id="listeo_ai_floating_animated_avatar_style" value="<?php echo esc_attr($animated_avatar_style); ?>" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="airs-label"><?php _e("Speed", "ai-chat-search"); ?></label>
+                                        <div class="airs-floating-avatar-style-toggle airs-floating-speed-toggle">
+                                            <?php foreach (["slow" => __("Slow", "ai-chat-search"), "normal" => __("Normal", "ai-chat-search"), "fast" => __("Fast", "ai-chat-search")] as $speed_value => $speed_label): ?>
+                                                <button type="button" class="airs-floating-avatar-style-btn airs-floating-speed-btn<?php echo $animated_speed === $speed_value ? " active" : ""; ?>" data-value="<?php echo esc_attr($speed_value); ?>">
+                                                    <?php echo esc_html($speed_label); ?>
+                                                </button>
+                                            <?php endforeach; ?>
+                                            <input type="hidden" name="listeo_ai_floating_animated_speed" id="listeo_ai_floating_animated_speed" value="<?php echo esc_attr($animated_speed); ?>" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <label for="listeo_ai_floating_animated_avatar_color" class="airs-label" style="margin-top: 18px;">
+                                    <?php _e("Button Color", "ai-chat-search"); ?>
+                                </label>
+                                <input type="text" id="listeo_ai_floating_animated_avatar_color" name="listeo_ai_floating_animated_avatar_color" value="<?php echo esc_attr($animated_avatar_color); ?>" class="airs-input airs-color-picker" data-default-color="#006aff" />
+                            </div>
+                            <div>
+                                <label for="listeo_ai_floating_animated_icon" class="airs-label">
+                                    <?php _e("Button Icon / Image", "ai-chat-search"); ?>
+                                </label>
+                                <div class="airs-media-upload">
+                                    <input type="hidden" id="listeo_ai_floating_animated_icon" name="listeo_ai_floating_animated_icon" value="<?php echo esc_attr($animated_icon_id); ?>" />
+                                    <img src="<?php echo esc_url($animated_icon_url); ?>" alt="" id="listeo-animated-icon-source" style="display: none;" />
+                                    <div id="airs-floating-avatar-preview"></div>
+                                    <div class="airs-media-buttons" style="margin-top: 10px;">
+                                        <button type="button" class="airs-button airs-button-secondary" id="listeo-upload-animated-icon">
+                                            <?php _e("Choose SVG / PNG", "ai-chat-search"); ?>
+                                        </button>
+                                        <?php if ($animated_icon_id): ?>
+                                            <button type="button" class="airs-button airs-button-secondary" id="listeo-remove-animated-icon" style="margin-left: 5px;">
+                                                <?php _e("Remove", "ai-chat-search"); ?>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div id="listeo-animated-icon-size-wrapper"<?php echo $animated_icon_id ? "" : ' style="display: none;"'; ?>>
+                                    <label for="listeo_ai_floating_animated_icon_size" class="airs-label" style="margin-top: 15px;">
+                                        <?php _e("Icon Size (px)", "ai-chat-search"); ?>
+                                    </label>
+                                    <input type="number" id="listeo_ai_floating_animated_icon_size" name="listeo_ai_floating_animated_icon_size" value="<?php echo esc_attr($animated_icon_size); ?>" class="airs-input" min="8" max="38" step="1" placeholder="28" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                        </div>
+                        <div class="airs-floating-widget-toggles airs-group-block">
+                            <label class="airs-checkbox-label">
+                                <input type="checkbox" name="listeo_ai_floating_chat_enabled" value="1" <?php checked(
+                                    get_option(
+                                        "listeo_ai_floating_chat_enabled",
+                                        0,
+                                    ),
+                                    1,
+                                ); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <?php _e(
+                                        "Enable Floating Chat Widget",
+                                        "ai-chat-search",
+                                    ); ?>
+                                    <small><?php _e(
+                                        "Show a floating chat button on all pages.",
+                                        "ai-chat-search",
+                                    ); ?></small>
+                                    <?php $widget_position = get_option(
+                                        "listeo_ai_floating_position",
+                                        "right",
+                                    ); ?>
+                                    <span class="airs-position-toggle" style="margin-top: 8px;" onclick="event.preventDefault(); event.stopPropagation();">
+                                        <button type="button" class="airs-position-btn<?php echo $widget_position === "left" ? " active" : ""; ?>" data-value="left">
+                                            <?php _e("Left", "ai-chat-search"); ?>
+                                        </button>
+                                        <button type="button" class="airs-position-btn<?php echo $widget_position === "right" ? " active" : ""; ?>" data-value="right">
+                                            <?php _e("Right", "ai-chat-search"); ?>
+                                        </button>
+                                        <input type="hidden" name="listeo_ai_floating_position" id="listeo_ai_floating_position" value="<?php echo esc_attr($widget_position); ?>" />
+                                    </span>
+                                </span>
+                            </label>
+
+                            <label class="airs-checkbox-label">
+                                <input type="checkbox" name="listeo_ai_floating_keep_chat_opened" value="1" <?php checked(
+                                    get_option(
+                                        "listeo_ai_floating_keep_chat_opened",
+                                        0,
+                                    ),
+                                    1,
+                                ); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <?php _e(
+                                        "Keep Chat Open Between Pages",
+                                        "ai-chat-search",
+                                    ); ?>
+                                    <small><?php _e(
+                                        "Remember open/closed state when user navigates between pages.",
+                                        "ai-chat-search",
+                                    ); ?></small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="airs-form-row" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="airs-form-col" style="flex: 1;">
+                            <label for="listeo_ai_floating_welcome_bubble" class="airs-label">
                                 <?php _e(
                                     "Welcome Bubble Message",
                                     "ai-chat-search",
@@ -8333,100 +8671,6 @@ class Listeo_AI_Search_Admin_Interface
      "Leave empty to disable.",
      "ai-chat-search",
  ); ?></strong></p>
-                        </div>
-                        <div class="airs-form-col airs-group-block" style="flex: 0 0 auto; align-self: flex-start; margin-top: 10px; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; max-width: 250px;">
-                            <label for="listeo_ai_floating_custom_icon" class="airs-label">
-                                <?php _e("Button Icon", "ai-chat-search"); ?>
-                            </label>
-                            <?php
-                            $custom_icon_id = get_option(
-                                "listeo_ai_floating_custom_icon",
-                                0,
-                            );
-                            $custom_icon_url = $custom_icon_id
-                                ? wp_get_attachment_image_url(
-                                    $custom_icon_id,
-                                    "thumbnail",
-                                )
-                                : "";
-                            $button_color = get_option(
-                                "listeo_ai_floating_button_color",
-                                "#222222",
-                            );
-                            ?>
-                            <?php
-                            $custom_icon_size = absint(
-                                get_option(
-                                    "listeo_ai_floating_custom_icon_size",
-                                    32,
-                                ),
-                            );
-                            if ($custom_icon_size < 1) {
-                                $custom_icon_size = 32;
-                            }
-                            ?>
-                            <div class="airs-media-upload">
-                                <input type="hidden" id="listeo_ai_floating_custom_icon" name="listeo_ai_floating_custom_icon" value="<?php echo esc_attr(
-                                    $custom_icon_id,
-                                ); ?>" />
-                                <div class="airs-media-preview" id="listeo-custom-icon-preview">
-                                    <?php if ($custom_icon_url): ?>
-                                        <div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: <?php echo esc_attr(
-                                            $button_color,
-                                        ); ?>; border-radius: 100px; display: flex; align-items: center; justify-content: center;">
-                                            <img src="<?php echo esc_url(
-                                                $custom_icon_url,
-                                            ); ?>" alt="Custom icon" id="listeo-custom-icon-preview-img" style="width: <?php echo esc_attr(
-    $custom_icon_size,
-); ?>px; height: <?php echo esc_attr(
-    $custom_icon_size,
-); ?>px; max-width: <?php echo esc_attr(
-    $custom_icon_size,
-); ?>px; max-height: <?php echo esc_attr(
-    $custom_icon_size,
-); ?>px; border-radius: 100px; object-fit: contain;" />
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: <?php echo esc_attr(
-                                            $button_color,
-                                        ); ?>; border-radius: 100px; display: flex; align-items: center; justify-content: center;">
-                                            <img src="<?php echo esc_url(
-                                                LISTEO_AI_SEARCH_PLUGIN_URL .
-                                                    "assets/icons/chat.svg",
-                                            ); ?>" alt="Default icon" width="28" height="28" />
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="airs-media-buttons" style="margin-top: 10px;">
-                                    <button type="button" class="airs-button airs-button-secondary" id="listeo-upload-custom-icon">
-                                        <?php _e(
-                                            "Change Icon",
-                                            "ai-chat-search",
-                                        ); ?>
-                                    </button>
-                                    <?php if ($custom_icon_id): ?>
-                                        <button type="button" class="airs-button airs-button-secondary" id="listeo-remove-custom-icon" style="margin-left: 5px;">
-                                            <?php _e(
-                                                "Remove",
-                                                "ai-chat-search",
-                                            ); ?>
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <div id="listeo-custom-icon-size-wrapper"<?php echo $custom_icon_id
-                                ? ""
-                                : ' style="display: none;"'; ?>>
-                                <label for="listeo_ai_floating_custom_icon_size" class="airs-label" style="margin-top: 15px;">
-                                    <?php _e(
-                                        "Icon Size (px)",
-                                        "ai-chat-search",
-                                    ); ?>
-                                </label>
-                                <input type="number" id="listeo_ai_floating_custom_icon_size" name="listeo_ai_floating_custom_icon_size" value="<?php echo esc_attr(
-                                    $custom_icon_size,
-                                ); ?>" class="airs-input" min="8" max="100" step="1" placeholder="32" />
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -9843,8 +10087,14 @@ class Listeo_AI_Search_Admin_Interface
             "listeo_ai_floating_chat_enabled",
             "listeo_ai_floating_keep_chat_opened",
             "listeo_ai_floating_position",
+            "listeo_ai_floating_button_style",
             "listeo_ai_floating_custom_icon",
             "listeo_ai_floating_custom_icon_size",
+            "listeo_ai_floating_animated_avatar_style",
+            "listeo_ai_floating_animated_avatar_color",
+            "listeo_ai_floating_animated_speed",
+            "listeo_ai_floating_animated_icon",
+            "listeo_ai_floating_animated_icon_size",
             "listeo_ai_floating_welcome_bubble",
             "listeo_ai_floating_popup_width",
             "listeo_ai_floating_popup_height",
@@ -9866,6 +10116,7 @@ class Listeo_AI_Search_Admin_Interface
             "listeo_ai_chat_blocked_ips",
             "listeo_ai_chat_enable_speech",
             "listeo_ai_chat_enable_image_input",
+            "listeo_ai_gpt56_reasoning",
             "listeo_ai_openrouter_reasoning",
             "listeo_ai_chat_quick_buttons",
             "listeo_ai_search_provider",
