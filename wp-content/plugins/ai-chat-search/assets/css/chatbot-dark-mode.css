@@ -244,6 +244,11 @@
     color: #fff !important;
 }
 
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-quick-btn.has-custom-color:hover {
+    background: var(--quick-btn-color) !important;
+    background: color-mix(in srgb, var(--quick-btn-color) 88%, #000) !important;
+}
+
 .listeo-ai-chat-wrapper.dark-mode .listeo-ai-quick-btn:hover .listeo-ai-btn-icon {
     stroke: #fff !important;
 }

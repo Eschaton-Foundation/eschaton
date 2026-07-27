@@ -2,7 +2,7 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: PurioChat 2.3.1\n"
+"Project-Id-Version: PurioChat 2.2.6\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -544,16 +544,6 @@ msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:77
 msgid "Save user questions and AI responses for analytics."
-msgstr ""
-
-#: includes/admin/class-admin-chat-history.php:87
-msgid "Do not store IP addresses"
-msgstr ""
-
-#: includes/admin/class-admin-chat-history.php:88
-msgid ""
-"New chat history entries will not include visitor IP addresses. Existing "
-"history is not changed."
 msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:83
@@ -2220,7 +2210,7 @@ msgstr ""
 #: includes/admin/class-admin-interface.php:4491
 msgid ""
 "<strong>One API key for top AI providers</strong> (OpenAI, Anthropic, "
-"Google, Meta, Mistral, DeepSeek, Grok). <strong>OpenRouter requires $5 "
+"Google, Meta, Mistral, DeepSeek, Grok).<br><strong>OpenRouter requires $5 "
 "minimum balance.</strong>"
 msgstr ""
 
@@ -2482,18 +2472,6 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:5183
 msgid "Max Execution Time:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php
-msgid "PHP Version:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php
-msgid "Database:"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php
-msgid "Database Version:"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:5195
@@ -2771,33 +2749,29 @@ msgid ""
 "600;\">this article in docs</a>."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6559
-msgid "Search Field Shortcode"
+#: includes/admin/class-admin-interface.php:6095
+msgid ""
+"<strong>Do not need chatbot? No problems - use this shortcode </strong> "
+"builder to create an AI-powered semantic search field. Select which content "
+"types to include in search results."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6562
-msgid "Choose the searchable content and customize the shortcode for your page."
+#: includes/admin/class-admin-interface.php:6103
+msgid "How it works:"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6721
-#: includes/admin/class-admin-interface.php:6736
-msgid "something to soak up water from my body"
+#: includes/admin/class-admin-interface.php:6108
+msgid "Users type their search query in natural language"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6732
-msgid "Top match for"
+#: includes/admin/class-admin-interface.php:6112
+msgid "AI finds semantically related content (not just keyword matches)"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6753
-msgid "Organic Bath Towels"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6757
-msgid "Plush cotton towels that soak up water fast and stay soft wash after wash."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6781
-msgid "Illustrative preview. It does not run a search."
+#: includes/admin/class-admin-interface.php:6116
+msgid ""
+"Results are displayed in a dropdown according to Minimum Match Percentage "
+"setting"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:6126
@@ -2845,8 +2819,6 @@ msgid "Generated Shortcode:"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:6243
-#: includes/admin/class-admin-interface.php:9186
-#: includes/admin/class-admin-interface.php:9281
 msgid "Copy Shortcode"
 msgstr ""
 
@@ -2914,11 +2886,6 @@ msgstr ""
 msgid "Chat activity trends over time"
 msgstr ""
 
-#: includes/admin/class-free-chat-activity-chart.php
-#: ai-chat-search-pro/includes/class-chat-history-chart.php
-msgid "No chats yet"
-msgstr ""
-
 #: includes/admin/class-admin-interface.php:6567
 msgid "Activity Analytics"
 msgstr ""
@@ -2944,6 +2911,10 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:6655
 msgid "Data gaps"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:6662
+msgid "Weak points"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:6669
@@ -3071,8 +3042,15 @@ msgstr ""
 msgid "Global switch - disables shortcode and floating widget."
 msgstr ""
 
+#: includes/admin/class-admin-interface.php:7188
+msgid "Shortcode Usage"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7194
+msgid "Available parameters:"
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:7197
-#: class-free-live-chat-upgrade.php:173
 msgid "or"
 msgstr ""
 
@@ -3510,8 +3488,7 @@ msgstr ""
 msgid "Base color for the animated wave effect."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:9000
-#: includes/admin/class-admin-interface.php:9197
+#: includes/admin/class-admin-interface.php:8670
 msgid "Preview"
 msgstr ""
 
@@ -4869,8 +4846,6 @@ msgstr ""
 
 #: includes/class-chat-shortcode.php:165
 #: includes/class-floating-chat-widget.php:333
-#: includes/admin/class-admin-interface.php:9213
-#: includes/class-proactive-actions.php:896
 msgid "Type a message"
 msgstr ""
 
@@ -5013,7 +4988,6 @@ msgstr ""
 
 #: includes/class-floating-chat-widget.php:219
 #: includes/class-floating-chat-widget.php:497
-#: includes/class-chat-shortcode.php:59
 msgid "Open chat"
 msgstr ""
 
@@ -5316,6 +5290,10 @@ msgstr ""
 msgid "Add AI provider API key before running AI Auto Config."
 msgstr ""
 
+#: ai-chat-search-pro/includes/class-auto-config.php:114
+msgid "TRY IT"
+msgstr ""
+
 #: ai-chat-search-pro/includes/class-auto-config.php:119
 msgid "Run Auto Config"
 msgstr ""
@@ -5541,22 +5519,17 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:9100
+#: ai-chat-search-pro/includes/class-embed-widget.php:366
 msgid "Embed on any website (copy &amp; paste script)"
 msgstr ""
 
-#: ai-chat-search-pro/includes/class-embed-widget.php:584
-#: includes/admin/class-admin-interface.php:9117
-msgid "Enable embed script"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9105
+#: ai-chat-search-pro/includes/class-embed-widget.php:370
 msgid ""
 "When enabled, you get a one-line script that adds the chat bubble to any "
 "external page - plain HTML, another CMS, anywhere - without WordPress."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:9124
+#: ai-chat-search-pro/includes/class-embed-widget.php:378
 msgid "Upgrade to Pro to embed the chat anywhere"
 msgstr ""
 
@@ -5694,18 +5667,6 @@ msgstr ""
 
 #: includes/class-live-handoff.php:275 includes/class-live-handoff.php:284
 msgid "Invalid live conversation credentials."
-msgstr ""
-
-#: includes/class-live-handoff.php:228
-msgid "The handoff request is too large."
-msgstr ""
-
-#: includes/class-live-handoff.php:495
-msgid "Human handoff requests are disabled."
-msgstr ""
-
-#: includes/class-live-handoff.php:501
-msgid "This live conversation is closed."
 msgstr ""
 
 #: includes/class-live-handoff.php:350
@@ -6416,16 +6377,8 @@ msgid ""
 "WordPress inbox."
 msgstr ""
 
-#: class-free-live-chat-upgrade.php:167
-msgid "Get alerts via"
-msgstr ""
-
-#: class-free-live-chat-upgrade.php:168
-msgid "browser, email, or Telegram"
-msgstr ""
-
-#: class-free-live-chat-upgrade.php:169
-msgid "Reply from"
+#: class-free-live-chat-upgrade.php:155
+msgid "Browser, sound, and offline email alerts"
 msgstr ""
 
 #: class-free-live-chat-upgrade.php:156
@@ -6609,1459 +6562,4 @@ msgstr ""
 #: ai-chat-search-pro/includes/live-handoff/admin-page.php:343
 #, php-format
 msgid "%s closing time"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1963
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:311
-msgid "Connected"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1964
-#, php-format
-msgid "Connected to @%s"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1965
-#, php-format
-msgid "Connected to %s"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1965
-msgid "Bot saved. Connect the administrator’s Telegram account."
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1966
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:311
-msgid "Waiting for connection"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1968
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:514
-msgid "Telegram bot is not configured."
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1969
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:311
-msgid "Not configured"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1970
-msgid "Telegram settings saved."
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1971
-msgid "Creating a secure connection link…"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1972
-msgid "Press Start in Telegram to finish connecting."
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1974
-msgid "Disconnect the administrator’s Telegram account?"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1975
-msgid "Telegram account disconnected."
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1976
-msgid "Remove the Telegram bot and stop Telegram Live Chat alerts?"
-msgstr ""
-
-#: ai-chat-search-pro/includes/class-live-handoff.php:1977
-msgid "Telegram bot removed."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:307
-msgid "Telegram alerts"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:308
-msgid "Receive handoff requests and reply through a separate private Telegram bot."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:313
-msgid "Configure Telegram"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:401
-msgid "Close Telegram settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:413
-msgid "Bot Token"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:410
-msgid "Open <a href=\"https://t.me/BotFather\" target=\"_blank\" rel=\"noopener noreferrer\">@BotFather</a> on Telegram, use the /newbot command to create a separate bot, then paste its token below. Use a different bot from the customer-facing Telegram AI integration."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:417
-msgid "The token from @BotFather. Leave blank and save to remove the configured bot."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:415
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:132
-msgid "Use a different bot from the customer-facing Telegram AI integration."
-msgstr ""
-
-#: ai-chat-search-pro/includes/messaging/class-telegram-admin.php:195
-msgid "Use a different bot from the Live Chat operator Telegram integration."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:418
-msgid "Visitor names, email addresses, and Live Chat messages are sent to Telegram while this bot is configured."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:421
-msgid "Connect Telegram"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:422
-msgid "Send test notification"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:423
-msgid "Disconnect"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:427
-msgid "Remove bot"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:399
-msgid "Telegram Configuration"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:293
-msgid "Email alerts"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:99
-msgid "Telegram Live Chat is not configured."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:102
-msgid "Invalid Telegram webhook credentials."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:128
-msgid "Enter a Telegram bot token."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:164
-msgid "Save the Telegram bot first."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:180
-msgid "Connect the administrator’s Telegram account first."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:184
-msgid "PurioChat test notification: Telegram Live Chat alerts are working."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:221
-msgid "New Live Chat request"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:239
-msgid "Take chat"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:242
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:438
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:455
-msgid "Open in WordPress"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:272
-msgid "The Live Chat conversation ended and was returned to AI."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:289
-msgid "This bot is reserved for the site administrator’s Live Chat notifications."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:294
-msgid "A Live Chat conversation is active."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:294
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:401
-msgid "There is no active Live Chat conversation."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:302
-msgid "Only text replies are supported in Live Chat."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:308
-msgid "There is no active Live Chat conversation. Use Take chat on a notification first."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:326
-msgid "Telegram Live Chat alerts are connected."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:327
-msgid "Open Telegram settings in WordPress and use Connect Telegram."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:337
-msgid "This connection link is invalid or has expired."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:346
-msgid "Telegram is now connected to PurioChat Live Chat."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:357
-msgid "This action is not available."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:367
-msgid "End the active Telegram chat before taking another one."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:132
-msgid "End the active Telegram chat before replacing the bot."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:366
-msgid "End the active Telegram chat before connecting another account."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:376
-msgid "Chat taken."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:377
-msgid "You joined this chat."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:388
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:389
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:413
-msgid "Conversation returned to AI."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:421
-msgid "Recent conversation:"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:437
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:454
-msgid "End chat"
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:486
-msgid "Telegram did not return a valid bot username."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:526
-msgid "Telegram request failed."
-msgstr ""
-
-#: ai-chat-search-pro/includes/live-handoff/class-telegram-operator.php:609
-msgid "The connected Telegram operator is unavailable."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9232
-msgid "Magic Link Generator"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9235
-msgid "Create a link that opens the floating chat and optionally sends a question."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9243
-msgid "Link text"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9250
-msgid "Chat with us"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9254
-msgid "Question (optional)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9262
-msgid "What plans do you offer?"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9175
-#: includes/admin/class-admin-interface.php:9270
-msgid "Generated shortcode"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9288
-msgid "Generated HTML"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9299
-msgid "Copy HTML"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9305
-msgid "Magic links require the Floating Chat Widget to be enabled on the page."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:7311
-#: includes/admin/class-admin-interface.php:9086
-msgid "Embed & Links"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9088
-msgid "Add PurioChat to WordPress pages, create chat links, or embed the widget on another website."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9139
-msgid "Embedded Chat Shortcode"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9142
-msgid "Place the complete chat interface inside a WordPress page, post, or widget."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9152
-msgid "Height"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9163
-msgid "Style"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9167
-msgid "Style 1"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9168
-msgid "Style 2"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9190
-msgid "Paste the shortcode into any WordPress content area that supports shortcodes."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9220
-msgid "Illustrative preview. It does not send messages."
-msgstr ""
-
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:110
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:140
-msgid "Pre-chat fields are currently unavailable."
-msgstr ""
-
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:147
-msgid "Invalid chat session."
-msgstr ""
-
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:163
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:194
-msgid "Please complete all required fields."
-msgstr ""
-
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:207
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:228
-msgid "Chat history is currently unavailable."
-msgstr ""
-
-#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:281
-msgid "Could not start the chat. Please try again."
-msgstr ""
-
-#: includes/class-chat-history.php:601
-msgid "Pre-Chat Data"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:10054
-msgid "Show AI what page the user is on"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:10058
-msgid "Adds the current page title and URL to the latest message sent to AI."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:794
-#: includes/admin/class-admin-interface.php:860
-msgid "Fast, low-cost replies"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:801
-msgid "Strong everyday model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:809
-msgid "Maximum reasoning"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:816
-msgid "Fast advanced model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:823
-msgid "Advanced general model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:830
-msgid "Previous general model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:837
-msgid "Reliable non-reasoning"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:844
-#: includes/admin/class-admin-interface.php:896
-msgid "Fast everyday model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:851
-msgid "Fastest legacy model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:867
-msgid "Smart and fast"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:875
-msgid "Deepest reasoning"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:882
-msgid "Strong general model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:889
-msgid "Previous Flash model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:903
-msgid "Reliable previous model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:910
-msgid "Previous Pro model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:919
-msgid "Fast, efficient replies"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:926
-msgid "Balanced everyday model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:934
-msgid "Maximum capability"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:941
-msgid "Alternative medium model"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3590
-msgid "Capability"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3593
-msgid "Balanced"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3594
-msgid "Most capable"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3595
-msgid "Recommended"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:3596
-msgid "Select a model"
-msgstr ""
-
-#. translators: 1: rating name, 2: rating value from 0 to 5.
-#: includes/admin/class-admin-interface.php:3597
-#, php-format
-msgid "%1$s: %2$d out of 5"
-msgstr ""
-
-#: includes/class-proactive-actions.php:201
-#: includes/class-proactive-actions.php:377
-msgid "Proactive Actions"
-msgstr ""
-
-#: includes/class-proactive-actions.php:378
-msgid "Start a chat or show a short message after a visitor stays on a page."
-msgstr ""
-
-#: includes/class-proactive-actions.php:388
-msgid "Enable proactive actions"
-msgstr ""
-
-#: includes/class-proactive-actions.php:454
-msgid ""
-"Actions wait for their trigger on each page view. Choose below when they can "
-"appear again after the visitor sends a message."
-msgstr ""
-
-#: includes/class-proactive-actions.php:402
-msgid "You can add up to 1 action in the free plugin."
-msgstr ""
-
-#: includes/class-proactive-actions.php:406
-msgid "Add Action"
-msgstr ""
-
-#: includes/class-proactive-actions.php:409
-msgid "Upgrade to Pro to add more actions."
-msgstr ""
-
-#: includes/class-proactive-actions.php:411
-msgid "Upgrade to Add More Actions"
-msgstr ""
-
-#: includes/class-proactive-actions.php:437
-#: includes/class-proactive-actions.php:621
-#, php-format
-msgid "Action %d"
-msgstr ""
-
-#: includes/class-proactive-actions.php:635
-#: includes/class-proactive-actions.php:836
-msgid "Action name"
-msgstr ""
-
-#: includes/class-proactive-actions.php:636
-#: includes/class-proactive-actions.php:837
-msgid "Edit action name"
-msgstr ""
-
-#: includes/class-proactive-actions.php:442
-#: includes/class-proactive-actions.php:617
-msgid "Trigger"
-msgstr ""
-
-#: includes/class-proactive-actions.php:444
-#: includes/class-proactive-actions.php:618
-msgid "Time"
-msgstr ""
-
-#: includes/class-proactive-actions.php:445
-#: includes/class-proactive-actions.php:619
-msgid "Scroll Depth"
-msgstr ""
-
-#: includes/class-proactive-actions.php:449
-#: includes/class-proactive-actions.php:616
-msgid "After"
-msgstr ""
-
-#: includes/class-proactive-actions.php:456
-#: includes/class-proactive-actions.php:620
-msgid "Scroll depth"
-msgstr ""
-
-#: includes/class-proactive-actions.php:465
-#: includes/class-proactive-actions.php:626
-msgid "Show mini chat"
-msgstr ""
-
-#: includes/class-proactive-actions.php:466
-#: includes/class-proactive-actions.php:624
-msgid "Show message bubble"
-msgstr ""
-
-#: includes/class-proactive-actions.php:467
-#: includes/class-proactive-actions.php:625
-msgid "Start chat with message"
-msgstr ""
-
-#: includes/class-proactive-actions.php:471
-#: includes/class-proactive-actions.php:627
-msgid "Where"
-msgstr ""
-
-#: includes/class-proactive-actions.php:473
-#: includes/class-proactive-actions.php:628
-msgid "Entire site"
-msgstr ""
-
-#: includes/class-proactive-actions.php:474
-#: includes/class-proactive-actions.php:508
-#: includes/class-proactive-actions.php:629
-msgid "Content type"
-msgstr ""
-
-#: includes/class-proactive-actions.php:574
-#: includes/class-proactive-actions.php:730
-msgid "Specific page"
-msgstr ""
-
-#: includes/class-proactive-actions.php:478
-#: includes/class-proactive-actions.php:632
-msgid "Remove rule"
-msgstr ""
-
-#: includes/class-proactive-actions.php:484
-#: includes/class-proactive-actions.php:633
-msgid "Message"
-msgstr ""
-
-#: includes/class-proactive-actions.php:485
-#: includes/class-proactive-actions.php:635
-msgid "Choose emoji"
-msgstr ""
-
-#: includes/class-proactive-actions.php:493
-#: includes/class-proactive-actions.php:636
-msgid "Buttons"
-msgstr ""
-
-#: includes/class-proactive-actions.php:494
-#: includes/class-proactive-actions.php:637
-msgid "Optional buttons shown below the mini chat message."
-msgstr ""
-
-#: includes/class-proactive-actions.php:497
-#: includes/class-proactive-actions.php:638
-msgid "Add Button"
-msgstr ""
-
-#: includes/class-proactive-actions.php:510
-#: includes/class-proactive-actions.php:644
-msgid "Select content type"
-msgstr ""
-
-#: includes/class-proactive-actions.php:519
-msgid "Specific posts, pages, or products"
-msgstr ""
-
-#: includes/class-proactive-actions.php:520
-#: includes/class-proactive-actions.php:645
-msgid "Search by title…"
-msgstr ""
-
-#: includes/class-proactive-actions.php:552
-#: includes/class-proactive-actions.php:642
-msgid "Button color"
-msgstr ""
-
-#: includes/class-proactive-actions.php:555
-#: includes/class-proactive-actions.php:639
-msgid "Button label"
-msgstr ""
-
-#: includes/class-proactive-actions.php:555
-msgid "Quick action label"
-msgstr ""
-
-#: includes/class-proactive-actions.php:556
-#: includes/class-proactive-actions.php:640
-msgid "Message sent to AI"
-msgstr ""
-
-#: includes/class-proactive-actions.php:557
-#: includes/class-proactive-actions.php:641
-msgid "Remove quick action"
-msgstr ""
-
-#: includes/class-proactive-actions.php:577
-#: includes/class-proactive-actions.php:683
-#, php-format
-msgid "Item #%d"
-msgstr ""
-
-#: includes/class-proactive-actions.php:579
-msgid "Remove content"
-msgstr ""
-
-#: includes/class-proactive-actions.php:634
-#: includes/class-proactive-actions.php:856
-msgid "Need help? Ask me anything."
-msgstr ""
-
-#: includes/class-proactive-actions.php:646
-msgid "No content found."
-msgstr ""
-
-#: includes/class-proactive-actions.php:748
-msgid "Send message"
-msgstr ""
-
-#: includes/class-proactive-actions.php:749
-msgid "Close mini chat"
-msgstr ""
-
-#: includes/class-proactive-actions.php:461
-msgid "After the visitor sends a message"
-msgstr ""
-
-#: includes/class-proactive-actions.php:463
-msgid "Show actions again on the next page"
-msgstr ""
-
-#: includes/class-proactive-actions.php:464
-msgid "Hide actions for the rest of this visit"
-msgstr ""
-
-#: includes/class-proactive-actions.php:465
-msgid "Hide actions for 30 minutes"
-msgstr ""
-
-#: includes/class-proactive-actions.php:466
-msgid "Hide actions for 1 hour"
-msgstr ""
-
-#: includes/class-proactive-actions.php:467
-msgid "Hide actions for 24 hours"
-msgstr ""
-
-#: includes/class-proactive-actions.php:468
-msgid "Hide actions for 7 days"
-msgstr ""
-
-#: includes/class-proactive-actions.php:470
-msgid "Opening or closing the chat without sending a message does not hide actions. “This visit” lasts until the browser tab is closed; closing Mini Chat affects only that action."
-msgstr ""
-
-#: includes/class-proactive-actions.php:473
-msgid "When multiple actions match"
-msgstr ""
-
-#: includes/class-proactive-actions.php:476
-msgid "Show highest priority only"
-msgstr ""
-
-#: includes/class-proactive-actions.php:475
-msgid "Show all matching actions"
-msgstr ""
-
-#: includes/class-proactive-actions.php:478
-msgid "If multiple configured actions can trigger on the same page, show them all or show only one. Priority appears when you choose to show one."
-msgstr ""
-
-#: includes/class-proactive-actions.php:529
-#: includes/class-proactive-actions.php:720
-msgid "Priority"
-msgstr ""
-
-#: includes/class-proactive-actions.php:528
-#: includes/class-proactive-actions.php:721
-msgid "1 is the highest priority."
-msgstr ""
-
-#: includes/class-proactive-actions.php:572
-#: includes/class-proactive-actions.php:765
-msgid "Collapse action"
-msgstr ""
-
-#: includes/class-proactive-actions.php:766
-msgid "Expand action"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:76
-msgid "You are not allowed to run this check."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:97
-msgid "You are not allowed to view MCP activity."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:104
-msgid "MCP activity is unavailable."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:131
-msgid "No MCP calls have been recorded."
-msgstr ""
-
-#. translators: %d: WordPress user ID.
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:143
-#, php-format
-msgid "User #%d"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:147
-msgid "Success"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:147
-msgid "Denied or failed"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:192
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:570
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:71
-msgid "MCP connections"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:202
-msgid "Secure address"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:205
-msgid "Remote assistants require HTTPS. Plain HTTP works only on localhost."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:211
-msgid "Pretty permalinks"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:214
-msgid "With plain permalinks the OAuth discovery addresses do not exist."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:218
-msgid "MCP endpoint"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:221
-msgid "A security plugin, firewall, or CDN rule is most likely blocking the WordPress REST API."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:225
-msgid "Connection details"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:228
-msgid "Assistants read this address to find the sign-in service."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:232
-msgid "Claude MCP endpoint"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:235
-msgid "Claude must receive an OAuth challenge before MCP initialization. If you use Cloudflare, open Manage AI bot access and allow Claude-User, or add an exception for /wp-json/puriochat-mcp/*."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:240
-msgid "Claude connection details"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:245
-msgid "Claude reads this address to find the sign-in service."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:253
-msgid "Sign-in discovery address"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:256
-msgid "Your server blocks addresses starting with a dot, so assistants cannot discover the sign-in service. Ask your host to let /.well-known/ through to WordPress."
-msgstr ""
-
-#. translators: %s: error message from the failed request.
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:311
-#, php-format
-msgid "The check could not run: %s. This often means the server cannot call itself, which does not necessarily affect assistants."
-msgstr ""
-
-#. translators: 1: HTTP status code, 2: guidance on how to fix it.
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:327
-#, php-format
-msgid "Returned HTTP %1$d. %2$s"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:365
-msgid "Enable MCP connections"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:366
-msgid "Read WordPress content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:367
-msgid "Create and edit content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:368
-msgid "Publish and schedule content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:369
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:707
-msgid "Access all custom fields"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:370
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:708
-msgid "Manage media"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:371
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:709
-msgid "Manage comments"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:372
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:710
-msgid "Manage users"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:373
-msgid "Manage approved settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:374
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:712
-msgid "Manage plugins and themes"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:375
-msgid "Allow destructive actions"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:376
-msgid "Read WooCommerce catalog"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:377
-msgid "Manage WooCommerce products"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:378
-msgid "Manage WooCommerce orders"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:379
-msgid "Access and manage customer personal data"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:380
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:725
-msgid "Manage coupons"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:381
-msgid "Manage WooCommerce store settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:382
-msgid "Read PurioChat conversations"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:383
-msgid "Read PurioChat contact messages"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:384
-msgid "Force new content to draft"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:402
-msgid "MCP access profile"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:409
-msgid "Maximum MCP tool calls per minute"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:455
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:50
-msgid "MCP"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:481
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:153
-msgid "Read only"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:482
-msgid "Content editor"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:483
-msgid "Store manager"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:484
-msgid "Full access (YOLO mode)"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:485
-msgid "Custom permissions"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:571
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:72
-msgid "Connect an AI assistant to this website."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:580
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:82
-msgid "Edit WordPress from your AI chat"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:581
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:83
-msgid "Connect ChatGPT, Claude, or another supported AI assistant. Manage pages, products, orders, and PurioChat simply by chatting."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:591
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:90
-msgid "Allow AI connections"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:595
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:92
-msgid "Nothing can connect while this is switched off."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:602
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:98
-msgid "Connect your AI assistant"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:603
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:99
-msgid "Choose your assistant and copy its MCP server address."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:609
-msgid "A public HTTPS address is required before remote assistants can connect."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:614
-msgid "Pretty permalinks are required. With plain permalinks the OAuth discovery addresses do not resolve and assistants cannot complete sign-in."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:615
-msgid "Change permalink settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:625
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:107
-msgid "ChatGPT"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:633
-msgid "ChatGPT MCP server address"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:643
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:124
-msgid "Claude"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:651
-msgid "Claude MCP server address"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:661
-msgid "Run the connection check again"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:671
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1057
-msgid "Checking…"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:671
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1063
-msgid "Enable and save to run the check"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:663
-msgid "Re-run"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:673
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:145
-msgid "Only administrators can connect. Assistants sign in with OAuth, never receive your password, and are limited to the permissions enabled below."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:676
-msgid "The MCP endpoint will appear after the MCP transport is available."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:682
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:151
-msgid "What can the assistant do?"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:695
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:161
-msgid "Customize permissions"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:696
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:162
-msgid "Only needed when a preset is not enough"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:702
-msgid "WordPress"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:704
-msgid "View content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:704
-msgid "Posts, pages, public post types, and taxonomies."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:705
-msgid "Edit content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:705
-msgid "Create drafts and edit existing content."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:706
-msgid "Publish content"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:706
-msgid "Publish, schedule, and unpublish content."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:707
-msgid "Read and update custom fields on content, including ACF and theme fields."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:707
-msgid "Custom fields may hold private data. Keys starting with an underscore stay blocked."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:708
-msgid "Upload files and set featured images."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:709
-msgid "Review, reply, mark as spam, or trash."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:710
-msgid "View and change user accounts."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:710
-msgid "May expose names and email addresses."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:711
-msgid "Change site settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:711
-msgid "Only a small approved settings list."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:712
-msgid "Install, update, enable, or disable."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:712
-msgid "Can change how the entire website works."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:713
-msgid "Permanent deletion"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:713
-msgid "Allow actions that bypass WordPress Trash."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:713
-msgid "Keep this off unless absolutely necessary."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:714
-msgid "Keep new content as drafts"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:714
-msgid "Prevents accidental publishing."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:719
-msgid "WooCommerce"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:721
-msgid "View catalog"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:721
-msgid "Products, prices, stock, and categories."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:722
-msgid "Manage products"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:722
-msgid "Create products and update catalog data."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:723
-msgid "Manage orders"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:723
-msgid "View sanitized orders and change their status."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:724
-msgid "Customer personal data"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:724
-msgid "Names, addresses, email, and phone numbers."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:724
-msgid "Private customer information is sent to the connected AI service."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:725
-msgid "Create, update, or disable coupons."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:726
-msgid "Change store settings"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:726
-msgid "Approved currency, units, tax, and gateway states."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:733
-msgid "View conversations"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:733
-msgid "Conversation history and statistics."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:733
-msgid "Conversations may contain private information."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:734
-msgid "View contact messages"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:734
-msgid "Contact form messages and sender details."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:734
-msgid "Messages may contain private information."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:744
-msgid "Recent activity"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:745
-msgid "MCP actions are loaded only when this panel is opened"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:747
-msgid "Not loaded"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:751
-msgid "Built-in guardrails stay active"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:752
-msgid "API keys, passwords, licenses, payment credentials, arbitrary options, SQL, PHP, and filesystem access are never exposed."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:756
-msgid "Tool calls per minute"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:758
-msgid "Per connected app and WordPress user."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:763
-msgid "Revoke all connections"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:766
-msgid "Clear activity log"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:770
-msgid "Only metadata is stored. Message bodies and argument values are never logged."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:775
-msgid "Time (UTC)"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:777
-msgid "Tool"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:778
-msgid "Arguments"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:779
-msgid "Result"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:784
-msgid "Open this panel to load MCP activity."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:791
-msgid "Load more"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:816
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:155
-msgid "Can safely view public WordPress content. Cannot make changes."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:817
-msgid "Can create and edit drafts, media, and comments. Cannot publish."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:818
-msgid "Can manage products and sanitized orders. Customer personal data and refunds stay protected."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:819
-msgid "Everything is switched on: users, plugins, themes, custom fields, customer data, conversations, and permanent deletion. Draft protection is turned off."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:820
-msgid "Uses the individual permissions in the section below."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:836
-msgid "permission"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:837
-msgid "permissions"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:906
-msgid "Revoke every current MCP connection?"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:907
-msgid "Clear the MCP audit log?"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:927
-msgid "MCP action completed."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:932
-msgid "The MCP action could not be completed."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:951
-msgid "Loading activity…"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:952
-msgid "Activity could not be loaded."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:953
-msgid "event"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:954
-msgid "events"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1047
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:138
-msgid "Ready to connect"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1048
-#, php-format
-msgid "%d problem found"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1049
-#, php-format
-msgid "%d problems found"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1050
-msgid "Check incomplete"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1051
-msgid "Check failed to run"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1064
-msgid "Save to run the connection check"
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:1065
-msgid "Save to disable AI connections"
-msgstr ""
-
-#: ai-chat-search-pro/includes/mcp/class-mcp-manager.php:53
-msgid "All MCP connections were revoked."
-msgstr ""
-
-#: ai-chat-search-pro/includes/mcp/class-mcp-manager.php:70
-msgid "The MCP audit log could not be cleared."
-msgstr ""
-
-#: ai-chat-search-pro/includes/mcp/class-mcp-manager.php:80
-msgid "The MCP audit log was cleared."
-msgstr ""
-
-#: ai-chat-search-pro/includes/mcp/class-mcp-manager.php:113
-msgid "You are not allowed to manage MCP connections."
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:109
-msgid "Settings → Security and Login → Enable Developer Mode"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:110
-msgid "Plugins → Add Plugin"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:126
-msgid "Settings → Connectors"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:127
-msgid "Click Add → Add Custom Connector"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:164
-msgid "2 permissions"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:170
-msgid "Manage WordPress from ChatGPT or Claude"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:172
-msgid "Create and update posts, pages, and custom post types"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:173
-msgid "Manage WooCommerce products and orders"
-msgstr ""
-
-#: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:174
-msgid "Keep WordPress permissions and secure sign-in"
 msgstr ""

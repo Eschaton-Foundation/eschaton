@@ -138,9 +138,11 @@ class Admin_Contact_Messages {
      */
     private function render_messages_list($messages, $total_count) {
         if (empty($messages)): ?>
-            <p style="padding: 20px; text-align: center; color: #666;">
-                <?php _e('No contact messages yet. Messages will appear here when users send them via the AI chat or contact form button.', 'ai-chat-search'); ?>
-            </p>
+            <div class="airs-audit-list">
+                <div class="airs-audit-empty-state">
+                    <?php esc_html_e('No contact messages yet. Messages will appear here when users send them via the AI chat or contact form button.', 'ai-chat-search'); ?>
+                </div>
+            </div>
         <?php else: ?>
             <div id="contact-messages-container" style="margin-top: 20px;">
                 <?php foreach ($messages as $msg): ?>

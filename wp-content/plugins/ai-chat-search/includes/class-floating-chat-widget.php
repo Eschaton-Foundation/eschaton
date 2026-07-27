@@ -291,6 +291,10 @@ class Listeo_AI_Search_Floating_Chat_Widget
             $floating_config["lazyScripts"] = $lazy_scripts;
             $floating_config["scriptVersion"] = LISTEO_AI_SEARCH_VERSION;
         }
+        $floating_config = apply_filters(
+            'listeo_ai_floating_chat_config',
+            $floating_config
+        );
         wp_localize_script(
             "listeo-ai-floating-chat",
             "listeoAiFloatingChatConfig",
@@ -539,13 +543,22 @@ class Listeo_AI_Search_Floating_Chat_Widget
             }
             <?php endif; ?>
 
-            /* AI Chat Primary Color Variables */
+            /* AI Chat Color Variables */
             :root {
+                --ai-chat-button-color: <?php echo esc_attr(
+                    $button_color,
+                ); ?>;
                 --ai-chat-primary-color: <?php echo esc_attr(
                     $primary_color,
                 ); ?>;
                 --ai-chat-primary-color-light: <?php echo esc_attr(
                     $primary_color_light,
+                ); ?>;
+            }
+
+            .listeo-floating-chat-widget {
+                --ai-chat-button-color: <?php echo esc_attr(
+                    $button_color,
                 ); ?>;
             }
 
@@ -575,27 +588,29 @@ class Listeo_AI_Search_Floating_Chat_Widget
         <?php endif; ?>
         <?php if (get_option('listeo_ai_color_scheme_switcher')): ?>
         <script>(function(){var s=localStorage.getItem('listeo_ai_chat_dark_mode'),e=document.getElementById('listeo-floating-chat-widget');if(s==='dark')e.classList.add('dark-mode');else if(s==='light')e.classList.remove('dark-mode');})();</script>
-        <?php endif; ?>
-
-            <?php if (!empty(trim($welcome_bubble))) : ?>
-            <!-- Welcome Bubble (shows on first visit only) -->
-            <div class="listeo-floating-welcome-bubble hidden" id="listeo-floating-welcome-bubble">
-                <div class="listeo-floating-welcome-bubble-content">
-                    <?php echo wp_kses_post($welcome_bubble); ?>
-                </div>
-                <div class="listeo-floating-welcome-bubble-arrow"></div>
-            </div>
-            <!-- Check localStorage immediately to prevent flash -->
-            <script>
-                (function() {
-                    var bubble = document.getElementById('listeo-floating-welcome-bubble');
-                    var dismissed = localStorage.getItem('<?php echo esc_js($welcome_bubble_storage_key); ?>');
-                    if (dismissed !== 'true' && bubble) {
-                        bubble.classList.remove('hidden');
-                    }
-                })();
-            </script>
             <?php endif; ?>
+
+            <div class="listeo-floating-bubble-stack" id="listeo-floating-bubble-stack">
+                <?php if (!empty(trim($welcome_bubble))) : ?>
+                <!-- Welcome Bubble (shows on first visit only) -->
+                <div class="listeo-floating-welcome-bubble hidden" id="listeo-floating-welcome-bubble">
+                    <div class="listeo-floating-welcome-bubble-content">
+                        <?php echo wp_kses_post($welcome_bubble); ?>
+                    </div>
+                    <div class="listeo-floating-welcome-bubble-arrow"></div>
+                </div>
+                <!-- Check localStorage immediately to prevent flash -->
+                <script>
+                    (function() {
+                        var bubble = document.getElementById('listeo-floating-welcome-bubble');
+                        var dismissed = localStorage.getItem('<?php echo esc_js($welcome_bubble_storage_key); ?>');
+                        if (dismissed !== 'true' && bubble) {
+                            bubble.classList.remove('hidden');
+                        }
+                    })();
+                </script>
+                <?php endif; ?>
+            </div>
 
             <!-- Floating Button -->
             <button

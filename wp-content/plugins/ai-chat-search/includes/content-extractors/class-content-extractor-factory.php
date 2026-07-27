@@ -100,7 +100,7 @@ class Listeo_AI_Content_Extractor_Factory {
      */
     public static function extract_custom_fields($post_id, $already_extracted = array()) {
         $post = get_post($post_id);
-        if ($post && $post->post_type !== 'listing' && self::has_manual_custom_fields_config($post->post_type)) {
+        if ($post && self::can_use_manual_custom_fields_config($post->post_type)) {
             return self::extract_selected_custom_fields($post_id, $post->post_type, $already_extracted);
         }
 
@@ -257,7 +257,7 @@ class Listeo_AI_Content_Extractor_Factory {
      */
     public static function extract_configured_custom_fields($post_id, $already_extracted = array()) {
         $post = get_post($post_id);
-        if (!$post || !self::has_manual_custom_fields_config($post->post_type)) {
+        if (!$post || !self::can_use_manual_custom_fields_config($post->post_type)) {
             return '';
         }
 
@@ -277,6 +277,27 @@ class Listeo_AI_Content_Extractor_Factory {
         $config = get_option('listeo_ai_search_custom_meta_fields', array());
 
         return is_array($config) && array_key_exists($post_type, $config);
+    }
+
+    /**
+     * Check whether saved custom field selection may be used for a post type.
+     *
+     * Listing selection is enabled by Pro through a license-gated filter. When
+     * Pro is unavailable, listings keep using the existing automatic extraction.
+     *
+     * @param string $post_type Post type.
+     * @return bool
+     */
+    private static function can_use_manual_custom_fields_config($post_type) {
+        if (!self::has_manual_custom_fields_config($post_type)) {
+            return false;
+        }
+
+        if ($post_type === 'listing') {
+            return (bool) apply_filters('listeo_ai_listing_custom_fields_enabled', false);
+        }
+
+        return true;
     }
 
     /**

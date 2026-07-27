@@ -22,7 +22,48 @@ class Listeo_AI_Search_Chat_Shortcode
         // Register shortcodes (both old and new for backward compatibility)
         add_shortcode("listeo_ai_chat", [$this, "render_chat"]); // Legacy shortcode
         add_shortcode("ai_chat", [$this, "render_chat"]); // New shortcode
+        add_shortcode("ai_chat_link", [$this, "render_chat_link"]);
         // Assets are enqueued in render_chat() only when shortcode is actually used
+    }
+
+    /**
+     * Render a link that opens the floating chat and optionally sends a question.
+     *
+     * @param array  $atts    Shortcode attributes.
+     * @param string $content Link text.
+     * @return string
+     */
+    public function render_chat_link($atts, $content = "")
+    {
+        $atts = shortcode_atts(
+            [
+                "question" => "",
+            ],
+            $atts,
+            "ai_chat_link",
+        );
+
+        $question = sanitize_text_field(
+            html_entity_decode(
+                (string) $atts["question"],
+                ENT_QUOTES | ENT_HTML5,
+                get_bloginfo("charset"),
+            ),
+        );
+        $question = function_exists("mb_substr")
+            ? mb_substr($question, 0, 1000)
+            : substr($question, 0, 1000);
+
+        $link_text = trim(wp_strip_all_tags((string) $content));
+        if ($link_text === "") {
+            $link_text = __("Open chat", "ai-chat-search");
+        }
+
+        return sprintf(
+            '<a href="#" class="listeo-ai-chat-magic-link" data-chat-magic-link="%1$s">%2$s</a>',
+            esc_attr($question),
+            esc_html($link_text),
+        );
     }
 
     /**

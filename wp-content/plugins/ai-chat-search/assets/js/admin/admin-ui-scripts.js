@@ -75,6 +75,20 @@
     }
 
     /**
+     * Initialize bulk controls for floating chat page exclusions.
+     */
+    function initPageExclusionActions() {
+        $('.airs-page-exclusion-controls').on('click', '[data-page-exclusion-action]', function() {
+            var shouldSelect = $(this).data('page-exclusion-action') === 'select';
+            $(this)
+                .closest('.airs-form-group')
+                .find('input[name="listeo_ai_floating_excluded_pages[]"]')
+                .prop('checked', shouldSelect)
+                .trigger('change');
+        });
+    }
+
+    /**
      * Initialize shortcode generator
      */
     function initShortcodeGenerator() {
@@ -136,6 +150,139 @@
                 $btn.html(originalHtml);
             }, 2000);
         });
+    }
+
+    /**
+     * Initialize the embedded chat shortcode builder and preview.
+     */
+    function initChatShortcodeGenerator() {
+        var $builder = $('#ai-chat-shortcode-builder');
+        if (!$builder.length) return;
+
+        var $height = $('#chat-shortcode-height');
+        var $style = $('#chat-shortcode-style');
+        var $output = $('#generated-chat-shortcode');
+        var $preview = $('#chat-shortcode-preview');
+        var $copyButton = $('#copy-chat-shortcode');
+
+        function updateChatShortcode() {
+            var height = $height.val().trim();
+            var style = $style.val() === '2' ? '2' : '1';
+            var validHeight = /^\d+(?:\.\d+)?(?:px|vh|vw|em|rem|%)$/i.test(height);
+            var shortcode = '[ai_chat';
+
+            if (!validHeight) {
+                height = '600px';
+            }
+
+            if (height !== '600px') {
+                shortcode += ' height="' + height + '"';
+            }
+            if (style !== '1') {
+                shortcode += ' style="' + style + '"';
+            }
+
+            shortcode += ']';
+            $output.val(shortcode);
+            $preview.toggleClass('is-style-2', style === '2');
+            $preview.css('height', style === '2' ? '' : height);
+        }
+
+        $height.add($style).on('input change', updateChatShortcode);
+        $height.on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        $copyButton.on('click', function() {
+            var originalText = $copyButton.text();
+            $output[0].select();
+            document.execCommand('copy');
+            $copyButton.text(i18n.copied || 'Copied!');
+
+            setTimeout(function() {
+                $copyButton.text(originalText);
+            }, 2000);
+        });
+
+        updateChatShortcode();
+        $preview.css('height', '300px');
+    }
+
+    /**
+     * Initialize the chat magic-link generator.
+     */
+    function initMagicLinkGenerator() {
+        var $builder = $('#ai-chat-magic-link-builder');
+        if (!$builder.length) return;
+
+        var $linkText = $('#magic-link-text');
+        var $question = $('#magic-link-question');
+        var $shortcodeOutput = $('#generated-magic-link-shortcode');
+        var $htmlOutput = $('#generated-magic-link-html');
+        var defaultLinkText = $linkText.val().trim() || 'Chat with us';
+
+        function escapeShortcodeAttribute(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function updateMagicLinks() {
+            var linkText = $linkText.val().trim() || defaultLinkText;
+            var question = $question.val().trim();
+            var shortcode = '[ai_chat_link';
+            var html = '<a href="#" data-chat-magic-link';
+
+            if (question) {
+                shortcode += ' question="' + escapeShortcodeAttribute(question) + '"';
+                html += '="' + escapeHtml(question) + '"';
+            }
+
+            shortcode += ']' + linkText + '[/ai_chat_link]';
+            html += '>' + escapeHtml(linkText) + '</a>';
+
+            $shortcodeOutput.val(shortcode);
+            $htmlOutput.val(html);
+        }
+
+        function showCopied($button) {
+            var originalText = $button.text();
+            $button.text(i18n.copied || 'Copied!');
+
+            setTimeout(function() {
+                $button.text(originalText);
+            }, 2000);
+        }
+
+        $linkText.add($question).on('input', updateMagicLinks);
+        $linkText.add($question).on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        $builder.on('click', '.magic-link-copy-button', function() {
+            var $button = $(this);
+            var targetId = $button.data('copy-target');
+            var $output = $('#' + targetId);
+
+            $output[0].select();
+            document.execCommand('copy');
+            showCopied($button);
+        });
+
+        updateMagicLinks();
     }
 
     /**
@@ -508,7 +655,12 @@
         }
 
         // Initialize: apply collapsed class, then add js-ready to disable early CSS
-        var DEFAULTS = { 'database-management': true, 'semantic-search-field': true, 'developer-debug': true };
+        var DEFAULTS = {
+            'database-management': true,
+            'semantic-search-field': true,
+            'developer-debug': true,
+            'stats-contact-messages': true
+        };
         var collapsedState = window.airsCollapsedCards || getCollapsedCards();
         for (var id in DEFAULTS) {
             if (!(id in collapsedState)) collapsedState[id] = DEFAULTS[id];
@@ -1098,7 +1250,14 @@
             var target = $(this).data('target');
             switchSection(target);
             if (target) {
-                window.location.hash = target;
+                // No element carries the section id, so assigning location.hash
+                // makes the browser fail to find the fragment and jump to the
+                // top of the page. replaceState keeps deep links working.
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', '#' + target);
+                } else {
+                    window.location.hash = target;
+                }
             }
         });
     }
@@ -1109,7 +1268,10 @@
     function init() {
         initStickyFooters();
         initCollapsibleSections();
+        initPageExclusionActions();
         initShortcodeGenerator();
+        initChatShortcodeGenerator();
+        initMagicLinkGenerator();
         initVisualRadioCards();
         initThemeToggle();
         initPositionToggle();

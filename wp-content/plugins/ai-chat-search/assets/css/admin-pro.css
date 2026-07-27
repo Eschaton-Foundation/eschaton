@@ -232,6 +232,17 @@
     font-size: 16px;
 }
 
+.ai-chat-pro-feature-locked .benefits-list .lp-puriochat-tabs__feature-text {
+    margin: 0;
+    color: inherit;
+}
+
+.ai-chat-pro-feature-locked .benefits-list .lp-puriochat-tabs__feature-text svg {
+    position: relative;
+    top: 2px;
+    margin: 0 2px;
+}
+
 .ai-chat-pro-feature-locked .button-hero {
     padding: 12px 30px;
     height: auto;
@@ -530,6 +541,418 @@
     box-sizing: border-box;
 }
 
+/* Free MCP settings preview */
+.purio-mcp-upgrade__sidebar-icon svg,
+.purio-mcp-upgrade__header-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.purio-mcp-upgrade__header-icon {
+    background: #e9f3ff;
+    color: #006aff;
+}
+
+.purio-mcp-upgrade__card-body {
+    padding: 0 !important;
+}
+
+.purio-mcp-upgrade {
+    min-height: 790px;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+.purio-mcp-upgrade__preview {
+    display: grid;
+    gap: 20px;
+    padding: 28px;
+}
+
+.purio-mcp-upgrade__notice {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    background: rgba(4, 118, 238, .1);
+    color: #0476ee;
+}
+
+.purio-mcp-upgrade__provider-stack {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 5px 8px 5px 5px;
+}
+
+.purio-mcp-upgrade__provider-logo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    padding: 7px;
+    margin-right: -8px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+    transform: rotate(-7deg);
+}
+
+.purio-mcp-upgrade__provider-logo:nth-child(2) {
+    z-index: 2;
+    margin-right: 0;
+    transform: translateY(-2px) rotate(3deg);
+}
+
+.purio-mcp-upgrade__provider-logo img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.purio-mcp-upgrade__notice .listeo-ai-auto-config-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.45;
+}
+
+.purio-mcp-upgrade__notice .listeo-ai-auto-config-copy strong {
+    color: #0476ee;
+    font-size: 14px;
+}
+
+.purio-mcp-upgrade__notice .listeo-ai-auto-config-copy > span {
+    color: #0476ee;
+    font-size: 13px;
+}
+
+.purio-mcp-upgrade__master {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 17px 18px;
+    border-radius: 7px;
+    background: #f7f7f7;
+}
+
+.purio-mcp-upgrade__master strong,
+.purio-mcp-upgrade__section-heading strong {
+    color: #111;
+    font-size: 15px;
+}
+
+.purio-mcp-upgrade__master small,
+.purio-mcp-upgrade__section-heading small {
+    color: #666;
+    font-size: 13px;
+}
+
+.purio-mcp-upgrade__checkbox {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border-radius: 4px;
+    background: #006aff;
+}
+
+.purio-mcp-upgrade__checkbox::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 7px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.purio-mcp-upgrade__master-copy {
+    display: block;
+    min-width: 0;
+}
+
+.purio-mcp-upgrade__master-copy small {
+    display: block;
+    margin-top: 4px;
+}
+
+.purio-mcp-upgrade__status,
+.purio-mcp-upgrade__check {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 0 8px;
+    border-radius: 5px;
+    color: #237d17;
+    background: #c3f5bc;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.purio-mcp-upgrade__status {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.purio-mcp-upgrade__connect {
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 9px;
+    background: #fff;
+}
+
+.purio-mcp-upgrade__section-heading {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 16px;
+}
+
+.purio-mcp-upgrade__provider-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.purio-mcp-upgrade__provider {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 18px;
+    border-radius: 7px;
+    text-align: left;
+}
+
+.purio-mcp-upgrade__provider--chatgpt {
+    background: #f5f5f5;
+}
+
+.purio-mcp-upgrade__provider--claude {
+    background: #fcece1;
+}
+
+.purio-mcp-upgrade__provider-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+}
+
+.purio-mcp-upgrade__provider-header img {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    object-fit: contain;
+}
+
+.purio-mcp-upgrade__provider-header > div {
+    width: 100%;
+    min-width: 0;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.purio-mcp-upgrade__provider-header strong {
+    display: block;
+    color: #111;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.purio-mcp-upgrade__provider-header ol {
+    margin: 3px 0 0 16px;
+    padding: 0;
+}
+
+.purio-mcp-upgrade__provider-header li {
+    margin: 0;
+}
+
+.purio-mcp-upgrade__endpoint {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    margin-top: auto;
+}
+
+.purio-mcp-upgrade__endpoint input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    color: #222;
+    background: #fff;
+    font-family: monospace;
+    font-size: 13px;
+    box-shadow: none;
+    opacity: 1;
+}
+
+.purio-mcp-upgrade__endpoint button {
+    min-width: 72px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 1;
+}
+
+.purio-mcp-upgrade__provider--chatgpt button {
+    background: #111;
+}
+
+.purio-mcp-upgrade__provider--claude button {
+    background: #d97757;
+}
+
+.purio-mcp-upgrade__check {
+    margin-top: 12px;
+}
+
+.purio-mcp-upgrade__secure-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 10px 0 0;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.purio-mcp-upgrade__secure-note svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    margin-top: 2px;
+    color: #999;
+}
+
+.purio-mcp-upgrade__fields {
+    max-width: 340px;
+}
+
+.purio-mcp-upgrade__fields label {
+    display: grid;
+    gap: 8px;
+    color: #111;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.purio-mcp-upgrade__fake-select {
+    width: 100%;
+    min-height: 42px;
+    max-width: none;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    background: #fff;
+    color: #555;
+    font-size: 13px;
+}
+
+.purio-mcp-upgrade__fake-select {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 40px 0 14px;
+    box-sizing: border-box;
+    font-weight: 400;
+}
+
+.purio-mcp-upgrade__fields small {
+    color: #666;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.purio-mcp-upgrade__fake-select::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    width: 6px;
+    height: 6px;
+    border: solid #777;
+    border-width: 0 2px 2px 0;
+    transform: translateY(-70%) rotate(45deg);
+}
+
+.purio-mcp-upgrade__permissions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 48px 16px 18px;
+    border: 1px solid #e0e0e0;
+    border-radius: 9px;
+    background: #fafafa;
+}
+
+.purio-mcp-upgrade__permissions::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid #777;
+    border-bottom: 2px solid #777;
+    transform: translateY(-30%) rotate(225deg);
+}
+
+.purio-mcp-upgrade__permissions strong,
+.purio-mcp-upgrade__permissions small {
+    display: block;
+}
+
+.purio-mcp-upgrade__permissions strong {
+    color: #111;
+    font-size: 14px;
+}
+
+.purio-mcp-upgrade__permissions small {
+    margin-top: 3px;
+    color: #777;
+    font-size: 13px;
+}
+
+.purio-mcp-upgrade__permissions-meta {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.purio-mcp-upgrade .lock-overlay h3 {
+    color: #111;
+}
+
+.purio-mcp-upgrade .benefits-list li {
+    color: #666;
+}
+
 @media (max-width: 782px) {
     .purio-live-chat-upgrade__preview {
         display: block;
@@ -544,6 +967,24 @@
 
     .purio-live-chat-upgrade__conversation {
         display: none;
+    }
+
+    .purio-mcp-upgrade {
+        min-height: 950px;
+    }
+
+    .purio-mcp-upgrade__provider-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .purio-mcp-upgrade__endpoint {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .purio-mcp-upgrade__endpoint button {
+        min-height: 38px;
+        align-self: flex-start;
     }
 }
 

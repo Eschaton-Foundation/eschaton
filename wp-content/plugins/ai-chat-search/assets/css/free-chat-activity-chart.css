@@ -1,0 +1,204 @@
+/**
+ * Free chat activity chart.
+ */
+
+.airs-free-chat-activity-chart {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 220px;
+}
+
+.airs-free-chat-activity-chart .airs-chart-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.airs-free-chat-activity-chart .airs-chart-legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.airs-free-chat-activity-chart .airs-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666666;
+    font-size: 13px;
+}
+
+.airs-free-chat-activity-chart .airs-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.airs-free-chat-activity-chart .airs-legend-conversations .airs-legend-color {
+    background-color: #006aff;
+}
+
+.airs-free-chat-activity-chart .airs-legend-messages .airs-legend-color {
+    background-color: #10b981;
+}
+
+.airs-free-chat-activity-chart .airs-chart-canvas-panel {
+    position: relative;
+    width: 100%;
+    height: 220px;
+}
+
+.airs-free-chat-activity-chart canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    transition: opacity 0.15s ease;
+}
+
+.airs-free-chat-activity-chart.is-loading canvas {
+    opacity: 0.28;
+}
+
+.airs-free-chat-activity-chart:not(.is-loading) .airs-chart-loading {
+    display: none;
+}
+
+.airs-free-chat-activity-chart .airs-chart-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.airs-free-chat-activity-chart .airs-chart-loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #006aff;
+    border-radius: 50%;
+    animation: airs-free-chart-spin 0.8s linear infinite;
+}
+
+.airs-chart-empty-state {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #666666;
+    text-align: center;
+}
+
+.airs-chart-empty-placeholder {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -3%;
+    width: 106%;
+    height: 100%;
+    opacity: 0.72;
+}
+
+.airs-chart-empty-placeholder line {
+    stroke: #cccccc;
+    stroke-width: 1;
+    stroke-dasharray: 5 6;
+}
+
+.airs-chart-empty-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.airs-chart-empty-line-conversations {
+    stroke: #006aff;
+}
+
+.airs-chart-empty-line-messages {
+    stroke: #10b981;
+}
+
+.airs-chart-empty-labels {
+    position: absolute;
+    right: 5%;
+    bottom: 8px;
+    left: 5%;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    color: #999999;
+    font-size: 11px;
+}
+
+.airs-chart-empty-message {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 460px;
+    padding: 18px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.58);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+}
+
+.airs-chart-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    background: rgba(0, 106, 255, 0.08);
+    color: #006aff;
+}
+
+.airs-chart-empty-message strong {
+    color: #111111;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+@keyframes airs-free-chart-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .airs-free-chat-activity-chart .airs-chart-legend {
+        gap: 15px;
+    }
+
+    .airs-free-chat-activity-chart .airs-legend-item {
+        font-size: 12px;
+    }
+
+    .airs-free-chat-activity-chart,
+    .airs-free-chat-activity-chart .airs-chart-canvas-panel {
+        min-height: 180px;
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .airs-free-chat-activity-chart,
+    .airs-free-chat-activity-chart .airs-chart-canvas-panel {
+        min-height: 150px;
+        height: 150px;
+    }
+}

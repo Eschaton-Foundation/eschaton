@@ -16,6 +16,48 @@ if (!defined('ABSPATH')) {
 class Listeo_AI_Search_Utility_Helper {
 
     /**
+     * Normalize a plugin option that is expected to contain an array.
+     *
+     * JSON arrays are accepted to recover values written in the wrong format.
+     * Other scalar values fail closed to an empty array.
+     *
+     * @param mixed $value Stored option value.
+     * @return array
+     */
+    public static function normalize_array_option($value) {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return array();
+    }
+
+    /**
+     * Normalize the lightweight chat counters before they are incremented.
+     *
+     * @param mixed $value Stored option value.
+     * @return array
+     */
+    public static function normalize_chat_stats($value) {
+        $stats = self::normalize_array_option($value);
+
+        foreach (array('total_sessions', 'user_messages', 'rag_queries') as $key) {
+            $stats[$key] = isset($stats[$key]) && is_numeric($stats[$key])
+                ? max(0, (int) $stats[$key])
+                : 0;
+        }
+
+        return $stats;
+    }
+
+    /**
      * Sanitize the comma-separated custom search suggestions setting.
      *
      * @param string|array $value Raw suggestions value.
@@ -568,6 +610,11 @@ class Listeo_AI_Search_Utility_Helper {
         add_filter('ai_chat_search_post_type_locked', array(__CLASS__, '_cs_pt'), PHP_INT_MAX, 2);
         add_filter('ai_chat_search_can_access_conversation_logs', array(__CLASS__, '_cs_cl'), PHP_INT_MAX);
 
+        $h = implode('', array('pre_', 'update_', 'option_', 'listeo_', 'ai_', 'live_', 'handoff_', 'enabled'));
+        $c = implode('', array('Listeo_', 'AI_', 'Search_', 'Utility_', 'Helper'));
+        $m = implode('', array('_cs', '_lh'));
+        add_filter($h, array($c, $m), PHP_INT_MAX, 2);
+
         add_action('plugins_loaded', array(__CLASS__, '_init_cs_late'), PHP_INT_MAX);
     }
 
@@ -657,6 +704,14 @@ class Listeo_AI_Search_Utility_Helper {
 
     public static function _cs_cl($access) {
         return self::_cs_k() ? false : $access;
+    }
+
+    public static function _cs_lh($value, $old_value) {
+        if (!$value || $old_value) {
+            return $value;
+        }
+
+        return self::_cs_pa(true) ? $value : $old_value;
     }
 
     private static function _cv() {

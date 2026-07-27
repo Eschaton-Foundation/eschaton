@@ -229,7 +229,7 @@ class Listeo_AI_Search_Shortcode_Handler
 
         // If no valid types remain, show error
         if (empty($valid_types)) {
-            return '<div class="ai-search-field-error" style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; margin: 10px 0;">
+            return '<div class="ai-search-field-error" style="padding: 15px; background: #fff3cd; margin: 10px 0;">
                 <strong>' . esc_html__('AI Search Configuration Error:', 'ai-chat-search') . '</strong>
                 <p style="margin: 5px 0 0;">' . esc_html__('No valid content types specified or content not trained yet. Please check your shortcode settings.', 'ai-chat-search') . '</p>
             </div>';
@@ -259,7 +259,12 @@ class Listeo_AI_Search_Shortcode_Handler
                         placeholder="<?php echo esc_attr($atts['placeholder']); ?>"
                         class="ai-search-input">
                     <input type="text" name="ai_search_hp" tabindex="-1" autocomplete="off">
-                    <button type="button" class="ai-search-submit-btn"><i class="fa fa-search"></i></button>
+                    <button type="button" class="ai-search-submit-btn" aria-label="<?php esc_attr_e('Search', 'ai-chat-search'); ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m22 22-5.5-5.5"></path>
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- AI Processing Status -->

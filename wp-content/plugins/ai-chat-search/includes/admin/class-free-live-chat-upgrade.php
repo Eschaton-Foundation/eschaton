@@ -162,7 +162,21 @@ class Listeo_AI_Search_Free_Live_Chat_Upgrade {
                                 <h3><?php esc_html_e('Add Human Live Chat', 'ai-chat-search'); ?></h3>
                                 <p><?php esc_html_e('Let visitors request a person, allow AI to escalate, and reply from a shared WordPress inbox.', 'ai-chat-search'); ?></p>
                                 <ul class="benefits-list">
-                                    <li><?php esc_html_e('Browser, sound, and offline email alerts', 'ai-chat-search'); ?></li>
+                                    <li>
+                                        <p class="lp-puriochat-tabs__feature-text">
+                                            <?php esc_html_e('Get alerts via', 'ai-chat-search'); ?>
+                                            <strong><?php esc_html_e('browser, email, or Telegram', 'ai-chat-search'); ?></strong>.<br>
+                                            <?php esc_html_e('Reply from', 'ai-chat-search'); ?>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                <path fill="#111111" d="M12 0C5.383 0 0 5.383 0 12s5.383 12 12 12 12-5.383 12-12S18.617 0 12 0ZM1.211 12c0-1.564.334-3.05.935-4.39l5.145 14.1A10.794 10.794 0 0 1 1.211 12Zm10.789 10.789c-1.06 0-2.084-.155-3.051-.44l3.237-9.406 3.315 9.083c.021.053.047.102.075.148A10.74 10.74 0 0 1 12 22.789Zm1.488-15.847c.65-.034 1.236-.103 1.236-.103.582-.069.514-.925-.068-.891 0 0-1.75.137-2.88.137-1.063 0-2.846-.137-2.846-.137-.583-.034-.651.856-.069.891 0 0 .55.069 1.133.103l1.684 4.614-2.366 7.097-3.937-11.71c.651-.034 1.236-.103 1.236-.103.582-.069.514-.925-.068-.891 0 0-1.75.137-2.88.137-.203 0-.442-.005-.696-.013A10.78 10.78 0 0 1 12 1.211c2.8 0 5.35 1.069 7.267 2.821-.046-.003-.091-.009-.139-.009-1.062 0-1.815.925-1.815 1.918 0 .89.514 1.644 1.062 2.534.411.719.89 1.644.89 2.98 0 .925-.356 1.986-.822 3.482l-1.078 3.604-3.877-11.599Zm3.928 14.384 3.295-9.528c.617-1.541.822-2.774.822-3.87 0-.397-.026-.767-.073-1.112A10.73 10.73 0 0 1 22.789 12c0 3.98-2.16 7.46-5.373 9.326Z"></path>
+                                            </svg>
+                                            WordPress <?php esc_html_e('or', 'ai-chat-search'); ?>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                <path fill="#229ED9" d="M23.953 4.57a.91.91 0 0 0-1.282-.813L.548 12.286c-.702.278-.697.687-.128.862l5.677 1.773 2.186 6.835c.265.733.135 1.022.904 1.022.594 0 .856-.271 1.188-.594l2.85-2.77 5.928 4.376c1.091.602 1.88.29 2.153-1.012L23.953 4.57ZM8.11 14.513l11.093-6.998c.554-.336 1.063-.156.646.214l-9.151 8.255-.357 3.819-2.231-5.29Z"></path>
+                                            </svg>
+                                            Telegram.
+                                        </p>
+                                    </li>
                                     <li><?php esc_html_e('Manual takeover with complete conversation history', 'ai-chat-search'); ?></li>
                                     <li><?php esc_html_e('Access for selected WordPress users', 'ai-chat-search'); ?></li>
                                 </ul>

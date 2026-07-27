@@ -12,6 +12,526 @@
 
     var AIRS = window.AIRS || {};
     var i18n = window.listeo_ai_search_i18n || {};
+    var directModelFallbackSlugs = {
+        openai: ['gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-5.6-sol', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.5', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'],
+        gemini: ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+        mistral: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'mistral-medium-3.5']
+    };
+
+    function getDirectModelCatalog(provider) {
+        var catalog = i18n.directModelCatalog || {};
+        return catalog[provider] || null;
+    }
+
+    function getDirectModelSlugs(provider) {
+        var catalog = getDirectModelCatalog(provider);
+        return catalog ? Object.keys(catalog) : (directModelFallbackSlugs[provider] || []);
+    }
+
+    function getModelSelectorText(key, fallback) {
+        return i18n[key] || fallback;
+    }
+
+    function getDirectModelIcon(provider) {
+        var icons = i18n.directModelIcons || {};
+        return icons[provider] || '';
+    }
+
+    function getOpenRouterModelGroups() {
+        var providerMeta = i18n.openRouterProviders || {};
+        var groups = [];
+        var groupsByProvider = {};
+
+        $('#listeo_ai_chat_model .model-group-openrouter option').each(function() {
+            var $option = $(this);
+            var slug = $option.val() || '';
+            var provider = slug.split('/')[0];
+            var meta = providerMeta[provider] || {};
+
+            if (!groupsByProvider[provider]) {
+                groupsByProvider[provider] = {
+                    key: provider,
+                    label: meta.label || provider,
+                    icon: meta.icon || $option.find('img').attr('src') || '',
+                    models: []
+                };
+                groups.push(groupsByProvider[provider]);
+            }
+
+            groupsByProvider[provider].models.push({
+                slug: slug,
+                name: $.trim($option.text()),
+                capability: parseInt($option.attr('data-capability'), 10) || 0,
+                speed: parseInt($option.attr('data-speed'), 10) || 0
+            });
+        });
+
+        return groups;
+    }
+
+    function getModelRatingLabel(metric, value) {
+        return getModelSelectorText('modelSelectorRating', '%1$s: %2$d out of 5')
+            .replace('%1$s', metric)
+            .replace('%2$d', value);
+    }
+
+    function createModelRating(type, value) {
+        var metric = type === 'capability'
+            ? getModelSelectorText('modelSelectorCapability', 'Capability')
+            : getModelSelectorText('modelSelectorSpeed', 'Speed');
+        var $rating = $('<span class="airs-model-rating"></span>')
+            .attr('aria-label', getModelRatingLabel(metric, value));
+
+        for (var index = 1; index <= 5; index++) {
+            var activeClass = index <= value ? ' is-active' : '';
+            if (type === 'capability') {
+                $rating.append('<span class="airs-model-rating-dot' + activeClass + '" aria-hidden="true"></span>');
+            } else {
+                $rating.append(
+                    '<svg class="airs-model-rating-bolt' + activeClass + '" width="8" height="12" viewBox="0 0 12 16" aria-hidden="true" focusable="false">' +
+                        '<path d="M7.1 0.7 1.2 8.8h4.1l-0.6 6.5 6.1-8.7H6.7z"></path>' +
+                    '</svg>'
+                );
+            }
+        }
+
+        return $rating;
+    }
+
+    function positionDirectModelMenu($selector, measureContent) {
+        var $trigger = $selector.find('.airs-direct-model-trigger');
+        var $menu = $('#airs-direct-model-menu');
+        var trigger = $trigger.get(0);
+        var menu = $menu.get(0);
+
+        if (!trigger || !menu) return;
+
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        var triggerRect = trigger.getBoundingClientRect();
+        var menuGap = 6;
+        var viewportMargin = 12;
+        var menuWidth = Math.min(triggerRect.width, viewportWidth - (viewportMargin * 2));
+        var menuLeft = Math.min(
+            Math.max(triggerRect.left, viewportMargin),
+            viewportWidth - menuWidth - viewportMargin
+        );
+        var menuTop = triggerRect.bottom + menuGap;
+        var spaceBelow = Math.max(0, viewportHeight - triggerRect.bottom - menuGap - viewportMargin);
+        var naturalHeight;
+
+        $menu.css({
+            top: Math.round(menuTop) + 'px',
+            left: Math.round(menuLeft) + 'px',
+            width: Math.round(menuWidth) + 'px'
+        });
+
+        if (measureContent || !$menu.data('natural-height')) {
+            $menu.css({ height: 'auto', maxHeight: 'none' });
+            $menu.data('natural-height', menu.scrollHeight);
+        }
+
+        naturalHeight = parseFloat($menu.data('natural-height')) || 0;
+        $menu.css({
+            height: Math.min(naturalHeight, spaceBelow) + 'px',
+            maxHeight: 'none'
+        });
+    }
+
+    function setDirectModelMenuOpen($selector, open, focusOption, onClosed) {
+        var $trigger = $selector.find('.airs-direct-model-trigger');
+        var $menu = $('#airs-direct-model-menu');
+
+        $trigger.attr('aria-expanded', open ? 'true' : 'false');
+        $selector.toggleClass('is-open', open);
+
+        if (open) {
+            $menu
+                .off('animationend.airsDirectModelMenu')
+                .removeData('on-closed')
+                .prop('hidden', true)
+                .removeClass('is-opening is-closing')
+                .addClass('is-positioning')
+                .appendTo(document.body)
+                .prop('hidden', false);
+            positionDirectModelMenu($selector, true);
+            $menu.removeClass('is-positioning');
+            if ($menu.get(0)) {
+                void $menu.get(0).offsetWidth;
+            }
+            $menu.addClass('is-opening');
+        } else {
+            if (typeof onClosed === 'function') {
+                $menu.data('on-closed', onClosed);
+            }
+
+            if ($menu.hasClass('is-closing')) return;
+
+            var finishClose = function() {
+                if (!$menu.hasClass('is-closing')) return;
+
+                var closeCallback = $menu.data('on-closed');
+                $menu
+                    .off('animationend.airsDirectModelMenu')
+                    .prop('hidden', true)
+                    .removeClass('is-positioning is-opening is-closing')
+                    .removeData('natural-height on-closed')
+                    .css({
+                        top: '',
+                        left: '',
+                        width: '',
+                        height: '',
+                        maxHeight: ''
+                    });
+
+                if (typeof closeCallback === 'function') {
+                    closeCallback();
+                }
+            };
+
+            if (!$menu.length || $menu.prop('hidden')) {
+                $menu.removeData('on-closed');
+                if (typeof onClosed === 'function') {
+                    onClosed();
+                }
+            } else {
+                $menu
+                    .removeClass('is-opening')
+                    .addClass('is-closing')
+                    .off('animationend.airsDirectModelMenu')
+                    .on('animationend.airsDirectModelMenu', function(event) {
+                        if (
+                            event.target === $menu.get(0) &&
+                            event.originalEvent.animationName === 'airsDirectModelMenuOut'
+                        ) {
+                            finishClose();
+                        }
+                    });
+                if (
+                    window.matchMedia &&
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ) {
+                    finishClose();
+                }
+            }
+        }
+
+        if (open && focusOption) {
+            var $options = $menu.find('.airs-direct-model-option:visible');
+            var $selected = $options.filter('[aria-selected="true"]');
+            var $target = $selected.length ? $selected.eq(0) : $options.eq(0);
+            if ($target.length) {
+                $target.trigger('focus');
+            }
+        }
+    }
+
+    function renderDirectModelSelector(provider, selectedSlug) {
+        var $selector = $('#airs-direct-model-selector');
+        var catalog = getDirectModelCatalog(provider);
+        var selectedModel = catalog && catalog[selectedSlug];
+        if (!$selector.length || !selectedModel) return;
+
+        $('#airs-direct-model-menu').remove();
+        $selector.removeClass('is-open');
+
+        var groupDefinitions = [
+            { key: 'balanced', label: getModelSelectorText('modelSelectorBalanced', 'Balanced') },
+            { key: 'fast', label: getModelSelectorText('modelSelectorFast', 'Fast') },
+            { key: 'capable', label: getModelSelectorText('modelSelectorMostCapable', 'Most capable') }
+        ];
+        var providerIcon = getDirectModelIcon(provider);
+        var $trigger = $('<button type="button" class="airs-direct-model-trigger" id="airs-direct-model-trigger" aria-haspopup="listbox"></button>')
+            .attr('aria-expanded', 'false')
+            .attr('aria-label', getModelSelectorText('modelSelectorSelect', 'Select a model'));
+        if (providerIcon) {
+            $trigger.append(
+                $('<img class="airs-direct-model-icon" alt="">').attr('src', providerIcon)
+            );
+        }
+        var $triggerText = $('<span class="airs-direct-model-trigger-text"></span>');
+        $triggerText.append($('<span class="airs-direct-model-trigger-name"></span>').text(selectedModel.name));
+        $triggerText.append($('<span class="airs-direct-model-trigger-description"></span>').text(selectedModel.description));
+        $trigger.append($triggerText);
+        $trigger.append('<span class="airs-direct-model-chevron" aria-hidden="true"></span>');
+
+        var $menu = $('<div id="airs-direct-model-menu" class="airs-direct-model-menu" hidden></div>');
+        var $columns = $('<div class="airs-direct-model-columns" aria-hidden="true"></div>');
+        $columns.append('<span></span>');
+        $columns.append($('<span></span>').text(getModelSelectorText('modelSelectorCapability', 'Capability')));
+        $columns.append($('<span></span>').text(getModelSelectorText('modelSelectorSpeed', 'Speed')));
+        $menu.append($columns);
+
+        var $listbox = $('<div class="airs-direct-model-list" role="listbox"></div>')
+            .attr('aria-labelledby', 'model-label-text');
+
+        groupDefinitions.forEach(function(group) {
+            var entries = [];
+            $.each(catalog, function(slug, model) {
+                if (model.group === group.key) {
+                    entries.push({ slug: slug, model: model });
+                }
+            });
+            if (!entries.length) return;
+
+            var groupId = 'airs-model-group-' + provider + '-' + group.key;
+            var $group = $('<div class="airs-direct-model-group" role="group"></div>')
+                .attr('aria-labelledby', groupId)
+                .attr('data-model-group', group.key);
+            $group.append($('<div class="airs-direct-model-group-label"></div>').attr('id', groupId).text(group.label));
+
+            entries.forEach(function(entry) {
+                var model = entry.model;
+                var selected = entry.slug === selectedSlug;
+                var $option = $('<button type="button" class="airs-direct-model-option" role="option"></button>')
+                    .attr('data-model', entry.slug)
+                    .attr('aria-selected', selected ? 'true' : 'false')
+                    .toggleClass('is-selected', selected);
+                var $main = $('<span class="airs-direct-model-main"></span>');
+                if (providerIcon) {
+                    $main.append(
+                        $('<img class="airs-direct-model-icon" alt="">').attr('src', providerIcon)
+                    );
+                }
+                var $details = $('<span class="airs-direct-model-details"></span>');
+                var $name = $('<span class="airs-direct-model-name"></span>').text(model.name);
+                if (model.recommended) {
+                    $name.append(
+                        $('<span class="airs-direct-model-badge"></span>').text(
+                            getModelSelectorText('modelSelectorRecommended', 'Recommended')
+                        )
+                    );
+                }
+                $details.append($name);
+                $details.append($('<span class="airs-direct-model-description"></span>').text(model.description));
+                $main.append($details);
+                $option.append($main);
+                $option.append(createModelRating('capability', parseInt(model.capability, 10) || 0));
+                $option.append(createModelRating('speed', parseInt(model.speed, 10) || 0));
+                $group.append($option);
+            });
+
+            $listbox.append($group);
+        });
+
+        $menu.append($listbox);
+
+        $selector.empty().attr('data-provider', provider).append($trigger, $menu);
+    }
+
+    function renderOpenRouterModelSelector(selectedSlug, groups) {
+        var $selector = $('#airs-direct-model-selector');
+        var selectedModel = null;
+        var selectedGroup = null;
+
+        groups.some(function(group) {
+            return group.models.some(function(model) {
+                if (model.slug === selectedSlug) {
+                    selectedModel = model;
+                    selectedGroup = group;
+                    return true;
+                }
+                return false;
+            });
+        });
+
+        if (!$selector.length || !selectedModel || !selectedGroup) return;
+
+        $('#airs-direct-model-menu').remove();
+        $selector.removeClass('is-open');
+
+        var $trigger = $('<button type="button" class="airs-direct-model-trigger" id="airs-direct-model-trigger" aria-haspopup="listbox"></button>')
+            .attr('aria-expanded', 'false')
+            .attr('aria-label', getModelSelectorText('modelSelectorSelect', 'Select a model'));
+        if (selectedGroup.icon) {
+            $trigger.append($('<img class="airs-direct-model-icon" alt="">').attr('src', selectedGroup.icon));
+        }
+        $trigger.append(
+            $('<span class="airs-direct-model-trigger-text"></span>').append(
+                $('<span class="airs-direct-model-trigger-name"></span>').text(selectedModel.name)
+            )
+        );
+        $trigger.append('<span class="airs-direct-model-chevron" aria-hidden="true"></span>');
+
+        var $menu = $('<div id="airs-direct-model-menu" class="airs-direct-model-menu airs-openrouter-model-menu" hidden></div>');
+        var $columns = $('<div class="airs-direct-model-columns" aria-hidden="true"></div>');
+        $columns.append('<span></span>');
+        $columns.append($('<span></span>').text(getModelSelectorText('modelSelectorCapability', 'Capability')));
+        $columns.append($('<span></span>').text(getModelSelectorText('modelSelectorSpeed', 'Speed')));
+        $menu.append($columns);
+        var $listbox = $('<div class="airs-direct-model-list" role="listbox"></div>')
+            .attr('aria-labelledby', 'model-label-text');
+
+        groups.forEach(function(group) {
+            var groupId = 'airs-openrouter-model-group-' + group.key;
+            var $group = $('<div class="airs-direct-model-group" role="group"></div>')
+                .attr('aria-labelledby', groupId)
+                .attr('data-model-group', group.key);
+            $group.append(
+                $('<div class="airs-direct-model-group-label"></div>')
+                    .attr('id', groupId)
+                    .text(group.label)
+            );
+
+            group.models.forEach(function(model) {
+                var selected = model.slug === selectedSlug;
+                var $option = $('<button type="button" class="airs-direct-model-option" role="option"></button>')
+                    .attr('data-model', model.slug)
+                    .attr('aria-selected', selected ? 'true' : 'false')
+                    .toggleClass('is-selected', selected);
+                var $main = $('<span class="airs-direct-model-main"></span>');
+                if (group.icon) {
+                    $main.append($('<img class="airs-direct-model-icon" alt="">').attr('src', group.icon));
+                }
+                $main.append($('<span class="airs-direct-model-name"></span>').text(model.name));
+                $option.append($main);
+                $option.append(createModelRating('capability', model.capability));
+                $option.append(createModelRating('speed', model.speed));
+                $group.append($option);
+            });
+
+            $listbox.append($group);
+        });
+
+        $menu.append($listbox);
+        $selector.empty().attr('data-provider', 'openrouter').append($trigger, $menu);
+    }
+
+    function syncDirectModelSelector(provider) {
+        var $selector = $('#airs-direct-model-selector');
+        var $select = $('#listeo_ai_chat_model');
+        var catalog = getDirectModelCatalog(provider);
+        var openRouterGroups = provider === 'openrouter' ? getOpenRouterModelGroups() : [];
+        var isDirectProvider = !!(catalog && Object.keys(catalog).length);
+        var isOpenRouter = openRouterGroups.length > 0;
+        var isEnhancedProvider = isDirectProvider || isOpenRouter;
+
+        if (!$selector.length || !$select.length) return;
+
+        $selector.prop('hidden', !isEnhancedProvider);
+        $select.toggleClass('airs-model-select-enhanced', isEnhancedProvider);
+        $('#model-label-text').closest('label').attr(
+            'for',
+            isEnhancedProvider ? 'airs-direct-model-trigger' : 'listeo_ai_chat_model'
+        );
+
+        if (!isEnhancedProvider) {
+            $('#airs-direct-model-menu').remove();
+            $selector.removeClass('is-open').empty();
+            return;
+        }
+
+        var selectedSlug = $select.val();
+        if (isOpenRouter) {
+            var openRouterSlugs = [];
+            openRouterGroups.forEach(function(group) {
+                group.models.forEach(function(model) {
+                    openRouterSlugs.push(model.slug);
+                });
+            });
+            if (openRouterSlugs.indexOf(selectedSlug) === -1) {
+                $select.val(openRouterSlugs[0]).trigger('change');
+                return;
+            }
+            renderOpenRouterModelSelector(selectedSlug, openRouterGroups);
+            return;
+        }
+
+        if (!catalog[selectedSlug]) {
+            var fallbackSlug = '';
+            $.each(catalog, function(slug, model) {
+                if (model.recommended) {
+                    fallbackSlug = slug;
+                    return false;
+                }
+            });
+            fallbackSlug = fallbackSlug || Object.keys(catalog)[0];
+            $select.val(fallbackSlug).trigger('change');
+            return;
+        }
+
+        renderDirectModelSelector(provider, selectedSlug);
+    }
+
+    function initDirectModelSelector() {
+        var $selector = $('#airs-direct-model-selector');
+        var $select = $('#listeo_ai_chat_model');
+        if (!$selector.length || !$select.length) return;
+
+        $selector.on('click', '.airs-direct-model-trigger', function() {
+            setDirectModelMenuOpen($selector, $(this).attr('aria-expanded') !== 'true', false);
+        });
+
+        $(document).on('click.airsDirectModelSelector', '#airs-direct-model-menu .airs-direct-model-option', function() {
+            var selectedModel = $(this).attr('data-model');
+            setDirectModelMenuOpen($selector, false, false, function() {
+                $select.val(selectedModel).trigger('change');
+            });
+        });
+
+        $selector.on('keydown', '.airs-direct-model-trigger', function(event) {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                setDirectModelMenuOpen($selector, true, true);
+            } else if (event.key === 'Escape') {
+                setDirectModelMenuOpen($selector, false, false);
+            }
+        });
+
+        $(document).on('keydown.airsDirectModelSelector', '#airs-direct-model-menu .airs-direct-model-option', function(event) {
+            var $options = $('#airs-direct-model-menu .airs-direct-model-option:visible');
+            var currentIndex = $options.index(this);
+            var nextIndex = currentIndex;
+
+            if (event.key === 'ArrowDown') {
+                nextIndex = Math.min(currentIndex + 1, $options.length - 1);
+            } else if (event.key === 'ArrowUp') {
+                nextIndex = Math.max(currentIndex - 1, 0);
+            } else if (event.key === 'Home') {
+                nextIndex = 0;
+            } else if (event.key === 'End') {
+                nextIndex = $options.length - 1;
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                setDirectModelMenuOpen($selector, false, false);
+                $selector.find('.airs-direct-model-trigger').trigger('focus');
+                return;
+            } else {
+                return;
+            }
+
+            event.preventDefault();
+            $options.eq(nextIndex).trigger('focus');
+        });
+
+        $(document).on('click.airsDirectModelSelector', function(event) {
+            if (
+                !$selector.is(event.target) &&
+                !$selector.has(event.target).length &&
+                !$(event.target).closest('#airs-direct-model-menu').length
+            ) {
+                setDirectModelMenuOpen($selector, false, false);
+            }
+        });
+
+        $(window).on('scroll.airsDirectModelSelector', function() {
+            if ($selector.hasClass('is-open')) {
+                positionDirectModelMenu($selector, false);
+            }
+        });
+
+        $(window).on('resize.airsDirectModelSelector', function() {
+            if ($selector.hasClass('is-open')) {
+                positionDirectModelMenu($selector, true);
+            }
+        });
+
+        $select.on('change.airsDirectModelSelector', function() {
+            syncDirectModelSelector($('#listeo_ai_search_provider').val() || 'openai');
+        });
+
+        syncDirectModelSelector($('#listeo_ai_search_provider').val() || 'openai');
+    }
 
     /**
      * Provider Toggle Handler
@@ -132,6 +652,7 @@
         if (window.listeo_ai_search_ajax) {
             window.listeo_ai_search_ajax.current_provider = provider;
         }
+        $('.airs-provider-model-layout').attr('data-provider', provider);
         $(document).trigger('listeo_ai_provider_changed', [provider]);
 
         // Hide all provider fields and model groups
@@ -144,7 +665,7 @@
                 modelGroup: 'model-group-openai',
                 label: i18n.openaiModel || 'OpenAI Model',
                 help: i18n.openaiModelHelp || 'Select the OpenAI model for chat responses.',
-                models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
+                models: getDirectModelSlugs('openai'),
                 default: 'gpt-5.4-mini'
             },
             gemini: {
@@ -152,15 +673,15 @@
                 modelGroup: 'model-group-gemini',
                 label: i18n.geminiModel || 'Gemini Model',
                 help: i18n.geminiModelHelp || 'Select the Gemini model for chat responses.',
-                models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'],
-                default: 'gemini-3-flash-preview'
+                models: getDirectModelSlugs('gemini'),
+                default: 'gemini-3.6-flash'
             },
             mistral: {
                 class: 'provider-mistral',
                 modelGroup: 'model-group-mistral',
                 label: i18n.mistralModel || 'Mistral Model',
                 help: i18n.mistralModelHelp || 'Select the Mistral model for chat responses.',
-                models: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-medium-3.5', 'mistral-large-latest'],
+                models: getDirectModelSlugs('mistral'),
                 default: 'mistral-large-latest'
             },
             openrouter: {
@@ -170,7 +691,7 @@
                 help: i18n.openrouterModelHelp || 'Select an OpenRouter model for chat responses.',
                 // Any vendor/model slug is considered valid — OpenRouter has 300+ models.
                 // This list only governs auto-reset when switching into the openrouter provider.
-                models: ['openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-5.6-luna', 'openai/gpt-5.6-terra', 'openai/gpt-5.6-sol', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.5-flash', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.5', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m2.7', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
+                models: ['openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-5.6-luna', 'openai/gpt-5.6-terra', 'openai/gpt-5.6-sol', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-5', 'anthropic/claude-opus-4.8', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.6-flash', 'google/gemini-3.5-flash', 'google/gemini-3.5-flash-lite', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.6', 'moonshotai/kimi-k3', 'moonshotai/kimi-k2.5', 'qwen/qwen3.7-plus', 'qwen/qwen3.7-max', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m3', 'minimax/minimax-m2.7', 'x-ai/grok-4.5', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
                 default: 'openai/gpt-5.6-luna'
             }
         };
@@ -189,6 +710,7 @@
             }
         }
 
+        syncDirectModelSelector(provider);
         updateGpt56ReasoningVisibility();
     }
 
@@ -263,6 +785,8 @@
                         $.each((response.data && response.data.updated_settings) || {}, function(fieldName, fieldValue) {
                             $('input[type="hidden"][name="' + fieldName + '"], select[name="' + fieldName + '"]').val(fieldValue);
                         });
+
+                        $form.trigger('airs:settings-saved', [formData]);
                     } else {
                         AIRS.showMessage($message, 'error',
                             '<strong>\u2717 ' + (i18n.error || 'Error!') + '</strong> ' + (response.data.message || 'Unknown error')
@@ -544,6 +1068,7 @@
         }
 
         initProviderToggle();
+        initDirectModelSelector();
         initModelChangeHandler();
         initAjaxFormHandler();
         initApiKeyTests();

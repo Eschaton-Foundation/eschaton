@@ -1010,6 +1010,22 @@
     line-height: 1.5;
 }
 
+.custom-fields-integrated-notice .button-link {
+    margin: 0 4px 8px;
+    color: #006aff;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.custom-fields-integrated-notice .button-link:hover,
+.custom-fields-integrated-notice .button-link:focus {
+    color: #0056cc;
+}
+
+#listing-custom-fields-results {
+    margin-top: 12px;
+}
+
 /* Modal Footer */
 .listeo-ai-modal-footer {
     padding: 16px 24px;

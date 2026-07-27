@@ -72,7 +72,8 @@
             $('#custom-fields-deselect-all').on('click', this.deselectAllCustomFields.bind(this));
             $('#custom-fields-auto-detect').on('click', this.autoDetectCustomFields.bind(this));
             $('#custom-fields-save').on('click', this.saveCustomFieldsSelection.bind(this));
-            $(document).on('change', '.custom-field-checkbox', this.updateCustomFieldsSelectionCount.bind(this));
+            $(document).on('click', '#custom-fields-toggle-listing-fields', this.toggleListingCustomFields.bind(this));
+            $(document).on('change', '.custom-field-checkbox', this.handleCustomFieldSelectionChange.bind(this));
 
             // Bulk actions
             $('#reindex-all-enabled').on('click', this.handleBulkReindex.bind(this));
@@ -473,6 +474,8 @@
          */
         _customFieldsPostType: '',
         _customFieldsCurrentFields: [],
+        _customFieldsHasManualConfig: false,
+        _listingCustomFieldsVisible: false,
 
         /**
          * Open custom fields modal
@@ -527,12 +530,23 @@
                 this.setCustomFieldsActionButtonsDisabled(true);
                 this.toggleCustomFieldsAiHelper(false);
                 this._customFieldsCurrentFields = [];
-                this.renderListingCustomFieldsInfo();
+                this._customFieldsHasManualConfig = false;
+                this._listingCustomFieldsVisible = false;
+                this.renderListingCustomFieldsInfo(!!listeoAiUniversalSettings.listing_custom_fields_enabled);
                 return;
             }
 
+            this._listingCustomFieldsVisible = false;
             this.toggleCustomFieldsAiHelper(true);
             this.setCustomFieldsActionButtonsDisabled(false);
+            this.requestCustomFieldsForPostType(postType, $list);
+        },
+
+        /**
+         * Request available custom fields and render them in the supplied container.
+         */
+        requestCustomFieldsForPostType: function(postType, $list) {
+            $list = $list && $list.length ? $list : $('#custom-fields-list');
             $list.html('<p class="loading-message"><span class="airs-spinner" style="margin-right: 6px;"></span>' + listeoAiUniversalSettings.strings.loading_custom_fields + '</p>');
             $('#custom-fields-selection-count').text('');
 
@@ -547,7 +561,8 @@
                 success: (response) => {
                     if (response.success) {
                         this._customFieldsCurrentFields = response.data.fields || [];
-                        this.renderCustomFields(response.data.fields || [], response.data.has_manual_config);
+                        this._customFieldsHasManualConfig = !!response.data.has_manual_config;
+                        this.renderCustomFields(response.data.fields || [], response.data.has_manual_config, $list);
                     } else {
                         this._customFieldsCurrentFields = [];
                         const message = response.data || listeoAiUniversalSettings.strings.error;
@@ -562,17 +577,65 @@
         },
 
         /**
-         * Show the integrated listing fields notice.
+         * Show the integrated listing fields notice and optional Pro disclosure.
          */
-        renderListingCustomFieldsInfo: function() {
-            const message = listeoAiUniversalSettings.strings.listing_auto_fields || 'Listing fields are selected automatically through the Listeo integration. No action is needed.';
+        renderListingCustomFieldsInfo: function(canConfigure, expanded) {
+            const strings = listeoAiUniversalSettings.strings;
+            const message = canConfigure
+                ? (strings.listing_predefined_fields || 'Listings already include predefined fields automatically.')
+                : (strings.listing_auto_fields || 'Listing fields are selected automatically through the Listeo integration. No action is needed.');
+            let html = '<div class="custom-fields-integrated-notice"><p>' + this.escapeHtml(message) + '</p>';
 
-            $('#custom-fields-list').html(
-                '<div class="custom-fields-integrated-notice">' +
-                    '<p>' + this.escapeHtml(message) + '</p>' +
-                '</div>'
-            );
-            $('#custom-fields-selection-count').text('');
+            if (canConfigure) {
+                const buttonText = expanded
+                    ? (strings.listing_hide_all_fields || 'Hide custom fields')
+                    : (strings.listing_show_all_fields || 'Show all custom fields');
+
+                html += '<button type="button" id="custom-fields-toggle-listing-fields" class="button-link" aria-expanded="' + (expanded ? 'true' : 'false') + '">' +
+                    this.escapeHtml(buttonText) +
+                '</button>';
+
+                if (expanded) {
+                    html += '<div id="listing-custom-fields-results"></div>';
+                }
+            }
+
+            html += '</div>';
+
+            $('#custom-fields-list').html(html);
+
+            const selected = (this._customFieldsCurrentFields || []).filter((field) => field.selected).length;
+            $('#custom-fields-selection-count').text(selected ? selected + ' ' + strings.selected_fields : '');
+        },
+
+        /**
+         * Reveal or hide all listing meta fields without clearing current checks.
+         */
+        toggleListingCustomFields: function(e) {
+            if (e) {
+                e.preventDefault();
+            }
+
+            if (!listeoAiUniversalSettings.listing_custom_fields_enabled) {
+                return;
+            }
+
+            this._listingCustomFieldsVisible = !this._listingCustomFieldsVisible;
+            this.renderListingCustomFieldsInfo(true, this._listingCustomFieldsVisible);
+            this.setCustomFieldsActionButtonsDisabled(!this._listingCustomFieldsVisible);
+
+            if (!this._listingCustomFieldsVisible) {
+                $('#custom-fields-save').prop('disabled', !this._customFieldsCurrentFields.length);
+                return;
+            }
+
+            const $results = $('#listing-custom-fields-results');
+            if (this._customFieldsCurrentFields.length) {
+                this.renderCustomFields(this._customFieldsCurrentFields, this._customFieldsHasManualConfig, $results);
+                return;
+            }
+
+            this.requestCustomFieldsForPostType('listing', $results);
         },
 
         /**
@@ -607,8 +670,8 @@
         /**
          * Render custom fields in the modal
          */
-        renderCustomFields: function(fields, hasManualConfig) {
-            const $list = $('#custom-fields-list');
+        renderCustomFields: function(fields, hasManualConfig, $target) {
+            const $list = $target && $target.length ? $target : $('#custom-fields-list');
             this._customFieldsCurrentFields = fields || [];
 
             if (!fields.length) {
@@ -660,6 +723,7 @@
             }
 
             $('#custom-fields-list .custom-field-checkbox').prop('checked', true);
+            this.syncCustomFieldsSelectionState();
             this.updateCustomFieldsSelectionCount();
         },
 
@@ -672,6 +736,29 @@
             }
 
             $('#custom-fields-list .custom-field-checkbox').prop('checked', false);
+            this.syncCustomFieldsSelectionState();
+            this.updateCustomFieldsSelectionCount();
+        },
+
+        /**
+         * Keep the cached field state in sync with rendered checkboxes.
+         */
+        syncCustomFieldsSelectionState: function() {
+            const selected = new Set();
+            $('#custom-fields-list .custom-field-checkbox:checked').each(function() {
+                selected.add($(this).val());
+            });
+
+            (this._customFieldsCurrentFields || []).forEach((field) => {
+                field.selected = selected.has(field.meta_key || '');
+            });
+        },
+
+        /**
+         * Handle an individual custom field selection change.
+         */
+        handleCustomFieldSelectionChange: function() {
+            this.syncCustomFieldsSelectionState();
             this.updateCustomFieldsSelectionCount();
         },
 
@@ -699,7 +786,7 @@
                 sample: field.sample || ''
             })).filter((field) => field.meta_key);
 
-            if (!postType || postType === 'listing' || !fields.length) {
+            if (!postType || !fields.length) {
                 return;
             }
 
@@ -727,6 +814,7 @@
                                 $(this).prop('checked', suggested.has($(this).val()));
                             });
 
+                            this.syncCustomFieldsSelectionState();
                             this.updateCustomFieldsSelectionCount();
                             this.setCustomFieldsAiStatus(listeoAiUniversalSettings.strings.auto_detected_fields_inline || 'Success. Suggestions applied.', 'success');
                             this.showNotice('success', listeoAiUniversalSettings.strings.auto_detected_fields);
@@ -762,9 +850,17 @@
             const $button = $('#custom-fields-save');
             const originalText = $button.text();
 
-            $('#custom-fields-list .custom-field-checkbox:checked').each(function() {
-                selectedFields.push($(this).val());
-            });
+            if (postType === 'listing' && !this._listingCustomFieldsVisible && this._customFieldsCurrentFields.length) {
+                this._customFieldsCurrentFields.forEach((field) => {
+                    if (field.selected && field.meta_key) {
+                        selectedFields.push(field.meta_key);
+                    }
+                });
+            } else {
+                $('#custom-fields-list .custom-field-checkbox:checked').each(function() {
+                    selectedFields.push($(this).val());
+                });
+            }
 
             $button.prop('disabled', true).text('Saving...');
 

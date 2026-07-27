@@ -1062,6 +1062,14 @@ body#dark-mode .listeo-ai-chat-input {background: #f5f5f5; color: #555;}
 
 .elementor-chat-style .listeo-ai-chat-input {
     background: transparent;
+    min-width: 0 !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.elementor-chat-style .listeo-ai-chat-input::-webkit-scrollbar {
+    display: none;
 }
 
 .elementor-chat-style .listeo-ai-chat-input-wrapper {
@@ -1244,6 +1252,11 @@ padding: 12px 0;
     color: var(--quick-btn-color, var(--ai-chat-primary-color, #0073ee));
 }
 
+.listeo-ai-quick-btn.has-custom-color:hover {
+    background: var(--quick-btn-color-light);
+    background: color-mix(in srgb, var(--quick-btn-color-light) 94%, var(--quick-btn-color));
+}
+
 .listeo-ai-quick-btn:active {
     transform: scale(0.97);
 }
@@ -1303,7 +1316,7 @@ padding: 12px 0;
 
 .listeo-ai-contact-form-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 16px !important;
     font-weight: 600;
     color: #333;
 }

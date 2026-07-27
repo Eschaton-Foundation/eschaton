@@ -3,7 +3,7 @@
  * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.2.6
+ * Version: 2.3.1
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.2.6");
+define("LISTEO_AI_SEARCH_VERSION", "2.3.1");
 define("LISTEO_AI_LIVE_HANDOFF_INTEGRATION_VERSION", 1);
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
@@ -74,6 +74,8 @@ class Listeo_AI_Search
         // Load dependencies first
         $this->load_dependencies();
 
+        $this->register_array_option_guards();
+
         // Initialize AJAX handlers early (before init)
         $this->search_handler = new Listeo_AI_Search_Search_Handler();
 
@@ -97,12 +99,57 @@ class Listeo_AI_Search
     }
 
     /**
+     * Normalize plugin-owned options that must always be arrays.
+     */
+    private function register_array_option_guards()
+    {
+        $array_options = [
+            "listeo_ai_search_logs",
+            "listeo_ai_search_enabled_post_types",
+            "listeo_ai_search_custom_post_types",
+            "listeo_ai_search_manual_selections",
+            "listeo_ai_search_custom_meta_fields",
+            "listeo_ai_search_enabled_types",
+            "listeo_ai_floating_excluded_pages",
+            "listeo_ai_chat_quick_buttons",
+            "listeo_ai_chat_blocked_ips",
+            "listeo_ai_chat_pre_chat_fields",
+            "listeo_ai_proactive_actions",
+            "listeo_ai_knowledge_sources",
+            "listeo_ai_cart_events",
+            "listeo_ai_audit_cost_history",
+            "listeo_ai_webhook_actions",
+            "listeo_ai_live_handoff_business_hours",
+            "listeo_ai_live_handoff_operator_users",
+        ];
+
+        foreach ($array_options as $option_name) {
+            add_filter(
+                "option_{$option_name}",
+                [Listeo_AI_Search_Utility_Helper::class, "normalize_array_option"],
+            );
+        }
+
+        add_filter(
+            "option_listeo_ai_chat_stats",
+            [Listeo_AI_Search_Utility_Helper::class, "normalize_chat_stats"],
+        );
+    }
+
+    /**
      * Initialize plugin
      */
     public function init()
     {
         $this->maybe_migrate_retired_chat_model();
         $this->ensure_typing_animation_enabled();
+
+        if (
+            get_option("listeo_ai_chat_history_enabled", 0) &&
+            class_exists("Listeo_AI_Search_Chat_History")
+        ) {
+            Listeo_AI_Search_Chat_History::maybe_upgrade_schema();
+        }
 
         // Register external pages CPT (Pro feature - hidden CPT for storing scraped web pages)
         register_post_type('ai_external_page', array(
@@ -116,10 +163,15 @@ class Listeo_AI_Search
 
         // Initialize remaining components
         $this->shortcode_handler = new Listeo_AI_Search_Shortcode_Handler();
+        new AI_Chat_Search_Proactive_Actions();
+        if (is_admin()) {
+            new Listeo_AI_Search_Free_Chat_Activity_Chart();
+        }
         $this->admin_interface = new Listeo_AI_Search_Admin_Interface();
         if (is_admin()) {
             new Listeo_AI_Search_Free_Live_Chat_Upgrade();
             new Listeo_AI_Search_Free_License_Upgrade();
+            new Listeo_AI_Search_Free_MCP_Upgrade();
         }
 
         // Initialize background processor if available
@@ -193,7 +245,7 @@ class Listeo_AI_Search
      */
     private function maybe_migrate_retired_chat_model()
     {
-        $migration_version = 1;
+        $migration_version = 2;
         $installed_version = (int) get_option(
             "listeo_ai_chat_model_migration_version",
             0,
@@ -291,9 +343,13 @@ class Listeo_AI_Search
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-admin-interface.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/admin/class-free-chat-activity-chart.php";
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-free-license-upgrade.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-free-live-chat-upgrade.php";
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/admin/class-free-mcp-upgrade.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-universal-settings.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -321,6 +377,10 @@ class Listeo_AI_Search
         // Floating chat widget
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/class-floating-chat-widget.php";
+
+        // Proactive chat actions.
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/class-proactive-actions.php";
 
         // Contact form handler
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -434,6 +494,40 @@ class Listeo_AI_Search
             $ex[] = 'wp-includes/js/jquery/jquery.min.js';
             $ex[] = 'wp-includes/js/jquery/jquery-migrate.min.js';
             return $ex;
+        });
+
+        // --- Perfmatters ---
+        $perfmatters_js_paths = [
+            'ai-chat-search/assets/js/',
+            'ai-chat-search-pro/assets/js/',
+            'wp-includes/js/jquery/jquery.min.js',
+            'wp-includes/js/jquery/jquery-migrate.min.js',
+        ];
+        $perfmatters_inline_js = [
+            'listeoAiSearch',
+            'listeoAiChatConfig',
+            'listeoAiFloatingChatConfig',
+            'purioAvatarFrontendConfig',
+        ];
+        $perfmatters_css_paths = [
+            'ai-chat-search/assets/css/',
+            'ai-chat-search-pro/assets/css/',
+        ];
+
+        add_filter('perfmatters_defer_js_exclusions', function ($ex) use ($perfmatters_js_paths, $perfmatters_inline_js) {
+            return array_merge((array) $ex, $perfmatters_js_paths, $perfmatters_inline_js);
+        });
+        add_filter('perfmatters_delay_js_exclusions', function ($ex) use ($perfmatters_js_paths, $perfmatters_inline_js) {
+            return array_merge((array) $ex, $perfmatters_js_paths, $perfmatters_inline_js);
+        });
+        add_filter('perfmatters_minify_js_exclusions', function ($ex) use ($perfmatters_js_paths) {
+            return array_merge((array) $ex, $perfmatters_js_paths);
+        });
+        add_filter('perfmatters_minify_css_exclusions', function ($ex) use ($perfmatters_css_paths) {
+            return array_merge((array) $ex, $perfmatters_css_paths);
+        });
+        add_filter('perfmatters_rucss_excluded_stylesheets', function ($ex) use ($perfmatters_css_paths) {
+            return array_merge((array) $ex, $perfmatters_css_paths);
         });
 
         // --- Autoptimize ---
@@ -825,6 +919,7 @@ class Listeo_AI_Search
                 "ai-chat-search",
             ),
             "listeo_ai_chat_system_prompt" => "",
+            "listeo_ai_chat_page_context_enabled" => 0,
             "listeo_ai_chat_model" => "gpt-5.4-mini",
             "listeo_ai_chat_max_results" => 10,
             "listeo_ai_chat_rag_sources_limit" => 5,
@@ -833,6 +928,7 @@ class Listeo_AI_Search
             "listeo_ai_chat_typing_animation" => 1,
             "listeo_ai_chat_require_login" => 0,
             "listeo_ai_chat_history_enabled" => 1,
+            "listeo_ai_chat_history_disable_ip_storage" => 0,
             "listeo_ai_chat_retention_days" => 30,
             "listeo_ai_chat_terms_notice_enabled" => 0,
             "listeo_ai_chat_terms_notice_text" => "",

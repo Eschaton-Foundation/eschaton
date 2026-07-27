@@ -361,7 +361,7 @@ class Listeo_AI_Provider {
     public function get_chat_model() {
         $stored = $this->normalize_model(get_option('listeo_ai_chat_model', ''));
         if ($this->get_provider() === 'gemini') {
-            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3-flash-preview';
+            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.6-flash';
         } elseif ($this->get_provider() === 'mistral') {
             return $this->model_matches_provider($stored, 'mistral') ? $stored : 'mistral-large-latest';
         } elseif ($this->get_provider() === 'openrouter') {
@@ -531,12 +531,16 @@ class Listeo_AI_Provider {
             'gpt-5.2'                          => 'gpt-5.6-terra',
             'gpt-5.3-chat-latest'              => 'gpt-5.6-terra',
             'gpt-5.4'                          => 'gpt-5.6-terra',
+            'gpt-4o'                           => 'gpt-5.6-luna',
+            'gpt-4o-mini'                      => 'gpt-5.6-luna',
             'openai/gpt-5-mini'                => 'openai/gpt-5.4-mini',
             'openai/gpt-5-chat-latest'         => 'openai/gpt-5.6-terra',
             'openai/gpt-5.1'                   => 'openai/gpt-5.6-terra',
             'openai/gpt-5.2'                   => 'openai/gpt-5.6-terra',
             'openai/gpt-5.3-chat-latest'       => 'openai/gpt-5.6-terra',
             'openai/gpt-5.4'                   => 'openai/gpt-5.6-terra',
+            'openai/gpt-4o'                    => 'openai/gpt-5.6-luna',
+            'openai/gpt-4o-mini'               => 'openai/gpt-5.6-luna',
         );
 
         return isset( $replacements[ $model ] )
@@ -578,7 +582,7 @@ class Listeo_AI_Provider {
      * @param array $payload Base payload with at minimum 'model' and 'messages'.
      * @param array $options {
      *     Optional. Normalization overrides.
-     *     @type int    $max_tokens   Max tokens for the response. Default 3000.
+     *     @type int    $max_tokens   Max tokens for the response. Default 5000.
      *     @type float  $temperature  Temperature for non-GPT-5 models. Default 0.6.
      *     @type string|null $reasoning Force a reasoning level ('none','low','medium','high').
      *                                   null = auto per model. Default null.
@@ -586,7 +590,7 @@ class Listeo_AI_Provider {
      * @return array Normalized payload ready for wp_remote_post.
      */
     public function normalize_chat_payload( array $payload, array $options = array() ) {
-        $max_tokens   = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 3000;
+        $max_tokens   = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 5000;
         $temperature  = isset( $options['temperature'] ) ? (float) $options['temperature'] : 0.6;
         $force_reasoning = isset( $options['reasoning'] ) ? $options['reasoning'] : null;
 
@@ -632,7 +636,7 @@ class Listeo_AI_Provider {
                 $payload['reasoning_effort'] = 'low';
             } elseif ( strpos( $model, 'gemini-3.1-pro' ) !== false || strpos( $model, 'gemini-3-pro' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
-            } elseif ( strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
+            } elseif ( strpos( $model, 'gemini-3.6-flash' ) !== false || strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
             }
         }
@@ -650,6 +654,7 @@ class Listeo_AI_Provider {
                 // Some models reject 'none' with HTTP 400 (openai/*, select google/gemini-3*)
                 $reasoning_mandatory = ( strpos( $payload['model'], 'openai/' ) === 0 )
                     || ( strpos( $payload['model'], 'google/gemini-3.1-pro' ) !== false )
+                    || ( strpos( $payload['model'], 'google/gemini-3.6-flash' ) !== false )
                     || ( strpos( $payload['model'], 'google/gemini-3.5-flash' ) !== false );
                 $effort = $reasoning_mandatory ? 'minimal' : 'none';
                 $payload['reasoning'] = array( 'effort' => $effort );

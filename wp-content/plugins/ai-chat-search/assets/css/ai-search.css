@@ -1494,7 +1494,6 @@ body .header-search-container .search-input-wrapper {
     color: #fff; 
 }
 
-.ai-search-submit-btn i {
-    font-size: 14px;
+.ai-search-submit-btn svg {
     transition: 0.3s;
 }

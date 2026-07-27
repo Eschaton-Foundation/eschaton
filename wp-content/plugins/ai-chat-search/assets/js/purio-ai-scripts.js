@@ -267,7 +267,9 @@
     // Reasoning disabled — server applies lowest-possible per vendor
     var reasoningMandatory =
       model.indexOf("openai/") === 0 ||
-      model.indexOf("google/gemini-3.1-pro") !== -1;
+      model.indexOf("google/gemini-3.1-pro") !== -1 ||
+      model.indexOf("google/gemini-3.6-flash") !== -1 ||
+      model.indexOf("google/gemini-3.5-flash") !== -1;
     return reasoningMandatory ? "minimal" : "none";
   };
 
@@ -950,6 +952,7 @@
     this.preChatCompleted = false;
     this.preChatData = null; // Array of { label, value } once submitted
     this.preChatDataSent = false; // Whether header was already sent with first message
+    this.pendingMagicMessage = false;
 
     this.init();
 
@@ -1239,6 +1242,36 @@
     },
 
     /**
+     * Fill the composer from a magic link and send the message.
+     * Required pre-chat fields are completed before the pending message is sent.
+     */
+    sendMagicMessage: function (message) {
+      var question = String(message || "").trim().substring(0, 1000);
+      if (!question) {
+        return;
+      }
+
+      this.$input.val(question).focus();
+      this.pendingMagicMessage = this.preChatRequired && !this.preChatCompleted;
+      this.sendMessage();
+    },
+
+    notifyUserMessageSent: function () {
+      if (!this.$wrapper || !this.$wrapper.length) {
+        return;
+      }
+
+      try {
+        this.$wrapper[0].dispatchEvent(
+          new CustomEvent("listeo-ai-chat-user-message-sent", {
+            bubbles: true,
+            detail: { chatId: this.chatId },
+          }),
+        );
+      } catch (e) {}
+    },
+
+    /**
      * Send message - Dual Mode Architecture
      *
      * Mode 1 (Listeo Available): Function Calling with Listeo Tools
@@ -1323,6 +1356,7 @@
 
       // Add user message (with image preview if attached)
       this.addMessage("user", displayContent);
+      this.notifyUserMessageSent();
       this.$input.val("");
       this.isProcessing = true;
       this.$sendBtn.prop("disabled", true);
@@ -4177,7 +4211,10 @@
         e.preventDefault();
         e.stopPropagation();
 
-        var $fields = $(this).find("input[data-field-label]");
+        var $formBody = $(this);
+        var $fields = $formBody.find("input[data-field-label]");
+        var $submitButton = $formBody.find(".listeo-ai-pre-chat-submit");
+        var $errorMessage = $formBody.find(".listeo-ai-pre-chat-form-message");
         var allFilled = true;
         var data = [];
 
@@ -4197,22 +4234,50 @@
 
         if (!allFilled) return;
 
-        // Store data
-        self.preChatData = data;
-        self.preChatRequired = false;
-        self.preChatCompleted = true;
-        self.preChatDataSent = false;
-        sessionStorage.setItem(storageKey, JSON.stringify(data));
+        $submitButton.prop("disabled", true);
+        $errorMessage.removeClass("error").hide().text("");
 
-        // Hide form
-        $form.slideUp(200);
+        $.ajax({
+          url: listeoAiChatConfig.apiBase + "/pre-chat-submit",
+          method: "POST",
+          headers: getRequestHeaders(),
+          data: JSON.stringify({
+            session_id: self.sessionId,
+            fields: data,
+          }),
+          success: function () {
+            // Store data locally after WordPress has created the conversation.
+            self.preChatData = data;
+            self.preChatRequired = false;
+            self.preChatCompleted = true;
+            self.preChatDataSent = false;
+            sessionStorage.setItem(storageKey, JSON.stringify(data));
 
-        // Enable send button
-        self.$sendBtn.prop("disabled", false);
-        self.$sendBtn.removeAttr("data-chat-tooltip");
-        self.$input.focus();
+            if ($form[0]) {
+              $form[0].dispatchEvent(new CustomEvent("purio:pre-chat-completed"));
+            }
 
-        debugLog("[Pre-Chat] Form submitted:", data);
+            // Hide form
+            $form.slideUp(200);
+
+            // Enable send button
+            self.$sendBtn.prop("disabled", false);
+            self.$sendBtn.removeAttr("data-chat-tooltip");
+            self.$input.focus();
+
+            if (self.pendingMagicMessage) {
+              self.pendingMagicMessage = false;
+              self.sendMessage();
+            }
+
+            debugLog("[Pre-Chat] Form submitted and stored:", data);
+          },
+          error: function (xhr) {
+            var errorInfo = analyzeError(xhr, "pre-chat-submit");
+            $submitButton.prop("disabled", false);
+            $errorMessage.addClass("error").text(errorInfo.userMessage).show();
+          },
+        });
       });
     },
 
@@ -4237,6 +4302,7 @@
       }
       this.activeChatRequest = null;
       this.isProcessing = false;
+      this.pendingMagicMessage = false;
       this.$sendBtn.prop("disabled", false);
 
       // A new conversation must not inherit a pending or active human handoff.

@@ -861,6 +861,7 @@ class Listeo_AI_Search_Chat_API
      */
     public function chat_proxy($request)
     {
+        $request_started_at = microtime(true);
         $request_id = 'unknown';
 
         try {
@@ -1400,19 +1401,23 @@ class Listeo_AI_Search_Chat_API
         // Inject compact language rule into the last user message (not system prompt)
         if ($last_user_index !== null) {
             $user_content = $messages[$last_user_index]["content"];
+            $page_context = self::get_page_context_inline($request);
             $language_rule = self::get_language_rule_inline();
+            $inline_context = $page_context !== ''
+                ? $page_context . "\n" . $language_rule
+                : $language_rule;
 
             // Handle multimodal content (array with text/image parts)
             if (is_array($user_content)) {
-                // Append language rule as new text part
+                // Append compact dynamic context as a new text part.
                 $messages[$last_user_index]["content"][] = [
                     "type" => "text",
-                    "text" => "\n\n" . $language_rule
+                    "text" => "\n\n" . $inline_context
                 ];
             } else {
                 // Simple string content
                 $messages[$last_user_index]["content"] =
-                    $user_content . "\n\n" . $language_rule;
+                    $user_content . "\n\n" . $inline_context;
             }
         }
 
@@ -1433,7 +1438,7 @@ class Listeo_AI_Search_Chat_API
 
         // Normalize model-specific parameters (max_tokens key, reasoning, model remaps)
         $payload = $provider->normalize_chat_payload($payload, array(
-            'max_tokens' => 3000,
+            'max_tokens' => 5000,
         ));
 
         // Atomically acquire rate limit slot before making API call
@@ -1573,7 +1578,7 @@ class Listeo_AI_Search_Chat_API
             ], $conversation_messages);
 
             $filter_payload = $provider->prepare_chat_payload($filter_messages, $filter_tools, $filter_tool_choice);
-            $filter_payload = $provider->normalize_chat_payload($filter_payload, ['max_tokens' => 500]);
+            $filter_payload = $provider->normalize_chat_payload($filter_payload, ['max_tokens' => 1500]);
 
             $filter_response = $provider->request_chat($filter_payload, 60);
 
@@ -1628,7 +1633,7 @@ class Listeo_AI_Search_Chat_API
                 ];
 
                 $text_payload = $provider->prepare_chat_payload($text_messages);
-                $text_payload = $provider->normalize_chat_payload($text_payload, ['max_tokens' => 3000]);
+                $text_payload = $provider->normalize_chat_payload($text_payload, ['max_tokens' => 5000]);
                 $api_payload = $text_payload;
 
                 if (get_option("listeo_ai_search_debug_mode", false)) {
@@ -1798,7 +1803,7 @@ class Listeo_AI_Search_Chat_API
                     ];
 
                     $second_payload = $provider->prepare_chat_payload($second_messages);
-                    $second_payload = $provider->normalize_chat_payload($second_payload, ["max_tokens" => 3000]);
+                    $second_payload = $provider->normalize_chat_payload($second_payload, ["max_tokens" => 5000]);
 
                     $second_response = $provider->request_chat($second_payload, 60);
 
@@ -1869,19 +1874,8 @@ class Listeo_AI_Search_Chat_API
                     isset($last_message["role"]) &&
                     $last_message["role"] === "user"
                 ) {
-                    $stats = get_option("listeo_ai_chat_stats", [
-                        "total_sessions" => 0,
-                        "user_messages" => 0,
-                    ]);
-
-                    $stats["user_messages"]++;
-
                     // New session = first user message (messages: [system, user])
-                    if (count($messages) === 2) {
-                        $stats["total_sessions"]++;
-                    }
-
-                    update_option("listeo_ai_chat_stats", $stats);
+                    $this->track_chat_usage_stats(count($messages) === 2);
                 }
             }
         }
@@ -1891,7 +1885,7 @@ class Listeo_AI_Search_Chat_API
             $response_code === 200 &&
             get_option("listeo_ai_chat_history_enabled", 0)
         ) {
-            $this->track_chat_history($request, $response_data);
+            $this->track_chat_history($request, $response_data, $request_started_at);
         }
 
         // Inject relevant_ids from forced function calling into the response
@@ -1929,13 +1923,93 @@ class Listeo_AI_Search_Chat_API
     }
 
     /**
+     * Track lightweight chat totals and the rolling 30-day activity series.
+     *
+     * Only aggregate counts are stored. Message contents and visitor details are
+     * not included in this option.
+     *
+     * @param bool $is_new_session Whether this is the first message in a session.
+     * @param bool $is_rag_query Whether this message used the RAG endpoint.
+     */
+    private function track_chat_usage_stats($is_new_session, $is_rag_query = false)
+    {
+        $stats = get_option("listeo_ai_chat_stats", [
+            "total_sessions" => 0,
+            "user_messages" => 0,
+            "rag_queries" => 0,
+        ]);
+
+        if (!is_array($stats)) {
+            $stats = [];
+        }
+
+        $stats["total_sessions"] = isset($stats["total_sessions"])
+            ? max(0, (int) $stats["total_sessions"])
+            : 0;
+        $stats["user_messages"] = isset($stats["user_messages"])
+            ? max(0, (int) $stats["user_messages"])
+            : 0;
+        $stats["rag_queries"] = isset($stats["rag_queries"])
+            ? max(0, (int) $stats["rag_queries"])
+            : 0;
+
+        $stats["user_messages"]++;
+        if ($is_new_session) {
+            $stats["total_sessions"]++;
+        }
+        if ($is_rag_query) {
+            $stats["rag_queries"]++;
+        }
+
+        $daily = isset($stats["daily"]) && is_array($stats["daily"])
+            ? $stats["daily"]
+            : [];
+        $timezone = wp_timezone();
+        $today = new DateTimeImmutable("today", $timezone);
+        $date_key = $today->format("Y-m-d");
+        $cutoff_key = $today->modify("-29 days")->format("Y-m-d");
+
+        $day = isset($daily[$date_key]) && is_array($daily[$date_key])
+            ? $daily[$date_key]
+            : [];
+        $day["conversations"] = isset($day["conversations"])
+            ? max(0, (int) $day["conversations"])
+            : 0;
+        $day["messages"] = isset($day["messages"])
+            ? max(0, (int) $day["messages"])
+            : 0;
+
+        $day["messages"]++;
+        if ($is_new_session) {
+            $day["conversations"]++;
+        }
+        $daily[$date_key] = $day;
+
+        foreach ($daily as $stored_date => $stored_day) {
+            if (
+                !is_string($stored_date) ||
+                !preg_match("/^\d{4}-\d{2}-\d{2}$/", $stored_date) ||
+                $stored_date < $cutoff_key
+            ) {
+                unset($daily[$stored_date]);
+            }
+        }
+
+        ksort($daily);
+        $stats["daily"] = $daily;
+
+        update_option("listeo_ai_chat_stats", $stats);
+    }
+
+    /**
      * Track chat history for analytics
      * Handles the tool call challenge by caching user questions
      *
      * @param WP_REST_Request $request
      * @param array $response_data OpenAI response
+     * @param float $request_started_at Request start time from microtime(true)
      */
-    private function track_chat_history($request, $response_data)
+    private function track_chat_history($request, $response_data, $request_started_at)
     {
         if (!class_exists("Listeo_AI_Search_Chat_History")) {
             return;
@@ -2007,7 +2081,10 @@ class Listeo_AI_Search_Chat_API
             // AI returned tool_calls, cache user question
             set_transient(
                 "listeo_ai_chat_pending_" . $session_id,
-                $user_message,
+                array(
+                    "question" => $user_message,
+                    "started_at" => $request_started_at,
+                ),
                 300,
             ); // 5 min expiry
             return;
@@ -2016,9 +2093,16 @@ class Listeo_AI_Search_Chat_API
         // Save complete exchange: user question + AI text answer
         if (!empty($assistant_message)) {
             // Check for cached user question from previous tool call
-            $cached_question = get_transient(
+            $pending_exchange = get_transient(
                 "listeo_ai_chat_pending_" . $session_id,
             );
+
+            $cached_question = is_array($pending_exchange) && isset($pending_exchange["question"])
+                ? $pending_exchange["question"]
+                : $pending_exchange;
+            $reply_started_at = is_array($pending_exchange) && isset($pending_exchange["started_at"])
+                ? (float) $pending_exchange["started_at"]
+                : $request_started_at;
 
             if ($cached_question) {
                 // Use cached question and clear it
@@ -2033,6 +2117,7 @@ class Listeo_AI_Search_Chat_API
             $provider = new Listeo_AI_Provider();
             $model = $provider->get_chat_model();
             $user_id = is_user_logged_in() ? get_current_user_id() : null;
+            $response_time_ms = max(0, intval(round((microtime(true) - $reply_started_at) * 1000)));
 
             Listeo_AI_Search_Chat_History::save_exchange(
                 $session_id,
@@ -2040,7 +2125,8 @@ class Listeo_AI_Search_Chat_API
                 $assistant_message,
                 $model,
                 $user_id,
-                $page_url // Track which page chat was used on
+                $page_url, // Track which page chat was used on
+                $response_time_ms
             );
         }
     }
@@ -2780,7 +2866,11 @@ class Listeo_AI_Search_Chat_API
                 }
             }
 
-            // Add compact language rule (in user message for cache-friendly system prompt)
+            // Add dynamic context to the user message to keep the system prompt cache-friendly.
+            $page_context = self::get_page_context_inline($request);
+            if ($page_context !== '') {
+                $user_prompt .= $page_context . "\n";
+            }
             $user_prompt .= self::get_language_rule_inline() . "\n";
 
             $messages[] = [
@@ -2830,7 +2920,7 @@ class Listeo_AI_Search_Chat_API
                 "messages" => $messages,
             ];
             $api_payload = $provider->normalize_chat_payload($api_payload, array(
-                'max_tokens' => 3000,
+                'max_tokens' => 5000,
             ));
 
             // Debug logging for RAG endpoint
@@ -2939,23 +3029,8 @@ class Listeo_AI_Search_Chat_API
 
             // Track usage stats
             if ($response_code === 200) {
-                $stats = get_option("listeo_ai_chat_stats", [
-                    "total_sessions" => 0,
-                    "user_messages" => 0,
-                    "rag_queries" => 0,
-                ]);
-
-                $stats["user_messages"]++;
-                $stats["rag_queries"] = isset($stats["rag_queries"])
-                    ? $stats["rag_queries"] + 1
-                    : 1;
-
                 // New session if no chat history
-                if (empty($chat_history)) {
-                    $stats["total_sessions"]++;
-                }
-
-                update_option("listeo_ai_chat_stats", $stats);
+                $this->track_chat_usage_stats(empty($chat_history), true);
 
                 // Track search analytics (RAG chat performs a search)
                 if (class_exists("Listeo_AI_Search_Analytics")) {
@@ -2997,13 +3072,20 @@ class Listeo_AI_Search_Chat_API
                     $question_for_history = "[" . __("Transcribed", "ai-chat-search") . "] " . $question_for_history;
                 }
 
+                $pending_exchange = get_transient("listeo_ai_chat_pending_" . $session_id);
+                $reply_started_at = is_array($pending_exchange) && isset($pending_exchange["started_at"])
+                    ? (float) $pending_exchange["started_at"]
+                    : $start_time;
+                $response_time_ms = max(0, intval(round((microtime(true) - $reply_started_at) * 1000)));
+
                 Listeo_AI_Search_Chat_History::save_exchange(
                     $session_id,
                     $question_for_history,
                     $answer,
                     $provider->get_chat_model(),
                     is_user_logged_in() ? get_current_user_id() : null,
-                    $page_url // Track which page chat was used on
+                    $page_url, // Track which page chat was used on
+                    $response_time_ms
                 );
 
                 // Clear cached question from chat-proxy to prevent stale data
@@ -3259,6 +3341,66 @@ class Listeo_AI_Search_Chat_API
     }
 
     /**
+     * Get compact current-page metadata for the latest user message.
+     *
+     * @param WP_REST_Request $request Current chat request.
+     * @return string Page context or an empty string.
+     */
+    private static function get_page_context_inline($request)
+    {
+        if (!self::is_page_context_enabled() || !$request instanceof WP_REST_Request) {
+            return '';
+        }
+
+        $page_url = esc_url_raw(trim((string) $request->get_header('X-Page-URL')));
+        if ($page_url === '') {
+            return '';
+        }
+
+        $page_title = '';
+        $post_id = url_to_postid($page_url);
+        $post_type = $post_id > 0 ? get_post_type($post_id) : '';
+
+        $page_url = preg_replace('/[?#].*$/', '', $page_url);
+        $page_url = substr($page_url, 0, 500);
+
+        if ($post_id > 0) {
+            $page_title = get_the_title($post_id);
+        }
+
+        if ($page_title === '') {
+            $parsed_url = wp_parse_url($page_url);
+            $path = is_array($parsed_url) && isset($parsed_url['path'])
+                ? trim($parsed_url['path'], '/')
+                : '';
+            $last_segment = $path !== '' ? basename($path) : '';
+            $page_title = $last_segment !== ''
+                ? ucwords(str_replace(array('-', '_'), ' ', $last_segment))
+                : get_bloginfo('name');
+        }
+
+        $page_title = mb_substr(sanitize_text_field($page_title), 0, 200);
+        $page_context = '[CURRENT PAGE USER IS VIEWING: ' . $page_title . ' | ' . $page_url;
+        if ($post_type === 'listing') {
+            $page_context .= ' | LISTING ID: ' . $post_id;
+        } elseif ($post_type === 'product') {
+            $page_context .= ' | PRODUCT ID: ' . $post_id;
+        }
+
+        return $page_context . ']';
+    }
+
+    /**
+     * Check whether current-page context should be sent to the AI.
+     *
+     * @return bool
+     */
+    private static function is_page_context_enabled()
+    {
+        return (bool) get_option('listeo_ai_chat_page_context_enabled', 0);
+    }
+
+    /**
      * Get short language rule for system prompt header
      * Returns a one-liner suitable for embedding in system prompt
      *
@@ -3332,6 +3474,9 @@ class Listeo_AI_Search_Chat_API
 
         // Get unified language rule (handles empty/restricted/forced modes)
         $language_rule = self::get_language_rule_short();
+        $page_context_source = self::is_page_context_enabled()
+            ? " or the CURRENT PAGE context"
+            : "";
 
         // ========================================
         // DEFAULT PROMPT (ALWAYS SHOWN)
@@ -3587,7 +3732,7 @@ TOOLS:
 
 {$details_number}. get_listing_details(listing_id) - For getting details about a SPECIFIC listing or COMPARING listings from search results
    Examples: \"tell me more about Blue Bottle Coffee\", \"what are their hours?\", \"do they have WiFi?\"
-   - You MUST use the EXACT listing_id number from previous search_listings() response
+   - You MUST use the EXACT listing_id number from previous search_listings() response{$page_context_source}
    - Don't offer making reservations/bookings - just provide info
    - IMPORTANT: If user asks about a SPECIFIC listing from previous search results (hours, details, reviews, etc.), use this tool - do NOT search again!
 
@@ -3624,7 +3769,7 @@ TOOLS:
 
 {$wc_details_number}. get_product_details(product_id) - For getting detailed info about a SPECIFIC product or COMPARING products from search results
    Examples: \"tell me more about those Sony headphones\", \"what sizes are available?\", \"is it in stock?\"
-   - You MUST use the EXACT product_id number from previous search_products() response
+   - You MUST use the EXACT product_id number from previous search_products() response{$page_context_source}
    - Returns: full description, pricing, stock status, attributes, variations, reviews, shipping info
    - IMPORTANT: If user asks about a SPECIFIC product from previous search results (sizes, stock, details, etc.), use this tool - do NOT search again!
 
@@ -3772,6 +3917,9 @@ ADDITIONAL NOTES:
     public static function get_listeo_tools()
     {
         $tools = [];
+        $page_context_source = self::is_page_context_enabled()
+            ? " or the CURRENT PAGE context"
+            : "";
 
         // Check if Listeo is available AND listing post type is enabled in admin
         $has_listeo =
@@ -3909,7 +4057,7 @@ ADDITIONAL NOTES:
                 "function" => [
                     "name" => "get_listing_details",
                     "description" =>
-                        "PREFERRED for follow-up questions about listings from previous search results. When user asks about opening hours, reviews, amenities, contact info, pricing, or any specific details of a listing they just found, use this tool. Supports fetching multiple listings at once for comparison requests (up to 3).",
+                        "PREFERRED for follow-up questions about listings from previous search results{$page_context_source}. When user asks about opening hours, reviews, amenities, contact info, pricing, or any specific details of a listing they just found, use this tool. Supports fetching multiple listings at once for comparison requests (up to 3).",
                     "parameters" => [
                         "type" => "object",
                         "properties" => [
@@ -3919,7 +4067,7 @@ ADDITIONAL NOTES:
                                 "minItems" => 1,
                                 "maxItems" => 3,
                                 "description" =>
-                                    "One or more listing IDs from previous search_listings results. Use multiple IDs when user asks to compare listings (e.g., 'compare listing 1 and 3, which one is better'). Maximum 3 listings. Treat recommendations between listings as comparisons.",
+                                    "One or more listing IDs from previous search_listings results{$page_context_source}. Use multiple IDs when user asks to compare listings (e.g., 'compare listing 1 and 3, which one is better'). Maximum 3 listings. Treat recommendations between listings as comparisons.",
                             ],
                         ],
                         "required" => ["listing_ids"],
@@ -3981,7 +4129,7 @@ ADDITIONAL NOTES:
                 "function" => [
                     "name" => "get_product_details",
                     "description" =>
-                        "PREFERRED for follow-up questions about products from previous search results. When user asks about sizes, stock availability, specifications, shipping, or any specific details of a product they just found, use this tool. Returns complete product information including description, pricing, attributes, variations, reviews, and shipping info.",
+                        "PREFERRED for follow-up questions about products from previous search results{$page_context_source}. When user asks about sizes, stock availability, specifications, shipping, or any specific details of a product they just found, use this tool. Returns complete product information including description, pricing, attributes, variations, reviews, and shipping info.",
                     "parameters" => [
                         "type" => "object",
                         "properties" => [
@@ -3991,7 +4139,7 @@ ADDITIONAL NOTES:
                                 "minItems" => 1,
                                 "maxItems" => 3,
                                 "description" =>
-                                    "One or more product IDs from previous search_products results. Use multiple IDs when user asks to compare products (e.g., 'compare product X and Y, which one is better'). Maximum 3 products. Treat recommendations between products as comparisons.",
+                                    "One or more product IDs from previous search_products results{$page_context_source}. Use multiple IDs when user asks to compare products (e.g., 'compare product X and Y, which one is better'). Maximum 3 products. Treat recommendations between products as comparisons.",
                             ],
                         ],
                         "required" => ["product_ids"],

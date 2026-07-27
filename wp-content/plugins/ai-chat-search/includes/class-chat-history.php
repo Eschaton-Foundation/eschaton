@@ -16,6 +16,9 @@ if (!class_exists('Listeo_AI_Search_Chat_History')) :
 
 class Listeo_AI_Search_Chat_History {
 
+    const SCHEMA_VERSION = '1.1';
+    const SCHEMA_VERSION_OPTION = 'listeo_ai_chat_history_schema_version';
+
     /**
      * Database table name
      */
@@ -94,6 +97,17 @@ class Listeo_AI_Search_Chat_History {
     }
 
     /**
+     * Run chat history schema changes once when needed.
+     */
+    public static function maybe_upgrade_schema() {
+        if (get_option(self::SCHEMA_VERSION_OPTION, '') === self::SCHEMA_VERSION) {
+            return;
+        }
+
+        self::create_table();
+    }
+
+    /**
      * Create chat history database table
      * Called on first enable or plugin activation
      */
@@ -114,6 +128,7 @@ class Listeo_AI_Search_Chat_History {
             user_message longtext NOT NULL,
             assistant_message longtext NOT NULL,
             model_used varchar(50) NOT NULL,
+            response_time_ms int unsigned DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY conversation_id (conversation_id),
@@ -134,6 +149,10 @@ class Listeo_AI_Search_Chat_History {
 
         // Auto-upgrade existing TEXT columns to LONGTEXT
         self::maybe_upgrade_columns();
+
+        if (self::has_response_time_column()) {
+            update_option(self::SCHEMA_VERSION_OPTION, self::SCHEMA_VERSION, false);
+        }
 
         return true;
     }
@@ -179,6 +198,12 @@ class Listeo_AI_Search_Chat_History {
         if (!in_array('page_url', $column_names)) {
             $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN page_url varchar(500) DEFAULT NULL AFTER ip_address");
             error_log("Listeo AI Search: Added page_url column to chat history table");
+        }
+
+        // Add response time column if it doesn't exist.
+        if (!in_array('response_time_ms', $column_names)) {
+            $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN response_time_ms int unsigned DEFAULT NULL AFTER model_used");
+            error_log("Listeo AI Search: Added response_time_ms column to chat history table");
         }
 
         return true;
@@ -243,6 +268,33 @@ class Listeo_AI_Search_Chat_History {
     }
 
     /**
+     * Check if response_time_ms column exists in table.
+     * Result is cached for performance.
+     *
+     * @return bool
+     */
+    public static function has_response_time_column() {
+        static $has_column = null;
+
+        if ($has_column !== null) {
+            return $has_column;
+        }
+
+        global $wpdb;
+        $table_name = self::get_table_name();
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
+            $has_column = false;
+            return $has_column;
+        }
+
+        $column = $wpdb->get_results("SHOW COLUMNS FROM {$table_name} LIKE 'response_time_ms'");
+        $has_column = !empty($column);
+
+        return $has_column;
+    }
+
+    /**
      * Get geolocation data from IP address (cached)
      *
      * @param string $ip IP address
@@ -297,9 +349,10 @@ class Listeo_AI_Search_Chat_History {
      * @param string $model_used OpenAI model name
      * @param int|null $user_id WordPress user ID (NULL for guests)
      * @param string|null $page_url URL of the page where chat occurred (optional, for analytics)
+     * @param int|null $response_time_ms Full reply time in milliseconds
      * @return int|false Insert ID on success, false on failure
      */
-    public static function save_exchange($session_id, $user_message, $assistant_message, $model_used, $user_id = null, $page_url = null) {
+    public static function save_exchange($session_id, $user_message, $assistant_message, $model_used, $user_id = null, $page_url = null, $response_time_ms = null) {
         global $wpdb;
 
         // PRO FEATURE: Chat history logging requires Pro version
@@ -363,8 +416,16 @@ class Listeo_AI_Search_Chat_History {
         );
         $insert_format = array('%s', '%s', '%d', '%s', '%s', '%s', '%s');
 
-        // Add IP address if column exists (backward compatibility)
-        if (self::has_ip_column()) {
+        if ($response_time_ms !== null && self::has_response_time_column()) {
+            $insert_data['response_time_ms'] = max(0, intval($response_time_ms));
+            $insert_format[] = '%d';
+        }
+
+        // Add IP address if enabled and the column exists (backward compatibility)
+        if (
+            !get_option('listeo_ai_chat_history_disable_ip_storage', 0) &&
+            self::has_ip_column()
+        ) {
             $insert_data['ip_address'] = Listeo_AI_Search_Utility_Helper::get_client_ip_secure();
             $insert_format[] = '%s';
         }
@@ -391,6 +452,41 @@ class Listeo_AI_Search_Chat_History {
                     $insert_format[] = $meta['format'];
                 }
             }
+        }
+
+        // A submitted pre-chat form creates an empty pending row. Fill that row
+        // with the first completed exchange so the conversation is not duplicated.
+        $pending_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table_name}
+            WHERE conversation_id = %s AND user_message = '' AND assistant_message = ''
+            ORDER BY id ASC LIMIT 1",
+            $conversation_id
+        ));
+
+        if ($pending_id) {
+            $update_data = $insert_data;
+            $update_format = $insert_format;
+            $created_at_index = array_search('created_at', array_keys($update_data), true);
+
+            if ($created_at_index !== false) {
+                unset($update_data['created_at'], $update_format[$created_at_index]);
+                $update_format = array_values($update_format);
+            }
+
+            $result = $wpdb->update(
+                $table_name,
+                $update_data,
+                array('id' => absint($pending_id)),
+                $update_format,
+                array('%d')
+            );
+
+            if ($result === false) {
+                error_log('Listeo AI Chat History: Pending conversation update failed - ' . $wpdb->last_error);
+                return false;
+            }
+
+            return absint($pending_id);
         }
 
         $result = $wpdb->insert($table_name, $insert_data, $insert_format);
@@ -563,9 +659,11 @@ class Listeo_AI_Search_Chat_History {
             __('Username', 'ai-chat-search'),
             __('IP Address', 'ai-chat-search'),
             __('Page URL', 'ai-chat-search'),
+            __('Pre-Chat Data', 'ai-chat-search'),
             __('User Message', 'ai-chat-search'),
             __('Assistant Message', 'ai-chat-search'),
             __('Model', 'ai-chat-search'),
+            __('Full Reply Time (ms)', 'ai-chat-search'),
             __('Created At', 'ai-chat-search')
         ));
 
@@ -585,6 +683,20 @@ class Listeo_AI_Search_Chat_History {
                 $username = $user_cache[$user_id];
             }
 
+            $pre_chat_data = '';
+            if (!empty($record['pre_chat_data'])) {
+                $decoded_pre_chat_data = json_decode($record['pre_chat_data'], true);
+                if (is_array($decoded_pre_chat_data)) {
+                    $pre_chat_fields = array();
+                    foreach ($decoded_pre_chat_data as $field) {
+                        if (isset($field['label'], $field['value'])) {
+                            $pre_chat_fields[] = $field['label'] . ': ' . $field['value'];
+                        }
+                    }
+                    $pre_chat_data = implode(' | ', $pre_chat_fields);
+                }
+            }
+
             fputcsv($output, array(
                 isset($record['id']) ? $record['id'] : '',
                 isset($record['conversation_id']) ? $record['conversation_id'] : '',
@@ -593,9 +705,11 @@ class Listeo_AI_Search_Chat_History {
                 $username,
                 isset($record['ip_address']) ? $record['ip_address'] : '',
                 isset($record['page_url']) ? $record['page_url'] : '',
+                $pre_chat_data,
                 isset($record['user_message']) ? $record['user_message'] : '',
                 isset($record['assistant_message']) ? $record['assistant_message'] : '',
                 isset($record['model_used']) ? $record['model_used'] : '',
+                isset($record['response_time_ms']) ? $record['response_time_ms'] : '',
                 isset($record['created_at']) ? $record['created_at'] : ''
             ));
         }

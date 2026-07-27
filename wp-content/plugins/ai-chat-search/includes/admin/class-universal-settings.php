@@ -122,6 +122,7 @@ class Listeo_AI_Search_Universal_Settings {
             'ajax_url' => get_admin_url(get_current_blog_id(), 'admin-ajax.php'),
             'nonce' => wp_create_nonce('listeo_ai_universal_settings'),
             'database_nonce' => wp_create_nonce('listeo_ai_search_nonce'),
+            'listing_custom_fields_enabled' => $this->is_custom_field_configurable_post_type('listing'),
             'strings' => array(
                 'confirm_toggle' => __('Enable embeddings for this content type?', 'ai-chat-search'),
                 'confirm_reindex' => __('This will regenerate all embeddings for this content type. Continue?', 'ai-chat-search'),
@@ -146,6 +147,9 @@ class Listeo_AI_Search_Universal_Settings {
                 'selected_fields' => __('selected fields', 'ai-chat-search'),
                 'retrain_required' => __('Retrain this content type to update AI context.', 'ai-chat-search'),
                 'listing_auto_fields' => __('Listing fields are selected automatically through the Listeo integration. No action is needed.', 'ai-chat-search'),
+                'listing_predefined_fields' => __('Listings already include predefined Listeo fields automatically.', 'ai-chat-search'),
+                'listing_show_all_fields' => __('Show all custom fields', 'ai-chat-search'),
+                'listing_hide_all_fields' => __('Hide custom fields', 'ai-chat-search'),
                 'auto_detecting_fields' => __('Detecting fields...', 'ai-chat-search'),
                 'auto_detected_fields' => __('Auto Detection selected suggested fields. Review them before saving.', 'ai-chat-search'),
                 'auto_detected_fields_inline' => __('Success. Suggestions applied.', 'ai-chat-search'),
@@ -552,7 +556,7 @@ class Listeo_AI_Search_Universal_Settings {
         }
 
         ?>
-        <div class="airs-notice airs-notice-warning airs-memory-notice" style="margin-bottom: 16px; padding: 14px 18px; border-radius: 6px; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid #ffc107; position: relative;">
+        <div class="airs-notice airs-notice-warning airs-memory-notice" style="margin-bottom: 16px; padding: 14px 18px; border-radius: 6px; display: flex; align-items: flex-start; gap: 10px; position: relative;">
             <span class="dashicons dashicons-warning" style="color: #856404; margin-top: 2px;"></span>
             <div style="flex: 1;">
                 <strong><?php _e('Low PHP Memory Limit Detected', 'ai-chat-search'); ?></strong>
@@ -924,8 +928,6 @@ class Listeo_AI_Search_Universal_Settings {
     /**
      * Get post types that can use explicit custom field selection.
      *
-     * Listings are intentionally excluded because they use the dedicated Listeo extractor.
-     *
      * @param array|null $post_types Optional post type objects already loaded for the UI.
      * @return array
      */
@@ -969,8 +971,11 @@ class Listeo_AI_Search_Universal_Settings {
             return false;
         }
 
+        if ($post_type === 'listing') {
+            return (bool) apply_filters('listeo_ai_listing_custom_fields_enabled', false);
+        }
+
         $excluded_post_types = array(
-            'listing',
             'ai_pdf_document',
             'ai_external_page',
             'ai_content_chunk',
@@ -1414,7 +1419,7 @@ class Listeo_AI_Search_Universal_Settings {
         );
 
         $payload = $provider->normalize_chat_payload($payload, array(
-            'max_tokens' => 900,
+            'max_tokens' => 1500,
             'temperature' => 0.1,
             'reasoning' => 'low',
         ));
@@ -1550,8 +1555,6 @@ class Listeo_AI_Search_Universal_Settings {
                 'updated_at' => time(),
             );
         }
-
-        unset($config['listing']);
 
         update_option('listeo_ai_search_custom_meta_fields', $config, false);
         wp_cache_delete('alloptions', 'options');

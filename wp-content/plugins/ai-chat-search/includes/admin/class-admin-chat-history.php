@@ -80,6 +80,17 @@ class Admin_Chat_History {
                         </div>
 
                         <div class="airs-form-group">
+                            <label class="airs-checkbox-label">
+                                <input type="checkbox" name="listeo_ai_chat_history_disable_ip_storage" value="1" <?php checked(get_option('listeo_ai_chat_history_disable_ip_storage', 0), 1); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <?php _e('Do not store IP addresses', 'ai-chat-search'); ?>
+                                    <small><?php _e('New chat history entries will not include visitor IP addresses. Existing history is not changed.', 'ai-chat-search'); ?></small>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="airs-form-group">
                             <label class="airs-label" for="chat-history-retention-days"><?php _e('Data Retention', 'ai-chat-search'); ?></label>
                             <?php $retention = get_option('listeo_ai_chat_retention_days', 30); ?>
                             <select name="listeo_ai_chat_retention_days" id="chat-history-retention-days" class="airs-input">
@@ -95,7 +106,7 @@ class Admin_Chat_History {
 
                         <?php if (get_option('listeo_ai_chat_history_enabled', 0)): ?>
                         <!-- Export Chat History CSV -->
-                        <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f8f9fa; border-radius: 6px;">
+                        <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f6f6f6; border-radius: 6px;">
                             <div>
                                 <strong style="font-size: 14px;"><?php _e('Export Chat History', 'ai-chat-search'); ?></strong>
                                 <p style="margin: 3px 0 0; font-size: 13px; color: #666;"><?php _e('Download all conversations as a CSV file.', 'ai-chat-search'); ?></p>
@@ -107,7 +118,7 @@ class Admin_Chat_History {
                         </div>
 
                         <!-- Clear History -->
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f8f9fa; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: #f6f6f6; border-radius: 6px;">
                             <div>
                                 <strong style="font-size: 14px; color: #b32d2e;"><?php _e('Clear All History', 'ai-chat-search'); ?></strong>
                                 <p style="margin: 3px 0 0; font-size: 13px; color: #666;"><?php _e('Permanently delete all chat history records.', 'ai-chat-search'); ?></p>
@@ -153,6 +164,7 @@ class Admin_Chat_History {
                     action: 'listeo_ai_save_settings',
                     nonce: '<?php echo $nonce; ?>',
                     listeo_ai_chat_history_enabled: $('input[name="listeo_ai_chat_history_enabled"]').is(':checked') ? 1 : 0,
+                    listeo_ai_chat_history_disable_ip_storage: $('input[name="listeo_ai_chat_history_disable_ip_storage"]').is(':checked') ? 1 : 0,
                     listeo_ai_chat_retention_days: $('#chat-history-retention-days').val()
                 };
 
@@ -347,7 +359,7 @@ class Admin_Chat_History {
                                     ?>
                                     <span class="airs-ip-geo" data-geo-tooltip="<?php echo implode('|', $dummy_tip); ?>">
                                         <img src="https://flagcdn.com/16x12/<?php echo esc_attr($conv['country']); ?>.png" alt="<?php echo esc_attr(strtoupper($conv['country'])); ?>" style="vertical-align: middle;" />
-                                        <span style="color: #999;"><?php echo esc_html($conv['ip']); ?></span>
+                                        <span class="airs-ip-address"><?php echo esc_html($conv['ip']); ?></span>
                                     </span>
                                 </div>
                                 <div style="font-size: 12px; color: #999;">
@@ -441,12 +453,13 @@ class Admin_Chat_History {
      * @param int $total_pages Total pages
      */
     private function render_conversations_list($conversations, $page, $total_pages) {
-        if (empty($conversations)) {
-            echo '<p style="padding: 20px; text-align: center; color: #666;">' . __('No conversations yet. Start using the AI chat to see history here.', 'ai-chat-search') . '</p>';
-            return;
-        }
         ?>
         <div>
+            <?php if (empty($conversations)): ?>
+            <div class="airs-audit-list">
+                <div class="airs-audit-empty-state"><?php esc_html_e('No conversations yet. Start using the AI chat to see history here.', 'ai-chat-search'); ?></div>
+            </div>
+            <?php else: ?>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div>
@@ -473,6 +486,7 @@ class Admin_Chat_History {
             <div id="listeo-history-pagination">
                 <?php $this->render_pagination($page, $total_pages); ?>
             </div>
+            <?php endif; ?>
 
             <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                 <button type="button" id="chat-history-configure-btn" class="airs-button airs-button-secondary">
@@ -549,6 +563,7 @@ class Admin_Chat_History {
      * @param WP_User|null $user_info User info or null for guest
      */
     public function render_conversation_card($conv, $messages, $user_info) {
+        $conv = apply_filters('listeo_ai_chat_history_conversation_summary', $conv);
         $messages_loaded = is_array($messages);
         $message_count = isset($conv['message_count'])
             ? intval($conv['message_count'])
@@ -587,7 +602,7 @@ class Admin_Chat_History {
                                 <?php if ($geo): ?>
                                     <img src="https://flagcdn.com/16x12/<?php echo esc_attr($geo['country_code']); ?>.png" alt="<?php echo esc_attr(strtoupper($geo['country_code'])); ?>" style="vertical-align: middle;" />
                                 <?php endif; ?>
-                                <span style="color: #999;"><?php echo esc_html($conv['ip_address']); ?></span>
+                                <span class="airs-ip-address"><?php echo esc_html($conv['ip_address']); ?></span>
                             </span>
                         <?php endif; ?>
                     </div>
@@ -644,6 +659,26 @@ class Admin_Chat_History {
     }
 
     /**
+     * Format a stored reply duration for display.
+     *
+     * @param int $milliseconds Reply duration in milliseconds.
+     * @return string
+     */
+    private function format_response_time($milliseconds) {
+        $milliseconds = max(0, intval($milliseconds));
+
+        if ($milliseconds < 1000) {
+            /* translators: %d: Reply duration in milliseconds. */
+            return sprintf(__('%d ms', 'ai-chat-search'), $milliseconds);
+        }
+
+        $decimals = $milliseconds < 10000 ? 2 : 1;
+
+        /* translators: %s: Reply duration in seconds. */
+        return sprintf(__('%s s', 'ai-chat-search'), number_format_i18n($milliseconds / 1000, $decimals));
+    }
+
+    /**
      * Render messages for a conversation.
      *
      * @param string $conversation_id Conversation identifier
@@ -661,6 +696,7 @@ class Admin_Chat_History {
         do_action('ai_chat_search_conversation_messages_before', $messages, $conversation_id);
         ?>
         <?php foreach ($messages as $msg): ?>
+            <?php if (empty($msg['_purio_live_type']) && empty($msg['user_message']) && empty($msg['assistant_message'])) continue; ?>
             <?php if (!empty($msg['_purio_live_type'])): ?>
                 <?php $live_type = sanitize_key($msg['_purio_live_type']); ?>
                 <?php if ('system' === $live_type): ?>
@@ -728,6 +764,10 @@ class Admin_Chat_History {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
                     <span class="airs-chat-msg-name"><?php _e('AI Assistant', 'ai-chat-search'); ?></span>
                     <span class="airs-chat-msg-time"><?php echo esc_html($msg['model_used']); ?></span>
+                    <?php if (isset($msg['response_time_ms']) && is_numeric($msg['response_time_ms'])): ?>
+                        <span class="airs-chat-msg-sep">&bull;</span>
+                        <span class="airs-chat-msg-time" title="<?php esc_attr_e('Full reply time', 'ai-chat-search'); ?>"><?php echo esc_html($this->format_response_time($msg['response_time_ms'])); ?></span>
+                    <?php endif; ?>
                 </div>
                 <div class="airs-chat-msg-body">
                     <?php echo nl2br(wp_kses($msg['assistant_message'], array('a' => array('href' => array(), 'title' => array(), 'target' => array(), 'rel' => array())))); ?>
@@ -1086,7 +1126,7 @@ class Admin_Chat_History {
                     conversation_id,
                     MIN(created_at) as first_message_at,
                     MAX(created_at) as last_message_at,
-                    COUNT(*) as message_count,
+                    SUM(CASE WHEN user_message <> '' OR assistant_message <> '' THEN 1 ELSE 0 END) as message_count,
                     MAX(user_id) as user_id,
                     MAX(ip_address) as ip_address
                 FROM {$table_name}
@@ -1132,7 +1172,7 @@ class Admin_Chat_History {
                     conversation_id,
                     MIN(created_at) as first_message_at,
                     MAX(created_at) as last_message_at,
-                    COUNT(*) as message_count,
+                    SUM(CASE WHEN user_message <> '' OR assistant_message <> '' THEN 1 ELSE 0 END) as message_count,
                     user_id,
                     MAX(ip_address) as ip_address
                 FROM {$table_name}

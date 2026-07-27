@@ -1,0 +1,75 @@
+.purio-emoji-field {
+    position: relative;
+}
+
+.purio-emoji-field textarea {
+    padding-right: 48px;
+    resize: none;
+}
+
+.purio-emoji-tools {
+    position: absolute;
+    right: 8px;
+    bottom: 12px;
+    z-index: 30;
+}
+
+.purio-emoji-toggle {
+    display: inline-flex;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    color: #666;
+    box-shadow: none;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.purio-emoji-toggle:hover,
+.purio-emoji-toggle:focus {
+    background: #f5f5f5;
+}
+
+.purio-emoji-picker {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    z-index: 40;
+    display: none;
+    grid-template-columns: repeat(6, 32px);
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.purio-emoji-picker.is-open {
+    display: grid;
+}
+
+.purio-emoji-option {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 32px;
+}
+
+.purio-emoji-option:hover,
+.purio-emoji-option:focus {
+    background: #f5f5f5;
+}

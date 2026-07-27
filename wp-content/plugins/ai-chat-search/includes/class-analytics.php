@@ -51,7 +51,7 @@ class Listeo_AI_Search_Analytics {
         );
         
         // Store in transient (keep for 30 days)
-        $current_logs = get_option('listeo_ai_search_logs', array());
+        $current_logs = self::get_all_logs();
         $current_logs[] = $log_entry;
         
         // Keep only last 10000 entries to prevent database bloat
@@ -69,12 +69,12 @@ class Listeo_AI_Search_Analytics {
      * @return array Analytics data
      */
     public static function get_analytics($days = 7) {
-        $logs = get_option('listeo_ai_search_logs', array());
+        $logs = self::get_all_logs();
         $cutoff_time = current_time('timestamp') - ($days * DAY_IN_SECONDS);
 
         // Filter logs to specified time period
         $recent_logs = array_filter($logs, function($log) use ($cutoff_time) {
-            return $log['timestamp'] > $cutoff_time;
+            return isset($log['timestamp']) && $log['timestamp'] > $cutoff_time;
         });
 
         if (empty($recent_logs)) {
@@ -91,7 +91,7 @@ class Listeo_AI_Search_Analytics {
         // Calculate analytics
         $total_searches = count($recent_logs);
         $ai_searches = array_filter($recent_logs, function($log) {
-            return $log['search_type'] === 'ai';
+            return isset($log['search_type']) && $log['search_type'] === 'ai';
         });
 
         $avg_response_time = array_sum(array_column($recent_logs, 'response_time')) / $total_searches;
@@ -193,7 +193,18 @@ class Listeo_AI_Search_Analytics {
      * @return array All log entries
      */
     public static function get_all_logs() {
-        return get_option('listeo_ai_search_logs', array());
+        $logs = Listeo_AI_Search_Utility_Helper::normalize_array_option(
+            get_option('listeo_ai_search_logs', array())
+        );
+
+        return array_values(array_filter($logs, function($log) {
+            return is_array($log) && isset(
+                $log['query'],
+                $log['timestamp'],
+                $log['results_count'],
+                $log['response_time']
+            );
+        }));
     }
 
     /**
@@ -203,7 +214,7 @@ class Listeo_AI_Search_Analytics {
      * @return array Array of queries with counts and stats
      */
     public static function get_popular_queries_for_export($days = null) {
-        $logs = get_option('listeo_ai_search_logs', array());
+        $logs = self::get_all_logs();
 
         // Filter by days if specified
         if ($days !== null) {

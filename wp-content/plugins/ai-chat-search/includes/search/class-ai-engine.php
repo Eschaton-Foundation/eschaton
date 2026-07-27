@@ -654,7 +654,7 @@ Examples:
 Keywords:";
 
             // Use lightweight models for query expansion
-            $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
+            $model = ($this->provider->get_provider() === 'gemini') ? 'gemini-2.5-flash' : 'gpt-5.6-luna';
             $max_tokens = ($this->provider->get_provider() === 'gemini') ? 500 : 150;
 
             $payload = $this->provider->normalize_chat_payload(array(
