@@ -132,6 +132,10 @@ class Listeo_AI_Search_Embedding_Manager {
      * @throws Exception On API errors
      */
     public function generate_embedding($text, $skip_rate_limit = false) {
+        $managed_access_error = $this->provider->get_no_api_key_configuration_error();
+        if ($managed_access_error !== '') {
+            throw new Exception($managed_access_error);
+        }
         if (empty($this->api_key)) {
             return false;
         }
@@ -1417,64 +1421,22 @@ class Listeo_AI_Search_Embedding_Manager {
             );
         }
 
-        // Check for manual selections to respect user's specific post choices
-        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        // A global training run is a rebuild, so stale embeddings must not survive.
+        if ($start_offset === 0 && !Listeo_AI_Search_Database_Manager::clear_embeddings_for_rebuild()) {
+            return array('error' => __('Failed to clear embeddings.', 'ai-chat-search'));
+        }
+
         $all_post_ids = array();
 
-        // Process each post type individually:
-        // - If it has manual selections, use those specific IDs
-        // - If it has no manual selections, get ALL published posts of that type
+        // Resolve the authoritative training IDs for each enabled post type.
         foreach ($post_types as $post_type) {
-            $has_manual_selection_for_type = array_key_exists($post_type, $manual_selections)
-                && !empty($manual_selections[$post_type]);
+            $type_ids = Listeo_AI_Search_Database_Manager::get_training_post_ids($post_type);
 
-            if ($has_manual_selection_for_type) {
-                // This post type has manual selections - use only those specific IDs
-                $type_ids = is_array($manual_selections[$post_type])
-                    ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                    : array();
-
-                if (get_option('listeo_ai_search_debug_mode', false)) {
-                    error_log("Listeo AI Search: Post type '{$post_type}' - using {" . count($type_ids) . "} manually selected items");
-                }
-
-                $all_post_ids = array_merge($all_post_ids, $type_ids);
-            } else {
-                // This post type has NO manual selections - get ALL published posts
-                if (get_option('listeo_ai_search_debug_mode', false)) {
-                    error_log("Listeo AI Search: Post type '{$post_type}' - getting ALL published items");
-                }
-
-                // Build query args
-                $type_query_args = array(
-                    'post_type' => $post_type,
-                    'post_status' => 'publish',
-                    'posts_per_page' => -1,
-                    'fields' => 'ids',
-                    'orderby' => 'ID',
-                    'order' => 'ASC'
-                );
-
-                // Exclude listeo-booking products (hidden booking products)
-                if ($post_type === 'product') {
-                    $type_query_args['tax_query'] = array(
-                        array(
-                            'taxonomy' => 'product_cat',
-                            'field' => 'slug',
-                            'terms' => 'listeo-booking',
-                            'operator' => 'NOT IN'
-                        )
-                    );
-                }
-
-                $type_posts = get_posts($type_query_args);
-
-                if (get_option('listeo_ai_search_debug_mode', false)) {
-                    error_log("Listeo AI Search: Post type '{$post_type}' - found {" . count($type_posts) . "} published items");
-                }
-
-                $all_post_ids = array_merge($all_post_ids, $type_posts);
+            if (get_option('listeo_ai_search_debug_mode', false)) {
+                error_log("Listeo AI Search: Post type '{$post_type}' - found {" . count($type_ids) . "} eligible items");
             }
+
+            $all_post_ids = array_merge($all_post_ids, $type_ids);
         }
 
         // Remove duplicates and sort

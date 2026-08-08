@@ -37,6 +37,15 @@
         return icons[provider] || '';
     }
 
+    function getModelIcon(provider, slug) {
+        if (provider === 'no_api_key') {
+            var vendor = (slug || '').split('/')[0];
+            var vendorMeta = (i18n.openRouterProviders || {})[vendor] || {};
+            return vendorMeta.icon || '';
+        }
+        return getDirectModelIcon(provider);
+    }
+
     function getOpenRouterModelGroups() {
         var providerMeta = i18n.openRouterProviders || {};
         var groups = [];
@@ -240,13 +249,13 @@
             { key: 'fast', label: getModelSelectorText('modelSelectorFast', 'Fast') },
             { key: 'capable', label: getModelSelectorText('modelSelectorMostCapable', 'Most capable') }
         ];
-        var providerIcon = getDirectModelIcon(provider);
+        var selectedIcon = getModelIcon(provider, selectedSlug);
         var $trigger = $('<button type="button" class="airs-direct-model-trigger" id="airs-direct-model-trigger" aria-haspopup="listbox"></button>')
             .attr('aria-expanded', 'false')
             .attr('aria-label', getModelSelectorText('modelSelectorSelect', 'Select a model'));
-        if (providerIcon) {
+        if (selectedIcon) {
             $trigger.append(
-                $('<img class="airs-direct-model-icon" alt="">').attr('src', providerIcon)
+                $('<img class="airs-direct-model-icon" alt="">').attr('src', selectedIcon)
             );
         }
         var $triggerText = $('<span class="airs-direct-model-trigger-text"></span>');
@@ -288,9 +297,10 @@
                     .attr('aria-selected', selected ? 'true' : 'false')
                     .toggleClass('is-selected', selected);
                 var $main = $('<span class="airs-direct-model-main"></span>');
-                if (providerIcon) {
+                var modelIcon = getModelIcon(provider, entry.slug);
+                if (modelIcon) {
                     $main.append(
-                        $('<img class="airs-direct-model-icon" alt="">').attr('src', providerIcon)
+                        $('<img class="airs-direct-model-icon" alt="">').attr('src', modelIcon)
                     );
                 }
                 var $details = $('<span class="airs-direct-model-details"></span>');
@@ -539,13 +549,6 @@
      */
     function initProviderToggle() {
         var $providerSelect = $('#listeo_ai_search_provider');
-        var ajax = window.listeo_ai_search_ajax || {};
-
-        if (ajax.trial_gateway_active) {
-            $providerSelect.val('openrouter');
-            updateProviderUI('openrouter');
-        }
-
         // Handle select change
         $providerSelect.on('change', function() {
             var provider = $(this).val();
@@ -640,7 +643,7 @@
     function updateGpt56ReasoningVisibility() {
         var provider = $('#listeo_ai_search_provider').val() || '';
         var model = $('#listeo_ai_chat_model').val() || '';
-        $('#gpt56-reasoning-field').toggle(
+        $('#gpt56-reasoning-field, #gpt56-fast-mode-field').toggle(
             provider === 'openai' && model.indexOf('gpt-5.6-') === 0
         );
     }
@@ -657,7 +660,30 @@
 
         // Hide all provider fields and model groups
         $('.provider-field').hide();
-        $('.model-group-openai, .model-group-gemini, .model-group-mistral, .model-group-openrouter').hide();
+        $('.model-group-openai, .model-group-gemini, .model-group-mistral, .model-group-openrouter, .model-group-purio-cloud').hide();
+        var hasLicenseGateway = $('.airs-provider-model-layout').attr('data-license-gateway') === '1';
+        $('.airs-model-selection').toggle(provider !== 'no_api_key' || hasLicenseGateway);
+
+        if (provider === 'no_api_key') {
+            $('.provider-no-api-key').show();
+            if (hasLicenseGateway) {
+                var managedModels = [];
+                $('.model-group-purio-cloud').show().find('option').each(function() {
+                    managedModels.push($(this).val());
+                });
+                $('#model-label-text').text(i18n.purioCloudModel || 'Purio Cloud Model');
+                $('#model-help-text').text(
+                    i18n.purioCloudModelHelp ||
+                    'Choose the Purio Cloud model and credit cost per message. The gateway validates the model and pricing.'
+                );
+                if (managedModels.indexOf($('#listeo_ai_chat_model').val()) === -1) {
+                    $('#listeo_ai_chat_model').val('openai/gpt-5.4-mini').trigger('change');
+                }
+            }
+            syncDirectModelSelector(provider);
+            updateGpt56ReasoningVisibility();
+            return;
+        }
 
         var models = {
             openai: {
@@ -967,6 +993,9 @@
                 success: function(response) {
                     if (response.success) {
                         $status.html(response.data.message).addClass('success').css('color', '#46b450');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 900);
                     } else {
                         $status.html(response.data.message || i18n.clearCacheFailed || 'Clear cache failed')
                             .addClass('error').css('color', '#dc3232');
@@ -1087,7 +1116,7 @@
      * Renders a tooltip bubble as a `position: fixed` element appended directly
      * to <body>, so it escapes any ancestor with overflow: hidden (e.g. the
      * admin card at .airs-tab-content .airs-card). Used by
-     * <span class="airs-hint-icon" data-tooltip="...">?</span>.
+     * <span class="airs-hint-icon" data-airs-tooltip="...">?</span>.
      */
     function initInfoTooltips() {
         var $bubble = null;
@@ -1100,10 +1129,10 @@
         }
 
         function show(el) {
-            var text = el.getAttribute('data-tooltip') || '';
+            var text = el.getAttribute('data-airs-tooltip') || '';
             if (!text) return;
             var $b = ensureBubble();
-            $b.text(text);
+            $b.text(text).toggleClass('is-left-aligned', el.getAttribute('data-airs-tooltip-align') === 'left');
 
             // Measure after content is set so width is correct
             var rect = el.getBoundingClientRect();
@@ -1114,6 +1143,10 @@
             // Clamp to viewport so it never clips off-screen
             var margin = 8;
             left = Math.max(margin, Math.min(left, window.innerWidth - bubbleRect.width - margin));
+            var arrowLeft = Math.max(10, Math.min(
+                rect.left + (rect.width / 2) - left,
+                bubbleRect.width - 10
+            ));
             if (top < margin) {
                 // Flip below the icon if there's no room above
                 top = rect.bottom + 10;
@@ -1122,6 +1155,7 @@
                 $b.attr('data-placement', 'top');
             }
 
+            $b[0].style.setProperty('--airs-tooltip-arrow-left', arrowLeft + 'px');
             $b.css({ top: top + 'px', left: left + 'px' }).addClass('is-visible').attr('aria-hidden', 'false');
         }
 
@@ -1130,10 +1164,10 @@
         }
 
         // Delegated listeners — handles dynamically added tooltips without re-binding
-        $(document).on('mouseenter focus', '.airs-hint-icon[data-tooltip]', function() {
+        $(document).on('mouseenter focus', '[data-airs-tooltip]', function() {
             show(this);
         });
-        $(document).on('mouseleave blur', '.airs-hint-icon[data-tooltip]', function() {
+        $(document).on('mouseleave blur', '[data-airs-tooltip]', function() {
             hide();
         });
         // Hide on scroll / resize to avoid stale positioning

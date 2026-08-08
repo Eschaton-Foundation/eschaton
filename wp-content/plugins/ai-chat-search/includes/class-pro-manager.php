@@ -21,6 +21,22 @@ if (!defined('ABSPATH')) {
 }
 
 class AI_Chat_Search_Pro_Manager {
+    const GATEWAY_ROLLOUT_CONFIG_URL = 'https://purethemes.net/gateway-config.json';
+    const GATEWAY_ROLLOUT_OPTION = 'listeo_ai_gateway_rollout_config';
+    const GATEWAY_ROLLOUT_TTL = 86400;
+
+
+    /**
+     * Number of blog posts available for training in Free.
+     */
+    const FREE_POST_TRAINING_LIMIT = 25;
+
+    /**
+     * Number of pages available for training in Free.
+     *
+     * The static homepage is selected automatically.
+     */
+    const FREE_PAGE_TRAINING_LIMIT = 1;
 
     /**
      * 🔗 Pro Upgrade URL
@@ -45,6 +61,159 @@ class AI_Chat_Search_Pro_Manager {
      */
     public static function is_pro_active() {
         return apply_filters('ai_chat_search_pro_active', false);
+    }
+
+    /**
+     * Check whether managed No API Key access is available.
+     *
+     * Free users and eligible licensed users may use the managed gateway.
+     * Licensed eligibility is supplied by the Pro extension.
+     *
+     * @return bool True when No API Key access is available.
+     */
+    public static function can_use_no_api_key_access() {
+        if (!self::is_pro_active()) {
+            return self::is_gateway_rollout_enabled_for('free');
+        }
+
+        return self::can_use_license_managed_gateway();
+    }
+
+    /**
+     * Refresh the remote Purio Cloud rollout configuration when its cache expires.
+     * Failed requests and invalid responses are cached as disabled.
+     *
+     * @return array Normalized rollout configuration.
+     */
+    public static function refresh_gateway_rollout_config() {
+        $cached = self::get_gateway_rollout_config();
+        if (!empty($cached['checked_at'])) {
+            return $cached;
+        }
+
+        $disabled = self::get_disabled_gateway_rollout_config(time());
+        $response = wp_remote_get(self::GATEWAY_ROLLOUT_CONFIG_URL, array(
+            'timeout' => 3,
+            'sslverify' => true,
+            'limit_response_size' => 16384,
+        ));
+
+        if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
+            update_option(self::GATEWAY_ROLLOUT_OPTION, $disabled, false);
+            return $disabled;
+        }
+
+        $decoded = json_decode(wp_remote_retrieve_body($response), true);
+        $config = self::normalize_gateway_rollout_config($decoded, time());
+        if (empty($config['checked_at'])) {
+            update_option(self::GATEWAY_ROLLOUT_OPTION, $disabled, false);
+            return $disabled;
+        }
+
+        update_option(self::GATEWAY_ROLLOUT_OPTION, $config, false);
+        return $config;
+    }
+
+    /**
+     * Get the fresh cached rollout configuration without making a remote request.
+     *
+     * @return array Normalized rollout configuration, disabled when stale or invalid.
+     */
+    public static function get_gateway_rollout_config() {
+        $cached = get_option(self::GATEWAY_ROLLOUT_OPTION, array());
+        $checked_at = is_array($cached) && isset($cached['checked_at'])
+            ? (int) $cached['checked_at']
+            : 0;
+        if (
+            $checked_at <= 0
+            || $checked_at > time() + 300
+            || time() - $checked_at >= self::GATEWAY_ROLLOUT_TTL
+        ) {
+            return self::get_disabled_gateway_rollout_config();
+        }
+
+        return self::normalize_gateway_rollout_config($cached, $checked_at);
+    }
+
+    /**
+     * Check whether the cached rollout enables a specific access tier.
+     *
+     * @param string $tier One of: free, trial, pro.
+     * @return bool
+     */
+    public static function is_gateway_rollout_enabled_for($tier) {
+        if (!in_array($tier, array('free', 'trial', 'pro'), true)) {
+            return false;
+        }
+
+        $config = self::get_gateway_rollout_config();
+        return !empty($config['purio_cloud']['enabled'])
+            && !empty($config['purio_cloud'][$tier . '_enabled']);
+    }
+
+    /**
+     * Validate and normalize a remote or cached rollout configuration.
+     *
+     * @param mixed $config Raw configuration.
+     * @param int   $checked_at Successful check timestamp.
+     * @return array
+     */
+    private static function normalize_gateway_rollout_config($config, $checked_at) {
+        if (
+            !is_array($config)
+            || !isset($config['schema_version'])
+            || (int) $config['schema_version'] !== 1
+            || !isset($config['purio_cloud'])
+            || !is_array($config['purio_cloud'])
+        ) {
+            return self::get_disabled_gateway_rollout_config();
+        }
+
+        $cloud = $config['purio_cloud'];
+        foreach (array('enabled', 'free_enabled', 'trial_enabled', 'pro_enabled') as $key) {
+            if (!array_key_exists($key, $cloud) || !is_bool($cloud[$key])) {
+                return self::get_disabled_gateway_rollout_config();
+            }
+        }
+
+        return array(
+            'schema_version' => 1,
+            'purio_cloud' => array(
+                'enabled' => $cloud['enabled'],
+                'free_enabled' => $cloud['free_enabled'],
+                'trial_enabled' => $cloud['trial_enabled'],
+                'pro_enabled' => $cloud['pro_enabled'],
+            ),
+            'checked_at' => (int) $checked_at,
+        );
+    }
+
+    /**
+     * Get a fail-closed rollout configuration.
+     *
+     * @param int $checked_at Optional failed check timestamp.
+     * @return array
+     */
+    private static function get_disabled_gateway_rollout_config($checked_at = 0) {
+        return array(
+            'schema_version' => 1,
+            'purio_cloud' => array(
+                'enabled' => false,
+                'free_enabled' => false,
+                'trial_enabled' => false,
+                'pro_enabled' => false,
+            ),
+            'checked_at' => (int) $checked_at,
+        );
+    }
+
+    /**
+     * Check whether the installed Pro extension exposes signed managed access.
+     *
+     * @return bool
+     */
+    public static function can_use_license_managed_gateway() {
+        return (bool) apply_filters('ai_chat_search_license_gateway_available', false);
     }
 
     /**
@@ -118,30 +287,26 @@ class AI_Chat_Search_Pro_Manager {
      * Get default locked status for post type in free version
      *
      * FREE VERSION RULES:
-     * - Listeo theme: ONLY listing = unlimited | post, page, products, custom = locked
-     * - Generic theme: ONLY post (blog) = unlimited | page, products, custom = locked
+     * - Listeo environment: listing = unlimited | everything else = locked
+     * - Generic theme: post and page = limited | products and custom = locked
      *
      * @param string $post_type Post type slug
      * @return bool True if locked, false if available
      */
     private static function get_default_locked_status($post_type) {
-        $is_listeo = self::is_listeo_theme();
+        $is_listeo = self::is_listeo_available();
 
-        // Listeo theme: ONLY listings are free, everything else is locked
+        // Listeo Free supports listings only.
         if ($is_listeo) {
-            if ($post_type === 'listing') {
-                return false; // Unlimited - not locked
-            }
-            // Everything else is locked in Listeo (including posts and pages)
-            return true;
+            return $post_type !== 'listing';
         }
 
-        // Generic theme: ONLY posts (blog) are free, pages are now locked (Pro feature)
-        if ($post_type === 'post') {
-            return false; // Unlimited - not locked
+        // Generic themes can train a limited number of posts and pages.
+        if (in_array($post_type, array('post', 'page'), true)) {
+            return false;
         }
 
-        // Lock pages, products and all custom post types in generic theme
+        // Lock products and all custom post types in generic themes.
         return true;
     }
 
@@ -151,15 +316,45 @@ class AI_Chat_Search_Pro_Manager {
      * @return array Array of available post type slugs
      */
     public static function get_free_available_post_types() {
-        $is_listeo = self::is_listeo_theme();
+        $is_listeo = self::is_listeo_available();
 
         if ($is_listeo) {
-            // Listeo: Only listings are free
             return ['listing'];
         }
 
-        // Generic: Only posts (blog) are free, pages now require Pro
-        return ['post'];
+        return ['post', 'page'];
+    }
+
+    /**
+     * Check whether a post type uses the Free training limit.
+     *
+     * @param string $post_type Post type slug.
+     * @return bool
+     */
+    public static function is_free_training_limited($post_type) {
+        return !self::is_pro_active()
+            && !self::is_listeo_available()
+            && in_array($post_type, array('post', 'page'), true);
+    }
+
+    /**
+     * Get the adjustable Free training limit for posts/pages.
+     *
+     * @param string $post_type Post type slug.
+     * @return int
+     */
+    public static function get_free_training_limit($post_type) {
+        $default_limit = $post_type === 'page'
+            ? self::FREE_PAGE_TRAINING_LIMIT
+            : self::FREE_POST_TRAINING_LIMIT;
+
+        $limit = (int) apply_filters(
+            'listeo_ai_free_content_training_limit',
+            $default_limit,
+            $post_type
+        );
+
+        return max(0, $limit);
     }
 
     /**
@@ -168,14 +363,11 @@ class AI_Chat_Search_Pro_Manager {
      * @return array Array of locked post type slugs
      */
     public static function get_locked_post_types() {
-        $is_listeo = self::is_listeo_theme();
+        $locked = ['product', 'ai_pdf_document', 'ai_external_page'];
 
-        // Lock products, pages, PDF documents, and external pages in all themes
-        $locked = ['product', 'page', 'ai_pdf_document', 'ai_external_page'];
-
-        // Listeo theme: Also lock posts (only listings are free)
-        if ($is_listeo) {
+        if (self::is_listeo_available()) {
             $locked[] = 'post';
+            $locked[] = 'page';
         }
 
         // Add all detected custom post types
@@ -188,16 +380,20 @@ class AI_Chat_Search_Pro_Manager {
     }
 
     /**
-     * Detect if Listeo theme is active
+     * Detect whether the Listeo theme or Listeo Core is active.
      *
-     * @return bool True if Listeo or Listeo child theme is active
+     * @return bool
      */
-    private static function is_listeo_theme() {
+    private static function is_listeo_available() {
         if (class_exists('Listeo_AI_Detection')) {
             return Listeo_AI_Detection::is_listeo_available();
         }
 
-        // Fallback: Check theme name
+        if (class_exists('Listeo_Core') || class_exists('Listeo_Core_Listing')) {
+            return true;
+        }
+
+        // Fallback: Check the active theme.
         $current_theme = wp_get_theme();
         $theme_name = $current_theme->get('Name');
         $parent_theme = $current_theme->get('Template');
@@ -235,6 +431,11 @@ class AI_Chat_Search_Pro_Manager {
         if (self::is_pro_active()) {
             return 6000;
         }
+
+        if (self::is_listeo_available()) {
+            return 0;
+        }
+
         return apply_filters('ai_chat_search_free_prompt_limit', 500);
     }
 

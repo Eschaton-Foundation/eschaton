@@ -35,6 +35,10 @@ class Listeo_AI_Background_Processor {
             return false;
         }
 
+        if (!Listeo_AI_Search_Database_Manager::is_post_eligible_for_training($listing_id)) {
+            return false;
+        }
+
         // Skip processing chunk posts directly - they're processed via their parent
         if ($post->post_type === Listeo_AI_Content_Chunker::CHUNK_POST_TYPE) {
             return self::process_chunk_embedding($listing_id);
@@ -247,17 +251,15 @@ class Listeo_AI_Background_Processor {
      * Process all existing posts (supports multiple post types)
      */
     public static function process_all_listings() {
-        // Get configured post types or use defaults
-        $post_types = get_option('listeo_ai_search_post_types', array('listing', 'post', 'page', 'product'));
-
-        $args = array(
-            'post_type' => $post_types,
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-            'fields' => 'ids'
-        );
-
-        $listings = get_posts($args);
+        $post_types = Listeo_AI_Search_Database_Manager::get_enabled_post_types();
+        $listings = array();
+        foreach ($post_types as $post_type) {
+            $listings = array_merge(
+                $listings,
+                Listeo_AI_Search_Database_Manager::get_training_post_ids($post_type)
+            );
+        }
+        $listings = array_values(array_unique(array_map('intval', $listings)));
 
         if (get_option('listeo_ai_search_debug_mode', false)) {
             error_log("Listeo AI Search: Starting bulk processing of " . count($listings) . " listings");

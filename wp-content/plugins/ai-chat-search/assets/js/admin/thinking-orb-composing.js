@@ -150,9 +150,12 @@
 
         var size = Number(canvas.dataset.size) || 70;
         var speed = Number(canvas.dataset.speed) || 1;
+        var frameRate = Math.max(1, Math.min(60, Number(canvas.dataset.fps) || 60));
+        var frameInterval = 1000 / frameRate;
         var deviceScale = Math.min(2, window.devicePixelRatio || 1);
         var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var animationFrame = 0;
+        var lastFrameTime = 0;
         var running = false;
         var visible = true;
 
@@ -167,8 +170,11 @@
             drawComposingOrb(context, size, time);
         }
 
-        function loop() {
-            draw((window.performance.now() / 1000) * 2.34 * speed);
+        function loop(timestamp) {
+            if (!lastFrameTime || timestamp - lastFrameTime >= frameInterval) {
+                draw((timestamp / 1000) * 2.34 * speed);
+                lastFrameTime = timestamp;
+            }
 
             if (running) {
                 animationFrame = window.requestAnimationFrame(loop);
@@ -187,6 +193,7 @@
         function stop() {
             running = false;
             window.cancelAnimationFrame(animationFrame);
+            lastFrameTime = 0;
         }
 
         draw(reducedMotion ? 0.6 : (window.performance.now() / 1000) * 2.34 * speed);

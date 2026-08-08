@@ -331,7 +331,7 @@
             var separator = searchUrl.includes('?') ? '&' : '?';
 
             // Build proper AI search URL parameters
-            var params = 'location_search=&ai_search_input=' + encodeURIComponent(query || '') + '&action=listeo_get_listings';
+            var params = 'location_search=&ai_search_input=' + encodeURIComponent(query || '');
             window.location.href = searchUrl + separator + params;
             return;
         }

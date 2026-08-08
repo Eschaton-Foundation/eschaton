@@ -137,23 +137,21 @@ class Listeo_AI_Search_Chat_Shortcode
             LISTEO_AI_SEARCH_VERSION,
             true,
         );
+        if (
+            AI_Chat_Search_Pro_Manager::is_pro_active() &&
+            get_option("listeo_ai_chat_agentic_mode", 0)
+        ) {
+            wp_enqueue_script(
+                "listeo-ai-chat-agentic",
+                LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-agentic.js",
+                ["jquery", "listeo-ai-chat"],
+                LISTEO_AI_SEARCH_VERSION,
+                true,
+            );
+        }
 
         // Load UI utilities only when the badge is visible.
-        $pro_plugin_file = 'ai-chat-search-pro/ai-chat-search-pro.php';
-        $active_plugins = (array) get_option('active_plugins', array());
-        $network_active_plugins = is_multisite() ? (array) get_site_option('active_sitewide_plugins', array()) : array();
-        $pro_plugin_active =
-            in_array($pro_plugin_file, $active_plugins, true) ||
-            isset($network_active_plugins[$pro_plugin_file]);
-        $trial_expires_at = (int) get_option('ai_chat_search_pro_trial_expires_at', 0);
-        $trial_expired =
-            get_option('ai_chat_search_pro_is_trial', false) &&
-            $trial_expires_at <= time();
-        $whitelabel_enabled =
-            $pro_plugin_active &&
-            get_option('listeo_ai_chat_whitelabel_enabled', 0) &&
-            get_option('ai_chat_search_pro_license_instance_id', '') !== '' &&
-            !$trial_expired;
+        $whitelabel_enabled = listeo_ai_is_chat_whitelabel_enabled();
         if (!$whitelabel_enabled) {
             wp_enqueue_script(
                 "listeo-ai-chat-ui-utils",
@@ -401,21 +399,7 @@ class Listeo_AI_Search_Chat_Shortcode
 
                 <?php
                 // Show "Powered by PurioChat" badge unless whitelabel is fully enabled.
-                $pro_plugin_file = "ai-chat-search-pro/ai-chat-search-pro.php";
-                $active_plugins = (array) get_option("active_plugins", array());
-                $network_active_plugins = is_multisite() ? (array) get_site_option("active_sitewide_plugins", array()) : array();
-                $pro_plugin_active =
-                    in_array($pro_plugin_file, $active_plugins, true) ||
-                    isset($network_active_plugins[$pro_plugin_file]);
-                $trial_expires_at = (int) get_option("ai_chat_search_pro_trial_expires_at", 0);
-                $trial_expired =
-                    get_option("ai_chat_search_pro_is_trial", false) &&
-                    $trial_expires_at <= time();
-                $whitelabel_enabled =
-                    $pro_plugin_active &&
-                    get_option("listeo_ai_chat_whitelabel_enabled", 0) &&
-                    get_option("ai_chat_search_pro_license_instance_id", "") !== "" &&
-                    !$trial_expired;
+                $whitelabel_enabled = listeo_ai_is_chat_whitelabel_enabled();
                 if (!$whitelabel_enabled): ?>
                     <div class="listeo-ai-chat-powered-by" id="listeo-ai-chat-powered-by-<?php echo esc_attr(
                         $chat_id,

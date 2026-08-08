@@ -133,6 +133,7 @@ class Listeo_AI_Search_Universal_Settings {
                 'add_external_pages' => __('Add external pages', 'ai-chat-search'),
                 'manual_selection_active' => __('Manual selection active', 'ai-chat-search'),
                 'clear' => __('Clear', 'ai-chat-search'),
+                'confirm_clear_selection' => __('Clear the manual selection and restore the default automatic selection?', 'ai-chat-search'),
                 'manual_selection' => __('Manual selection', 'ai-chat-search'),
                 'selected_of' => __('of', 'ai-chat-search'),
                 'selected' => __('selected', 'ai-chat-search'),
@@ -155,6 +156,16 @@ class Listeo_AI_Search_Universal_Settings {
                 'auto_detected_fields_inline' => __('Success. Suggestions applied.', 'ai-chat-search'),
                 'no_suggested_fields' => __('Auto Detection did not find fields to suggest.', 'ai-chat-search'),
                 'no_manual_custom_fields' => __('No custom selection has been saved for this post type yet.', 'ai-chat-search'),
+                'free_training_limit_notice' => wp_kses_post(sprintf(
+                    /* translators: %d: posts limit */
+                    __('Try it free with <strong>up to %d blog posts and your homepage</strong> before upgrading to PurioChat Pro.', 'ai-chat-search'),
+                    AI_Chat_Search_Pro_Manager::get_free_training_limit('post')
+                )),
+                'homepage' => __('Homepage', 'ai-chat-search'),
+                'select_item_to_train' => __('Select at least one item to train.', 'ai-chat-search'),
+                'training_selected' => __('Training selected items...', 'ai-chat-search'),
+                'selected_training_complete' => __('Selected items trained successfully.', 'ai-chat-search'),
+                'selected_training_incomplete' => __('Some selected items could not be trained.', 'ai-chat-search'),
             )
         ));
     }
@@ -202,6 +213,9 @@ class Listeo_AI_Search_Universal_Settings {
 
         // Get manual selections once (cheap option lookup, no DB queries)
         $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        if (!is_array($manual_selections)) {
+            $manual_selections = array();
+        }
 
         ?>
         <div class="listeo-ai-universal-settings">
@@ -211,11 +225,11 @@ class Listeo_AI_Search_Universal_Settings {
             <!-- Post Types Grid -->
             <div class="listeo-ai-post-types-grid" style="margin-top: 0;">
                 <?php foreach ($post_types as $post_type):
-                    $is_enabled = in_array($post_type->name, $enabled_post_types);
                     $is_custom = !in_array($post_type->name, $this->default_types);
 
                     // PRO FEATURE CHECK: Check if post type is locked
                     $is_locked = AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type->name);
+                    $is_enabled = !$is_locked && in_array($post_type->name, $enabled_post_types);
 
                     // Stats loaded lazily via AJAX to prevent timeout on large databases
                     $has_manual_selection = array_key_exists($post_type->name, $manual_selections);
@@ -261,7 +275,10 @@ class Listeo_AI_Search_Universal_Settings {
                                     <div class="manual-selection-actions">
                                         <?php if ($has_manual_selection): ?>
                                             <a href="#" class="manual-selection-link active" data-post-type="<?php echo esc_attr($post_type->name); ?>">
-                                                <span class="dashicons dashicons-yes"></span>
+                                                <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                                    <circle cx="12" cy="12" r="9"></circle>
+                                                    <path d="m8 12 2.5 2.5L16 9"></path>
+                                                </svg>
                                                 <?php _e('Manual selection active', 'ai-chat-search'); ?>
                                             </a>
                                             <a href="#" class="clear-selection-link" data-post-type="<?php echo esc_attr($post_type->name); ?>">
@@ -269,7 +286,13 @@ class Listeo_AI_Search_Universal_Settings {
                                             </a>
                                         <?php else: ?>
                                             <a href="#" class="manual-selection-link" data-post-type="<?php echo esc_attr($post_type->name); ?>">
-                                                <span class="dashicons dashicons-admin-generic"></span>
+                                                <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                                    <path d="M4 6h10"></path>
+                                                    <path d="M4 12h7"></path>
+                                                    <path d="M4 18h10"></path>
+                                                    <path d="M18 9v6"></path>
+                                                    <path d="M15 12h6"></path>
+                                                </svg>
                                                 <?php _e('Manual selection', 'ai-chat-search'); ?>
                                             </a>
                                         <?php endif; ?>
@@ -394,6 +417,11 @@ class Listeo_AI_Search_Universal_Settings {
                                 <button type="button" id="select-verified-posts" class="button button-small" style="display:none;"><?php _e('Select Verified Only', 'ai-chat-search'); ?></button>
                             </div>
                         </div>
+                        <div id="modal-selection-limit-notice"
+                             class="listeo-ai-selection-limit-notice"
+                             role="alert"
+                             aria-live="polite"
+                             hidden></div>
                         <div id="modal-posts-list" class="listeo-ai-posts-list">
                             <p class="loading-message"><span class="airs-spinner" style="margin-right: 6px;"></span><?php _e('Loading posts...', 'ai-chat-search'); ?></p>
                         </div>
@@ -403,14 +431,11 @@ class Listeo_AI_Search_Universal_Settings {
                         <div class="modal-footer-buttons">
                             <button type="button" class="button" id="modal-cancel"><?php _e('Cancel', 'ai-chat-search'); ?></button>
                             <button type="button" class="button button-secondary" id="modal-save"><?php _e('Save Selection', 'ai-chat-search'); ?></button>
-                            <button type="button" class="button button-primary" id="modal-train-now">
-                                <svg class="airs-button-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                                    <path d="M3 21v-5h5"></path>
-                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                                    <path d="M16 8h5V3"></path>
+                            <button type="button" class="button button-primary" id="modal-train-selected">
+                                <svg class="airs-button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="m9 7 8 5-8 5Z"></path>
                                 </svg>
-                                <?php _e('Train Now', 'ai-chat-search'); ?>
+                                <span><?php _e('Train Selected', 'ai-chat-search'); ?></span>
                             </button>
                         </div>
                     </div>
@@ -520,13 +545,10 @@ class Listeo_AI_Search_Universal_Settings {
             return;
         }
 
-        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
         $total_posts = 0;
         foreach ($enabled_post_types as $pt) {
-            if (array_key_exists($pt, $manual_selections)) {
-                $selected_ids = is_array($manual_selections[$pt])
-                    ? array_filter(array_map('intval', $manual_selections[$pt]))
-                    : array();
+            $selected_ids = Listeo_AI_Search_Database_Manager::get_training_selection_ids($pt);
+            if (is_array($selected_ids)) {
                 $total_posts += count($selected_ids);
             } else {
                 $counts = wp_count_posts($pt);
@@ -638,7 +660,12 @@ class Listeo_AI_Search_Universal_Settings {
                         <!-- Upload documents button (PRO active) -->
                         <div class="manual-selection-actions">
                             <a href="#" class="pdf-upload-link" id="upload-pdf-btn">
-                                <span class="dashicons dashicons-upload"></span>
+                                <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <path d="M14 2v6h6"></path>
+                                    <path d="M12 18v-6"></path>
+                                    <path d="m9 15 3-3 3 3"></path>
+                                </svg>
                                 <?php _e('Upload documents', 'ai-chat-search'); ?>
                             </a>
                         </div>
@@ -733,7 +760,12 @@ class Listeo_AI_Search_Universal_Settings {
                         <!-- Add external pages button (PRO active) -->
                         <div class="manual-selection-actions">
                             <a href="#" class="external-pages-link" id="manage-external-pages-btn">
-                                <span class="dashicons dashicons-admin-site-alt3"></span>
+                                <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="M3 12h18"></path>
+                                    <path d="M12 3a14 14 0 0 1 0 18"></path>
+                                    <path d="M12 3a14 14 0 0 0 0 18"></path>
+                                </svg>
                                 <?php _e('Add external pages', 'ai-chat-search'); ?>
                             </a>
                         </div>
@@ -813,16 +845,15 @@ class Listeo_AI_Search_Universal_Settings {
         $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
         $chunk_post_type = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
 
-        // Check if there's a manual selection for this post type
+        // Check if there's a manual selection for this post type.
         $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        if (!is_array($manual_selections)) {
+            $manual_selections = array();
+        }
         $has_manual_selection = array_key_exists($post_type, $manual_selections);
+        $selected_ids = Listeo_AI_Search_Database_Manager::get_training_selection_ids($post_type);
 
-        if ($has_manual_selection) {
-            // Manual selection active
-            $selected_ids = is_array($manual_selections[$post_type])
-                ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                : array();
-
+        if (is_array($selected_ids)) {
             if (empty($selected_ids)) {
                 return array(
                     'total' => 0,
@@ -1665,6 +1696,10 @@ class Listeo_AI_Search_Universal_Settings {
             wp_send_json_error('Post type not available for training');
         }
 
+        if ($enabled && AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            wp_send_json_error(__('This content type requires Pro.', 'ai-chat-search'));
+        }
+
         // Get current enabled post types (raw, no filtering)
         $enabled_post_types = get_option('listeo_ai_search_enabled_post_types', array('listing'));
         if (!is_array($enabled_post_types)) {
@@ -1724,6 +1759,20 @@ class Listeo_AI_Search_Universal_Settings {
         if (!in_array($post_type, $allowed_post_types)) {
             wp_send_json_error('Post type not available for training');
         }
+
+        if (AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            wp_send_json_error(__('This content type requires Pro.', 'ai-chat-search'));
+        }
+
+        // Resolve the active Free selection before querying so it can be pinned first.
+        $selected_ids = Listeo_AI_Search_Database_Manager::get_training_selection_ids($post_type);
+        if ($selected_ids === null) {
+            $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+            $selected_ids = isset($manual_selections[$post_type]) && is_array($manual_selections[$post_type])
+                ? array_map('intval', $manual_selections[$post_type])
+                : array();
+        }
+        $is_limited = AI_Chat_Search_Pro_Manager::is_free_training_limited($post_type);
 
         global $wpdb;
         $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
@@ -1788,6 +1837,18 @@ class Listeo_AI_Search_Universal_Settings {
             WHERE {$where_clause}";
         $total_count = (int) $wpdb->get_var($total_query);
 
+        $order_by = 'p.post_title ASC';
+        if ($is_limited && !empty($selected_ids)) {
+            $pinned_ids = array_values(array_unique(array_filter(array_map('absint', $selected_ids))));
+            if (!empty($pinned_ids)) {
+                $placeholders = implode(',', array_fill(0, count($pinned_ids), '%d'));
+                $order_by = $wpdb->prepare(
+                    "CASE WHEN p.ID IN ($placeholders) THEN 0 ELSE 1 END, p.post_title ASC",
+                    ...$pinned_ids
+                );
+            }
+        }
+
         // Get paginated posts
         $posts = $wpdb->get_results("
             SELECT p.ID, p.post_title, p.post_modified,
@@ -1798,13 +1859,9 @@ class Listeo_AI_Search_Universal_Settings {
             LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
             {$extra_join}
             WHERE {$where_clause}
-            ORDER BY p.post_title ASC
+            ORDER BY {$order_by}
             LIMIT {$per_page} OFFSET {$offset}
         ", ARRAY_A);
-
-        // Get currently selected post IDs
-        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
-        $selected_ids = isset($manual_selections[$post_type]) ? $manual_selections[$post_type] : array();
 
         wp_send_json_success(array(
             'posts'           => $posts ?: array(),
@@ -1815,6 +1872,15 @@ class Listeo_AI_Search_Universal_Settings {
             'per_page'        => $per_page,
             'total'           => $total_count,
             'total_pages'     => ceil($total_count / $per_page),
+            'is_limited'      => $is_limited,
+            'selection_limit' => $is_limited
+                ? AI_Chat_Search_Pro_Manager::get_free_training_limit($post_type)
+                : 0,
+            'can_train_selected' => AI_Chat_Search_Pro_Manager::is_pro_active()
+                || ($post_type === 'listing' && !AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)),
+            'homepage_id'     => $post_type === 'page'
+                ? Listeo_AI_Search_Database_Manager::get_static_homepage_id()
+                : 0,
         ));
     }
 
@@ -1833,6 +1899,9 @@ class Listeo_AI_Search_Universal_Settings {
 
         if (!post_type_exists($post_type)) {
             wp_send_json_error('Invalid post type');
+        }
+        if (AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            wp_send_json_error(__('This content type requires Pro.', 'ai-chat-search'));
         }
 
         global $wpdb;
@@ -1879,10 +1948,17 @@ class Listeo_AI_Search_Universal_Settings {
             LEFT JOIN ({$chunk_parents_subquery}) cp ON p.ID = cp.parent_id
             {$extra_join}
             WHERE {$where_clause}
+            ORDER BY p.post_date DESC, p.ID DESC
         ");
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        if (AI_Chat_Search_Pro_Manager::is_free_training_limited($post_type)) {
+            $limit = AI_Chat_Search_Pro_Manager::get_free_training_limit($post_type);
+            $ids = array_slice($ids, 0, $limit);
+        }
 
         wp_send_json_success(array(
-            'ids' => array_map('intval', $ids),
+            'ids' => $ids,
         ));
     }
 
@@ -1897,7 +1973,9 @@ class Listeo_AI_Search_Universal_Settings {
         }
 
         $post_type = sanitize_text_field($_POST['post_type']);
-        $post_ids = isset($_POST['post_ids']) ? array_map('intval', (array) $_POST['post_ids']) : array();
+        $post_ids = isset($_POST['post_ids'])
+            ? array_values(array_unique(array_map('absint', (array) $_POST['post_ids'])))
+            : array();
 
         // Validate post type exists
         if (!post_type_exists($post_type)) {
@@ -1917,8 +1995,39 @@ class Listeo_AI_Search_Universal_Settings {
             wp_send_json_error('Post type not available for training');
         }
 
+        if (AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)) {
+            wp_send_json_error(__('This content type requires Pro.', 'ai-chat-search'));
+        }
+
+        foreach ($post_ids as $post_id) {
+            $post = get_post($post_id);
+            if (!$post || $post->post_type !== $post_type || $post->post_status !== 'publish') {
+                wp_send_json_error(__('The selection contains an invalid or unpublished item.', 'ai-chat-search'));
+            }
+        }
+
+        $is_limited = AI_Chat_Search_Pro_Manager::is_free_training_limited($post_type);
+        $limit = $is_limited
+            ? AI_Chat_Search_Pro_Manager::get_free_training_limit($post_type)
+            : 0;
+        if ($is_limited && count($post_ids) > $limit) {
+            if ($post_type === 'page') {
+                $message = _n(
+                    'Free allows up to %d selected page.',
+                    'Free allows up to %d selected pages.',
+                    $limit,
+                    'ai-chat-search'
+                );
+                wp_send_json_error(sprintf($message, $limit));
+            }
+            wp_send_json_error(sprintf(__('Free allows up to %d selected posts.', 'ai-chat-search'), $limit));
+        }
+
         // Get current manual selections
         $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        if (!is_array($manual_selections)) {
+            $manual_selections = array();
+        }
 
         // Distinguish between "clear selection" (button) vs "save with 0 selected" (modal)
         // If post_ids is empty but request came from modal save, treat as 0 posts selected
@@ -1928,7 +2037,7 @@ class Listeo_AI_Search_Universal_Settings {
 
         if (empty($post_ids)) {
             if ($is_clear_request) {
-                // Clear button clicked - remove manual selection (revert to all)
+                // Remove the override and return to the type's automatic mode.
                 unset($manual_selections[$post_type]);
             } else {
                 // Modal saved with 0 posts - treat as explicit empty selection
@@ -1960,9 +2069,13 @@ class Listeo_AI_Search_Universal_Settings {
         $stats = $this->get_post_type_stats($post_type);
 
         wp_send_json_success(array(
-            'message' => empty($post_ids)
-                ? __('Manual selection cleared - all posts will be processed', 'ai-chat-search')
-                : sprintf(__('Saved selection of %d posts', 'ai-chat-search'), count($post_ids)),
+            'message' => $is_clear_request
+                ? (
+                    $is_limited
+                        ? __('Manual selection cleared. The most recent content will be selected automatically.', 'ai-chat-search')
+                        : __('Manual selection cleared - all posts will be processed', 'ai-chat-search')
+                )
+                : sprintf(__('Saved selection of %d items', 'ai-chat-search'), count($post_ids)),
             'total' => count($post_ids),
             'stats' => $stats
         ));
@@ -2000,8 +2113,6 @@ class Listeo_AI_Search_Universal_Settings {
             return;
         }
 
-        // Get manual selections
-        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
         $embeddings_table = Listeo_AI_Search_Database_Manager::get_embeddings_table_name();
         $chunk_post_type = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
 
@@ -2009,25 +2120,19 @@ class Listeo_AI_Search_Universal_Settings {
         if (get_option('listeo_ai_search_debug_mode', false)) {
             error_log('[AI Chat] ajax_get_total_count called');
             error_log('[AI Chat] Enabled post types: ' . json_encode($enabled_post_types));
-            error_log('[AI Chat] Manual selections: ' . json_encode($manual_selections));
         }
 
-        // Calculate total and indexed counts respecting manual selections
+        // Calculate total and indexed counts respecting effective selections.
         $total = 0;
         $indexed = 0;
         $type_breakdown = array(); // Store per-type breakdown
 
         foreach ($enabled_post_types as $post_type) {
-            // Three states for manual selection:
-            // 1. Not set (not in array) → count all posts
-            // 2. Set to empty array ([]) → count 0 posts (user explicitly selected 0)
-            // 3. Set to array with IDs ([123, 456]) → count those posts
+            // Free posts/pages resolve to automatic or manual capped selections.
+            // Unlimited types return null when all published items should be counted.
 
-            if (array_key_exists($post_type, $manual_selections)) {
-                $selected_ids = is_array($manual_selections[$post_type])
-                    ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                    : array();
-
+            $selected_ids = Listeo_AI_Search_Database_Manager::get_training_selection_ids($post_type);
+            if (is_array($selected_ids)) {
                 if (empty($selected_ids)) {
                     continue;
                 }

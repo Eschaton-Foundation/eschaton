@@ -37,12 +37,12 @@ class Listeo_AI_Detection {
 
     /**
      * Check if Listeo environment is available
-     * If theme is active, Core is always active (required dependency)
+     * Listeo listings are available with either the theme or Listeo Core.
      *
      * @return bool
      */
     public static function is_listeo_available() {
-        return self::is_listeo_theme_active();
+        return self::is_listeo_theme_active() || self::is_listeo_core_active();
     }
 
     /**
@@ -92,11 +92,14 @@ class Listeo_AI_Detection {
         }
 
         $theme_active = self::is_listeo_theme_active();
+        $core_active = self::is_listeo_core_active();
+        $listeo_available = $theme_active || $core_active;
 
         error_log('=== LISTEO ENVIRONMENT DEBUG ===');
         error_log('Listeo Theme: ' . ($theme_active ? 'ACTIVE ✓' : 'NOT FOUND'));
+        error_log('Listeo Core: ' . ($core_active ? 'ACTIVE ✓' : 'NOT FOUND'));
 
-        if ($theme_active) {
+        if ($listeo_available) {
             error_log('Listeo Integration: ENABLED');
             error_log('Available Endpoints:');
             error_log('  - POST /wp-json/listeo/v1/listeo-hybrid-search');

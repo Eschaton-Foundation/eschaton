@@ -162,7 +162,7 @@ class Listeo_AI_Search_Free_Live_Chat_Upgrade {
                                 <h3><?php esc_html_e('Add Human Live Chat', 'ai-chat-search'); ?></h3>
                                 <p><?php esc_html_e('Let visitors request a person, allow AI to escalate, and reply from a shared WordPress inbox.', 'ai-chat-search'); ?></p>
                                 <ul class="benefits-list">
-                                    <li>
+                                    <li class="purio-live-chat-upgrade__alerts-benefit">
                                         <p class="lp-puriochat-tabs__feature-text">
                                             <?php esc_html_e('Get alerts via', 'ai-chat-search'); ?>
                                             <strong><?php esc_html_e('browser, email, or Telegram', 'ai-chat-search'); ?></strong>.<br>
@@ -177,8 +177,34 @@ class Listeo_AI_Search_Free_Live_Chat_Upgrade {
                                             Telegram.
                                         </p>
                                     </li>
-                                    <li><?php esc_html_e('Manual takeover with complete conversation history', 'ai-chat-search'); ?></li>
-                                    <li><?php esc_html_e('Access for selected WordPress users', 'ai-chat-search'); ?></li>
+                                    <li class="purio-live-chat-upgrade__platform-benefit">
+                                        <span class="airs-label purio-live-chat-upgrade__telegram-label">
+                                            <svg class="purio-live-handoff__label-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 2.4a1.5 1.5 0 0 0-1.52-.18L2.93 9.4a1.5 1.5 0 0 0 .1 2.8l4.33 1.53 1.72 5.24a1.5 1.5 0 0 0 2.55.52l2.42-2.48 4.25 3.12a1.5 1.5 0 0 0 2.36-.92l2.87-15.4a1.5 1.5 0 0 0-.93-1.41ZM9.2 13.02l8.58-6.2-6.67 7.18-.78 2.7-1.13-3.68Z"></path></svg>
+                                            <?php esc_html_e('Telegram app notifications:', 'ai-chat-search'); ?>
+                                        </span>
+                                        <ul class="purio-live-handoff__telegram-benefits">
+                                            <li>
+                                                <svg class="purio-live-handoff__platform-icon is-windows" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 4.2 10.6 3v8H2V4.2Zm9.8-1.4L22 1.4V11H11.8V2.8ZM2 12.2h8.6v8L2 19v-6.8Zm9.8 0H22v9.6l-10.2-1.4v-8.2Z"></path></svg>
+                                                <span><?php esc_html_e('Windows alerts', 'ai-chat-search'); ?></span>
+                                            </li>
+                                            <li>
+                                                <svg class="purio-live-handoff__platform-icon is-apple" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9Zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3Z"></path></svg>
+                                                <span><?php esc_html_e('macOS alerts', 'ai-chat-search'); ?></span>
+                                            </li>
+                                            <li>
+                                                <svg class="purio-live-handoff__platform-icon is-iphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2" width="11" height="20" rx="2.5"></rect><path d="M10 5h4M11 19h2"></path></svg>
+                                                <span><?php esc_html_e('iPhone alerts', 'ai-chat-search'); ?></span>
+                                            </li>
+                                            <li>
+                                                <svg class="purio-live-handoff__platform-icon is-android" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m17.6 9.48 1.84-3.18a.63.63 0 0 0-1.09-.63l-1.86 3.22A11.43 11.43 0 0 0 12 8c-1.59 0-3.11.31-4.49.88L5.65 5.67a.63.63 0 0 0-1.09.63L6.4 9.48C3.3 11.17 1.15 14.31 1 18h22c-.15-3.69-2.3-6.83-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"></path></svg>
+                                                <span><?php esc_html_e('Android alerts', 'ai-chat-search'); ?></span>
+                                            </li>
+                                            <li class="is-wide">
+                                                <svg class="purio-live-handoff__telegram-benefit-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 2.4a1.5 1.5 0 0 0-1.52-.18L2.93 9.4a1.5 1.5 0 0 0 .1 2.8l4.33 1.53 1.72 5.24a1.5 1.5 0 0 0 2.55.52l2.42-2.48 4.25 3.12a1.5 1.5 0 0 0 2.36-.92l2.87-15.4a1.5 1.5 0 0 0-.93-1.41ZM9.2 13.02l8.58-6.2-6.67 7.18-.78 2.7-1.13-3.68Z"></path></svg>
+                                                <span><?php esc_html_e('Reply directly from the Telegram app', 'ai-chat-search'); ?></span>
+                                            </li>
+                                        </ul>
+                                    </li>
                                 </ul>
                                 <a href="<?php echo esc_url($upgrade_url); ?>" class="button button-primary button-hero" target="_blank" rel="noopener noreferrer">
                                     <?php esc_html_e('Upgrade to Pro', 'ai-chat-search'); ?>

@@ -3,7 +3,7 @@
  * Null Content Extractor
  *
  * Returns empty content for Pro-only post types.
- * Used when someone tries to use page/product without Pro license.
+ * Used when someone tries to use a product without Pro.
  *
  * @package Listeo_AI_Search
  * @since 2.0.0

@@ -159,12 +159,17 @@ class AI_Chat_Search_Proactive_Actions {
                 $content_ids = array();
             }
 
-            $message = isset($rule['message']) ? sanitize_textarea_field($rule['message']) : '';
+            $message = isset($rule['message']) && is_string($rule['message'])
+                ? $rule['message']
+                : '';
             if (function_exists('mb_substr')) {
                 $message = mb_substr($message, 0, 500);
             } else {
                 $message = substr($message, 0, 500);
             }
+            $message = $action === 'mini_chat'
+                ? self::sanitize_mini_chat_message($message)
+                : sanitize_textarea_field($message);
 
             $quick_actions = array();
             $raw_quick_actions = isset($rule['quick_actions']) && is_array($rule['quick_actions'])
@@ -253,6 +258,7 @@ class AI_Chat_Search_Proactive_Actions {
         <style>
             .purio-post-reference-results {
                 margin-top: 4px;
+                max-width: 400px;
                 max-height: 200px;
                 overflow-y: auto;
                 border: 1px solid #e0e0e0;
@@ -273,9 +279,6 @@ class AI_Chat_Search_Proactive_Actions {
             .purio-proactive-rule {
                 margin: 0 0 16px;
                 overflow: visible;
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background: #fff;
             }
             .purio-proactive-rule .airs-label svg {
                 width: 16px;
@@ -295,9 +298,12 @@ class AI_Chat_Search_Proactive_Actions {
                 box-sizing: border-box;
                 height: auto;
                 padding: 10px 20px;
+                padding-bottom: 20px;
                 align-items: center;
                 justify-content: space-between;
                 gap: 12px;
+                margin-bottom: -10px;
+                border: 1px solid #eee;
                 border-radius: 6px 6px 0 0;
                 background: #f5f5f5;
                 color: #666;
@@ -413,6 +419,11 @@ class AI_Chat_Search_Proactive_Actions {
             .purio-proactive-rule.is-collapsed > .purio-proactive-rule-body {
                 display: none;
             }
+            .purio-proactive-rule.is-collapsed > .purio-proactive-rule-title {
+                padding-bottom: 10px;
+                margin-bottom: 0;
+                border-radius: 6px;
+            }
             .purio-proactive-setting-help {
                 display: block;
                 margin-top: 6px;
@@ -422,6 +433,9 @@ class AI_Chat_Search_Proactive_Actions {
             }
             .purio-proactive-rule-body {
                 padding: 18px;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                background: #fff;
             }
             .purio-proactive-remove-rule {
                 display: inline-flex;
@@ -555,6 +569,92 @@ class AI_Chat_Search_Proactive_Actions {
             #purio-proactive-upgrade-action svg {
                 flex: 0 0 18px;
             }
+            @media (max-width: 782px) {
+                .purio-proactive-settings-grid > label,
+                .purio-proactive-rule-grid > label {
+                    min-width: 0 !important;
+                    flex-basis: 100% !important;
+                }
+                .airs-card[data-chat-section="proactive-actions"] select.airs-input {
+                    width: 100%;
+                    min-width: 0;
+                }
+                .purio-proactive-rule-title {
+                    padding: 10px 12px;
+                    padding-bottom: 20px;
+                    align-items: flex-start;
+                    flex-wrap: wrap;
+                }
+                .purio-proactive-rule.is-collapsed > .purio-proactive-rule-title {
+                    padding-bottom: 10px;
+                }
+                .purio-proactive-rule-name {
+                    min-height: 40px;
+                }
+                .purio-proactive-rule-name-input {
+                    width: 100% !important;
+                    max-width: none !important;
+                }
+                .purio-proactive-rule-title-actions {
+                    margin-left: auto;
+                }
+                .purio-proactive-edit-name,
+                .purio-proactive-toggle-rule,
+                .purio-proactive-rule-title .purio-proactive-remove-rule {
+                    width: 40px;
+                    height: 40px;
+                    min-height: 40px;
+                    flex-basis: 40px;
+                }
+                .purio-proactive-priority-enabled .purio-proactive-rule-name {
+                    flex-basis: 100%;
+                }
+                .purio-proactive-rule-body {
+                    padding: 12px;
+                }
+                .purio-proactive-quick-actions {
+                    padding: 12px;
+                }
+                .purio-proactive-quick-actions-header {
+                    align-items: stretch;
+                    flex-direction: column;
+                }
+                .purio-proactive-add-quick-action {
+                    width: 100%;
+                    justify-content: center;
+                }
+                .purio-proactive-quick-action-row {
+                    display: grid;
+                    grid-template-columns: 37px minmax(0, 1fr) 37px;
+                }
+                .purio-proactive-quick-action-color-wrap {
+                    grid-column: 1;
+                    grid-row: 1;
+                }
+                .purio-proactive-quick-action-label {
+                    grid-column: 2;
+                    grid-row: 1;
+                    width: 100%;
+                    min-width: 0;
+                }
+                .purio-proactive-remove-quick-action {
+                    grid-column: 3;
+                    grid-row: 1;
+                }
+                .purio-proactive-quick-action-message {
+                    grid-column: 1 / -1;
+                    grid-row: 2;
+                    width: 100%;
+                    min-width: 0;
+                }
+            }
+            @media (hover: none) and (pointer: coarse) {
+                @supports (appearance: base-select) {
+                    .airs-card[data-chat-section="proactive-actions"] select {
+                        appearance: auto;
+                    }
+                }
+            }
         </style>
         <div class="airs-card<?php echo $settings['display_mode'] === 'highest_priority' ? ' purio-proactive-priority-enabled' : ''; ?>" data-chat-section="proactive-actions">
             <div class="airs-card-header airs-card-header-with-icon">
@@ -574,12 +674,16 @@ class AI_Chat_Search_Proactive_Actions {
                         <span class="airs-checkbox-custom"></span>
                         <span class="airs-checkbox-text">
                             <?php esc_html_e('Enable proactive actions', 'ai-chat-search'); ?>
+                            <span class="airs-status-badge">
+                                <span class="airs-status-badge__on"><?php esc_html_e('Enabled', 'ai-chat-search'); ?></span>
+                                <span class="airs-status-badge__off"><?php esc_html_e('Disabled', 'ai-chat-search'); ?></span>
+                            </span>
                             <small><?php esc_html_e('Actions wait for their trigger on each page view. Choose below when they can appear again after the visitor sends a message.', 'ai-chat-search'); ?></small>
                         </span>
                     </label>
                 </div>
 
-                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
+                <div class="purio-proactive-settings-grid" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
                     <label style="flex:1;min-width:220px;">
                         <span class="airs-label"><?php esc_html_e('After the visitor sends a message', 'ai-chat-search'); ?></span>
                         <select class="airs-input" name="<?php echo esc_attr(self::OPTION_KEY); ?>[interaction_cooldown]">
@@ -667,7 +771,7 @@ class AI_Chat_Search_Proactive_Actions {
             </div>
             <div class="purio-proactive-rule-body">
                 <input type="hidden" class="purio-proactive-rule-id" name="<?php echo esc_attr(self::OPTION_KEY); ?>[rules][<?php echo esc_attr($index); ?>][id]" value="<?php echo esc_attr($rule['id']); ?>">
-                <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
+                <div class="purio-proactive-rule-grid" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
                 <label style="flex:1;min-width:160px;">
                     <span class="airs-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M12 9v6"></path><path d="M9 12h6"></path></svg><?php esc_html_e('Trigger', 'ai-chat-search'); ?></span>
                     <select class="airs-input purio-proactive-trigger" name="<?php echo esc_attr(self::OPTION_KEY); ?>[rules][<?php echo esc_attr($index); ?>][trigger]">
@@ -824,11 +928,16 @@ class AI_Chat_Search_Proactive_Actions {
             return;
         }
 
+        $script_path = LISTEO_AI_SEARCH_PLUGIN_PATH . 'assets/js/admin/proactive-actions-admin.js';
+        $script_version = file_exists($script_path)
+            ? (string) filemtime($script_path)
+            : LISTEO_AI_SEARCH_VERSION;
+
         wp_enqueue_script(
             'purio-proactive-actions-admin',
             LISTEO_AI_SEARCH_PLUGIN_URL . 'assets/js/admin/proactive-actions-admin.js',
             array('jquery', 'wp-color-picker'),
-            LISTEO_AI_SEARCH_VERSION,
+            $script_version,
             true
         );
 
@@ -943,6 +1052,12 @@ class AI_Chat_Search_Proactive_Actions {
 
         $config['proactiveActions'] = array_map(
             static function ($rule) {
+                $message = isset($rule['message']) && is_string($rule['message'])
+                    ? $rule['message']
+                    : '';
+                $message = $rule['action'] === 'mini_chat'
+                    ? self::sanitize_mini_chat_message($message)
+                    : sanitize_textarea_field($message);
                 $quick_actions = array();
                 $stored_quick_actions = isset($rule['quick_actions']) && is_array($rule['quick_actions'])
                     ? $rule['quick_actions']
@@ -977,7 +1092,7 @@ class AI_Chat_Search_Proactive_Actions {
                         ? max(1, min(100, absint($rule['scroll_depth'])))
                         : 50,
                     'action'  => $rule['action'],
-                    'message' => $rule['message'],
+                    'message' => $message,
                     'quick_actions' => $quick_actions,
                 );
             },
@@ -994,6 +1109,27 @@ class AI_Chat_Search_Proactive_Actions {
         );
 
         return $config;
+    }
+
+    /**
+     * Allow only basic formatting supported by Mini Chat messages.
+     *
+     * @param string $message Mini Chat message.
+     * @return string
+     */
+    private static function sanitize_mini_chat_message($message) {
+        return wp_kses(
+            $message,
+            array(
+                'strong' => array(),
+                'a'      => array(
+                    'href'   => array(),
+                    'target' => array(),
+                    'rel'    => array(),
+                ),
+                'br'     => array(),
+            )
+        );
     }
 
     /**

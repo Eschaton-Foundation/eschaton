@@ -249,12 +249,21 @@ class Listeo_AI_Search_Updater {
         }
 
         if ($update_data) {
+            $branding = listeo_ai_get_branding();
+            $is_whitelabel = !empty($branding['enabled']);
+            $brand_url = $is_whitelabel ? $branding['url'] : '';
+            $author = $is_whitelabel
+                ? ($brand_url !== ''
+                    ? sprintf('<a href="%1$s">%2$s</a>', esc_url($brand_url), esc_html($branding['name']))
+                    : esc_html($branding['name']))
+                : '<a href="https://purethemes.net">PureThemes</a>';
+
             return (object) array(
                 'slug' => $this->plugin_slug,
-                'name' => 'PurioChat',
+                'name' => listeo_ai_get_brand_name(),
                 'version' => $update_data->new_version,
-                'author' => '<a href="https://purethemes.net">PureThemes</a>',
-                'homepage' => $update_data->url,
+                'author' => $author,
+                'homepage' => $brand_url !== '' ? $brand_url : $update_data->url,
                 'requires' => $update_data->requires,
                 'tested' => $update_data->tested,
                 'requires_php' => $update_data->requires_php,
@@ -277,7 +286,10 @@ class Listeo_AI_Search_Updater {
      * @return array Modified links
      */
     public function plugin_row_meta($links, $file) {
-        if ($file === $this->plugin_file) {
+        if (
+            $file === $this->plugin_file &&
+            !listeo_ai_is_forced_whitelabel()
+        ) {
             $links[] = '<a href="https://purethemes.net/ai-chat-search/" target="_blank">' . __('View Details', 'ai-chat-search') . '</a>';
         }
         return $links;

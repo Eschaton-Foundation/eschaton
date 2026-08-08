@@ -893,6 +893,7 @@
     this.chatConfig = null;
     this.isProcessing = false;
     this.activeChatRequest = null;
+    this.activeMessageTransport = null;
     this.configLoaded = false;
     this.storageKey = getScopedStorageKey("listeo_ai_chat_" + this.chatId);
     this.rateLimitStorageKey = getScopedStorageKey("listeo_chat_rate_limit");
@@ -1147,7 +1148,11 @@
             debugLog("Opening URL:", value);
           } else if (type === "contact") {
             // Show contact form overlay
-            var $overlay = $chatWrapper.find(".listeo-ai-contact-form-overlay");
+            var $overlay = $chatWrapper
+              .find(
+                ".listeo-ai-contact-form-overlay:not(.purio-live-handoff-contact-form)",
+              )
+              .first();
             $overlay.fadeIn(200);
             $overlay.find('input[name="name"]').focus();
             debugLog("Showing contact form");
@@ -1395,7 +1400,25 @@
         }
       }
 
-      // Add loading indicator
+      var messageTransport = window.PurioChatMessageTransport;
+      if (
+        messageTransport &&
+        typeof messageTransport.canHandle === "function" &&
+        typeof messageTransport.send === "function" &&
+        messageTransport.canHandle(this)
+      ) {
+        this.activeMessageTransport = messageTransport;
+        messageTransport.send(this, messageContent, {
+          analyzeError: analyzeError,
+          generateLoaderHTML: generateLoaderHTML,
+          getRequestHeaders: getRequestHeaders,
+          logApiRequest: logApiRequest,
+          logModelDebug: logModelDebug,
+        });
+        return;
+      }
+
+      // Add loading indicator for the legacy chat transport.
       var loadingId = "loading-" + Date.now();
       this.addMessage(
         "assistant",
@@ -1403,7 +1426,7 @@
         loadingId,
       );
 
-      // ALWAYS use function calling mode - LLM decides whether to search or answer from context
+      // Legacy function calling mode - LLM decides whether to search or answer from context
       debugLog("===== FUNCTION CALLING MODE =====");
       debugLog(
         "Tools available:",
@@ -1756,11 +1779,50 @@
             generateLoaderHTML(listeoAiChatConfig.strings.searchingSiteContent),
           );
 
-        // Call RAG endpoint directly - it handles everything server-side
-        // IMPORTANT: Don't pass chat_history here because:
-        // 1. RAG endpoint doesn't use function calling
-        // 2. Chat history may contain tool messages that will break the request
-        // 3. This is being called AS a tool, so history isn't needed
+        // Pass clean conversational context to RAG so follow-up references such as
+        // "it" or "there" keep the subject resolved by the main chat model.
+        // Tool messages and assistant tool calls are intentionally excluded.
+        var ragHistory = self.conversationHistory
+          .filter(function (message) {
+            return !message.purio_live_handoff;
+          })
+          .filter(function (message) {
+            return (
+              (message.role === "user" || message.role === "assistant") &&
+              !message.tool_calls &&
+              message.content
+            );
+          })
+          .map(function (message) {
+            return {
+              role: message.role,
+              content: self.extractTextFromMessage(message.content),
+            };
+          })
+          .filter(function (message) {
+            return message.content.trim() !== "";
+          });
+
+        // Apply the configured limit after cleaning so tool messages do not
+        // consume conversation context intended for actual user turns.
+        var ragUserMessageLimits = { short: 3, normal: 9, long: 24 };
+        var ragContextLength =
+          (listeoAiChatConfig && listeoAiChatConfig.contextLength) || "normal";
+        var ragUserMessageLimit = ragUserMessageLimits[ragContextLength] || 9;
+        var ragUserMessages = 0;
+        var ragHistoryStart = 0;
+        for (var historyIndex = ragHistory.length - 1; historyIndex >= 0; historyIndex--) {
+          if (ragHistory[historyIndex].role === "user") {
+            ragUserMessages++;
+            if (ragUserMessages === ragUserMessageLimit) {
+              ragHistoryStart = historyIndex;
+              break;
+            }
+          }
+        }
+        ragHistory = ragHistory.slice(ragHistoryStart);
+
+        // Call RAG endpoint directly - it handles retrieval and answer generation server-side
         // No retry to avoid duplicate paid provider calls
         // Check if user message contains an image (for chat history logging)
         var messageHasImage = Array.isArray(userMessage) && userMessage.some(function(part) {
@@ -1779,7 +1841,7 @@
             data: JSON.stringify({
               query: functionArgs.query,
               original_question: self.extractTextFromMessage(userMessage), // Text only, no images
-              chat_history: [], // Empty history - this is a tool call, not a conversation
+              chat_history: ragHistory,
               top_results: functionArgs.top_results || 5, // Server uses DB setting, this is just fallback
               has_image: messageHasImage, // For chat history logging
               post_ids: functionArgs.post_ids || null, // Specific post IDs to search within
@@ -4297,6 +4359,24 @@
      * Clear conversation
      */
     clearConversation: function () {
+      var messageTransport =
+        this.activeMessageTransport || window.PurioChatMessageTransport;
+      if (
+        messageTransport &&
+        typeof messageTransport.reset === "function" &&
+        typeof messageTransport.canHandle === "function" &&
+        messageTransport.canHandle(this)
+      ) {
+        messageTransport.reset(this, {
+          getRequestHeaders: getRequestHeaders,
+        });
+      } else if (
+        this.activeMessageTransport &&
+        typeof this.activeMessageTransport.cancel === "function"
+      ) {
+        this.activeMessageTransport.cancel(this);
+      }
+      this.activeMessageTransport = null;
       if (this.activeChatRequest && typeof this.activeChatRequest.abort === "function") {
         this.activeChatRequest.abort();
       }

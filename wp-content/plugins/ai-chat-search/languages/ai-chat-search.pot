@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: PurioChat 2.3.1\n"
+"Project-Id-Version: PurioChat 2.3.6\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-09T21:09:52+00:00\n"
+"POT-Creation-Date: 2026-07-27T18:30:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ai-chat-search\n"
@@ -603,6 +603,8 @@ msgstr ""
 #: includes/admin/class-admin-interface.php:5475
 #: includes/admin/class-admin-interface.php:9764
 #: includes/admin/class-admin-interface.php:10159
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:416
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:458
 msgid "Save Settings"
 msgstr ""
 
@@ -1465,6 +1467,7 @@ msgid "AJAX error:"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3215
+#: includes/admin/class-admin-vector-benchmark.php:79
 msgid "Connection failed:"
 msgstr ""
 
@@ -1605,6 +1608,58 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:3301
 msgid "Training failed due to connection error."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3763
+#: includes/admin/class-admin-interface.php:7001
+msgid "Ready to start training"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3771
+msgid "Training complete"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3775
+msgid "Training stopped"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3779
+msgid "Training failed"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3782
+#: includes/admin/class-admin-interface.php:7012
+msgid "items"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3871
+msgid "source selected"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3872
+#: includes/admin/class-admin-interface.php:7274
+msgid "sources selected"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3762
+msgid "OpenAI API billing required"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3766
+msgid ""
+"OpenAI returned a 429 quota error. Add at least $5 to your OpenAI API credit "
+"balance, then start training again."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3770
+msgid "Google Gemini billing required"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:3774
+msgid ""
+"Google Gemini returned a 429 quota error. Connect a credit card and complete "
+"the billing information for the Google Cloud project linked to this API key, "
+"then start training again."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3305
@@ -2060,6 +2115,14 @@ msgid ""
 "%sPurioChat by Purethemes%s."
 msgstr ""
 
+#. translators: 1: opening brand link, 2: brand name, 3: closing brand link.
+#: includes/admin/class-admin-interface.php
+#, php-format
+msgid ""
+"Manage your AI assistant, train your content, and track conversations with "
+"%1$s%2$s%3$s."
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:3798
 msgid "Trial License Active"
 msgstr ""
@@ -2101,31 +2164,8 @@ msgstr ""
 msgid "Configure your AI provider and rate limiting."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4124
-msgid "Free Trial Active"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4130
-#, php-format
-msgid ""
-"No API key needed during your trial. We've got you covered.<br>Chat limit: "
-"<strong>%d</strong> messages. Training limit: <strong>%d</strong> resources."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4140
-msgid "Use my API key now"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4144
-msgid "After the trial you need to use your own API key."
-msgstr ""
-
 #: includes/admin/class-admin-interface.php:4155
 msgid "AI Provider"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:4168
-msgid "Use Trial AI Gateway"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:4183
@@ -2144,7 +2184,7 @@ msgstr ""
 msgid "OpenRouter"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4259
+#: includes/admin/class-admin-interface.php:4887
 msgid ""
 "Choose between OpenAI, Google Gemini, Mistral AI, or OpenRouter - a gateway "
 "to all top AI models."
@@ -2426,11 +2466,8 @@ msgstr ""
 msgid "Custom CSS"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:5039
-msgid "Database Tables Status"
-msgstr ""
-
 #: includes/admin/class-admin-interface.php:5046
+#: includes/admin/class-admin-vector-benchmark.php:112
 msgid "Embeddings"
 msgstr ""
 
@@ -2464,7 +2501,7 @@ msgstr ""
 msgid "To fix: Deactivate and reactivate the plugin."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:5154
+#: includes/admin/class-admin-interface.php:5546
 msgid "Server Info"
 msgstr ""
 
@@ -2509,8 +2546,11 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:5203
 msgid ""
-"Clear rate limiting and usage tracking data. Useful for testing or "
-"troubleshooting."
+"Refresh Purio Cloud availability and clear rate limiting and usage tracking "
+"data. Useful for testing or troubleshooting."
+msgstr ""
+
+msgid "Purio Cloud availability"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:5210
@@ -2881,22 +2921,8 @@ msgstr ""
 msgid "Training in progress..."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6369
-msgid "This may take a while depending on the number of items selected"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6412
-msgid "Start Training?"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6420
-msgid ""
-"This will generate embeddings for all selected post types and consume API "
-"credits. You can stop anytime."
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6430
-msgid "Yes, Start Training"
+#: includes/admin/class-admin-interface.php:7029
+msgid "Activity"
 msgstr ""
 
 #. translators: %s: AI provider name (e.g. OpenAI, Gemini, Mistral)
@@ -3527,6 +3553,14 @@ msgstr ""
 msgid "Select pages where the floating chat widget should be hidden."
 msgstr ""
 
+#: includes/admin/class-admin-interface.php:9886
+msgid "Whitelist Specific Content"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9928
+msgid "Whitelisted content always shows the floating chat widget, even when it is covered by the hidden pages above."
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:8761
 msgid "Customizable shortcut buttons displayed above the chat input."
 msgstr ""
@@ -3766,14 +3800,70 @@ msgid ""
 "terms\"&gt;Terms&lt;/a&gt;)."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:9468
+#: includes/admin/class-admin-interface.php:10515
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:417
 msgid "Enable Pre-Chat Form"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:9473
+#: includes/admin/class-admin-interface.php:8027
+#: includes/admin/class-admin-interface.php:10493
+msgid "Pre-Chat Form"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10495
+#: includes/admin/class-admin-interface.php:10520
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:422
 msgid ""
 "Collect visitor information before the chat starts. The submitted data will "
 "be visible in chat history."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10530
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:430
+msgid "Form Fields"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10536
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:433
+msgid "Add the fields visitors must fill out before chatting."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10543
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:437
+msgid "Form Headline"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10549
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:442
+msgid "e.g., Please introduce yourself"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10469
+msgid "Please introduce yourself"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10556
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:445
+msgid "Leave blank for no headline."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10564
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:456
+msgid "e.g., Full Name, Email, Phone Number"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10580
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:467
+msgid "+ Add Field"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10614
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:580
+msgid "Start Chat"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:10624
+msgid "Illustrative preview."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:9486
@@ -4572,6 +4662,26 @@ msgstr ""
 
 #: includes/admin/class-universal-settings.php:401
 msgid "Save Selection"
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:434
+msgid "Train Selected"
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:166
+msgid "Select at least one item to train."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:167
+msgid "Training selected items..."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:168
+msgid "Selected items trained successfully."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:169
+msgid "Some selected items could not be trained."
 msgstr ""
 
 #: includes/admin/class-universal-settings.php:409
@@ -6040,6 +6150,9 @@ msgstr ""
 msgid "Browser notifications enabled."
 msgstr ""
 
+msgid "Enable Live Chat first."
+msgstr ""
+
 #: includes/class-live-handoff.php:1446
 msgid "Browser notifications blocked"
 msgstr ""
@@ -6208,6 +6321,10 @@ msgid ""
 "and the optional escalation methods below."
 msgstr ""
 
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:213
+msgid "General Live Chat Settings"
+msgstr ""
+
 #: includes/live-handoff/admin-page.php:173
 msgid "Show visitor handoff button"
 msgstr ""
@@ -6362,10 +6479,6 @@ msgstr ""
 msgid "Play a sound"
 msgstr ""
 
-#: includes/live-handoff/admin-page.php:278
-msgid "Save settings"
-msgstr ""
-
 #: class-free-live-chat-upgrade.php:114
 msgid "Hand conversations from AI to your team without leaving the chat."
 msgstr ""
@@ -6426,14 +6539,6 @@ msgstr ""
 
 #: class-free-live-chat-upgrade.php:169
 msgid "Reply from"
-msgstr ""
-
-#: class-free-live-chat-upgrade.php:156
-msgid "Manual takeover with complete conversation history"
-msgstr ""
-
-#: class-free-live-chat-upgrade.php:157
-msgid "Access for selected WordPress users"
 msgstr ""
 
 #: class-free-live-chat-upgrade.php:137
@@ -6673,12 +6778,32 @@ msgstr ""
 msgid "Telegram bot removed."
 msgstr ""
 
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:307
-msgid "Telegram alerts"
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:316
+msgid "Telegram"
 msgstr ""
 
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:308
-msgid "Receive handoff requests and reply through a separate private Telegram bot."
+#: class-free-live-chat-upgrade.php:183
+msgid "Telegram app notifications:"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:324
+msgid "Windows alerts"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:329
+msgid "macOS alerts"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:334
+msgid "iPhone alerts"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:339
+msgid "Android alerts"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:333
+msgid "Reply directly from the Telegram app"
 msgstr ""
 
 #: ai-chat-search-pro/includes/live-handoff/admin-page.php:313
@@ -6694,7 +6819,7 @@ msgid "Bot Token"
 msgstr ""
 
 #: ai-chat-search-pro/includes/live-handoff/admin-page.php:410
-msgid "Open <a href=\"https://t.me/BotFather\" target=\"_blank\" rel=\"noopener noreferrer\">@BotFather</a> on Telegram, use the /newbot command to create a separate bot, then paste its token below. Use a different bot from the customer-facing Telegram AI integration."
+msgid "Open <a href=\"https://t.me/BotFather\" target=\"_blank\" rel=\"noopener noreferrer\">@BotFather</a> on Telegram, use the <strong>/newbot</strong> command to create a separate bot, then paste its token below. Use a different bot from the customer-facing Telegram AI integration."
 msgstr ""
 
 #: ai-chat-search-pro/includes/live-handoff/admin-page.php:417
@@ -6734,7 +6859,11 @@ msgstr ""
 msgid "Telegram Configuration"
 msgstr ""
 
-#: ai-chat-search-pro/includes/live-handoff/admin-page.php:293
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:300
+msgid "Alerts / Push Notifications"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:304
 msgid "Email alerts"
 msgstr ""
 
@@ -6990,6 +7119,18 @@ msgstr ""
 msgid "Fast, low-cost replies"
 msgstr ""
 
+#: includes/admin/class-admin-interface.php:847
+#: includes/admin/class-admin-interface.php:854
+#: includes/admin/class-admin-interface.php:862
+msgid "1 credit per message"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:869
+#: includes/admin/class-admin-interface.php:876
+#: includes/admin/class-admin-interface.php:883
+msgid "2 credits per message"
+msgstr ""
+
 #: includes/admin/class-admin-interface.php:801
 msgid "Strong everyday model"
 msgstr ""
@@ -7147,6 +7288,7 @@ msgstr ""
 
 #: includes/class-proactive-actions.php:444
 #: includes/class-proactive-actions.php:618
+#: includes/admin/class-admin-vector-benchmark.php:116
 msgid "Time"
 msgstr ""
 
@@ -7583,6 +7725,10 @@ msgstr ""
 msgid "Full access (YOLO mode)"
 msgstr ""
 
+#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:715
+msgid "YOLO"
+msgstr ""
+
 #: ai-chat-search-pro/includes/admin/class-admin-mcp.php:485
 msgid "Custom permissions"
 msgstr ""
@@ -7922,25 +8068,8 @@ msgstr ""
 msgid "Load more"
 msgstr ""
 
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:816
 #: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:155
 msgid "Can safely view public WordPress content. Cannot make changes."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:817
-msgid "Can create and edit drafts, media, and comments. Cannot publish."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:818
-msgid "Can manage products and sanitized orders. Customer personal data and refunds stay protected."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:819
-msgid "Everything is switched on: users, plugins, themes, custom fields, customer data, conversations, and permanent deletion. Draft protection is turned off."
-msgstr ""
-
-#: ai-chat-search-pro/includes/admin/class-admin-mcp.php:820
-msgid "Uses the individual permissions in the section below."
 msgstr ""
 
 #: ai-chat-search-pro/includes/admin/class-admin-mcp.php:836
@@ -8064,4 +8193,475 @@ msgstr ""
 
 #: ai-chat-search/includes/admin/class-free-mcp-upgrade.php:174
 msgid "Keep WordPress permissions and secure sign-in"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:95
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:340
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:102
+msgid "Enable push notifications"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:103
+msgid "Enabling…"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:104
+msgid "Disable push notifications"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:105
+msgid "Disabling…"
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:106
+msgid "Push notifications disabled on this device."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:107
+msgid "Could not disable push notifications. Please try again."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:108
+msgid "Background push notifications are unavailable in this browser."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:109
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:307
+msgid ""
+"Background push notifications require PHP 8.2 or newer and the cURL, "
+"mbstring, and OpenSSL extensions."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:110
+msgid "Could not enable push notifications. Please try again."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:111
+msgid "Test push notification sent."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:112
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:231
+msgid "Could not send the test push notification."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:214
+msgid "Enable push notifications on this device first."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:223
+msgid "Background push notifications are working."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:268
+msgid "A visitor is waiting for human support."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:319
+msgid "The background push notification runtime is incomplete."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:343
+msgid "Could not create the push notification keys."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:369
+msgid "Could not save the push notification keys."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/class-web-push.php:489
+msgid "The browser push subscription is invalid."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:330
+msgid "Push notifications"
+msgstr ""
+
+#. translators: %s: Current PHP major and minor version.
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:358
+#, php-format
+msgid "Push notifications require PHP 8.2+. Your site is running PHP %s. Please contact your hosting provider and ask for an upgrade."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:334
+msgid ""
+"Receive desktop notifications even when the Live Chat inbox is closed. "
+"Enable separately on each browser or device."
+msgstr ""
+
+#: ai-chat-search-pro/includes/live-handoff/admin-page.php:339
+msgid ""
+"macOS: Make sure notifications are also enabled for your browser in System "
+"Settings → Notifications."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:207
+msgid "Invalid benchmark size."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:250
+msgid "Could not create the synthetic vector."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:320
+msgid "Could not load sample embeddings from the database."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:335
+msgid "Synthetic vector scoring failed."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:359
+#, php-format
+msgid "Vector benchmark failed: %s"
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:72
+#, php-format
+msgid "Testing %s embeddings..."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:75
+msgid "Benchmark complete."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:76
+msgid "Benchmark failed."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:77
+msgid "Complete"
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:96
+msgid "Synthetic Similarity Benchmark"
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:102
+msgid ""
+"Tests how long your server takes to load and compare sample embeddings, "
+"similar to a real search by AI."
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:118
+msgid "Usually 1 embedding = 1 page, post, or product"
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:128
+msgid "Status"
+msgstr ""
+
+#: includes/admin/class-admin-vector-benchmark.php:169
+msgid "Run Vector Benchmark"
+msgstr ""
+
+#. translators: %d: posts limit
+#: includes/admin/class-admin-interface.php:7034
+#: includes/admin/class-universal-settings.php:161
+#, php-format
+msgid ""
+"Try it free with <strong>up to %d blog posts and your homepage</strong> before "
+"upgrading to PurioChat Pro."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:136
+msgid "Clear the manual selection and restore the default automatic selection?"
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:1671
+#: includes/admin/class-universal-settings.php:1735
+#: includes/admin/class-universal-settings.php:1861
+#: includes/admin/class-universal-settings.php:1965
+msgid "This content type requires Pro."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:1971
+msgid "The selection contains an invalid or unpublished item."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:2013
+#, php-format
+msgid "Free allows up to %d selected page."
+msgid_plural "Free allows up to %d selected pages."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-universal-settings.php:1989
+#, php-format
+msgid "Free allows up to %d selected posts."
+msgstr ""
+
+#: includes/admin/class-universal-settings.php:2042
+msgid ""
+"Manual selection cleared. The most recent content will be selected "
+"automatically."
+msgstr ""
+
+#: includes/class-database-manager.php:1004
+#, php-format
+msgid ""
+"This item is outside the Free training allowance. Select up to %d items "
+"manually to train it."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Enable Agentic Mode"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Beta"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid ""
+"Let AI handle multi-step requests. For example: <strong>“Find me headphones, "
+"pick the best one and add it to the cart, then check the refund policy and "
+"find the store owner’s contact details.”</strong> It searches, combines "
+"results, and shows progress as it works."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Agentic Mode requires PurioChat Pro."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Agentic chat mode is currently disabled."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Invalid agent request identifier."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Too many requests. Please try again later."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "A user message is required."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "I could not produce a complete answer. Please try rephrasing your request."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Invalid chat message history."
+msgstr ""
+
+#: includes/class-agent-api.php
+msgid "Agent request failed."
+msgstr ""
+
+#: includes/class-agent-runner.php
+msgid "The AI provider returned an invalid tool response."
+msgstr ""
+
+#: includes/class-agent-runner.php
+msgid "The AI provider could not prepare a progress update for this request."
+msgstr ""
+
+#: includes/class-agent-runner.php
+msgid "Rate limit exceeded. Please try again later."
+msgstr ""
+
+#: includes/class-agent-runner.php
+msgid "The agent request was cancelled."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Listeo integration is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "A listing ID is required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "A search query is required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Universal AI search is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "The AI provider API key is not configured."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "WooCommerce product search is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "WooCommerce is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "A product ID is required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Product details could not be loaded."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "The product details handler is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "WooCommerce order lookup is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "An order number is required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "A valid product ID is required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "The WooCommerce cart session is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Could not add the product to the cart."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Product added to the cart."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "The contact form handler is not available."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "Name, email, and message are required."
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "A valid email address is required."
+msgstr ""
+
+#. translators: %s: tool function name.
+#: includes/class-agent-tool-executor.php
+#, php-format
+msgid "Unknown tool: %s"
+msgstr ""
+
+#: includes/class-agent-tool-executor.php
+msgid "The tool could not complete the request."
+msgstr ""
+
+#: includes/class-ai-provider.php
+msgid "Invalid agent request data."
+msgstr ""
+
+#: includes/class-ai-provider.php
+msgid "The selected AI provider does not support agent tools."
+msgstr ""
+
+#: includes/class-ai-provider.php
+msgid "The AI provider returned an error."
+msgstr ""
+
+#: includes/class-ai-provider.php
+msgid "The AI provider returned an invalid response."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Fast mode"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid ""
+"Uses faster, more consistent OpenAI processing at a higher per-token price."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1932 includes/class-ai-provider.php:128
+msgid "Enter email address in API Configuration."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4789
+#: includes/admin/class-admin-interface.php:4844
+msgid "No API Key"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4882
+msgid ""
+"Start without an API key or connect OpenAI, Google Gemini, Mistral AI, or "
+"OpenRouter."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Use 100 starter Purio Cloud credits with Pro, top up when needed, or connect your own provider key."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "<strong>Purio Cloud for Pro.</strong> Includes 100 starter credits per license. Requests then use your license-linked balance; no provider API key is required."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+#, php-format
+msgid "<strong>Purio Cloud Trial.</strong> Includes <strong>%d starter credits</strong> — up to %d messages with 1-credit models."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+#, php-format
+msgid "<strong>Free test access.</strong> No API key required (<strong>up to %d messages per domain</strong> with GPT-5.4 Mini)."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4959
+msgid "Email Address"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Consent is required for Purio Cloud access."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "A valid email address is required for Purio Cloud access."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "Managed Purio Cloud access is not available for the current license."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:1931
+msgid "No API Key access is available in Free and during an active Pro trial only."
+msgstr ""
+
+#: includes/class-ai-provider.php:131
+msgid "Confirm consent in API Configuration."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:4974
+#: includes/admin/class-admin-interface.php:5003
+msgid "(required)"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid ""
+"I consent to sending this site's domain and the email address above to "
+"PureThemes for Purio Cloud access."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5011
+#, php-format
+msgid ""
+"These details are used to provide and limit managed access. See our "
+"%1$sPrivacy Policy%2$s."
+msgstr ""
+
+#, php-format
+msgid "%s credit remaining"
+msgid_plural "%s credits remaining"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Credit balance"
+msgstr ""
+
+msgid "Top up credits"
 msgstr ""

@@ -18,6 +18,11 @@
     var currentOffset = 0;
     var totalListings = 0;
     var activeBatchLogEntry = null;
+    var activeTrainingRun = 0;
+    var trainingModalState = 'closed';
+    var trainingStream = null;
+    var trainingCancelLabel = '';
+    var trainingConfirmLabel = '';
 
     function getAjaxErrorMessage(response, fallback) {
         if (response && response.message) {
@@ -53,9 +58,319 @@
     }
 
     /**
+     * Identify provider quota errors without changing the API response or log.
+     */
+    function getQuotaErrorProvider(errorData) {
+        var errorText = '';
+
+        if (typeof errorData === 'string') {
+            errorText = errorData;
+        } else {
+            try {
+                errorText = JSON.stringify(errorData || '');
+            } catch (error) {
+                errorText = String(errorData || '');
+            }
+        }
+
+        if (!/(^|\D)429(\D|$)/.test(errorText)) {
+            return '';
+        }
+
+        if (/google\s+gemini|\bgemini\b/i.test(errorText)) {
+            return 'gemini';
+        }
+
+        if (/\bopenai\b/i.test(errorText)) {
+            return 'openai';
+        }
+
+        var currentProvider = (window.listeo_ai_search_ajax || {}).current_provider;
+        return currentProvider === 'openai' || currentProvider === 'gemini' ? currentProvider : '';
+    }
+
+    /**
+     * Show provider-specific billing guidance below the training log.
+     */
+    function showQuotaNotice(errorData) {
+        var provider = getQuotaErrorProvider(errorData);
+        if (!provider) {
+            return;
+        }
+
+        var isGemini = provider === 'gemini';
+        var title = isGemini
+            ? (i18n.geminiQuotaTitle || 'Google Gemini billing required')
+            : (i18n.openAiQuotaTitle || 'OpenAI API billing required');
+        var message = isGemini
+            ? (i18n.geminiQuotaMessage || 'Google Gemini returned a 429 quota error. Connect a credit card and complete the billing information for the Google Cloud project linked to this API key, then start training again.')
+            : (i18n.openAiQuotaMessage || 'OpenAI returned a 429 quota error. Add at least $5 to your OpenAI API credit balance, then start training again.');
+
+        $('#training-quota-notice-title').text(title);
+        $('#training-quota-notice-message').text(message);
+        $('#training-quota-notice').stop(true, true).fadeIn(200);
+    }
+
+    /**
+     * Build the V1 ingest stream.
+     */
+    function createTrainingStream() {
+        var canvas = document.getElementById('training-stream');
+
+        if (!canvas) {
+            return null;
+        }
+
+        var context = canvas.getContext('2d');
+
+        if (!context) {
+            return null;
+        }
+
+        var reducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var deviceScale = Math.min(2, window.devicePixelRatio || 1);
+        var particles = [];
+        var animationFrame = 0;
+        var active = false;
+        var running = false;
+        var width = 0;
+        var height = 0;
+
+        function resize() {
+            width = canvas.offsetWidth;
+            height = canvas.offsetHeight;
+            canvas.width = Math.round(width * deviceScale);
+            canvas.height = Math.round(height * deviceScale);
+        }
+
+        function spawn() {
+            var fromLeft = Math.random() < 0.5;
+
+            particles.push({
+                x: fromLeft ? -4 : width + 4,
+                y: height / 2 + (Math.random() - 0.5) * height * 0.55,
+                direction: fromLeft ? 1 : -1,
+                speed: 0.55 + Math.random() * 0.75,
+                radius: 0.8 + Math.random() * 0.9,
+                life: 0
+            });
+        }
+
+        function frame() {
+            context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
+            context.clearRect(0, 0, width, height);
+
+            if (active && particles.length < 16 && Math.random() < 0.28) {
+                spawn();
+            }
+
+            var centerX = width / 2;
+            var centerY = height / 2;
+
+            particles = particles.filter(function(particle) {
+                particle.x += particle.direction * particle.speed;
+                particle.y += (centerY - particle.y) * 0.012;
+                particle.life += 1;
+
+                var distance = Math.abs(particle.x - centerX);
+                var alpha = Math.min(1, particle.life / 40) *
+                    Math.min(1, Math.max(0, (distance - 34) / 60)) * 0.45;
+
+                if (alpha > 0.01) {
+                    context.fillStyle = 'rgba(85,85,85,' + alpha.toFixed(3) + ')';
+                    context.beginPath();
+                    context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    context.fill();
+                }
+
+                return distance > 34;
+            });
+
+            if (active || particles.length > 0) {
+                animationFrame = window.requestAnimationFrame(frame);
+            } else {
+                running = false;
+                animationFrame = 0;
+            }
+        }
+
+        function start() {
+            active = true;
+            resize();
+
+            if (!reducedMotion && !running) {
+                running = true;
+                animationFrame = window.requestAnimationFrame(frame);
+            }
+        }
+
+        function stop() {
+            active = false;
+        }
+
+        function reset() {
+            active = false;
+            particles = [];
+
+            if (animationFrame) {
+                window.cancelAnimationFrame(animationFrame);
+                animationFrame = 0;
+            }
+
+            running = false;
+            resize();
+            context.clearRect(0, 0, width, height);
+        }
+
+        window.addEventListener('resize', resize);
+
+        return {
+            start: start,
+            stop: stop,
+            reset: reset
+        };
+    }
+
+    /**
+     * Paint the real AJAX batch progress in the V1 progress bar.
+     */
+    function updateTrainingProgress(completed, total) {
+        completed = Math.max(0, parseInt(completed, 10) || 0);
+        total = Math.max(0, parseInt(total, 10) || 0);
+
+        var percentage = total > 0
+            ? Math.min(100, Math.round((completed / total) * 100))
+            : 0;
+
+        $('#training-progress-fill').css('width', percentage + '%');
+        $('#training-progress-count').text(
+            completed + ' / ' + total + ' ' + (i18n.trainingItemsLabel || 'items')
+        );
+        $('#training-progress-percent').text(percentage + '%');
+    }
+
+    function updateTrainingSourceSummary(total) {
+        total = Math.max(0, parseInt(total, 10) || 0);
+        $('#training-status-pill-text').text(
+            total + ' ' + (
+                total === 1
+                    ? (i18n.trainingSourceSelected || 'source selected')
+                    : (i18n.trainingSourcesSelected || 'sources selected')
+            )
+        );
+    }
+
+    function getKnownTrainingTotal() {
+        return Math.max(0, parseInt(AIRS.trainingTotalItems, 10) || 0);
+    }
+
+    function setTrainingTitle(title, state) {
+        $('#training')
+            .removeClass('airs-training--done airs-training--failed airs-training--stopped')
+            .addClass(state ? 'airs-training--' + state : '');
+        $('#training-title-text').text(title);
+    }
+
+    function setTrainingModalState(state) {
+        var $cancelButton = $('#training-cancel-btn');
+        var $confirmButton = $('#training-confirm-btn');
+
+        trainingModalState = state;
+        $('#training').toggleClass('airs-training--running', state === 'running');
+
+        if (state === 'ready') {
+            $cancelButton.find('.airs-training-button-label').text(trainingCancelLabel);
+            $cancelButton.show();
+            $confirmButton.find('.airs-training-button-label').text(trainingConfirmLabel);
+            $confirmButton.prop('disabled', false).show();
+        } else if (state === 'running') {
+            $cancelButton.find('.airs-training-button-label').text(i18n.stopTraining || 'Stop');
+            $cancelButton.show();
+            $confirmButton.prop('disabled', true).hide();
+        } else {
+            $cancelButton.find('.airs-training-button-label').text(i18n.closeTraining || 'Close');
+            $cancelButton.show();
+            $confirmButton.prop('disabled', true).hide();
+        }
+    }
+
+    function resetTrainingModal() {
+        regenerationRunning = false;
+        currentOffset = 0;
+        totalListings = getKnownTrainingTotal();
+        activeBatchLogEntry = null;
+
+        $('#log-content').empty();
+        $('#training-quota-notice').hide();
+        $('#training-activity').removeClass('is-visible').attr('aria-hidden', 'true');
+        updateTrainingProgress(0, totalListings);
+        updateTrainingSourceSummary(totalListings);
+        setTrainingTitle(i18n.trainingReady || 'Ready to start training', '');
+        setTrainingModalState('ready');
+
+        if (trainingStream) {
+            trainingStream.reset();
+        }
+    }
+
+    function closeTrainingModal() {
+        if (regenerationRunning) {
+            return;
+        }
+
+        if (trainingStream) {
+            trainingStream.reset();
+        }
+
+        trainingModalState = 'closed';
+        $('#training-confirm-modal').fadeOut(200);
+    }
+
+    function stopTraining() {
+        activeTrainingRun++;
+        regenerationRunning = false;
+        $('#start-regeneration').show();
+
+        finishActiveBatchLog(i18n.stoppedByUser || 'Training stopped by user.', 'warning');
+        $('#training-status-pill-text').text(i18n.trainingStoppedTitle || 'Training stopped');
+        setTrainingTitle(i18n.trainingStoppedTitle || 'Training stopped', 'stopped');
+        setTrainingModalState('finished');
+
+        if (trainingStream) {
+            trainingStream.stop();
+        }
+    }
+
+    /**
      * Initialize batch embedding generation
      */
     function initBatchGeneration() {
+        trainingCancelLabel = $('#training-cancel-btn .airs-training-button-label').text().trim();
+        trainingConfirmLabel = $('#training-confirm-btn .airs-training-button-label').text().trim();
+        trainingStream = createTrainingStream();
+
+        var trainingOverlay = document.querySelector('#training-confirm-modal .airs-modal-overlay');
+        if (trainingOverlay) {
+            trainingOverlay.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }, true);
+        }
+
+        $(document).on('airs:training-total-updated', function(event, totalItems) {
+            if (trainingModalState === 'running' || trainingModalState === 'finished') {
+                return;
+            }
+
+            totalListings = Math.max(0, parseInt(totalItems, 10) || 0);
+
+            if (trainingModalState === 'ready') {
+                updateTrainingProgress(0, totalListings);
+                updateTrainingSourceSummary(totalListings);
+            }
+        });
+
         // Start button - check API key first, then show appropriate modal
         $('#start-regeneration').on('click', function() {
             var ajaxVars = window.listeo_ai_search_ajax || {};
@@ -63,6 +378,8 @@
                 $('#api-key-missing-modal').fadeIn(200);
                 return;
             }
+
+            resetTrainingModal();
             $('#training-confirm-modal').fadeIn(200);
         });
 
@@ -77,48 +394,55 @@
             window.location.href = ajaxVars.settings_url || '?page=ai-chat-search&tab=ai-chat';
         });
 
-        // Modal cancel
-        $('#training-cancel-btn, #training-confirm-modal .airs-modal-overlay').on('click', function() {
-            $('#training-confirm-modal').fadeOut(200);
+        // Training modal cancel / stop
+        $('#training-cancel-btn').on('click', function() {
+            if (trainingModalState === 'running') {
+                stopTraining();
+                return;
+            }
+
+            closeTrainingModal();
         });
 
         // Modal confirm - start batch processing
         $('#training-confirm-btn').on('click', function() {
-            $('#training-confirm-modal').fadeOut(200);
-
             regenerationRunning = true;
             currentOffset = 0;
-            totalListings = 0;
+            totalListings = getKnownTrainingTotal();
+            activeTrainingRun++;
+            var runId = activeTrainingRun;
 
             $('#start-regeneration').hide();
-            $('#stop-regeneration').show();
-            $('#regeneration-progress').show();
-            $('#regeneration-log').show();
+            $('#training-quota-notice').hide();
             $('#log-content').empty();
+            $('#training-activity').addClass('is-visible').attr('aria-hidden', 'false');
             activeBatchLogEntry = null;
+            setTrainingTitle(i18n.trainingInProgress || 'Training in progress...', '');
+            setTrainingModalState('running');
+
+            updateTrainingProgress(0, totalListings);
+
+            if (trainingStream) {
+                trainingStream.reset();
+                trainingStream.start();
+            }
 
             logMessage(i18n.startingGeneration || 'Preparing training run');
-            runRegenerationBatch();
-        });
-
-        // Stop button
-        $('#stop-regeneration').on('click', function() {
-            regenerationRunning = false;
-            $('#start-regeneration').show();
-            $('#stop-regeneration').hide();
-            finishActiveBatchLog(i18n.stoppedByUser || 'Training stopped by user.', 'warning');
+            runRegenerationBatch(runId);
         });
     }
 
     /**
      * Run a single batch of embedding generation
      */
-    function runRegenerationBatch() {
-        if (!regenerationRunning) return;
+    function runRegenerationBatch(runId) {
+        if (!regenerationRunning || runId !== activeTrainingRun) return;
 
         var batchSize = 20; // Reduced to prevent PHP timeout
 
-        startActiveBatchLog(getBatchRangeLabel(batchSize));
+        var batchLabel = getBatchRangeLabel(batchSize);
+        $('#training-status-pill-text').text(batchLabel);
+        startActiveBatchLog(batchLabel);
 
         AIRS.ajax({
             action: 'listeo_ai_manage_database',
@@ -128,12 +452,21 @@
                 start_offset: currentOffset
             },
             success: function(response) {
+                if (!regenerationRunning || runId !== activeTrainingRun) {
+                    return;
+                }
+
                 if (response.success) {
                     var data = response.data;
+                    showQuotaNotice(data.errors);
 
-                    // Set total from first response
-                    if (data.total_listings && totalListings === 0) {
-                        totalListings = data.total_listings;
+                    // Sync with the authoritative total returned by the training request.
+                    var responseTotal = typeof data.total_listings !== 'undefined'
+                        ? data.total_listings
+                        : data.total_posts;
+                    if (typeof responseTotal !== 'undefined') {
+                        totalListings = Math.max(0, parseInt(responseTotal, 10) || 0);
+                        AIRS.trainingTotalItems = totalListings;
                     }
 
                     // Update offset
@@ -142,8 +475,10 @@
                     }
 
                     // Log progress only for real work; processed 0 is the completion sentinel.
-                    var processed = data.processed || 0;
+                    var processed = Math.max(0, parseInt(data.processed, 10) || 0);
                     var progressPercent = totalListings > 0 ? Math.round((currentOffset / totalListings) * 100) : 0;
+                    updateTrainingProgress(currentOffset, totalListings);
+
                     if (processed > 0) {
                         finishActiveBatchLog(
                             processed + ' ' + (i18n.itemsProcessed || 'items trained.') +
@@ -183,15 +518,26 @@
                             AIRS.refreshDatabaseStatus();
                         }
                     } else if (regenerationRunning) {
-                        setTimeout(runRegenerationBatch, 1000);
+                        setTimeout(function() {
+                            runRegenerationBatch(runId);
+                        }, 1000);
                     }
                 } else {
+                    showQuotaNotice(response);
                     finishActiveBatchLog((i18n.batchFailed || 'Batch failed:') + ' ' +
                         getAjaxErrorMessage(response), 'error');
                     finishRegeneration(i18n.generationFailed || 'Training failed.', 'error');
                 }
             },
             error: function(xhr, status, error) {
+                if (!regenerationRunning || runId !== activeTrainingRun) {
+                    return;
+                }
+
+                showQuotaNotice({
+                    response: xhr.responseJSON || xhr.responseText,
+                    error: error
+                });
                 finishActiveBatchLog((i18n.ajaxError || 'AJAX error:') + ' ' + error, 'error');
                 finishRegeneration(i18n.connectionError || 'Training failed due to connection error.', 'error');
             }
@@ -204,9 +550,21 @@
     function finishRegeneration(message, type) {
         regenerationRunning = false;
         $('#start-regeneration').show();
-        $('#stop-regeneration').hide();
-        $('#regeneration-progress').hide();
         logMessage(message, type || 'success');
+
+        if (type === 'success') {
+            $('#training-status-pill-text').text(i18n.done || 'Done');
+            setTrainingTitle(i18n.trainingCompleteTitle || 'Training complete', 'done');
+        } else {
+            $('#training-status-pill-text').text(i18n.trainingFailedTitle || 'Training failed');
+            setTrainingTitle(i18n.trainingFailedTitle || 'Training failed', 'failed');
+        }
+
+        setTrainingModalState('finished');
+
+        if (trainingStream) {
+            trainingStream.stop();
+        }
     }
 
     /**
@@ -337,10 +695,10 @@
      */
     function getLogIcon(type) {
         var icons = {
-            running: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg>',
-            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+            running: '<span class="airs-training__log-spinner"></span>',
+            success: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#2e9e63"/><path d="M4.6 8.3l2.3 2.3 4.5-5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
             warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+            error: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#c0473b"/><path d="M5.4 5.4l5.2 5.2M10.6 5.4l-5.2 5.2" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
             info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
         };
 

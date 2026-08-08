@@ -735,6 +735,10 @@ div.listeo-ai-chat-message.listeo-ai-chat-message-assistant[id^="loading"] .list
     box-sizing: border-box;
 }
 
+#listeo-floating-chat-instance-input {
+    margin: 0;
+}
+
 .listeo-ai-chat-input:not(.elementor-chat-style .listeo-ai-chat-input) {
     background: #f5f5f5 !important;
 }

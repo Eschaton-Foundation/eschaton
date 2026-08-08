@@ -201,7 +201,7 @@
 }
 
 .ai-chat-pro-feature-locked .lock-overlay p {
-    color: #64748b;
+    color: #666;
     margin-bottom: 0px;
     line-height: 24px;
     font-size: 14px;
@@ -216,11 +216,11 @@
 
 .ai-chat-pro-feature-locked .benefits-list li {
     padding: 0;
-    color: #475569;
+    color: #666;
     position: relative;
     padding-left: 24px;
-    line-height: 24px;
-    font-size: 14px;
+    line-height: 20px;
+    font-size: 15px;
 }
 
 .ai-chat-pro-feature-locked .benefits-list li:before {
@@ -246,11 +246,11 @@
 .ai-chat-pro-feature-locked .button-hero {
     padding: 12px 30px;
     height: auto;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 16px;
     background: linear-gradient(135deg, #0073ee 0%, #005bb5 100%);
     border: none;
-    box-shadow: 0 4px 12px rgba(0,115,238,0.4);
+    box-shadow: 0 4px 12px rgba(0, 115, 238, 0.24);
     transition: 0.3s;
     outline: none; border: none;
 }
@@ -539,6 +539,96 @@
 .purio-live-chat-upgrade .lock-overlay {
     width: min(430px, calc(100% - 48px));
     box-sizing: border-box;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-chat-upgrade__alerts-benefit,
+.purio-live-chat-upgrade .benefits-list .purio-live-chat-upgrade__platform-benefit {
+    padding-left: 0;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-chat-upgrade__platform-benefit {
+    margin: 8px 0;
+    padding: 14px 14px 5px;
+    border-radius: 6px;
+    background: #f7f7f7;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-chat-upgrade__alerts-benefit::before,
+.purio-live-chat-upgrade .benefits-list .purio-live-chat-upgrade__platform-benefit::before {
+    content: none;
+}
+
+.purio-live-chat-upgrade__telegram-label {
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.purio-live-chat-upgrade__telegram-label .purio-live-handoff__label-icon {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-top: 0;
+    margin-right: 5px;
+    flex: 0 0 14px;
+    vertical-align: -2px;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__telegram-benefits {
+    display: grid;
+    width: 100%;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    font-size: 13px;
+    line-height: 18px;
+    list-style: none;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-handoff__telegram-benefits li {
+    display: flex;
+    min-width: 0;
+    margin-bottom: 7px;
+    padding: 0;
+    align-items: center;
+    gap: 6px;
+    color: #111;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-handoff__telegram-benefits li::before {
+    content: none;
+}
+
+.purio-live-chat-upgrade .benefits-list .purio-live-handoff__telegram-benefits li.is-wide {
+    grid-column: 1 / -1;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__platform-icon,
+.purio-live-chat-upgrade .purio-live-handoff__telegram-benefit-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__platform-icon.is-windows {
+    color: #0078d4;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__platform-icon.is-apple,
+.purio-live-chat-upgrade .purio-live-handoff__platform-icon.is-iphone {
+    color: #111;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__platform-icon.is-android {
+    color: #3a8f35;
+}
+
+.purio-live-chat-upgrade .purio-live-handoff__telegram-benefit-icon {
+    color: #229ed9;
 }
 
 /* Free MCP settings preview */

@@ -1,0 +1,209 @@
+/**
+ * PurioChat synthetic similarity benchmark.
+ */
+
+.airs-vector-benchmark-wrap {
+    width: 100%;
+}
+
+.airs-vector-benchmark {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 24px 28px 22px;
+    color: #111;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.airs-vector-benchmark__title {
+    margin: 0 0 6px;
+    color: #111;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.airs-vector-benchmark__description {
+    max-width: 620px;
+    margin: 0 0 22px;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.airs-vector-benchmark__table-wrap {
+    overflow-x: auto;
+}
+
+.airs-vector-benchmark__table {
+    width: 100%;
+    min-width: 460px;
+    border-collapse: collapse;
+    color: #111;
+    font-size: 13px;
+}
+
+.airs-vector-benchmark__table th {
+    padding: 0 0 9px;
+    color: #888;
+    border-bottom: 1px solid #ececec;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-align: left;
+    text-transform: uppercase;
+    vertical-align: top;
+}
+
+.airs-vector-benchmark__table th:first-child {
+    width: 240px;
+}
+
+.airs-vector-benchmark__table th:last-child {
+    width: 130px;
+    padding-left: 24px;
+}
+
+.airs-vector-benchmark__column-help {
+    display: block;
+    margin-top: 3px;
+    color: #777;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.4;
+    text-transform: none;
+}
+
+.airs-vector-benchmark__table td,
+.airs-vector-benchmark__table tbody th {
+    padding: 13px 0;
+    color: #111;
+    border-bottom: 1px solid #ececec;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+}
+
+.airs-vector-benchmark__table tbody tr:last-child td,
+.airs-vector-benchmark__table tbody tr:last-child th {
+    border-bottom: 0;
+}
+
+.airs-vector-benchmark__table tbody th.airs-vector-benchmark__count {
+    font-weight: 500;
+}
+
+.airs-vector-benchmark__status-cell {
+    padding-left: 24px !important;
+}
+
+.airs-vector-benchmark__time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-right: 8px;
+}
+
+.airs-vector-benchmark__bar {
+    display: block;
+    width: 0;
+    height: 8px;
+    flex: 0 1 auto;
+    background: #006aff;
+    border-radius: 0 4px 4px 0;
+}
+
+.airs-vector-benchmark__bar.is-visible {
+    animation: airs-vector-benchmark-grow 0.7s
+        cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.airs-vector-benchmark__value {
+    color: #555;
+    white-space: nowrap;
+}
+
+.airs-vector-benchmark__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+}
+
+.airs-vector-benchmark__status svg {
+    display: none;
+    flex: 0 0 auto;
+}
+
+.airs-vector-benchmark__status.is-running {
+    color: #006aff;
+}
+
+.airs-vector-benchmark__status.is-complete {
+    color: #237d17;
+}
+
+.airs-vector-benchmark__status.is-complete svg {
+    display: block;
+}
+
+.airs-vector-benchmark__status.is-error {
+    color: #b32d2e;
+}
+
+.airs-vector-benchmark__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.airs-vector-benchmark__actions .airs-button-secondary {
+    color: #111;
+    background: #f7f7f7;
+    border: 1px solid #d5d5d5;
+}
+
+.airs-vector-benchmark__actions .airs-button-secondary:hover:not(:disabled) {
+    background: #efefef;
+    border-color: #c7c7c7;
+}
+
+#listeo-vector-benchmark-status {
+    color: #666;
+    font-size: 13px;
+}
+
+#listeo-vector-benchmark-status.is-running {
+    color: #006aff;
+}
+
+#listeo-vector-benchmark-status.is-complete {
+    color: #237d17;
+}
+
+#listeo-vector-benchmark-status.is-error {
+    color: #b32d2e;
+}
+
+@keyframes airs-vector-benchmark-grow {
+    from {
+        width: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .airs-vector-benchmark__bar.is-visible {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .airs-vector-benchmark {
+        padding: 20px;
+    }
+}

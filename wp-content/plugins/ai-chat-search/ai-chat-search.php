@@ -3,7 +3,7 @@
  * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.3.1
+ * Version: 2.3.6
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,10 +19,139 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.3.1");
+define("LISTEO_AI_SEARCH_VERSION", "2.3.6");
 define("LISTEO_AI_LIVE_HANDOFF_INTEGRATION_VERSION", 1);
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
+
+/**
+ * Get the public product branding.
+ *
+ * Free keeps the PurioChat defaults. A licensed extension may replace them
+ * through the filter without changing any internal plugin identifiers.
+ *
+ * @return array{enabled: bool, name: string, url: string}
+ */
+function listeo_ai_get_branding()
+{
+    $defaults = [
+        "enabled" => false,
+        "name" => "PurioChat",
+        "url" => "https://purethemes.net/ai-chatbot-for-wordpress/",
+    ];
+
+    $branding = apply_filters("listeo_ai_whitelabel_branding", $defaults);
+    if (!is_array($branding) || empty($branding["enabled"])) {
+        return $defaults;
+    }
+
+    $name = isset($branding["name"])
+        ? sanitize_text_field((string) $branding["name"])
+        : "";
+    if ($name === "") {
+        return $defaults;
+    }
+
+    $url = isset($branding["url"])
+        ? esc_url_raw((string) $branding["url"], ["http", "https"])
+        : "";
+
+    return [
+        "enabled" => true,
+        "name" => $name,
+        "url" => $url,
+    ];
+}
+
+/**
+ * Check whether server-controlled white-label branding is active.
+ */
+function listeo_ai_is_forced_whitelabel()
+{
+    $branding = listeo_ai_get_branding();
+    return !empty($branding["enabled"]);
+}
+
+/**
+ * Get the visible product name.
+ */
+function listeo_ai_get_brand_name()
+{
+    $branding = listeo_ai_get_branding();
+    return $branding["name"];
+}
+
+/**
+ * Replace the public PurioChat name while preserving internal identifiers.
+ *
+ * @param string $text Visible text.
+ * @return string
+ */
+function listeo_ai_replace_brand_text($text)
+{
+    $branding = listeo_ai_get_branding();
+    if (empty($branding["enabled"])) {
+        return $text;
+    }
+
+    return str_replace("PurioChat", $branding["name"], $text);
+}
+
+/**
+ * Check whether the frontend "Powered by" badge should be removed.
+ */
+function listeo_ai_is_chat_whitelabel_enabled()
+{
+    if (listeo_ai_is_forced_whitelabel()) {
+        return true;
+    }
+
+    $pro_plugin_file = "ai-chat-search-pro/ai-chat-search-pro.php";
+    $active_plugins = (array) get_option("active_plugins", []);
+    $network_active_plugins = is_multisite()
+        ? (array) get_site_option("active_sitewide_plugins", [])
+        : [];
+    $pro_plugin_active =
+        in_array($pro_plugin_file, $active_plugins, true) ||
+        isset($network_active_plugins[$pro_plugin_file]);
+    $trial_expires_at = (int) get_option(
+        "ai_chat_search_pro_trial_expires_at",
+        0,
+    );
+    $trial_expired =
+        get_option("ai_chat_search_pro_is_trial", false) &&
+        $trial_expires_at <= time();
+
+    return
+        $pro_plugin_active &&
+        get_option("listeo_ai_chat_whitelabel_enabled", 0) &&
+        get_option("ai_chat_search_pro_license_instance_id", "") !== "" &&
+        !$trial_expired;
+}
+
+/**
+ * Replace the product name in translated, user-facing plugin strings.
+ *
+ * @param string $translation Translated text.
+ * @param string $text        Original text.
+ * @return string
+ */
+function listeo_ai_filter_brand_translation($translation, $text)
+{
+    $branding = listeo_ai_get_branding();
+    if (!empty($branding["enabled"])) {
+        return str_replace("PurioChat", $branding["name"], $translation);
+    }
+
+    // Brand name should stay unchanged in the regular Free/Pro interface.
+    return $text === "PurioChat" ? $text : $translation;
+}
+add_filter(
+    "gettext_ai-chat-search",
+    "listeo_ai_filter_brand_translation",
+    10,
+    2,
+);
 
 /**
  * Main plugin class
@@ -84,16 +213,6 @@ class Listeo_AI_Search
 
         $this->init_optimization_plugin_compatibility();
 
-        // Prevent WordPress from translating plugin name in admin — brand name should stay as-is
-        if (is_admin()) {
-            add_filter('gettext_ai-chat-search', function ($translation, $text) {
-                if ($text === 'PurioChat') {
-                    return $text;
-                }
-                return $translation;
-            }, 10, 2);
-        }
-
         register_activation_hook(__FILE__, [$this, "activate"]);
         register_deactivation_hook(__FILE__, [$this, "deactivate"]);
     }
@@ -111,6 +230,7 @@ class Listeo_AI_Search
             "listeo_ai_search_custom_meta_fields",
             "listeo_ai_search_enabled_types",
             "listeo_ai_floating_excluded_pages",
+            "listeo_ai_floating_whitelisted_pages",
             "listeo_ai_chat_quick_buttons",
             "listeo_ai_chat_blocked_ips",
             "listeo_ai_chat_pre_chat_fields",
@@ -304,7 +424,7 @@ class Listeo_AI_Search
             "includes/content-extractors/class-content-extractor-null.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/content-extractors/class-content-extractor-external-page.php";
-        // Note: Page and Product extractors moved to Pro plugin
+        // Pro can override the Free page extractor and provide product extraction.
 
         // Core utility classes
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -353,11 +473,7 @@ class Listeo_AI_Search
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/admin/class-universal-settings.php";
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
-            "includes/admin/class-auto-config-promo.php";
-        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/class-listeo-field-integration.php";
-
-        new Listeo_AI_Search_Auto_Config_Promo();
 
         // Chat API for conversational search
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -389,6 +505,14 @@ class Listeo_AI_Search
         // Contact messages logger
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
             "includes/class-contact-messages.php";
+
+        // Optional backend-only agentic chat mode.
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/class-agent-tool-executor.php";
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/class-agent-runner.php";
+        require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
+            "includes/class-agent-api.php";
 
         // Listeo integration (conditional - only loads if Listeo theme/core active)
         require_once LISTEO_AI_SEARCH_PLUGIN_PATH .
@@ -544,6 +668,7 @@ class Listeo_AI_Search
         $handles = [
             'ai-chat-search',
             'listeo-ai-chat',
+            'listeo-ai-chat-agentic',
             'listeo-ai-chat-dark-mode',
             'listeo-ai-floating-chat',
             'listeo-ai-chat-ui-utils',
@@ -936,6 +1061,7 @@ class Listeo_AI_Search
             "listeo_ai_chat_rate_limit_tier2" => 30,
             "listeo_ai_chat_rate_limit_tier3" => 100,
             "listeo_ai_chat_context_length" => "normal",
+            "listeo_ai_chat_agentic_mode" => 0,
 
             // Contact form tool settings
             "listeo_ai_contact_form_examples" =>
@@ -960,6 +1086,7 @@ class Listeo_AI_Search
             "listeo_ai_floating_button_color" => "#222222",
             "listeo_ai_primary_color" => "#0073ee",
             "listeo_ai_floating_excluded_pages" => [],
+            "listeo_ai_floating_whitelisted_pages" => [],
             "listeo_ai_chat_quick_buttons_enabled" => 1,
             "listeo_ai_chat_quick_buttons_visibility" => "always",
             "listeo_ai_chat_quick_buttons" => [],
@@ -1057,6 +1184,9 @@ function listeo_ai_get_chat_strings($welcome_message = "")
         "sendButton" => __("Send", "ai-chat-search"),
         "welcomeMessage" => $welcome_message,
         "loading" => __("Thinking...", "ai-chat-search"),
+        "agentThinking" => __("Thinking...", "ai-chat-search"),
+        "agentSearching" => __("Searching...", "ai-chat-search"),
+        "agentAnalyzing" => __("Analyzing...", "ai-chat-search"),
         "loadingConfig" => __(
             "Please wait, loading configuration...",
             "ai-chat-search",

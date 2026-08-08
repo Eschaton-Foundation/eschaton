@@ -295,23 +295,41 @@ class Listeo_AI_Search_Chat_History {
     }
 
     /**
-     * Get geolocation data from IP address (cached)
+     * Get cached geolocation data without making a remote request.
+     *
+     * A false return value means that the IP has not been looked up yet. Null
+     * means that the IP cannot be geolocated or a previous lookup failed.
+     *
+     * @param string $ip IP address
+     * @return array|null|false Cached geolocation, null for no result, or false on cache miss.
+     */
+    public static function get_cached_country_from_ip($ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return null;
+        }
+
+        $cache_key = 'listeo_ip_geo_' . md5($ip);
+        $geo = get_transient($cache_key);
+        if ($geo === false) {
+            return false;
+        }
+
+        return !empty($geo['country_code']) ? $geo : null;
+    }
+
+    /**
+     * Get geolocation data from IP address (cached).
      *
      * @param string $ip IP address
      * @return array|null Array with 'country_code', 'country_name', 'city', 'region', 'continent' or null
      */
     public static function get_country_from_ip($ip) {
-        // Skip for localhost
-        if (in_array($ip, array('127.0.0.1', '::1', 'localhost'))) {
-            return null;
+        $cached_geo = self::get_cached_country_from_ip($ip);
+        if ($cached_geo !== false) {
+            return $cached_geo;
         }
 
-        // Check cache first
         $cache_key = 'listeo_ip_geo_' . md5($ip);
-        $geo = get_transient($cache_key);
-        if ($geo !== false) {
-            return !empty($geo['country_code']) ? $geo : null;
-        }
 
         // Use freeipapi.com (free, HTTPS, no key required, 60 requests/minute)
         $response = wp_remote_get("https://free.freeipapi.com/api/json/{$ip}", array(
@@ -319,25 +337,39 @@ class Listeo_AI_Search_Chat_History {
             'sslverify' => true
         ));
 
-        if (is_wp_error($response)) {
+        if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
             set_transient($cache_key, array('country_code' => ''), HOUR_IN_SECONDS);
             return null;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
+        if (!is_array($body)) {
+            set_transient($cache_key, array('country_code' => ''), HOUR_IN_SECONDS);
+            return null;
+        }
+
+        $country_code = isset($body['countryCode']) ? strtolower(sanitize_key($body['countryCode'])) : '';
+        if (!preg_match('/^[a-z]{2}$/', $country_code)) {
+            $country_code = '';
+        }
 
         $geo = array(
-            'country_code' => isset($body['countryCode']) ? strtolower($body['countryCode']) : '',
-            'country_name' => isset($body['countryName']) ? $body['countryName'] : '',
-            'city'         => isset($body['cityName']) ? $body['cityName'] : '',
-            'region'       => isset($body['regionName']) ? $body['regionName'] : '',
-            'continent'    => isset($body['continent']) ? $body['continent'] : '',
+            'country_code' => $country_code,
+            'country_name' => isset($body['countryName']) ? sanitize_text_field($body['countryName']) : '',
+            'city'         => isset($body['cityName']) ? sanitize_text_field($body['cityName']) : '',
+            'region'       => isset($body['regionName']) ? sanitize_text_field($body['regionName']) : '',
+            'continent'    => isset($body['continent']) ? sanitize_text_field($body['continent']) : '',
         );
+
+        if (empty($geo['country_code'])) {
+            set_transient($cache_key, array('country_code' => ''), HOUR_IN_SECONDS);
+            return null;
+        }
 
         // Cache for 30 days - IP geolocation rarely changes
         set_transient($cache_key, $geo, MONTH_IN_SECONDS);
 
-        return !empty($geo['country_code']) ? $geo : null;
+        return $geo;
     }
 
     /**

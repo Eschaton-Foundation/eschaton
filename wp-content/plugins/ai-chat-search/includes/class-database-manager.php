@@ -97,6 +97,253 @@ class Listeo_AI_Search_Database_Manager {
     }
 
     /**
+     * Get the configured static homepage ID when it is a published page.
+     *
+     * @return int
+     */
+    public static function get_static_homepage_id() {
+        if (get_option('show_on_front') !== 'page') {
+            return 0;
+        }
+
+        $homepage_id = absint(get_option('page_on_front'));
+        $homepage = $homepage_id ? get_post($homepage_id) : null;
+
+        return $homepage && $homepage->post_type === 'page' && $homepage->post_status === 'publish'
+            ? $homepage_id
+            : 0;
+    }
+
+    /**
+     * Get the effective manual/automatic selection for a post type.
+     *
+     * Null means all published items. An array means only those IDs. In Free,
+     * posts/pages always return an array capped by the Free training limit.
+     * For pages, automatic selection uses the static homepage. Manual
+     * selection may replace it with another page within the same limit.
+     *
+     * @param string $post_type Post type slug.
+     * @return array|null
+     */
+    public static function get_training_selection_ids($post_type) {
+        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+        if (!is_array($manual_selections)) {
+            $manual_selections = array();
+        }
+
+        if (
+            class_exists('AI_Chat_Search_Pro_Manager')
+            && AI_Chat_Search_Pro_Manager::is_post_type_locked($post_type)
+        ) {
+            return array();
+        }
+
+        $is_limited = class_exists('AI_Chat_Search_Pro_Manager')
+            && AI_Chat_Search_Pro_Manager::is_free_training_limited($post_type);
+
+        if (!$is_limited) {
+            if (!array_key_exists($post_type, $manual_selections)) {
+                return null;
+            }
+
+            return self::sanitize_training_post_ids($manual_selections[$post_type], $post_type);
+        }
+
+        $limit = AI_Chat_Search_Pro_Manager::get_free_training_limit($post_type);
+
+        if ($post_type === 'page' && !array_key_exists($post_type, $manual_selections)) {
+            $homepage_id = self::get_static_homepage_id();
+            return $homepage_id && $limit > 0
+                ? array($homepage_id)
+                : array();
+        }
+
+        if (array_key_exists($post_type, $manual_selections)) {
+            $selected_ids = self::sanitize_training_post_ids($manual_selections[$post_type], $post_type);
+            $selected_ids = array_slice($selected_ids, 0, $limit);
+        } else {
+            $query_args = array(
+                'post_type' => $post_type,
+                'post_status' => 'publish',
+                'posts_per_page' => $limit,
+                'fields' => 'ids',
+                'orderby' => array(
+                    'date' => 'DESC',
+                    'ID' => 'DESC',
+                ),
+            );
+
+            $selected_ids = $limit > 0
+                ? array_map('intval', get_posts($query_args))
+                : array();
+        }
+
+        return array_values(array_unique(array_map('intval', $selected_ids)));
+    }
+
+    /**
+     * Get all post IDs eligible for a training run.
+     *
+     * @param string $post_type Post type slug.
+     * @return array
+     */
+    public static function get_training_post_ids($post_type) {
+        $selected_ids = self::get_training_selection_ids($post_type);
+        if (is_array($selected_ids)) {
+            return $selected_ids;
+        }
+
+        $query_args = array(
+            'post_type' => $post_type,
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'fields' => 'ids',
+            'orderby' => 'ID',
+            'order' => 'ASC',
+        );
+
+        if ($post_type === 'product') {
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'product_cat',
+                    'field' => 'slug',
+                    'terms' => 'listeo-booking',
+                    'operator' => 'NOT IN',
+                ),
+            );
+        }
+
+        return array_map('intval', get_posts($query_args));
+    }
+
+    /**
+     * Check whether a post is inside the active Free training allowance.
+     *
+     * @param int $post_id Post or chunk ID.
+     * @return bool
+     */
+    public static function is_post_eligible_for_training($post_id) {
+        $post_id = absint($post_id);
+        $post = $post_id ? get_post($post_id) : null;
+        if (!$post) {
+            return false;
+        }
+
+        if ($post->post_type === Listeo_AI_Content_Chunker::CHUNK_POST_TYPE) {
+            $post_id = Listeo_AI_Content_Chunker::get_chunk_parent_id($post_id);
+            $post = $post_id ? get_post($post_id) : null;
+            if (!$post) {
+                return false;
+            }
+        }
+
+        if (!class_exists('AI_Chat_Search_Pro_Manager')) {
+            return true;
+        }
+
+        if (AI_Chat_Search_Pro_Manager::is_post_type_locked($post->post_type)) {
+            return false;
+        }
+
+        if (!AI_Chat_Search_Pro_Manager::is_free_training_limited($post->post_type)) {
+            return true;
+        }
+
+        return in_array($post_id, self::get_training_selection_ids($post->post_type), true);
+    }
+
+    /**
+     * Sanitize post IDs and ensure they belong to the requested published type.
+     *
+     * @param mixed  $post_ids  Candidate IDs.
+     * @param string $post_type Required post type.
+     * @return array
+     */
+    private static function sanitize_training_post_ids($post_ids, $post_type) {
+        if (!is_array($post_ids)) {
+            return array();
+        }
+
+        $valid_ids = array();
+        foreach (array_unique(array_map('absint', $post_ids)) as $post_id) {
+            $post = $post_id ? get_post($post_id) : null;
+            if ($post && $post->post_type === $post_type && $post->post_status === 'publish') {
+                $valid_ids[] = $post_id;
+            }
+        }
+
+        return $valid_ids;
+    }
+
+    /**
+     * Restrict Free search queries to the active post/page allowance.
+     *
+     * @param string $post_alias Alias of the joined posts table.
+     * @return string Prepared SQL fragment.
+     */
+    private static function get_free_training_search_condition($post_alias = 'p') {
+        if (
+            !class_exists('AI_Chat_Search_Pro_Manager')
+            || AI_Chat_Search_Pro_Manager::is_pro_active()
+        ) {
+            return '';
+        }
+
+        global $wpdb;
+
+        $post_ids = self::get_training_selection_ids('post');
+        $page_ids = self::get_training_selection_ids('page');
+        $parent_ids = array_values(array_unique(array_merge($post_ids, $page_ids)));
+        $clauses = array(
+            "{$post_alias}.post_type NOT IN ('post', 'page', 'ai_content_chunk')",
+        );
+
+        if (!empty($post_ids)) {
+            $placeholders = implode(',', array_fill(0, count($post_ids), '%d'));
+            $clauses[] = $wpdb->prepare(
+                "({$post_alias}.post_type = 'post' AND {$post_alias}.ID IN ($placeholders))",
+                ...$post_ids
+            );
+        }
+
+        if (!empty($page_ids)) {
+            $placeholders = implode(',', array_fill(0, count($page_ids), '%d'));
+            $clauses[] = $wpdb->prepare(
+                "({$post_alias}.post_type = 'page' AND {$post_alias}.ID IN ($placeholders))",
+                ...$page_ids
+            );
+        }
+
+        $chunk_conditions = array(
+            "EXISTS (
+                SELECT 1 FROM {$wpdb->postmeta} pm_quota_source
+                WHERE pm_quota_source.post_id = {$post_alias}.ID
+                AND pm_quota_source.meta_key = '_chunk_source_type'
+                AND pm_quota_source.meta_value NOT IN ('post', 'page')
+            )",
+        );
+
+        if (!empty($parent_ids)) {
+            $placeholders = implode(',', array_fill(0, count($parent_ids), '%d'));
+            $chunk_conditions[] = $wpdb->prepare(
+                "EXISTS (
+                    SELECT 1 FROM {$wpdb->postmeta} pm_quota_parent
+                    WHERE pm_quota_parent.post_id = {$post_alias}.ID
+                    AND pm_quota_parent.meta_key = '_chunk_parent_id'
+                    AND CAST(pm_quota_parent.meta_value AS UNSIGNED) IN ($placeholders)
+                )",
+                ...$parent_ids
+            );
+        }
+
+        $clauses[] = "({$post_alias}.post_type = 'ai_content_chunk' AND ("
+            . implode(' OR ', $chunk_conditions)
+            . '))';
+
+        return ' AND (' . implode(' OR ', $clauses) . ')';
+    }
+
+    /**
      * Get the embeddings table name
      *
      * @return string Table name
@@ -358,20 +605,13 @@ class Listeo_AI_Search_Database_Manager {
             }
             unset($item);
 
-            // Get total published posts across enabled post types
-            // IMPORTANT: Respect manual selections (same 3-state logic as Universal Settings)
-            $manual_selections = get_option('listeo_ai_search_manual_selections', array());
+            // Get total published posts across enabled post types.
             $total_listings = 0;
 
             foreach ($enabled_post_types as $post_type) {
-                if (array_key_exists($post_type, $manual_selections)) {
-                    // Manual selection active
-                    $selected_ids = is_array($manual_selections[$post_type])
-                        ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                        : array();
-
+                $selected_ids = self::get_training_selection_ids($post_type);
+                if (is_array($selected_ids)) {
                     if (empty($selected_ids)) {
-                        // User explicitly selected 0 posts - don't count
                         continue;
                     }
 
@@ -384,7 +624,6 @@ class Listeo_AI_Search_Database_Manager {
                     ));
                     $total_listings += $type_total;
                 } else {
-                    // No manual selection - count all posts
                     // Exclude listeo-booking products (hidden booking products)
                     if ($post_type === 'product') {
                         $type_total = (int) $wpdb->get_var($wpdb->prepare(
@@ -416,11 +655,8 @@ class Listeo_AI_Search_Database_Manager {
             $total_indexed = 0;
 
             foreach ($enabled_post_types as $post_type) {
-                if (array_key_exists($post_type, $manual_selections)) {
-                    $selected_ids = is_array($manual_selections[$post_type])
-                        ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                        : array();
-
+                $selected_ids = self::get_training_selection_ids($post_type);
+                if (is_array($selected_ids)) {
                     if (empty($selected_ids)) {
                         continue;
                     }
@@ -466,7 +702,7 @@ class Listeo_AI_Search_Database_Manager {
             ") ?: 0;
             
             // Calculate coverage percentage
-            $coverage_percentage = $total_listings > 0 ? round(($total_embeddings / $total_listings) * 100, 1) : 0;
+            $coverage_percentage = $total_listings > 0 ? round(($total_indexed / $total_listings) * 100, 1) : 0;
             
             return array(
                 'table_exists' => $table_exists,
@@ -549,7 +785,7 @@ class Listeo_AI_Search_Database_Manager {
     /**
      * Get posts that are missing embeddings (across all enabled post types)
      *
-     * IMPORTANT: Respects manual selections (same 3-state logic as stats)
+     * IMPORTANT: Respects automatic and manual training selections.
      * Excludes posts that have content chunks - those are covered by chunk embeddings.
      *
      * @param int $limit Number of missing embeddings to return
@@ -568,9 +804,6 @@ class Listeo_AI_Search_Database_Manager {
         if (empty($enabled_post_types)) {
             return array();
         }
-
-        // Get manual selections
-        $manual_selections = get_option('listeo_ai_search_manual_selections', array());
 
         try {
             // Pre-collect chunk parent IDs (single fast query)
@@ -591,11 +824,8 @@ class Listeo_AI_Search_Database_Manager {
                 $where[] = "e.listing_id IS NULL";
                 $where[] = "cp.parent_id IS NULL";
 
-                if (array_key_exists($post_type, $manual_selections)) {
-                    $selected_ids = is_array($manual_selections[$post_type])
-                        ? array_filter(array_map('intval', $manual_selections[$post_type]))
-                        : array();
-
+                $selected_ids = self::get_training_selection_ids($post_type);
+                if (is_array($selected_ids)) {
                     if (empty($selected_ids)) {
                         continue;
                     }
@@ -771,6 +1001,17 @@ class Listeo_AI_Search_Database_Manager {
             return array(
                 'success' => false,
                 'error' => 'Invalid post or post type not enabled for embeddings'
+            );
+        }
+
+        if (!self::is_post_eligible_for_training($listing_id)) {
+            $limit = AI_Chat_Search_Pro_Manager::get_free_training_limit($post->post_type);
+            return array(
+                'success' => false,
+                'error' => sprintf(
+                    __('This item is outside the Free training allowance. Select up to %d items manually to train it.', 'ai-chat-search'),
+                    $limit
+                ),
             );
         }
 
@@ -1004,6 +1245,10 @@ class Listeo_AI_Search_Database_Manager {
             return;
         }
 
+        if (!self::is_post_eligible_for_training($post_id)) {
+            return;
+        }
+
         // PDF documents are trained via the dedicated batch AJAX endpoint (Train Now button).
         // Skip auto-training on save to avoid PHP timeout fatals with many chunks.
         if ($post->post_type === 'ai_pdf_document') {
@@ -1174,6 +1419,7 @@ class Listeo_AI_Search_Database_Manager {
                 ...array_merge($types_array, array($chunk_post_type), $types_array)
             );
         }
+        $quota_condition = self::get_free_training_search_condition('p');
 
         $query = "
             SELECT DISTINCT e.listing_id, e.embedding, p.post_title, p.post_status, p.post_type
@@ -1182,6 +1428,7 @@ class Listeo_AI_Search_Database_Manager {
             WHERE p.post_status = 'publish'
             {$id_condition}
             {$type_condition}
+            {$quota_condition}
         ";
 
         return $wpdb->get_results($query);
@@ -1394,6 +1641,35 @@ class Listeo_AI_Search_Database_Manager {
     }
 
     /**
+     * Clear generated embedding data before rebuilding the index.
+     *
+     * Source posts, documents, and external pages are preserved.
+     *
+     * @return bool Success status
+     */
+    public static function clear_embeddings_for_rebuild() {
+        global $wpdb;
+
+        $table_name = self::get_embeddings_table_name();
+        $chunk_post_type = Listeo_AI_Content_Chunker::CHUNK_POST_TYPE;
+
+        $chunk_ids = $wpdb->get_col($wpdb->prepare("
+            SELECT ID FROM {$wpdb->posts} WHERE post_type = %s
+        ", $chunk_post_type));
+
+        foreach ($chunk_ids as $chunk_id) {
+            $chunk_id = (int) $chunk_id;
+            if ($chunk_id > 0) {
+                wp_delete_post($chunk_id, true);
+            }
+        }
+
+        $result = $wpdb->query("TRUNCATE TABLE {$table_name}");
+
+        return $result !== false;
+    }
+
+    /**
      * Delete embeddings for a specific post type
      *
      * Also deletes any content chunks associated with posts of this type.
@@ -1540,6 +1816,7 @@ class Listeo_AI_Search_Database_Manager {
                 ...array_merge($types_array, array($chunk_post_type), $types_array)
             );
         }
+        $quota_condition = self::get_free_training_search_condition('p');
 
         $query = "
             SELECT COUNT(DISTINCT e.listing_id) as total_count
@@ -1551,6 +1828,7 @@ class Listeo_AI_Search_Database_Manager {
             WHERE p.post_status = 'publish'
             {$location_condition}
             {$type_condition}
+            {$quota_condition}
         ";
 
         $result = $wpdb->get_var($query);
@@ -1635,6 +1913,7 @@ class Listeo_AI_Search_Database_Manager {
                 ...array_merge($types_array, array($chunk_post_type), $types_array)
             );
         }
+        $quota_condition = self::get_free_training_search_condition('p');
 
         $query = "
             SELECT DISTINCT e.listing_id, e.embedding, p.post_title, p.post_status, p.post_type
@@ -1646,6 +1925,7 @@ class Listeo_AI_Search_Database_Manager {
             WHERE p.post_status = 'publish'
             {$location_condition}
             {$type_condition}
+            {$quota_condition}
             ORDER BY e.listing_id
             LIMIT %d OFFSET %d
         ";

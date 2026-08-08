@@ -17,19 +17,15 @@ if (!defined('ABSPATH')) {
 class Listeo_AI_Provider {
 
     /**
-     * Remote trial gateway config URL.
+     * Stable managed gateway endpoint. Public rollout is controlled separately
+     * by gateway-config.json in AI_Chat_Search_Pro_Manager.
      */
-    const TRIAL_CONFIG_URL = 'https://purethemes.net/trial-gateway-config.json';
-
-    /**
-     * Transient key for caching remote config (24h).
-     */
-    const TRIAL_CONFIG_TRANSIENT = 'listeo_ai_trial_gateway_config';
+    const MANAGED_GATEWAY_ENDPOINT = 'https://purethe.me/purio-gateway';
 
     /**
      * Current provider
      *
-     * @var string 'openai', 'gemini', 'mistral', or 'openrouter'
+     * @var string 'no_api_key', 'openai', 'gemini', 'mistral', or 'openrouter'
      */
     private $provider;
 
@@ -41,6 +37,13 @@ class Listeo_AI_Provider {
     private $api_key;
 
     /**
+     * Request-local managed gateway auth context supplied by Pro.
+     *
+     * @var array|null
+     */
+    private $managed_gateway_auth_context = null;
+
+    /**
      * Constructor
      *
      * @param string $provider Optional provider override (defaults to settings)
@@ -49,11 +52,21 @@ class Listeo_AI_Provider {
     public function __construct($provider = null, $api_key = null) {
         $this->provider = $provider ?: get_option('listeo_ai_search_provider', 'openai');
 
+        if (
+            $this->provider === 'no_api_key'
+            && class_exists('AI_Chat_Search_Pro_Manager')
+            && !AI_Chat_Search_Pro_Manager::can_use_no_api_key_access()
+        ) {
+            $this->provider = 'openai';
+        }
+
         if ($api_key) {
             $this->api_key = $api_key;
         } else {
             // Get API key based on provider
-            if ($this->provider === 'gemini') {
+            if ($this->provider === 'no_api_key') {
+                $this->api_key = '';
+            } elseif ($this->provider === 'gemini') {
                 $this->api_key = get_option('listeo_ai_search_gemini_api_key', '');
             } elseif ($this->provider === 'mistral') {
                 $this->api_key = get_option('listeo_ai_search_mistral_api_key', '');
@@ -80,106 +93,117 @@ class Listeo_AI_Provider {
     }
 
     /**
-     * Fetch remote trial gateway config from PT server.
-     * Cached for 24 hours.
-     *
-     * @return array Config with 'enabled' and 'endpoint' keys, or empty on failure.
-     */
-    public function get_remote_config() {
-        // Only trial users need remote config. Skip entirely for everyone else.
-        if (!class_exists('AI_Chat_Search_Pro_Proxy_License_Manager')) {
-            return array('enabled' => false);
-        }
-        $lm = AI_Chat_Search_Pro_Proxy_License_Manager::get_instance();
-        if (!$lm->is_trial_license() || $lm->get_trial_time_remaining() <= 0) {
-            return array('enabled' => false);
-        }
-
-        $cached = get_transient(self::TRIAL_CONFIG_TRANSIENT);
-        if (is_array($cached)) {
-            return $cached;
-        }
-
-        $response = wp_remote_get(self::TRIAL_CONFIG_URL, array('timeout' => 5));
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-            set_transient(self::TRIAL_CONFIG_TRANSIENT, array('enabled' => false), HOUR_IN_SECONDS);
-            return array('enabled' => false);
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
-        if (!is_array($data) || !isset($data['ai_trial_gateway'])) {
-            set_transient(self::TRIAL_CONFIG_TRANSIENT, array('enabled' => false), HOUR_IN_SECONDS);
-            return array('enabled' => false);
-        }
-
-        $config = $data['ai_trial_gateway'];
-        if (!isset($config['enabled']) || !$config['enabled'] || empty($config['endpoint'])) {
-            set_transient(self::TRIAL_CONFIG_TRANSIENT, array('enabled' => false), HOUR_IN_SECONDS);
-            return array('enabled' => false);
-        }
-
-        $result = array(
-            'enabled'           => true,
-            'endpoint'          => untrailingslashit($config['endpoint']),
-            'chat_limit'        => isset($config['chat_limit']) ? (int) $config['chat_limit'] : 500,
-            'embeddings_limit'  => isset($config['embeddings_limit']) ? (int) $config['embeddings_limit'] : 500,
-        );
-
-        set_transient(self::TRIAL_CONFIG_TRANSIENT, $result, HOUR_IN_SECONDS);
-        return $result;
-    }
-
-    /**
-     * Check if user explicitly opted to use trial gateway.
+     * Check whether the managed no-key provider is selected.
      *
      * @return bool
      */
-    public function is_trial_gateway_forced() {
-        return (bool) get_option('listeo_ai_use_trial_gateway', 0);
+    public function is_no_api_key_provider() {
+        return $this->provider === 'no_api_key';
     }
 
     /**
-     * Check if trial gateway should be used.
-     * Conditions: Pro trial active, remote config enabled, and either no own key or forced.
+     * Get the optional signed managed-gateway context supplied by Pro.
+     *
+     * Free does not know about license credentials. Pro hooks this filter and
+     * exchanges its trial/paid license for a short-lived gateway token. The result is
+     * memoized for this provider instance so one logical WordPress request does
+     * not contact the licenser more than once.
+     *
+     * @return array
+     */
+    public function get_managed_gateway_auth_context() {
+        if (!$this->is_no_api_key_provider()) {
+            return array();
+        }
+
+        if ($this->managed_gateway_auth_context !== null) {
+            return $this->managed_gateway_auth_context;
+        }
+
+        $context = apply_filters('listeo_ai_managed_gateway_auth_context', array(), $this);
+        $this->managed_gateway_auth_context = is_array($context) ? $context : array();
+
+        return $this->managed_gateway_auth_context;
+    }
+
+    /**
+     * Whether Pro claimed this request for signed trial/paid managed access.
+     *
+     * This stays true when token minting failed, preventing a licensed site from
+     * silently falling through to the domain/email based Free quota.
      *
      * @return bool
      */
-    public function is_trial_gateway_active() {
-        if (!class_exists('AI_Chat_Search_Pro_Proxy_License_Manager')) {
-            return false;
-        }
+    public function is_signed_managed_gateway() {
+        $context = $this->get_managed_gateway_auth_context();
+        return isset($context['tier']) && in_array($context['tier'], array('trial', 'pro'), true);
+    }
 
-        $lm = AI_Chat_Search_Pro_Proxy_License_Manager::get_instance();
-        if (!method_exists($lm, 'is_trial_license') || !method_exists($lm, 'get_trial_time_remaining')) {
-            return false;
-        }
-        if (!$lm->is_trial_license() || $lm->get_trial_time_remaining() <= 0) {
-            return false;
-        }
+    /**
+     * Get the email required for the managed no-key provider.
+     *
+     * @return string Valid email address or an empty string.
+     */
+    public function get_no_api_key_email() {
+        $email = sanitize_email(get_option('listeo_ai_free_gateway_email', ''));
+        return is_email($email) ? $email : '';
+    }
 
-        $config = $this->get_remote_config();
-        if (empty($config['enabled'])) {
-            return false;
-        }
+    /**
+     * Check whether the administrator explicitly consented to sending the
+     * site domain and email address to the managed gateway.
+     *
+     * @return bool
+     */
+    public function has_no_api_key_consent() {
+        return (bool) get_option('listeo_ai_free_gateway_consent', 0);
+    }
 
-        $forced = get_option('listeo_ai_use_trial_gateway');
-        if ($forced === false) {
-            return !$this->has_own_api_key();
+    /**
+     * Get a user-facing configuration error for managed access.
+     *
+     * @return string Empty when managed access is configured.
+     */
+    public function get_no_api_key_configuration_error() {
+        if (!$this->is_no_api_key_provider()) {
+            return '';
         }
-        return (bool) $forced;
+        if ($this->get_no_api_key_email() === '') {
+            return __('Enter email address in API Configuration.', 'ai-chat-search');
+        }
+        if (!$this->has_no_api_key_consent()) {
+            return __('Confirm consent in API Configuration.', 'ai-chat-search');
+        }
+        if ($this->is_signed_managed_gateway()) {
+            $context = $this->get_managed_gateway_auth_context();
+            if (!empty($context['token'])) {
+                return '';
+            }
+            return !empty($context['error'])
+                ? sanitize_text_field($context['error'])
+                : __('Purio Cloud authorization is temporarily unavailable.', 'ai-chat-search');
+        }
+        return '';
+    }
+
+    /**
+     * Get the normalized site domain used to authenticate and meter free requests.
+     *
+     * @return string
+     */
+    public function get_no_api_key_domain() {
+        $domain = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+        $domain = strtolower(rtrim($domain, '.'));
+        return preg_replace('/^www\./i', '', $domain);
     }
 
     /**
      * Get current provider.
      *
-     * When trial gateway is active, behaves as OpenRouter at runtime
-     * without persisting the change to settings.
-     *
      * @return string 'openai', 'gemini', 'mistral', or 'openrouter'.
      */
     public function get_provider() {
-        if ($this->is_trial_gateway_active()) {
+        if ($this->is_no_api_key_provider()) {
             return 'openrouter';
         }
         return $this->provider;
@@ -191,8 +215,12 @@ class Listeo_AI_Provider {
      * @return string
      */
     public function get_api_key() {
-        if ($this->is_trial_gateway_active()) {
-            return get_option('ai_chat_search_pro_license_key', '');
+        if ($this->is_no_api_key_provider()) {
+            $context = $this->get_managed_gateway_auth_context();
+            if ($this->is_signed_managed_gateway()) {
+                return !empty($context['token']) ? (string) $context['token'] : '';
+            }
+            return $this->get_no_api_key_domain();
         }
         return $this->api_key;
     }
@@ -204,13 +232,12 @@ class Listeo_AI_Provider {
      * @return string Full API endpoint URL
      */
     public function get_endpoint($type = 'embeddings') {
-        if ($this->is_trial_gateway_active()) {
-            $config = $this->get_remote_config();
-            $base = !empty($config['endpoint']) ? $config['endpoint'] : '';
+        if ($this->is_no_api_key_provider()) {
+            $base = self::MANAGED_GATEWAY_ENDPOINT;
             if ($type === 'embeddings') {
-                return $base . '/embeddings';
+                return $base . '/embeddings/';
             } elseif ($type === 'chat') {
-                return $base . '/chat/completions';
+                return $base . '/chat/completions/';
             }
             return '';
         }
@@ -262,13 +289,16 @@ class Listeo_AI_Provider {
             'Content-Type' => 'application/json',
         );
 
-        if ($this->is_trial_gateway_active() && class_exists('AI_Chat_Search_Pro_Proxy_License_Manager')) {
-            $lm = AI_Chat_Search_Pro_Proxy_License_Manager::get_instance();
-            $instance_id = $lm->get_instance_id();
-            if (!empty($instance_id)) {
-                $headers['X-Instance-ID'] = $instance_id;
-            }
+        if ($this->is_no_api_key_provider()) {
             $headers['X-Site-URL'] = home_url();
+            if ($this->is_signed_managed_gateway()) {
+                $headers['Idempotency-Key'] = function_exists('wp_generate_uuid4')
+                    ? wp_generate_uuid4()
+                    : uniqid('purio_', true);
+            } else {
+                $headers['X-User-Email'] = $this->get_no_api_key_email();
+                $headers['X-User-Consent'] = $this->has_no_api_key_consent() ? '1' : '0';
+            }
         }
 
         return $headers;
@@ -360,6 +390,13 @@ class Listeo_AI_Provider {
      */
     public function get_chat_model() {
         $stored = $this->normalize_model(get_option('listeo_ai_chat_model', ''));
+        if ($this->is_no_api_key_provider()) {
+            if (!$this->is_signed_managed_gateway()) {
+                return 'openai/gpt-5.4-mini';
+            }
+            $models = self::get_managed_gateway_chat_models();
+            return isset($models[$stored]) ? $stored : 'openai/gpt-5.4-mini';
+        }
         if ($this->get_provider() === 'gemini') {
             return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.6-flash';
         } elseif ($this->get_provider() === 'mistral') {
@@ -369,6 +406,26 @@ class Listeo_AI_Provider {
         } else {
             return $this->model_matches_provider($stored, 'openai') ? $stored : 'gpt-5.4-mini';
         }
+    }
+
+    /**
+     * Curated model choices for license-backed Purio Cloud access.
+     *
+     * The gateway remains authoritative for both this allowlist and pricing;
+     * these values only constrain the owner-facing selector and payload slug.
+     *
+     * @return array<string,array{name:string,credits:int}>
+     */
+    public static function get_managed_gateway_chat_models() {
+        return array(
+            'google/gemini-3.5-flash-lite' => array('name' => 'Gemini 3.5 Flash Lite', 'credits' => 1),
+            'google/gemini-3-flash-preview' => array('name' => 'Gemini 3 Flash', 'credits' => 1),
+            'openai/gpt-5.4-mini' => array('name' => 'GPT-5.4 Mini', 'credits' => 1),
+            'anthropic/claude-haiku-4.5' => array('name' => 'Claude Haiku 4.5', 'credits' => 1),
+            'google/gemini-3.6-flash' => array('name' => 'Gemini 3.6 Flash', 'credits' => 2),
+            'openai/gpt-5.6-terra' => array('name' => 'GPT-5.6 Terra', 'credits' => 2),
+            'anthropic/claude-sonnet-5' => array('name' => 'Claude Sonnet 5', 'credits' => 2),
+        );
     }
 
     /**
@@ -576,6 +633,7 @@ class Listeo_AI_Provider {
      *   - max_tokens vs max_completion_tokens (GPT-5 vs others)
      *   - temperature inclusion/exclusion (GPT-5 ignores it)
      *   - reasoning_effort per model (GPT-5.x, Gemini 3.x)
+     *   - OpenAI Fast mode for native GPT-5.6 models
      *   - OpenRouter reasoning override (object form: reasoning: {effort: ...})
      *   - Model ID remaps for renamed and retired models
      *
@@ -593,6 +651,12 @@ class Listeo_AI_Provider {
         $max_tokens   = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 5000;
         $temperature  = isset( $options['temperature'] ) ? (float) $options['temperature'] : 0.6;
         $force_reasoning = isset( $options['reasoning'] ) ? $options['reasoning'] : null;
+
+        // Every managed chat path uses the fixed Free model or the curated
+        // signed trial/Pro selection. Callers cannot smuggle their own slug.
+        if ( $this->is_no_api_key_provider() ) {
+            $payload['model'] = $this->get_chat_model();
+        }
 
         // Step 1: Apply model ID remaps
         $model = isset( $payload['model'] ) ? $payload['model'] : '';
@@ -641,7 +705,17 @@ class Listeo_AI_Provider {
             }
         }
 
-        // Step 5: OpenRouter reasoning override
+        // Step 5: OpenAI Fast mode
+        if (
+            $this->is_native_openai_gpt56( $model )
+            && get_option( 'listeo_ai_gpt56_fast_mode', 0 )
+        ) {
+            $payload['service_tier'] = 'fast';
+        } else {
+            unset( $payload['service_tier'] );
+        }
+
+        // Step 6: OpenRouter reasoning override
         // Uses object form `reasoning: {effort: ...}` per OpenRouter docs.
         // Applied last so it replaces any native-provider reasoning_effort.
         if ( $this->get_provider() === 'openrouter' && isset( $payload['model'] ) ) {
@@ -675,9 +749,11 @@ class Listeo_AI_Provider {
      *
      * @param array $payload Normalized Chat Completions payload.
      * @param int   $timeout Request timeout in seconds.
+     * @param bool  $preserve_agent_state Include native replay state for the
+     *                                    private backend agent loop.
      * @return array|WP_Error WordPress HTTP response.
      */
-    public function request_chat( array $payload, $timeout = 60 ) {
+    public function request_chat( array $payload, $timeout = 60, $preserve_agent_state = false ) {
         if ( ! $this->is_native_openai_gpt56( isset( $payload['model'] ) ? $payload['model'] : null ) ) {
             return wp_remote_post( $this->get_endpoint( 'chat' ), array(
                 'headers'     => $this->get_headers(),
@@ -700,10 +776,379 @@ class Listeo_AI_Provider {
 
         $response_data = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( is_array( $response_data ) ) {
-            $response['body'] = wp_json_encode( $this->convert_responses_to_chat_response( $response_data ) );
+            $response['body'] = wp_json_encode(
+                $this->convert_responses_to_chat_response(
+                    $response_data,
+                    (bool) $preserve_agent_state
+                )
+            );
         }
 
         return $response;
+    }
+
+    /**
+     * Get conservative function-calling capabilities for the active provider.
+     *
+     * The common agent loop only requires basic tool support. Optional features
+     * stay disabled unless the active transport is known to support them.
+     *
+     * @return array {
+     *     Provider capabilities.
+     *
+     *     @type bool $tools     Whether function tools are supported.
+     *     @type bool $parallel  Whether parallel tool calls may be requested.
+     *     @type bool $forced    Whether a specific function may be forced.
+     *     @type bool $reasoning Whether provider reasoning state can be replayed.
+     * }
+     */
+    public function get_agent_capabilities() {
+        $provider = $this->get_provider();
+        $known_providers = array( 'openai', 'gemini', 'mistral', 'openrouter' );
+
+        return array(
+            'tools'     => in_array( $provider, $known_providers, true ),
+            'parallel'  => in_array( $provider, array( 'openai', 'openrouter' ), true ),
+            'forced'    => $provider === 'openai',
+            'reasoning' => $this->is_native_openai_gpt56(),
+        );
+    }
+
+    /**
+     * Request one provider-neutral agent turn.
+     *
+     * This method is additive to the legacy chat flow. It accepts canonical
+     * Chat Completions messages and tools, then returns one stable shape for all
+     * supported providers and for native OpenAI Responses API models.
+     *
+     * @param array $messages Canonical chat messages.
+     * @param array $tools Canonical function tool definitions.
+     * @param array $options {
+     *     Optional agent request options.
+     *
+     *     @type string|array $tool_choice Tool selection strategy. Default 'auto'.
+     *     @type bool         $require_tool Force one of the supplied tools.
+     *     @type bool         $parallel    Request parallel calls when supported. Default false.
+     *     @type int          $max_tokens  Maximum response tokens. Default 5000.
+     *     @type int          $timeout     HTTP request timeout in seconds. Default 60.
+     * }
+     * @return array|WP_Error Canonical agent turn or an error.
+     */
+    public function request_agent_turn( $messages, $tools, $options = array() ) {
+        if ( ! is_array( $messages ) || ! is_array( $tools ) || ! is_array( $options ) ) {
+            return new WP_Error(
+                'listeo_ai_agent_invalid_request',
+                __( 'Invalid agent request data.', 'ai-chat-search' )
+            );
+        }
+
+        $capabilities = $this->get_agent_capabilities();
+        if ( ! empty( $tools ) && ! $capabilities['tools'] ) {
+            return new WP_Error(
+                'listeo_ai_agent_tools_unsupported',
+                __( 'The selected AI provider does not support agent tools.', 'ai-chat-search' )
+            );
+        }
+
+        $tool_choice = array_key_exists( 'tool_choice', $options )
+            ? $options['tool_choice']
+            : 'auto';
+
+        if ( ! empty( $options['require_tool'] ) && ! empty( $tools ) ) {
+            // All supported chat transports use their OpenAI-compatible
+            // function-calling endpoint, where forcing any tool is "required".
+            $tool_choice = 'required';
+        } elseif ( is_array( $tool_choice ) && ! $capabilities['forced'] ) {
+            $tool_choice = 'auto';
+        }
+
+        $payload = $this->prepare_chat_payload( $messages, $tools, $tool_choice );
+        if ( ! empty( $tools ) && ! empty( $options['parallel'] ) && $capabilities['parallel'] ) {
+            $payload['parallel_tool_calls'] = true;
+        }
+
+        $max_tokens = isset( $options['max_tokens'] ) ? (int) $options['max_tokens'] : 5000;
+        if ( $max_tokens <= 0 ) {
+            $max_tokens = 5000;
+        }
+
+        $normalization_options = array(
+            'max_tokens' => $max_tokens,
+        );
+        if ( array_key_exists( 'temperature', $options ) ) {
+            $normalization_options['temperature'] = $options['temperature'];
+        }
+        if ( array_key_exists( 'reasoning', $options ) ) {
+            $normalization_options['reasoning'] = $options['reasoning'];
+        }
+
+        $payload = $this->normalize_chat_payload( $payload, $normalization_options );
+        $timeout = isset( $options['timeout'] ) ? (int) $options['timeout'] : 60;
+        if ( $timeout <= 0 ) {
+            $timeout = 60;
+        }
+
+        $response = $this->request_chat( $payload, $timeout, true );
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        $response_code = (int) wp_remote_retrieve_response_code( $response );
+        $response_body = wp_remote_retrieve_body( $response );
+        $response_data = json_decode( $response_body, true );
+
+        $choice_error = is_array( $response_data )
+            && isset( $response_data['choices'][0]['error'] )
+            ? $response_data['choices'][0]['error']
+            : null;
+        $finish_error = is_array( $response_data )
+            && isset( $response_data['choices'][0]['finish_reason'] )
+            && $response_data['choices'][0]['finish_reason'] === 'error';
+        $top_level_error = is_array( $response_data ) && ! empty( $response_data['error'] )
+            ? $response_data['error']
+            : null;
+
+        if ( $response_code !== 200 || $top_level_error || $choice_error || $finish_error ) {
+            $error_message = '';
+            foreach ( array( $top_level_error, $choice_error ) as $provider_error ) {
+                if ( is_array( $provider_error ) && isset( $provider_error['message'] ) && is_string( $provider_error['message'] ) ) {
+                    $error_message = $provider_error['message'];
+                    break;
+                }
+                if ( is_string( $provider_error ) && $provider_error !== '' ) {
+                    $error_message = $provider_error;
+                    break;
+                }
+            }
+            if ( $error_message === '' ) {
+                $error_message = __( 'The AI provider returned an error.', 'ai-chat-search' );
+            }
+
+            return new WP_Error(
+                'listeo_ai_agent_provider_error',
+                $error_message,
+                array( 'status' => $response_code )
+            );
+        }
+
+        if (
+            ! is_array( $response_data )
+            || empty( $response_data['choices'] )
+            || ! isset( $response_data['choices'][0]['message'] )
+            || ! is_array( $response_data['choices'][0]['message'] )
+        ) {
+            return new WP_Error(
+                'listeo_ai_agent_invalid_response',
+                __( 'The AI provider returned an invalid response.', 'ai-chat-search' )
+            );
+        }
+
+        return $this->normalize_agent_turn( $response_data );
+    }
+
+    /**
+     * Normalize a Chat Completions-compatible response into one agent turn.
+     *
+     * @param array $response_data Decoded provider response.
+     * @return array Canonical agent turn.
+     */
+    private function normalize_agent_turn( array $response_data ) {
+        $choice  = $response_data['choices'][0];
+        $message = $choice['message'];
+        $text    = $this->normalize_agent_message_text(
+            isset( $message['content'] ) ? $message['content'] : ''
+        );
+
+        $canonical_calls = array();
+        $replay_calls    = array();
+        $raw_calls       = isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] )
+            ? $message['tool_calls']
+            : array();
+        $response_seed   = isset( $response_data['id'] ) && is_string( $response_data['id'] )
+            ? $response_data['id']
+            : wp_json_encode( $message );
+
+        foreach ( $raw_calls as $index => $raw_call ) {
+            if ( ! is_array( $raw_call ) ) {
+                $raw_call = array();
+            }
+
+            $function = isset( $raw_call['function'] ) && is_array( $raw_call['function'] )
+                ? $raw_call['function']
+                : array();
+            $name = isset( $function['name'] ) && is_string( $function['name'] )
+                ? $function['name']
+                : '';
+            $id = isset( $raw_call['id'] ) && is_string( $raw_call['id'] )
+                ? trim( $raw_call['id'] )
+                : '';
+            if ( $id === '' ) {
+                $id = 'call_agent_' . substr( hash( 'sha256', $response_seed . ':' . $index ), 0, 16 );
+            }
+
+            $normalized_arguments = $this->normalize_agent_tool_arguments(
+                array_key_exists( 'arguments', $function ) ? $function['arguments'] : null
+            );
+
+            $canonical_calls[] = array(
+                'id'              => $id,
+                'name'            => $name,
+                'arguments'       => $normalized_arguments['arguments'],
+                'arguments_valid' => $normalized_arguments['valid'],
+                'arguments_raw'   => $normalized_arguments['raw'],
+            );
+            $replay_call = array(
+                'id'       => $id,
+                'type'     => 'function',
+                'function' => array(
+                    'name'      => $name,
+                    'arguments' => $normalized_arguments['raw'],
+                ),
+            );
+            if (
+                isset( $raw_call['extra_content']['google']['thought_signature'] )
+                && is_string( $raw_call['extra_content']['google']['thought_signature'] )
+                && strlen( $raw_call['extra_content']['google']['thought_signature'] ) <= 65536
+            ) {
+                // Gemini 3 (including Gemini routed through OpenRouter) requires
+                // the exact thought signature on every replayed function call.
+                $replay_call['extra_content'] = array(
+                    'google' => array(
+                        'thought_signature' => $raw_call['extra_content']['google']['thought_signature'],
+                    ),
+                );
+            }
+            $replay_calls[] = $replay_call;
+        }
+
+        $replay_message = array(
+            'role'    => 'assistant',
+            'content' => $text !== '' ? $text : null,
+        );
+        if ( ! empty( $replay_calls ) ) {
+            $replay_message['tool_calls'] = $replay_calls;
+        }
+        if ( ! empty( $message['responses_reasoning'] ) ) {
+            $reasoning_items = $this->normalize_responses_reasoning_items( $message['responses_reasoning'] );
+            if ( ! empty( $reasoning_items ) ) {
+                $replay_message['responses_reasoning'] = $reasoning_items;
+            }
+        }
+        if ( ! empty( $message['responses_output_items'] ) ) {
+            $output_items = $this->normalize_responses_output_items( $message['responses_output_items'] );
+            if ( ! empty( $output_items ) ) {
+                $replay_message['responses_output_items'] = $output_items;
+            }
+        }
+        if ( isset( $message['reasoning_details'] ) && is_array( $message['reasoning_details'] ) ) {
+            $reasoning_details = $this->normalize_openrouter_reasoning_details( $message['reasoning_details'] );
+            if ( ! empty( $reasoning_details ) ) {
+                $replay_message['reasoning_details'] = $reasoning_details;
+            }
+        }
+        foreach ( array( 'reasoning', 'reasoning_content' ) as $reasoning_field ) {
+            if (
+                isset( $message[ $reasoning_field ] )
+                && is_string( $message[ $reasoning_field ] )
+                && strlen( $message[ $reasoning_field ] ) <= 262144
+            ) {
+                $replay_message[ $reasoning_field ] = $message[ $reasoning_field ];
+            }
+        }
+
+        return array(
+            'type'           => ! empty( $canonical_calls ) ? 'tool_calls' : 'final',
+            'text'           => $text,
+            'tool_calls'     => $canonical_calls,
+            'replay_message' => $replay_message,
+            'usage'          => isset( $response_data['usage'] ) && is_array( $response_data['usage'] )
+                ? $response_data['usage']
+                : array(),
+            'finish_reason'  => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : null,
+        );
+    }
+
+    /**
+     * Normalize an assistant message's text content.
+     *
+     * @param mixed $content Provider message content.
+     * @return string Plain assistant text.
+     */
+    private function normalize_agent_message_text( $content ) {
+        if ( is_string( $content ) ) {
+            return $content;
+        }
+        if ( ! is_array( $content ) ) {
+            return '';
+        }
+
+        $text = '';
+        foreach ( $content as $part ) {
+            if ( is_array( $part ) && isset( $part['text'] ) && is_string( $part['text'] ) ) {
+                $text .= $part['text'];
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * Normalize provider tool arguments without repairing malformed input.
+     *
+     * @param mixed $raw_arguments Provider function arguments.
+     * @return array {
+     *     @type array  $arguments Decoded argument object.
+     *     @type bool   $valid     Whether arguments were a valid object.
+     *     @type string $raw       JSON representation used for replay.
+     * }
+     */
+    private function normalize_agent_tool_arguments( $raw_arguments ) {
+        if ( is_object( $raw_arguments ) ) {
+            $encoded = wp_json_encode( $raw_arguments );
+            return array(
+                'arguments' => (array) $raw_arguments,
+                'valid'     => is_string( $encoded ),
+                'raw'       => is_string( $encoded ) ? $encoded : '',
+            );
+        }
+
+        if ( is_array( $raw_arguments ) ) {
+            $encoded = wp_json_encode( $raw_arguments );
+            $is_list = ! empty( $raw_arguments )
+                && array_keys( $raw_arguments ) === range( 0, count( $raw_arguments ) - 1 );
+            return array(
+                'arguments' => $is_list ? array() : $raw_arguments,
+                'valid'     => ! $is_list && is_string( $encoded ),
+                'raw'       => empty( $raw_arguments ) ? '{}' : ( is_string( $encoded ) ? $encoded : '' ),
+            );
+        }
+
+        if ( ! is_string( $raw_arguments ) || trim( $raw_arguments ) === '' ) {
+            return array(
+                'arguments' => array(),
+                'valid'     => false,
+                'raw'       => is_string( $raw_arguments ) ? $raw_arguments : '',
+            );
+        }
+
+        $decoded = json_decode( $raw_arguments, true );
+        if (
+            json_last_error() !== JSON_ERROR_NONE
+            || ! is_array( $decoded )
+            || strpos( ltrim( $raw_arguments ), '{' ) !== 0
+        ) {
+            return array(
+                'arguments' => array(),
+                'valid'     => false,
+                'raw'       => $raw_arguments,
+            );
+        }
+
+        return array(
+            'arguments' => $decoded,
+            'valid'     => true,
+            'raw'       => $raw_arguments,
+        );
     }
 
     /**
@@ -738,6 +1183,18 @@ class Listeo_AI_Provider {
                     'output'  => is_string( $content ) ? $content : wp_json_encode( $content ),
                 );
                 continue;
+            }
+
+            if ( $role === 'assistant' && ! empty( $message['responses_output_items'] ) ) {
+                $output_items = $this->normalize_responses_output_items( $message['responses_output_items'] );
+                foreach ( $output_items as $output_item ) {
+                    $responses_payload['input'][] = $output_item;
+                }
+                if ( ! empty( $output_items ) ) {
+                    // These are the original Responses output items in their
+                    // original order, so do not reconstruct duplicate items.
+                    continue;
+                }
             }
 
             if ( in_array( $role, array( 'user', 'assistant' ), true ) && $content !== '' && $content !== null ) {
@@ -816,6 +1273,9 @@ class Listeo_AI_Provider {
             if ( $payload['reasoning_effort'] !== 'none' ) {
                 $responses_payload['include'] = array( 'reasoning.encrypted_content' );
             }
+        }
+        if ( isset( $payload['service_tier'] ) ) {
+            $responses_payload['service_tier'] = $payload['service_tier'];
         }
         if ( isset( $payload['response_format'] ) ) {
             $responses_payload['text'] = array( 'format' => $payload['response_format'] );
@@ -938,12 +1398,87 @@ class Listeo_AI_Provider {
     }
 
     /**
+     * Retain bounded native Responses output items for stateless replay.
+     *
+     * GPT-5.6 with store:false requires the original response output items,
+     * including encrypted reasoning and function-call metadata, in their
+     * original order on the next request.
+     *
+     * @param mixed $items Candidate Responses output items.
+     * @return array Bounded output items.
+     */
+    private function normalize_responses_output_items( $items ) {
+        if ( ! is_array( $items ) ) {
+            return array();
+        }
+
+        $normalized = array();
+        $remaining_bytes = 4 * 1024 * 1024;
+        foreach ( $items as $item ) {
+            if ( count( $normalized ) >= 32 || $remaining_bytes <= 0 ) {
+                break;
+            }
+            if (
+                ! is_array( $item )
+                || empty( $item['type'] )
+                || ! is_string( $item['type'] )
+                || ! in_array( $item['type'], array( 'reasoning', 'function_call', 'message' ), true )
+            ) {
+                continue;
+            }
+
+            $encoded = wp_json_encode( $item );
+            if ( ! is_string( $encoded ) ) {
+                continue;
+            }
+            $item_bytes = strlen( $encoded );
+            if ( $item_bytes > $remaining_bytes ) {
+                continue;
+            }
+
+            $normalized[] = $item;
+            $remaining_bytes -= $item_bytes;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Retain bounded OpenRouter reasoning detail blocks for exact replay.
+     *
+     * @param mixed $items Candidate reasoning details.
+     * @return array Bounded reasoning details.
+     */
+    private function normalize_openrouter_reasoning_details( $items ) {
+        if ( ! is_array( $items ) ) {
+            return array();
+        }
+
+        $normalized = array();
+        $remaining_bytes = 2 * 1024 * 1024;
+        foreach ( $items as $item ) {
+            if ( count( $normalized ) >= 32 || $remaining_bytes <= 0 || ! is_array( $item ) ) {
+                break;
+            }
+            $encoded = wp_json_encode( $item );
+            if ( ! is_string( $encoded ) || strlen( $encoded ) > $remaining_bytes ) {
+                continue;
+            }
+            $normalized[] = $item;
+            $remaining_bytes -= strlen( $encoded );
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Convert a Responses API result to the existing Chat Completions shape.
      *
      * @param array $response Responses API response.
+     * @param bool  $preserve_agent_state Include raw output items for private replay.
      * @return array Chat Completions-compatible response.
      */
-    private function convert_responses_to_chat_response( array $response ) {
+    private function convert_responses_to_chat_response( array $response, $preserve_agent_state = false ) {
         $content         = '';
         $tool_calls      = array();
         $reasoning_items = array();
@@ -955,7 +1490,7 @@ class Listeo_AI_Provider {
             }
             if ( isset( $item['type'] ) && $item['type'] === 'function_call' ) {
                 $tool_calls[] = array(
-                    'id'       => ! empty( $item['call_id'] ) ? $item['call_id'] : $item['id'],
+                    'id'       => ! empty( $item['call_id'] ) ? $item['call_id'] : ( isset( $item['id'] ) ? $item['id'] : '' ),
                     'type'     => 'function',
                     'function' => array(
                         'name'      => $item['name'],
@@ -986,6 +1521,14 @@ class Listeo_AI_Provider {
             $reasoning_items = $this->normalize_responses_reasoning_items( $reasoning_items );
             if ( ! empty( $reasoning_items ) ) {
                 $message['responses_reasoning'] = $reasoning_items;
+            }
+            if ( $preserve_agent_state ) {
+                $output_items = $this->normalize_responses_output_items(
+                    isset( $response['output'] ) ? $response['output'] : array()
+                );
+                if ( ! empty( $output_items ) ) {
+                    $message['responses_output_items'] = $output_items;
+                }
             }
         }
 
@@ -1036,7 +1579,9 @@ class Listeo_AI_Provider {
      * @return string
      */
     public function get_provider_name() {
-        if ($this->get_provider() === 'gemini') {
+        if ($this->is_no_api_key_provider()) {
+            return 'Purio Cloud';
+        } elseif ($this->get_provider() === 'gemini') {
             return 'Google Gemini';
         } elseif ($this->get_provider() === 'mistral') {
             return 'Mistral AI';
@@ -1060,7 +1605,13 @@ class Listeo_AI_Provider {
             return false;
         }
 
-        if ($this->get_provider() === 'gemini') {
+        if ($this->is_no_api_key_provider()) {
+            if ($this->is_signed_managed_gateway()) {
+                $context = $this->get_managed_gateway_auth_context();
+                return !empty($context['token']) && hash_equals((string) $context['token'], (string) $key);
+            }
+            return $key === $this->get_no_api_key_domain();
+        } elseif ($this->get_provider() === 'gemini') {
             // Gemini keys start with AIzaSy
             return strpos($key, 'AIzaSy') === 0;
         } elseif ($this->get_provider() === 'mistral') {

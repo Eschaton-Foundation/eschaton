@@ -326,55 +326,55 @@
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 4px;
+    gap: 6px;
+    padding: 7px 9px;
+    border-radius: 6px;
     transition: all 0.2s;
     font-weight: 500;
     line-height: 1;
 }
 
 .manual-selection-link {
-    background: #2271b120;
-    color: #2271b1;
-    border: 1px solid #2271b130;
+    background: #d9e9ff;
+    color: #0057d9;
+    border: none;
 }
 
 .manual-selection-link:hover {
-    background: #2271b130;
-    border-color: #2271b150;
+    background: #c6dcfb;
+    color: #0057d9;
 }
 
 .post-type-card.enabled .manual-selection-link,
 .manual-selection-link.active {
-    background: #00a32a20;
-    color: #00a32a;
-    border: 1px solid #00a32a30;
+    background: #d5eedb;
+    color: #008a20;
+    border: none;
 }
 
 .manual-selection-actions a { box-shadow: none !important; outline: none !important}
 
+.post-type-card.enabled .manual-selection-link:hover,
 .manual-selection-link.active:hover {
-    background: #00a32a30;
-    border-color: #00a32a50;
+    background: #bfe4c8;
+    color: #00751b;
 }
 
-.manual-selection-link .dashicons {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
+.selection-action-icon {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .clear-selection-link {
-    background: #d6360020;
-    color: #d63600;
-    border: 1px solid #d6360030;
+    background: #f8ddd5;
+    color: #c42d00;
+    border: none;
 }
 
 .clear-selection-link:hover {
-    background: #d6360030;
-    color: #d63600;
-    border-color: #d6360050;
+    background: #f1c9be;
+    color: #a92700;
 }
 
 /* PDF Upload Link */
@@ -383,58 +383,44 @@
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 4px;
+    gap: 6px;
+    padding: 7px 9px;
+    border-radius: 6px;
     transition: all 0.2s;
     font-weight: 500;
     line-height: 1;
-    background: #2271b120;
-    color: #2271b1;
-    border: 1px solid #2271b130;
+    background: #d9e9ff;
+    color: #0057d9;
+    border: none;
 }
 
 .pdf-upload-link:hover {
-    background: #2271b130;
-    border-color: #2271b150;
-    color: #2271b1;
+    background: #c6dcfb;
+    color: #0057d9;
 }
 
-.pdf-upload-link .dashicons {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
-}
-
-/* External Pages Link - always green */
+/* Enabled document and external-page actions */
+.post-type-card.enabled .pdf-upload-link,
 .external-pages-link {
     font-size: 13px;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 4px;
+    gap: 6px;
+    padding: 7px 9px;
+    border-radius: 6px;
     transition: all 0.2s;
     font-weight: 500;
     line-height: 1;
-    background: #00a32a20;
-    color: #00a32a;
-    border: 1px solid #00a32a30;
+    background: #d5eedb;
+    color: #008a20;
+    border: none;
 }
 
+.post-type-card.enabled .pdf-upload-link:hover,
 .external-pages-link:hover {
-    background: #00a32a30;
-    border-color: #00a32a50;
-    color: #00a32a;
-}
-
-.external-pages-link .dashicons {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
-    position: relative;
-    top: 1px;
+    background: #bfe4c8;
+    color: #00751b;
 }
 
 /* Toggle Switch */
@@ -768,6 +754,18 @@
     background: #f9f9f9;
 }
 
+.listeo-ai-selection-limit-notice {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    color: #0057d9;
+    background: #eef5ff;
+    border: 1px solid #b8d5ff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
 .posts-checkboxes {
     display: flex;
     flex-direction: column;
@@ -1056,31 +1054,20 @@
     gap: 10px;
 }
 
-/* Train Now Button */
-#modal-train-now {
-    display: inline-flex;
+#modal-train-selected {
+    display: none;
     align-items: center;
     gap: 6px;
 }
 
-#modal-train-now .airs-button-icon {
-    color: #fff;
+#modal-train-selected.is-visible {
+    display: inline-flex;
+}
+
+#modal-train-selected .airs-button-icon {
     width: 16px;
     height: 16px;
-    flex-shrink: 0;
-}
-
-#modal-train-now .airs-button-icon.spin {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+    flex: 0 0 16px;
 }
 
 /* Loading and Error Messages */

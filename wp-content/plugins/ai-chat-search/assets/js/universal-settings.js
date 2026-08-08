@@ -43,16 +43,12 @@
             $('#select-verified-posts').on('click', this.selectVerifiedPosts.bind(this));
             $('#modal-search').on('keyup', this.filterPosts.bind(this));
 
-            // Individual checkbox change — sync to Set and update count
-            $(document).on('change', '#modal-posts-list input[type="checkbox"]', (e) => {
-                const id = parseInt($(e.target).val());
-                if ($(e.target).is(':checked')) {
-                    this._modalSelectedIds.add(id);
-                } else {
-                    this._modalSelectedIds.delete(id);
-                }
-                this.updateSelectionCount();
-            });
+            // Individual checkbox change — sync to Set and enforce the Free limit.
+            $(document).on(
+                'change',
+                '#modal-posts-list input[type="checkbox"]',
+                this.handlePostSelectionChange.bind(this)
+            );
 
             // Load More button
             $(document).on('click', '.load-more-btn', () => {
@@ -61,7 +57,7 @@
             });
 
             $('#modal-save').on('click', this.saveSelection.bind(this));
-            $('#modal-train-now').on('click', this.trainNow.bind(this));
+            $('#modal-train-selected').on('click', this.trainSelected.bind(this));
 
             // Custom fields modal controls
             $('#configure-custom-fields-btn').on('click', this.openCustomFieldsModal.bind(this));
@@ -959,21 +955,34 @@
                         if (postType === 'ai_pdf_document') {
                             $actions.html(`
                                 <a href="#" class="pdf-upload-link" id="upload-pdf-btn">
-                                    <span class="dashicons dashicons-upload"></span>
+                                    <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <path d="M14 2v6h6"></path>
+                                        <path d="M12 18v-6"></path>
+                                        <path d="m9 15 3-3 3 3"></path>
+                                    </svg>
                                     ${s.upload_documents}
                                 </a>
                             `);
                         } else if (postType === 'ai_external_page') {
                             $actions.html(`
                                 <a href="#" class="external-pages-link" id="manage-external-pages-btn">
-                                    <span class="dashicons dashicons-admin-site-alt3"></span>
+                                    <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <path d="M3 12h18"></path>
+                                        <path d="M12 3a14 14 0 0 1 0 18"></path>
+                                        <path d="M12 3a14 14 0 0 0 0 18"></path>
+                                    </svg>
                                     ${s.add_external_pages}
                                 </a>
                             `);
                         } else if (stats.has_manual_selection) {
                             $actions.html(`
                                 <a href="#" class="manual-selection-link active" data-post-type="${postType}">
-                                    <span class="dashicons dashicons-yes"></span>
+                                    <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <path d="m8 12 2.5 2.5L16 9"></path>
+                                    </svg>
                                     ${s.manual_selection_active}
                                 </a>
                                 <a href="#" class="clear-selection-link" data-post-type="${postType}">
@@ -983,7 +992,13 @@
                         } else {
                             $actions.html(`
                                 <a href="#" class="manual-selection-link" data-post-type="${postType}">
-                                    <span class="dashicons dashicons-admin-generic"></span>
+                                    <svg class="selection-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <path d="M4 6h10"></path>
+                                        <path d="M4 12h7"></path>
+                                        <path d="M4 18h10"></path>
+                                        <path d="M18 9v6"></path>
+                                        <path d="M15 12h6"></path>
+                                    </svg>
                                     ${s.manual_selection}
                                 </a>
                             `);
@@ -1136,7 +1151,7 @@
             const $link = $(e.currentTarget);
             const postType = $link.data('post-type');
 
-            if (!confirm('Clear manual selection? All posts of this type will be included in generation.')) {
+            if (!confirm(listeoAiUniversalSettings.strings.confirm_clear_selection)) {
                 return;
             }
 
@@ -1173,6 +1188,9 @@
         _modalPostType: '',
         _modalSearch: '',
         _searchDebounce: null,
+        _modalIsLimited: false,
+        _modalSelectionLimit: 0,
+        _modalHomepageId: 0,
 
         /**
          * Open manual selection modal
@@ -1187,7 +1205,12 @@
             this._modalCurrentPage = 1;
             this._modalPostType = postType;
             this._modalSearch = '';
+            this._modalIsLimited = false;
+            this._modalSelectionLimit = 0;
+            this._modalHomepageId = 0;
             $('#modal-search').val('');
+            $('#modal-train-selected').removeClass('is-visible');
+            this.hideSelectionLimitNotice();
 
             // Show/hide "Select Verified Only" button based on post type
             if (postType === 'listing') {
@@ -1227,6 +1250,10 @@
                         this._modalCurrentPage = data.page;
                         this._modalTotalPages = data.total_pages;
                         this._modalTotalPosts = data.total;
+                        this._modalIsLimited = Boolean(data.is_limited);
+                        this._modalSelectionLimit = parseInt(data.selection_limit, 10) || 0;
+                        this._modalHomepageId = parseInt(data.homepage_id, 10) || 0;
+                        $('#modal-train-selected').toggleClass('is-visible', Boolean(data.can_train_selected));
 
                         // On first load, initialize selected IDs from saved selection
                         if (isFirstLoad) {
@@ -1269,6 +1296,7 @@
                 const isChecked = this._modalSelectedIds.has(postId);
                 const hasEmbedding = parseInt(post.has_embedding) === 1;
                 const isVerified = parseInt(post.is_verified) === 1;
+                const isHomepage = postId === this._modalHomepageId;
                 const statusClass = hasEmbedding ? 'has-embedding' : 'no-embedding';
 
                 html += `
@@ -1276,6 +1304,7 @@
                         <input type="checkbox" value="${postId}" ${isChecked ? 'checked' : ''}>
                         <span class="post-title">${post.post_title}</span>
                         <span class="post-id">ID: ${postId}</span>
+                        ${isHomepage ? '<span class="post-verified-badge">' + s.homepage + '</span>' : ''}
                         ${isVerified ? '<span class="post-verified-badge">✓ ' + s.verified + '</span>' : ''}
                         <span class="post-status">${hasEmbedding ? '✓ ' + s.indexed : s.pending}</span>
                     </label>
@@ -1321,14 +1350,90 @@
         },
 
         /**
+         * Keep the Free selection at its limit while honoring the newest click.
+         */
+        handlePostSelectionChange: function(e) {
+            const $checkbox = $(e.currentTarget);
+            const id = parseInt($checkbox.val());
+
+            if (
+                $checkbox.is(':checked') &&
+                this._modalIsLimited &&
+                this.getCountedSelectionSize() >= this._modalSelectionLimit
+            ) {
+                const replaceableIds = Array.from(this._modalSelectedIds)
+                    .filter(selectedId => selectedId !== id);
+                const replacedId = replaceableIds.pop();
+
+                if (replacedId) {
+                    this._modalSelectedIds.delete(replacedId);
+                    $(`#modal-posts-list input[value="${replacedId}"]`).prop('checked', false);
+                    this._modalSelectedIds.add(id);
+                } else {
+                    $checkbox.prop('checked', false);
+                }
+
+                this.showSelectionLimitNotice();
+                this.updateSelectionCount();
+                return;
+            }
+
+            this.hideSelectionLimitNotice();
+            if ($checkbox.is(':checked')) {
+                this._modalSelectedIds.add(id);
+            } else {
+                this._modalSelectedIds.delete(id);
+            }
+            this.updateSelectionCount();
+        },
+
+        /**
+         * Count selected quota-consuming items.
+         */
+        getCountedSelectionSize: function() {
+            return this._modalSelectedIds.size;
+        },
+
+        /**
+         * Show the Free limit inside the selection modal.
+         */
+        showSelectionLimitNotice: function() {
+            $('#modal-selection-limit-notice')
+                .html(listeoAiUniversalSettings.strings.free_training_limit_notice || '')
+                .prop('hidden', false);
+        },
+
+        /**
+         * Hide the inline selection-limit notice.
+         */
+        hideSelectionLimitNotice: function() {
+            $('#modal-selection-limit-notice')
+                .text('')
+                .prop('hidden', true);
+        },
+
+        /**
          * Select all visible posts (only what's currently loaded/shown)
          */
         selectAllPosts: function() {
             const self = this;
+            let limitReached = false;
             $('#modal-posts-list input[type="checkbox"]').each(function() {
+                if ($(this).is(':disabled') || $(this).is(':checked')) {
+                    return;
+                }
+                if (self._modalIsLimited && self.getCountedSelectionSize() >= self._modalSelectionLimit) {
+                    limitReached = true;
+                    return false;
+                }
                 $(this).prop('checked', true);
                 self._modalSelectedIds.add(parseInt($(this).val()));
             });
+            if (limitReached) {
+                this.showSelectionLimitNotice();
+            } else {
+                this.hideSelectionLimitNotice();
+            }
             this.updateSelectionCount();
         },
 
@@ -1338,9 +1443,13 @@
         deselectAllPosts: function() {
             const self = this;
             $('#modal-posts-list input[type="checkbox"]').each(function() {
+                if ($(this).is(':disabled')) {
+                    return;
+                }
                 $(this).prop('checked', false);
                 self._modalSelectedIds.delete(parseInt($(this).val()));
             });
+            this.hideSelectionLimitNotice();
             this.updateSelectionCount();
         },
 
@@ -1362,6 +1471,7 @@
                 success: (response) => {
                     if (response.success) {
                         response.data.ids.forEach(id => self._modalSelectedIds.add(id));
+                        self.hideSelectionLimitNotice();
                         // Update visible checkboxes
                         $('#modal-posts-list .post-checkbox-item').each(function() {
                             const id = parseInt($(this).find('input').val());
@@ -1391,6 +1501,7 @@
                 success: (response) => {
                     if (response.success) {
                         response.data.ids.forEach(id => self._modalSelectedIds.add(id));
+                        self.hideSelectionLimitNotice();
                         $('#modal-posts-list .post-checkbox-item').each(function() {
                             const id = parseInt($(this).find('input').val());
                             $(this).find('input').prop('checked', self._modalSelectedIds.has(id));
@@ -1421,9 +1532,17 @@
          * Update selection count in modal footer
          */
         updateSelectionCount: function() {
-            const selected = this._modalSelectedIds.size;
+            const selected = this._modalIsLimited
+                ? this.getCountedSelectionSize()
+                : this._modalSelectedIds.size;
             const total = this._modalTotalPosts;
             const s = listeoAiUniversalSettings.strings;
+            if (this._modalIsLimited) {
+                $('#modal-selection-count').text(
+                    `${selected} ${s.selected_of} ${this._modalSelectionLimit} ${s.selected}`
+                );
+                return;
+            }
             $('#modal-selection-count').text(`${selected} ${s.selected_of} ${total} ${s.selected}`);
         },
 
@@ -1459,26 +1578,26 @@
         },
 
         /**
-         * Train Now - Immediately generate embeddings for selected posts
+         * Save and train the selected items without clearing existing embeddings.
          */
-        trainNow: function() {
+        trainSelected: function() {
             this.syncCheckboxesToSet();
             const $modal = $('#manual-selection-modal');
-            const $button = $('#modal-train-now');
+            const $button = $('#modal-train-selected');
             const postType = $modal.data('post-type');
             const selectedIds = Array.from(this._modalSelectedIds);
+            const originalHtml = $button.html();
+            const strings = listeoAiUniversalSettings.strings;
 
             if (selectedIds.length === 0) {
-                this.showNotice('error', 'Please select at least one item to train');
+                this.showNotice('error', strings.select_item_to_train);
                 return;
             }
 
-            // Disable button and show loading state
-            $button.prop('disabled', true);
-            const originalHtml = $button.html();
-            $button.html('<span class="airs-spinner"></span> Training...');
+            $button.prop('disabled', true).html(
+                '<span class="airs-spinner"></span><span>' + strings.training_selected + '</span>'
+            );
 
-            // First, save the selection
             $.ajax({
                 url: listeoAiUniversalSettings.ajax_url,
                 type: 'POST',
@@ -1489,53 +1608,48 @@
                     post_ids: selectedIds
                 },
                 success: (response) => {
-                    if (response.success) {
-                        // Now generate embeddings for each selected post
-                        this.generateEmbeddingsForPosts(selectedIds, $button, originalHtml, postType);
-                    } else {
+                    if (!response.success) {
                         this.showNotice('error', response.data || 'Error saving selection');
-                        $button.prop('disabled', false);
-                        $button.html(originalHtml);
+                        $button.prop('disabled', false).html(originalHtml);
+                        return;
                     }
+
+                    this.generateSelectedEmbeddings(selectedIds, $button, originalHtml, postType);
                 },
-                error: (xhr, status, error) => {
-                    this.showNotice('error', 'Failed to save selection: ' + error);
-                    $button.prop('disabled', false);
-                    $button.html(originalHtml);
+                error: () => {
+                    this.showNotice('error', strings.selected_training_incomplete);
+                    $button.prop('disabled', false).html(originalHtml);
                 }
             });
         },
 
         /**
-         * Generate embeddings for multiple posts sequentially
+         * Generate embeddings for selected items sequentially.
          */
-        generateEmbeddingsForPosts: function(postIds, $button, originalHtml, postType) {
-            let completed = 0;
+        generateSelectedEmbeddings: function(postIds, $button, originalHtml, postType) {
             let failed = 0;
-            const total = postIds.length;
+            const strings = listeoAiUniversalSettings.strings;
 
             const generateNext = (index) => {
-                if (index >= total) {
-                    // All done
-                    const message = failed === 0
-                        ? `Successfully trained ${completed} item(s)!`
-                        : `Trained ${completed} item(s), ${failed} failed`;
-
-                    this.showNotice(failed === 0 ? 'success' : 'warning', message);
+                if (index >= postIds.length) {
+                    this.showNotice(
+                        failed === 0 ? 'success' : 'warning',
+                        failed === 0
+                            ? strings.selected_training_complete
+                            : strings.selected_training_incomplete
+                    );
+                    $button.prop('disabled', false).html(originalHtml);
                     this.refreshStats(postType);
                     this.updateGenerationCount();
-
-                    $button.prop('disabled', false);
-                    $button.html(originalHtml);
-
-                    // Update selection count since we unchecked items
-                    this.updateSelectionCount();
                     return;
                 }
 
                 const postId = postIds[index];
-                const progress = `${index + 1}/${total}`;
-                $button.html(`<span class="airs-spinner"></span> Training ${progress}...`);
+                $button.html(
+                    '<span class="airs-spinner"></span><span>' +
+                    strings.training_selected + ' ' + (index + 1) + '/' + postIds.length +
+                    '</span>'
+                );
 
                 $.ajax({
                     url: listeoAiUniversalSettings.ajax_url,
@@ -1548,48 +1662,33 @@
                     },
                     success: (response) => {
                         if (response.success) {
-                            completed++;
-                            // Update the post status in the modal
-                            this.updatePostStatus(postId, 'indexed');
+                            this.updateSelectedPostStatus(postId);
                         } else {
                             failed++;
                         }
-                        // Continue to next post
                         generateNext(index + 1);
                     },
                     error: () => {
                         failed++;
-                        // Continue to next post even on error
                         generateNext(index + 1);
                     }
                 });
             };
 
-            // Start generating from first post
             generateNext(0);
         },
 
         /**
-         * Update post status in the modal list
+         * Mark a trained item as indexed without changing the selection.
          */
-        updatePostStatus: function(postId, status) {
-            const $checkbox = $(`#modal-posts-list input[value="${postId}"]`);
-            const $item = $checkbox.closest('.post-checkbox-item');
-            const $statusSpan = $item.find('.post-status');
-
-            if (status === 'indexed') {
-                // Update status text and styling
-                $statusSpan.text('✓ ' + listeoAiUniversalSettings.strings.indexed)
-                    .removeClass('pending')
-                    .addClass('indexed');
-
-                // Update item class
-                $item.removeClass('no-embedding')
-                    .addClass('has-embedding');
-
-                // Uncheck the checkbox
-                $checkbox.prop('checked', false);
-            }
+        updateSelectedPostStatus: function(postId) {
+            const $item = $(`#modal-posts-list input[value="${postId}"]`).closest('.post-checkbox-item');
+            $item.removeClass('no-embedding').addClass('has-embedding');
+            $item.attr('data-has-embedding', '1');
+            $item.find('.post-status')
+                .text('✓ ' + listeoAiUniversalSettings.strings.indexed)
+                .removeClass('pending')
+                .addClass('indexed');
         },
 
         /**

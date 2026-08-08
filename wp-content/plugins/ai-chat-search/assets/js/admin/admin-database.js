@@ -314,10 +314,13 @@
     }
 
     /**
-     * Update listing detection info (placeholder)
+     * Keep the selected training total available to the training modal.
      */
     function updateListingDetectionInfo(data) {
-        // Placeholder for future implementation
+        var totalItems = Math.max(0, parseInt(data.total_listings, 10) || 0);
+
+        AIRS.trainingTotalItems = totalItems;
+        $(document).trigger('airs:training-total-updated', [totalItems]);
     }
 
     /**

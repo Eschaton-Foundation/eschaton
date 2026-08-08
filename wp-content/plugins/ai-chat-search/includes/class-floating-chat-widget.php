@@ -61,6 +61,66 @@ class Listeo_AI_Search_Floating_Chat_Widget
     }
 
     /**
+     * Check whether page targeting hides the widget on the current request.
+     *
+     * Whitelisted content is always shown. The page selected as the WordPress
+     * posts page represents the whole blog, including posts and blog archives.
+     */
+    private function should_hide_widget_on_current_page()
+    {
+        $current_page_id = 0;
+
+        if (is_singular()) {
+            $current_page_id = intval(get_queried_object_id());
+        } elseif (is_home()) {
+            $current_page_id = intval(get_option("page_for_posts", 0));
+        }
+
+        $whitelisted_pages = get_option(
+            "listeo_ai_floating_whitelisted_pages",
+            [],
+        );
+        $whitelisted_pages = is_array($whitelisted_pages)
+            ? array_filter(array_map("intval", $whitelisted_pages))
+            : [];
+
+        if (
+            $current_page_id &&
+            in_array($current_page_id, $whitelisted_pages, true)
+        ) {
+            return false;
+        }
+
+        $excluded_pages = get_option("listeo_ai_floating_excluded_pages", []);
+        if (empty($excluded_pages) || !is_array($excluded_pages)) {
+            return false;
+        }
+
+        $excluded_pages = array_map("intval", $excluded_pages);
+        if (
+            is_singular() &&
+            in_array($current_page_id, $excluded_pages, true)
+        ) {
+            return true;
+        }
+
+        $posts_page_id = intval(get_option("page_for_posts", 0));
+        if (
+            !$posts_page_id ||
+            !in_array($posts_page_id, $excluded_pages, true)
+        ) {
+            return false;
+        }
+
+        return is_home() ||
+            is_singular("post") ||
+            is_category() ||
+            is_tag() ||
+            is_date() ||
+            is_author();
+    }
+
+    /**
      * Get the animated floating button style.
      */
     private function get_animated_avatar_style()
@@ -87,13 +147,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
             return;
         }
 
-        // Check if current page is in the exclusion list
-        $excluded_pages = get_option("listeo_ai_floating_excluded_pages", []);
-        if (!empty($excluded_pages) && is_array($excluded_pages) && is_singular()) {
-            $current_page_id = get_queried_object_id();
-            if (in_array($current_page_id, $excluded_pages)) {
-                return;
-            }
+        // Check page targeting (whitelist first, then exclusions)
+        if ($this->should_hide_widget_on_current_page()) {
+            return;
         }
 
         // Check if current IP is blocked (PRO feature)
@@ -176,21 +232,10 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
         // Lazy load mode: defer chatbot scripts until user opens the widget
         $lazy_load = get_option('listeo_ai_chat_lazy_load', 0);
-        $pro_plugin_file = 'ai-chat-search-pro/ai-chat-search-pro.php';
-        $active_plugins = (array) get_option('active_plugins', array());
-        $network_active_plugins = is_multisite() ? (array) get_site_option('active_sitewide_plugins', array()) : array();
-        $pro_plugin_active =
-            in_array($pro_plugin_file, $active_plugins, true) ||
-            isset($network_active_plugins[$pro_plugin_file]);
-        $trial_expires_at = (int) get_option('ai_chat_search_pro_trial_expires_at', 0);
-        $trial_expired =
-            get_option('ai_chat_search_pro_is_trial', false) &&
-            $trial_expires_at <= time();
-        $whitelabel_enabled =
-            $pro_plugin_active &&
-            get_option('listeo_ai_chat_whitelabel_enabled', 0) &&
-            get_option('ai_chat_search_pro_license_instance_id', '') !== '' &&
-            !$trial_expired;
+        $agentic_mode =
+            AI_Chat_Search_Pro_Manager::is_pro_active() &&
+            (bool) get_option('listeo_ai_chat_agentic_mode', 0);
+        $whitelabel_enabled = listeo_ai_is_chat_whitelabel_enabled();
         $needs_silk_wave = get_option('listeo_ai_floating_header_style', 'simple') === 'animated';
 
         if (!$lazy_load) {
@@ -202,6 +247,15 @@ class Listeo_AI_Search_Floating_Chat_Widget
                 LISTEO_AI_SEARCH_VERSION,
                 true,
             );
+            if ($agentic_mode) {
+                wp_enqueue_script(
+                    "listeo-ai-chat-agentic",
+                    LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-agentic.js",
+                    ["jquery", "listeo-ai-chat"],
+                    LISTEO_AI_SEARCH_VERSION,
+                    true,
+                );
+            }
 
             if ($needs_silk_wave) {
                 wp_enqueue_script(
@@ -263,6 +317,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
                 $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/silk-wave-bg.js";
             }
             $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-scripts.js";
+            if ($agentic_mode) {
+                $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-ai-agentic.js";
+            }
             if (!$whitelabel_enabled) {
                 $lazy_scripts[] = LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-chat-ui-utils.js";
             }
@@ -388,13 +445,9 @@ class Listeo_AI_Search_Floating_Chat_Widget
             return;
         }
 
-        // Check if current page is in the exclusion list
-        $excluded_pages = get_option("listeo_ai_floating_excluded_pages", []);
-        if (!empty($excluded_pages) && is_array($excluded_pages) && is_singular()) {
-            $current_page_id = get_queried_object_id();
-            if (in_array($current_page_id, $excluded_pages)) {
-                return;
-            }
+        // Check page targeting (whitelist first, then exclusions)
+        if ($this->should_hide_widget_on_current_page()) {
+            return;
         }
 
         // Check if current IP is blocked (PRO feature)
@@ -785,21 +838,7 @@ class Listeo_AI_Search_Floating_Chat_Widget
 
                         <?php
                         // Show "Powered by PurioChat" badge unless whitelabel is fully enabled.
-                        $pro_plugin_file = "ai-chat-search-pro/ai-chat-search-pro.php";
-                        $active_plugins = (array) get_option("active_plugins", array());
-                        $network_active_plugins = is_multisite() ? (array) get_site_option("active_sitewide_plugins", array()) : array();
-                        $pro_plugin_active =
-                            in_array($pro_plugin_file, $active_plugins, true) ||
-                            isset($network_active_plugins[$pro_plugin_file]);
-                        $trial_expires_at = (int) get_option("ai_chat_search_pro_trial_expires_at", 0);
-                        $trial_expired =
-                            get_option("ai_chat_search_pro_is_trial", false) &&
-                            $trial_expires_at <= time();
-                        $whitelabel_enabled_widget =
-                            $pro_plugin_active &&
-                            get_option("listeo_ai_chat_whitelabel_enabled", 0) &&
-                            get_option("ai_chat_search_pro_license_instance_id", "") !== "" &&
-                            !$trial_expired;
+                        $whitelabel_enabled_widget = listeo_ai_is_chat_whitelabel_enabled();
                         if (!$whitelabel_enabled_widget): ?>
                             <div class="listeo-ai-chat-powered-by" id="listeo-ai-chat-powered-by-floating" data-required="true">
                                 Powered by <a href="https://purethemes.net/ai-chatbot-for-wordpress/?utm_source=chatbot-widget&utm_medium=powered-by&utm_campaign=branding" target="_blank" rel="noopener" style="--ai-chat-primary-color: #111;"><img class="listeo-ai-chat-powered-by-logo" src="<?php echo esc_url(LISTEO_AI_SEARCH_PLUGIN_URL . "assets/icons/purio.svg"); ?>" alt="" aria-hidden="true" /><span class="listeo-ai-chat-powered-by-name" style="font-weight: 600 !important;">PurioChat</span></a>

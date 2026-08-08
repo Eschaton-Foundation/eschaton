@@ -45,7 +45,39 @@ class Listeo_AI_Search_Chat_API
             $text,
         );
 
-        return $text;
+        return self::strip_pdf_links($text);
+    }
+
+    /**
+     * Remove clickable links to PDF sources while preserving their label.
+     *
+     * @param string $html Sanitized or model-generated HTML.
+     * @return string HTML without PDF anchors.
+     */
+    public static function strip_pdf_links($html)
+    {
+        if (empty($html) || stripos($html, "<a") === false) {
+            return $html;
+        }
+
+        return preg_replace_callback(
+            '/<a\b[^>]*\bhref\s*=\s*(["\'])(.*?)\1[^>]*>(.*?)<\/a>/is',
+            static function ($matches) {
+                $url = rawurldecode(
+                    html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5, "UTF-8")
+                );
+                $is_pdf_url = preg_match('/\.pdf(?:[?#&]|$)/i', $url);
+                $is_pdf_post = preg_match(
+                    '/(?:[?&])post_type=ai_pdf_document(?:[&#]|$)/i',
+                    $url,
+                );
+
+                return $is_pdf_url || $is_pdf_post
+                    ? $matches[3]
+                    : $matches[0];
+            },
+            $html,
+        );
     }
 
     /**
@@ -114,12 +146,14 @@ class Listeo_AI_Search_Chat_API
      * Uses same tier settings as frontend but enforces server-side
      *
      * @param string $client_ip Client IP address
+     * @param int    $units Internal request units to consume.
      * @return array ['allowed' => bool, 'error' => string|null, 'tier' => string|null]
      */
-    public static function check_ip_rate_limit($client_ip)
+    public static function check_ip_rate_limit($client_ip, $units = 1)
     {
         $transient_key = "ai_chat_ip_" . md5($client_ip);
         $now = time();
+        $units = max(1, min(3, (int) $units));
 
         // Get user-facing tier limits from admin settings
         // These are what users see in error messages (e.g., "5 messages per minute")
@@ -174,7 +208,7 @@ class Listeo_AI_Search_Chat_API
 
         // Check limits (check strictest first)
         // Error messages show user-facing limits (display), not internal multiplied limits
-        if ($tier1_count >= $tier1_limit) {
+        if (($tier1_count + $units) > $tier1_limit) {
             return [
                 "allowed" => false,
                 "tier" => "tier1",
@@ -188,7 +222,7 @@ class Listeo_AI_Search_Chat_API
             ];
         }
 
-        if ($tier2_count >= $tier2_limit) {
+        if (($tier2_count + $units) > $tier2_limit) {
             return [
                 "allowed" => false,
                 "tier" => "tier2",
@@ -202,7 +236,7 @@ class Listeo_AI_Search_Chat_API
             ];
         }
 
-        if ($tier3_count >= $tier3_limit) {
+        if (($tier3_count + $units) > $tier3_limit) {
             return [
                 "allowed" => false,
                 "tier" => "tier3",
@@ -216,8 +250,10 @@ class Listeo_AI_Search_Chat_API
             ];
         }
 
-        // Allowed - add current timestamp and save
-        $timestamps[] = $now;
+        // Allowed - consume the requested internal units.
+        for ($unit = 0; $unit < $units; $unit++) {
+            $timestamps[] = $now;
+        }
         set_transient($transient_key, array_values($timestamps), $tier3_window);
 
         return ["allowed" => true, "tier" => null, "error" => null];
@@ -240,6 +276,9 @@ class Listeo_AI_Search_Chat_API
         // These include all AI/search endpoints to prevent language contamination across user sessions
         $no_cache_routes = [
             "/listeo/v1/chat-proxy",
+            "/listeo/v1/agent-chat",
+            "/listeo/v1/agent-progress",
+            "/listeo/v1/agent-cancel",
             "/listeo/v1/rag-chat",
             "/listeo/v1/universal-search",
             "/listeo/v1/chat-config",
@@ -922,6 +961,20 @@ class Listeo_AI_Search_Chat_API
 
         // Initialize AI provider
         $provider = new Listeo_AI_Provider();
+        $managed_access_error = $provider->get_no_api_key_configuration_error();
+        if ($managed_access_error !== '') {
+            return new WP_REST_Response(
+                [
+                    'success' => false,
+                    'error' => [
+                        'message' => $managed_access_error,
+                        'type' => 'configuration_error',
+                        'request_id' => $request_id,
+                    ],
+                ],
+                422,
+            );
+        }
         $api_key = $provider->get_api_key();
 
         if (empty($api_key)) {
@@ -2432,12 +2485,35 @@ class Listeo_AI_Search_Chat_API
             $request
         );
 
-        // Limit chat history to reduce token usage, respecting context length setting
+        // Limit RAG history by user turns after the frontend has removed tool messages.
+        // Keep this server-side limit as a safety net for direct API requests.
         $context_length = get_option('listeo_ai_chat_context_length', 'normal');
-        $multiplier = isset(self::CONTEXT_MULTIPLIERS[$context_length]) ? self::CONTEXT_MULTIPLIERS[$context_length] : self::CONTEXT_MULTIPLIERS['normal'];
-        $max_history = 6 * $multiplier;
-        if (count($chat_history) > $max_history) {
-            $chat_history = array_slice($chat_history, -$max_history);
+        $rag_user_limits = [
+            'short' => 3,
+            'normal' => 9,
+            'long' => 24,
+        ];
+        $max_user_messages = isset($rag_user_limits[$context_length])
+            ? $rag_user_limits[$context_length]
+            : $rag_user_limits['normal'];
+        $user_messages_seen = 0;
+        $history_start = 0;
+
+        for ($i = count($chat_history) - 1; $i >= 0; $i--) {
+            if (
+                isset($chat_history[$i]['role']) &&
+                $chat_history[$i]['role'] === 'user'
+            ) {
+                $user_messages_seen++;
+                if ($user_messages_seen === $max_user_messages) {
+                    $history_start = $i;
+                    break;
+                }
+            }
+        }
+
+        if ($history_start > 0) {
+            $chat_history = array_slice($chat_history, $history_start);
         }
 
         // Get post types from admin settings (excludes 'listing' - handled by search_listings tool)
@@ -2472,6 +2548,20 @@ class Listeo_AI_Search_Chat_API
 
         // Initialize AI provider
         $provider = new Listeo_AI_Provider();
+        $managed_access_error = $provider->get_no_api_key_configuration_error();
+        if ($managed_access_error !== '') {
+            return new WP_REST_Response(
+                [
+                    'success' => false,
+                    'error' => [
+                        'message' => $managed_access_error,
+                        'type' => 'configuration_error',
+                        'request_id' => $request_id,
+                    ],
+                ],
+                422,
+            );
+        }
         $api_key = $provider->get_api_key();
 
         if (empty($api_key)) {
@@ -2840,6 +2930,10 @@ class Listeo_AI_Search_Chat_API
             if (empty($sources)) {
                 // No results found
                 $user_prompt = "SEARCH RESULTS: No relevant content found.\n\n";
+                $user_prompt .=
+                    "RESOLVED SEARCH QUERY (use this to resolve references such as it, there, or that item): " .
+                    $query .
+                    "\n";
                 $user_prompt .= "USER QUESTION: " . $original_question . "\n\n";
 
                 if ($debug) {
@@ -2851,9 +2945,13 @@ class Listeo_AI_Search_Chat_API
                     "RELEVANT CONTENT FROM SITE:\n" .
                     $context_content .
                     "\n\n---\n\n";
+                $user_prompt .=
+                    "RESOLVED SEARCH QUERY (use this to resolve references such as it, there, or that item): " .
+                    $query .
+                    "\n";
                 $user_prompt .= "USER QUESTION: " . $original_question . "\n\n";
                 $user_prompt .=
-                    "Answer based ONLY on the content above. Include relevant links and cite your sources unless ADDITIONAL NOTES explicitly say not to link or cite sources. BUT DONT LINK TO PDF FILES THAT CONTAIN ?post_type=ai_pdf_document IN URL and DO NOT THEIR NAMES. If the content is NOT relevant to the question, simply say you couldn't find information about that topic - DO NOT list or describe the unrelated content you received.\n\n";
+                    "Answer based ONLY on the content above. Include relevant links and cite your sources unless ADDITIONAL NOTES explicitly say not to link or cite sources. NEVER LINK TO ANY PDF SOURCE, including URLs ending in .pdf or containing ?post_type=ai_pdf_document, and never mention PDF file names. If the content is NOT relevant to the question, simply say you couldn't find information about that topic - DO NOT list or describe the unrelated content you received.\n\n";
 
                 if ($debug) {
                     error_log(
@@ -3693,7 +3791,7 @@ DONT USE WHEN
                     // Bare WordPress - broader usage
                     $default_prompt .= "Use this to search for ANY content on the website.
    Examples: \"what services do you offer?\", \"tell me about your company\", \"latest blog posts\", \"contact information\"
-   - NEVER USE PDF NAMES IN RESPONSE and NEVER LINK TO THEM (WHEN URL CONTAIN ?post_type=ai_pdf_document) INSTEAD SAY 'ACCORDING TO DATA SOURCES I FOUND'
+   - NEVER USE PDF NAMES IN RESPONSE and NEVER LINK TO ANY PDF SOURCE, including URLs ending in .pdf or containing ?post_type=ai_pdf_document. INSTEAD SAY 'ACCORDING TO DATA SOURCES I FOUND'
 ";
                 }
 
@@ -3807,7 +3905,7 @@ TOOLS:
             $default_prompt .= "
 ========================================
 RESPONSE GUIDELINES:
-- FOR PDFs ?post_type=ai_pdf_document DO NOT USE LINKS and DO NOT USE PDF FILE NAMES IN RESPONSE
+- NEVER LINK TO ANY PDF SOURCE, including URLs ending in .pdf or containing ?post_type=ai_pdf_document, and do not use PDF file names in the response
 - If answering about LISTINGS or PRODUCTS highlight MAX TWO and say 1-2 sentences about each;
 - Use HTML:
   - <p> for paragraphs
@@ -3899,6 +3997,9 @@ ADDITIONAL NOTES:
 
         $config = [
             "enabled" => get_option("listeo_ai_chat_enabled", 0),
+            "agenticMode" =>
+                AI_Chat_Search_Pro_Manager::is_pro_active() &&
+                (bool) get_option("listeo_ai_chat_agentic_mode", 0),
             "listeo_available" => $has_listeo,
             "woocommerce_available" => $has_woocommerce,
             "hasTools" => !empty($tools),

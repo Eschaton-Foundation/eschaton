@@ -6,6 +6,7 @@
     var optionKey = config.optionKey || 'listeo_ai_proactive_actions';
     var ruleLimit = Math.max(1, parseInt(config.ruleLimit, 10) || 1);
     var searchTimer = null;
+    var whitelistSearchTimer = null;
     var $colorDropdown = null;
     var collapsedActionsCookie = 'purio_proactive_collapsed_actions';
     var labelIcons = {
@@ -64,7 +65,7 @@
             '</div>',
             '<div class="purio-proactive-rule-body">',
             '<input type="hidden" class="purio-proactive-rule-id" name="' + ruleField(index, 'id') + '" value="' + id + '">',
-            '<div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">',
+            '<div class="purio-proactive-rule-grid" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">',
             '<label style="flex:1;min-width:160px;"><span class="airs-label">' + labelIcons.trigger + escapeHtml(strings.trigger) + '</span>',
             '<select class="airs-input purio-proactive-trigger" name="' + ruleField(index, 'trigger') + '"><option value="time">' + escapeHtml(strings.triggerTime) + '</option><option value="scroll_depth">' + escapeHtml(strings.triggerScrollDepth) + '</option></select></label>',
             '<label class="purio-proactive-trigger-time" style="flex:1;min-width:150px;"><span class="airs-label">' + labelIcons.after + escapeHtml(strings.after) + '</span>',
@@ -338,10 +339,7 @@
         );
     }
 
-    function renderSearchResults($input, results) {
-        var $rule = $input.closest('.purio-proactive-rule');
-        var $results = $rule.find('.purio-proactive-search-results');
-
+    function renderContentSearchResults($results, results, resultClass) {
         if (!results.length) {
             $results.html('<div style="padding:8px 10px;color:#666;">' + escapeHtml(strings.noResults) + '</div>').show();
             return;
@@ -350,16 +348,42 @@
         var html = '';
         $.each(results, function (_, item) {
             var id = parseInt(item.id, 10);
-            html += '<div class="post-reference-item purio-proactive-search-result" data-id="' + id + '" data-title="' + escapeHtml(item.title) + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.15s;">';
-            html += '<div style="flex:1;min-width:0;">';
+            html += '<div class="post-reference-item ' + resultClass + '" data-id="' + id + '" data-title="' + escapeHtml(item.title) + '" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.15s;gap:10px;">';
+            html += '<div style="display:flex;align-items:baseline;gap:6px;flex:1;min-width:0;">';
             html += '<div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.title) + '</div>';
-            html += '<div style="font-size:12px;color:#999;margin-top:2px;">ID: ' + id + '</div>';
+            html += '<div style="flex:none;font-size:12px;color:#999;white-space:nowrap;">ID: ' + id + '</div>';
             html += '</div>';
-            html += '<span style="font-size:11px;background:#f5f5f5;color:#666;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-left:10px;">' + escapeHtml(item.type) + '</span>';
+            html += '<span style="font-size:11px;background:#f5f5f5;color:#666;padding:2px 8px;border-radius:4px;white-space:nowrap;">' + escapeHtml(item.type) + '</span>';
             html += '</div>';
         });
 
         $results.html(html).show();
+    }
+
+    function renderSearchResults($input, results) {
+        renderContentSearchResults(
+            $input.closest('.purio-proactive-rule').find('.purio-proactive-search-results'),
+            results,
+            'purio-proactive-search-result'
+        );
+    }
+
+    function addWhitelistedContent($wrap, item) {
+        var id = parseInt(item.id, 10);
+        var $selected = $wrap.find('.purio-floating-whitelist-selected');
+
+        if (!id || $selected.find('[data-id="' + id + '"]').length) {
+            return;
+        }
+
+        $selected.append(
+            '<span class="purio-floating-whitelist-chip purio-post-reference-selected-text" data-id="' + id + '">' +
+                '<strong>' + escapeHtml(item.title) + '</strong>' +
+                '<span style="color:#999;">(ID: ' + id + ')</span>' +
+                '<span class="post-reference-remove purio-floating-whitelist-remove" style="cursor:pointer;color:#999;margin-left:4px;" title="' + escapeHtml(strings.remove) + '">×</span>' +
+                '<input type="hidden" name="listeo_ai_floating_whitelisted_pages[' + id + ']" value="' + id + '">' +
+            '</span>'
+        );
     }
 
     $(function () {
@@ -439,6 +463,10 @@
             $(this).closest('.purio-proactive-content-chip').remove();
         });
 
+        $(document).on('click', '.purio-floating-whitelist-remove', function () {
+            $(this).closest('.purio-floating-whitelist-chip').remove();
+        });
+
         $(document).on('click', '.purio-proactive-add-quick-action', function () {
             var $rule = $(this).closest('.purio-proactive-rule');
             var ruleIndex = $rule.attr('data-rule-index');
@@ -486,9 +514,47 @@
             $rule.find('.purio-proactive-search-results').hide().empty();
         });
 
-        $(document).on('mouseenter', '.purio-proactive-search-result', function () {
+        $(document).on('input', '.purio-floating-whitelist-search', function () {
+            var $input = $(this);
+            var query = $.trim($input.val());
+            var $results = $input.closest('.purio-floating-whitelist-wrap').find('.purio-floating-whitelist-results');
+
+            clearTimeout(whitelistSearchTimer);
+            if (query.length < 2) {
+                $results.hide().empty();
+                return;
+            }
+
+            whitelistSearchTimer = setTimeout(function () {
+                $.get(config.ajaxUrl, {
+                    action: 'listeo_ai_proactive_search_content',
+                    nonce: config.nonce,
+                    query: query
+                }).done(function (response) {
+                    renderContentSearchResults(
+                        $results,
+                        response && response.success ? response.data : [],
+                        'purio-floating-whitelist-search-result'
+                    );
+                });
+            }, 250);
+        });
+
+        $(document).on('click', '.purio-floating-whitelist-search-result', function () {
+            var $result = $(this);
+            var $wrap = $result.closest('.purio-floating-whitelist-wrap');
+
+            addWhitelistedContent($wrap, {
+                id: $result.attr('data-id'),
+                title: $result.attr('data-title')
+            });
+            $wrap.find('.purio-floating-whitelist-search').val('');
+            $wrap.find('.purio-floating-whitelist-results').hide().empty();
+        });
+
+        $(document).on('mouseenter', '.purio-proactive-search-result, .purio-floating-whitelist-search-result', function () {
             $(this).css('background', '#f7f7f7');
-        }).on('mouseleave', '.purio-proactive-search-result', function () {
+        }).on('mouseleave', '.purio-proactive-search-result, .purio-floating-whitelist-search-result', function () {
             $(this).css('background', '');
         });
     });

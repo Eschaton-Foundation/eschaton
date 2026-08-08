@@ -35,12 +35,12 @@ class Listeo_AI_Content_Extractor_Factory {
             case 'post':
                 return new Listeo_AI_Content_Extractor_Post();
 
-            // Page and Product extractors are Pro features
-            // Without Pro, return null extractor that produces no content
             case 'page':
+                // Free pages use the generic core extractor; Pro can override it above.
+                return new Listeo_AI_Content_Extractor_Default();
+
             case 'product':
-                // Pro plugin provides real extractors via filter above
-                // Free version returns empty - no embeddings generated
+                // Pro provides the product extractor via the filter above.
                 return new Listeo_AI_Content_Extractor_Null();
 
             case 'ai_pdf_document':

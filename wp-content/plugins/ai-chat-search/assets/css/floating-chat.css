@@ -254,6 +254,67 @@
     transform-origin: bottom left;
 }
 
+.listeo-floating-mini-chat-identity {
+    position: absolute;
+    top: -42px;
+    left: 0;
+    display: inline-flex;
+    box-sizing: border-box;
+    max-width: calc(100% - 42px);
+    min-height: 32px;
+    margin: 0 !important;
+    padding: 4px 12px !important;
+    align-items: center;
+    gap: 8px;
+    border: 0 !important;
+    border-radius: 100px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+    color: #222 !important;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 24px;
+    text-align: left;
+}
+
+.listeo-floating-mini-chat-identity.has-avatar {
+    padding-left: 4px !important;
+}
+
+.listeo-floating-chat-widget:not(.dark-mode) .listeo-floating-mini-chat-identity {
+    border: 1px solid #ffffffa1 !important;
+    background: #ffffffb8 !important;
+    backdrop-filter: blur(5px);
+}
+
+.listeo-floating-chat-widget.position-left .listeo-floating-mini-chat-identity {
+    right: 0;
+    left: auto;
+}
+
+body .listeo-floating-mini-chat-avatar {
+    display: block;
+    flex: 0 0 24px;
+    box-sizing: border-box;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    margin: 0;
+    border-radius: 50% !important;
+    object-fit: cover;
+}
+
+.listeo-floating-mini-chat-assistant-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .listeo-floating-mini-chat-close {
     position: absolute !important;
     top: -42px !important;
@@ -276,7 +337,6 @@
     box-shadow: none !important;
     color: #666 !important;
     cursor: pointer !important;
-    appearance: none !important;
     transform: none !important;
     transition:
         background-color 0.2s ease,
@@ -299,6 +359,16 @@
     font-size: 15px;
     line-height: 24px;
     white-space: pre-wrap;
+}
+
+.listeo-floating-mini-chat-message a {
+    color: var(--ai-chat-primary-color, #006aff);
+    text-decoration: underline;
+}
+
+.listeo-floating-mini-chat-message a:hover,
+.listeo-floating-mini-chat-message a:focus-visible {
+    color: #0055cc;
 }
 
 .listeo-floating-mini-chat-quick-actions {
@@ -409,14 +479,14 @@
 
 .listeo-floating-mini-chat-send {
     display: inline-flex !important;
-    flex: 0 0 44px !important;
+    flex: 0 0 40px !important;
     box-sizing: border-box !important;
-    width: 44px !important;
-    min-width: 44px !important;
-    max-width: 44px !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    max-height: 44px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
     margin: 0 !important;
     padding: 0 !important;
     align-items: center !important;
@@ -461,9 +531,20 @@
     color-scheme: dark;
 }
 
+.listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-identity {
+    background: #333 !important;
+    color: #e5e5e5 !important;
+}
+
 .listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message {
     background: #2e2e2e !important;
     color: #e5e5e5;
+}
+
+.listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a,
+.listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a:hover,
+.listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a:focus-visible {
+    color: #fff;
 }
 
 .listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-send,

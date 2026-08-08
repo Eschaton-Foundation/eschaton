@@ -17,6 +17,7 @@ if (!defined("ABSPATH")) {
 require_once plugin_dir_path(__FILE__) . "class-admin-chat-history.php";
 require_once plugin_dir_path(__FILE__) . "class-admin-contact-messages.php";
 require_once plugin_dir_path(__FILE__) . "class-admin-search-analytics.php";
+require_once plugin_dir_path(__FILE__) . "class-admin-vector-benchmark.php";
 
 class Listeo_AI_Search_Admin_Interface
 {
@@ -39,6 +40,12 @@ class Listeo_AI_Search_Admin_Interface
     private $search_analytics;
 
     /**
+     * Synthetic vector benchmark handler instance
+     * @var Listeo_AI_Search_Admin_Vector_Benchmark
+     */
+    private $vector_benchmark;
+
+    /**
      * Centralized Settings Registry - Single Source of Truth
      *
      * This registry eliminates duplication across 10+ locations in the codebase.
@@ -59,10 +66,26 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => "openai",
                 "description" => "AI Provider",
                 "options" => [
+                    "no_api_key" => "No API Key",
                     "openai" => "OpenAI",
                     "gemini" => "Google Gemini",
                     "openrouter" => "OpenRouter",
                 ],
+            ],
+            "listeo_ai_free_gateway_email" => [
+                "type" => "text",
+                "section" => "api-config",
+                "sanitize" => "sanitize_email",
+                "default" => "",
+                "description" => "Email for Purio Cloud access",
+            ],
+            "listeo_ai_free_gateway_consent" => [
+                "type" => "checkbox",
+                "section" => "api-config",
+                "sanitize" => "intval",
+                "default" => 0,
+                "description" =>
+                    "Consent to send the site domain and email to PureThemes",
             ],
             "listeo_ai_embedding_model" => [
                 "type" => "select",
@@ -114,6 +137,14 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => 0,
                 "description" =>
                     "Enable low reasoning effort for direct OpenAI GPT-5.6 models",
+            ],
+            "listeo_ai_gpt56_fast_mode" => [
+                "type" => "checkbox",
+                "section" => "ai-chat-config",
+                "sanitize" => "intval",
+                "default" => 0,
+                "description" =>
+                    "Enable OpenAI Fast mode for direct GPT-5.6 models",
             ],
             "listeo_ai_search_debug_mode" => [
                 "type" => "checkbox",
@@ -448,6 +479,13 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => "normal",
                 "description" => "Conversation context length preset",
             ],
+            "listeo_ai_chat_agentic_mode" => [
+                "type" => "checkbox",
+                "section" => "ai-chat-config",
+                "sanitize" => "intval",
+                "default" => 0,
+                "description" => "Enable the optional backend-only agentic chat loop",
+            ],
 
             // ============================================
             // Floating Chat Widget Settings (now part of ai-chat-config section)
@@ -626,6 +664,14 @@ class Listeo_AI_Search_Admin_Interface
                 "default" => [],
                 "description" => "Pages where floating chat should be hidden",
             ],
+            "listeo_ai_floating_whitelisted_pages" => [
+                "type" => "array",
+                "section" => "ai-chat-config",
+                "sanitize" => "array_map_intval",
+                "default" => [],
+                "description" =>
+                    "Content where floating chat should always be shown",
+            ],
             "listeo_ai_floating_offset_desktop_h" => [
                 "type" => "number",
                 "section" => "ai-chat-config",
@@ -795,6 +841,58 @@ class Listeo_AI_Search_Admin_Interface
     private function get_direct_chat_model_catalog()
     {
         return [
+            "no_api_key" => [
+                "google/gemini-3.5-flash-lite" => [
+                    "name" => "Gemini 3.5 Flash Lite",
+                    "description" => __("1 credit per message", "ai-chat-search"),
+                    "group" => "fast",
+                    "capability" => 3,
+                    "speed" => 5,
+                ],
+                "google/gemini-3-flash-preview" => [
+                    "name" => "Gemini 3 Flash",
+                    "description" => __("1 credit per message", "ai-chat-search"),
+                    "group" => "fast",
+                    "capability" => 4,
+                    "speed" => 5,
+                ],
+                "openai/gpt-5.4-mini" => [
+                    "name" => "GPT-5.4 Mini",
+                    "description" => __("1 credit per message", "ai-chat-search"),
+                    "group" => "balanced",
+                    "capability" => 4,
+                    "speed" => 4,
+                    "recommended" => true,
+                ],
+                "anthropic/claude-haiku-4.5" => [
+                    "name" => "Claude Haiku 4.5",
+                    "description" => __("1 credit per message", "ai-chat-search"),
+                    "group" => "fast",
+                    "capability" => 3,
+                    "speed" => 5,
+                ],
+                "google/gemini-3.6-flash" => [
+                    "name" => "Gemini 3.6 Flash",
+                    "description" => __("2 credits per message", "ai-chat-search"),
+                    "group" => "balanced",
+                    "capability" => 4,
+                    "speed" => 5,
+                ],
+                "openai/gpt-5.6-terra" => [
+                    "name" => "GPT-5.6 Terra",
+                    "description" => __("2 credits per message", "ai-chat-search"),
+                    "group" => "capable",
+                    "capability" => 5,
+                    "speed" => 3,
+                ],
+                "anthropic/claude-sonnet-5" => [
+                    "name" => "Claude Sonnet 5",
+                    "description" => __("2 credits per message", "ai-chat-search"),
+                    "group" => "capable",
+                    "capability" => 5,
+                    "speed" => 4,
+                ],
+            ],
             "openai" => [
                 "gpt-5.4-nano" => [
                     "name" => "GPT-5.4 Nano",
@@ -896,7 +994,7 @@ class Listeo_AI_Search_Admin_Interface
                     "description" => __("Previous Flash model", "ai-chat-search"),
                     "group" => "balanced",
                     "capability" => 4,
-                    "speed" => 3,
+                    "speed" => 4,
                 ],
                 "gemini-3.1-flash-lite" => [
                     "name" => "Gemini 3.1 Flash Lite",
@@ -1033,6 +1131,13 @@ class Listeo_AI_Search_Admin_Interface
             return sanitize_text_field($value);
         }
 
+        if (
+            $key === "listeo_ai_chat_agentic_mode" &&
+            !AI_Chat_Search_Pro_Manager::is_pro_active()
+        ) {
+            return 0;
+        }
+
         $config = $registry[$key];
 
         // Allow PRO to handle sanitization for its own settings
@@ -1053,7 +1158,16 @@ class Listeo_AI_Search_Admin_Interface
         // Handle arrays
         if (is_array($value)) {
             // Special handling for page IDs (integers)
-            if ($key === "listeo_ai_floating_excluded_pages") {
+            if (
+                in_array(
+                    $key,
+                    [
+                        "listeo_ai_floating_excluded_pages",
+                        "listeo_ai_floating_whitelisted_pages",
+                    ],
+                    true,
+                )
+            ) {
                 return array_map("intval", $value);
             }
             // Special handling for quick buttons
@@ -1263,6 +1377,7 @@ class Listeo_AI_Search_Admin_Interface
         $this->chat_history = new Admin_Chat_History();
         $this->contact_messages = new Admin_Contact_Messages();
         $this->search_analytics = new Admin_Search_Analytics();
+        $this->vector_benchmark = new Listeo_AI_Search_Admin_Vector_Benchmark();
 
         // Ensure default settings exist (for existing installations)
         add_action("admin_init", [$this, "ensure_default_settings"], 5);
@@ -1273,9 +1388,6 @@ class Listeo_AI_Search_Admin_Interface
             $this,
             "send_no_cache_headers",
         ]);
-
-        // Handle trial gateway toggle
-        add_action("admin_init", [$this, "handle_trial_toggle"]);
 
         // Admin menu
         add_action("admin_menu", [$this, "admin_menu"]);
@@ -1459,41 +1571,6 @@ class Listeo_AI_Search_Admin_Interface
     }
 
     /**
-     * Handle trial gateway toggle via URL parameter.
-     */
-    public function handle_trial_toggle()
-    {
-        if (
-            !isset($_GET["toggle_trial"]) ||
-            !isset($_GET["page"]) ||
-            $_GET["page"] !== "ai-chat-search"
-        ) {
-            return;
-        }
-
-        if (!wp_verify_nonce($_GET["_wpnonce"] ?? "", "toggle_trial_gateway")) {
-            wp_die(__("Security check failed.", "ai-chat-search"));
-        }
-
-        if (!current_user_can("manage_options")) {
-            wp_die(
-                __("You do not have permission to do this.", "ai-chat-search"),
-            );
-        }
-
-        $ai_provider = new Listeo_AI_Provider();
-        if ($ai_provider->is_trial_gateway_active()) {
-            update_option("listeo_ai_use_trial_gateway", 0);
-        } else {
-            update_option("listeo_ai_use_trial_gateway", 1);
-            update_option("listeo_ai_search_provider", "openrouter");
-        }
-
-        wp_redirect(admin_url("admin.php?page=ai-chat-search&tab=ai-chat"));
-        exit();
-    }
-
-    /**
      * Check if Listeo theme is active
      *
      * @return bool True if Listeo or Listeo child theme is active
@@ -1525,9 +1602,11 @@ class Listeo_AI_Search_Admin_Interface
      */
     public function admin_menu()
     {
+        $brand_name = listeo_ai_get_brand_name();
+
         add_menu_page(
-            "PurioChat", // Page title
-            "PurioChat", // Menu title
+            $brand_name, // Page title
+            $brand_name, // Menu title
             "manage_options", // Capability
             "ai-chat-search", // Menu slug
             [$this, "admin_page"], // Callback function
@@ -1708,7 +1787,7 @@ class Listeo_AI_Search_Admin_Interface
             $active_tab
         );
 
-        $page_title = "PurioChat";
+        $page_title = listeo_ai_get_brand_name();
         if ($tab_label && $tab_label !== $active_tab) {
             $page_title .= " \u{2039} " . $tab_label;
         }
@@ -1873,6 +1952,60 @@ class Listeo_AI_Search_Admin_Interface
             ? sanitize_text_field($_POST["section"])
             : "";
 
+        $requested_provider = isset($_POST["listeo_ai_search_provider"])
+            ? sanitize_key(wp_unslash($_POST["listeo_ai_search_provider"]))
+            : get_option("listeo_ai_search_provider", "openai");
+        $requested_gateway_email = isset(
+            $_POST["listeo_ai_free_gateway_email"]
+        )
+            ? sanitize_email(
+                wp_unslash($_POST["listeo_ai_free_gateway_email"]),
+            )
+            : "";
+        if (
+            $requested_provider === "no_api_key" &&
+            !AI_Chat_Search_Pro_Manager::can_use_no_api_key_access()
+        ) {
+            wp_send_json_error([
+                "message" => __(
+                    "Managed Purio Cloud access is not available for the current license.",
+                    "ai-chat-search",
+                ),
+            ]);
+            return;
+        }
+        $saving_api_configuration = in_array(
+            $section,
+            ["settings-config", "api-config"],
+            true,
+        ) || isset($_POST["listeo_ai_search_provider"]);
+        if (
+            $saving_api_configuration &&
+            $requested_provider === "no_api_key" &&
+            !is_email($requested_gateway_email)
+        ) {
+            wp_send_json_error([
+                "message" => __(
+                    "A valid email address is required for Purio Cloud access.",
+                    "ai-chat-search",
+                ),
+            ]);
+            return;
+        }
+        if (
+            $saving_api_configuration &&
+            $requested_provider === "no_api_key" &&
+            empty($_POST["listeo_ai_free_gateway_consent"])
+        ) {
+            wp_send_json_error([
+                "message" => __(
+                    "Consent is required for Purio Cloud access.",
+                    "ai-chat-search",
+                ),
+            ]);
+            return;
+        }
+
         // REFACTORED: Get settings mapping from central registry
         $section_settings = $this->get_section_settings();
         $section_checkboxes = $this->get_section_checkboxes();
@@ -1930,6 +2063,11 @@ class Listeo_AI_Search_Admin_Interface
                 update_option("listeo_ai_floating_excluded_pages", []);
                 $updated_settings["listeo_ai_floating_excluded_pages"] = [];
             }
+            if (!isset($_POST["listeo_ai_floating_whitelisted_pages"])) {
+                // No selected whitelist items = unrestricted by whitelist
+                update_option("listeo_ai_floating_whitelisted_pages", []);
+                $updated_settings["listeo_ai_floating_whitelisted_pages"] = [];
+            }
             // Handle blocked IPs (PRO feature) - if all IPs removed, save empty array
             if (!isset($_POST["listeo_ai_chat_blocked_ips"])) {
                 update_option("listeo_ai_chat_blocked_ips", []);
@@ -1967,6 +2105,15 @@ class Listeo_AI_Search_Admin_Interface
                     $value = Listeo_AI_Provider::get_retired_model_replacement(
                         $value,
                     );
+                    if (
+                        $requested_provider === "no_api_key" &&
+                        AI_Chat_Search_Pro_Manager::can_use_license_managed_gateway()
+                    ) {
+                        $managed_models = Listeo_AI_Provider::get_managed_gateway_chat_models();
+                        if (!isset($managed_models[$value])) {
+                            $value = "openai/gpt-5.4-mini";
+                        }
+                    }
                 }
 
                 if (
@@ -2014,8 +2161,19 @@ class Listeo_AI_Search_Admin_Interface
                         is_string($current_model) &&
                         strpos($current_model, "/") !== false;
 
+                    // No API Key uses the OpenRouter-compatible managed gateway.
+                    if ($value === "no_api_key") {
+                        if (!$is_openrouter_model) {
+                            update_option(
+                                "listeo_ai_chat_model",
+                                "openai/gpt-5.4-mini",
+                            );
+                            $updated_settings["listeo_ai_chat_model"] =
+                                "openai/gpt-5.4-mini";
+                        }
+                    }
                     // If switching to OpenAI and current model is not an OpenAI model
-                    if (
+                    elseif (
                         $value === "openai" &&
                         !in_array($current_model, $openai_models)
                     ) {
@@ -2604,6 +2762,18 @@ class Listeo_AI_Search_Admin_Interface
             if (delete_transient("listeo_ai_api_health")) {
                 $cleared_count++;
                 $cleared_types[] = __("API health status", "ai-chat-search");
+            }
+
+            // Clear and immediately refresh the Purio Cloud rollout config.
+            if (class_exists("AI_Chat_Search_Pro_Manager")) {
+                delete_option(AI_Chat_Search_Pro_Manager::GATEWAY_ROLLOUT_OPTION);
+                wp_cache_delete(
+                    AI_Chat_Search_Pro_Manager::GATEWAY_ROLLOUT_OPTION,
+                    "options",
+                );
+                AI_Chat_Search_Pro_Manager::refresh_gateway_rollout_config();
+                $cleared_count++;
+                $cleared_types[] = __("Purio Cloud availability", "ai-chat-search");
             }
 
             // Clear global rate limit (current hour)
@@ -3464,37 +3634,53 @@ class Listeo_AI_Search_Admin_Interface
         );
 
         // Settings module (provider toggle, API tests, forms)
+        $admin_settings_path = LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/js/admin/ai-admin-settings.js";
+        $admin_settings_version = file_exists($admin_settings_path)
+            ? (string) filemtime($admin_settings_path)
+            : $js_version;
         wp_enqueue_script(
             "airs-admin-settings",
             $js_base_url . "ai-admin-settings.js",
             ["jquery", "airs-admin-core"],
-            $js_version,
+            $admin_settings_version,
             true,
         );
 
         // Embeddings module (batch processing, viewer)
+        $admin_embeddings_path = LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/js/admin/admin-ui-embeddings.js";
+        $admin_embeddings_version = file_exists($admin_embeddings_path)
+            ? (string) filemtime($admin_embeddings_path)
+            : $js_version;
         wp_enqueue_script(
             "airs-admin-embeddings",
             $js_base_url . "admin-ui-embeddings.js",
             ["jquery", "airs-admin-core"],
-            $js_version,
+            $admin_embeddings_version,
             true,
         );
 
+        $composing_orb_path = LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/js/admin/thinking-orb-composing.js";
+        $composing_orb_version = file_exists($composing_orb_path)
+            ? (string) filemtime($composing_orb_path)
+            : $js_version;
         wp_enqueue_script(
             "airs-composing-orb",
             $js_base_url . "thinking-orb-composing.js",
             [],
-            $js_version,
+            $composing_orb_version,
             true,
         );
 
         // Database module (status, actions, search)
+        $admin_database_path = LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/js/admin/admin-database.js";
+        $admin_database_version = file_exists($admin_database_path)
+            ? (string) filemtime($admin_database_path)
+            : $js_version;
         wp_enqueue_script(
             "airs-admin-database",
             $js_base_url . "admin-database.js",
             ["jquery", "airs-admin-core", "airs-admin-embeddings"],
-            $js_version,
+            $admin_database_version,
             true,
         );
 
@@ -3576,11 +3762,10 @@ class Listeo_AI_Search_Admin_Interface
             "total_embeddings" => intval($total_embeddings),
             "has_api_key" => $has_api_key,
             "provider_name" => $provider->get_provider_name(),
-            "current_provider" => $provider->get_provider(),
+            "current_provider" => get_option("listeo_ai_search_provider", "openai"),
             "settings_url" => admin_url(
                 "admin.php?page=ai-chat-search&tab=ai-chat",
             ),
-            "trial_gateway_active" => $provider->is_trial_gateway_active(),
         ]);
 
         // Localize translations for all modules
@@ -3626,6 +3811,11 @@ class Listeo_AI_Search_Admin_Interface
             "mistralModel" => __("Mistral Model", "ai-chat-search"),
             "mistralModelHelp" => __(
                 "Select the Mistral model for chat responses.",
+                "ai-chat-search",
+            ),
+            "purioCloudModel" => __("Purio Cloud Model", "ai-chat-search"),
+            "purioCloudModelHelp" => __(
+                "Choose the Purio Cloud model and credit cost per message. The gateway validates the model and pricing.",
                 "ai-chat-search",
             ),
             "directModelCatalog" => $this->get_direct_chat_model_catalog(),
@@ -3741,6 +3931,47 @@ class Listeo_AI_Search_Admin_Interface
             "generationFailed" => __("Training failed.", "ai-chat-search"),
             "connectionError" => __(
                 "Training failed due to connection error.",
+                "ai-chat-search",
+            ),
+            "trainingReady" => __(
+                "Ready to start training",
+                "ai-chat-search",
+            ),
+            "trainingInProgress" => __(
+                "Training in progress...",
+                "ai-chat-search",
+            ),
+            "trainingCompleteTitle" => __(
+                "Training complete",
+                "ai-chat-search",
+            ),
+            "trainingStoppedTitle" => __(
+                "Training stopped",
+                "ai-chat-search",
+            ),
+            "trainingFailedTitle" => __(
+                "Training failed",
+                "ai-chat-search",
+            ),
+            "trainingItemsLabel" => __("items", "ai-chat-search"),
+            "trainingSourceSelected" => __("source selected", "ai-chat-search"),
+            "trainingSourcesSelected" => __("sources selected", "ai-chat-search"),
+            "stopTraining" => __("Stop", "ai-chat-search"),
+            "closeTraining" => __("Close", "ai-chat-search"),
+            "openAiQuotaTitle" => __(
+                "OpenAI API billing required",
+                "ai-chat-search",
+            ),
+            "openAiQuotaMessage" => __(
+                "OpenAI returned a 429 quota error. Add at least $5 to your OpenAI API credit balance, then start training again.",
+                "ai-chat-search",
+            ),
+            "geminiQuotaTitle" => __(
+                "Google Gemini billing required",
+                "ai-chat-search",
+            ),
+            "geminiQuotaMessage" => __(
+                "Google Gemini returned a 429 quota error. Connect a credit card and complete the billing information for the Google Cloud project linked to this API key, then start training again.",
                 "ai-chat-search",
             ),
             "apiKeyMissing" => __("API Key Not Configured", "ai-chat-search"),
@@ -4209,14 +4440,39 @@ class Listeo_AI_Search_Admin_Interface
                                     __("Hello, %s", "ai-chat-search"),
                                     esc_html($greeting_name),
                                 ); ?></div>
-                                <p class="airs-header-subtitle"><?php printf(
-                                    __(
-                                        "Manage your AI assistant, train your content, and track conversations with %sPurioChat by Purethemes%s.",
-                                        "ai-chat-search",
-                                    ),
-                                    '<a href="https://purethemes.net/ai-chatbot-for-wordpress/" target="_blank">',
-                                    "</a>",
-                                ); ?></p>
+                                <p class="airs-header-subtitle"><?php
+                                $branding = listeo_ai_get_branding();
+                                if (!empty($branding["enabled"])) {
+                                    $brand_link_open = $branding["url"] !== ""
+                                        ? sprintf(
+                                            '<a href="%s" target="_blank" rel="noopener noreferrer">',
+                                            esc_url($branding["url"]),
+                                        )
+                                        : "";
+                                    $brand_link_close = $brand_link_open !== ""
+                                        ? "</a>"
+                                        : "";
+                                    printf(
+                                        /* translators: 1: opening brand link, 2: brand name, 3: closing brand link. */
+                                        __(
+                                            "Manage your AI assistant, train your content, and track conversations with %1\$s%2\$s%3\$s.",
+                                            "ai-chat-search",
+                                        ),
+                                        $brand_link_open,
+                                        esc_html($branding["name"]),
+                                        $brand_link_close,
+                                    );
+                                } else {
+                                    printf(
+                                        __(
+                                            "Manage your AI assistant, train your content, and track conversations with %sPurioChat by Purethemes%s.",
+                                            "ai-chat-search",
+                                        ),
+                                        '<a href="https://purethemes.net/ai-chatbot-for-wordpress/" target="_blank">',
+                                        "</a>",
+                                    );
+                                }
+                                ?></p>
                             </div>
                         </div>
                     </div>
@@ -4525,33 +4781,44 @@ class Listeo_AI_Search_Admin_Interface
     {
         ?>
         <?php
+        AI_Chat_Search_Pro_Manager::refresh_gateway_rollout_config();
         $ai_provider = new Listeo_AI_Provider();
         $trial_is_active = false;
-        $trial_hours = 0;
-        $config = [];
+        $current_provider = get_option("listeo_ai_search_provider", "openai");
+        $is_pro = AI_Chat_Search_Pro_Manager::is_pro_active();
         if (class_exists("AI_Chat_Search_Pro_Proxy_License_Manager")) {
             $lm = AI_Chat_Search_Pro_Proxy_License_Manager::get_instance();
             $trial_is_active =
                 $lm->is_trial_license() && $lm->get_trial_time_remaining() > 0;
-            $trial_hours = floor($lm->get_trial_time_remaining() / 3600);
-            if ($trial_is_active) {
-                $config = $ai_provider->get_remote_config();
-            }
         }
-        $chat_limit = !empty($config["chat_limit"])
-            ? (int) $config["chat_limit"]
-            : 500;
-        $embeddings_limit = !empty($config["embeddings_limit"])
-            ? (int) $config["embeddings_limit"]
-            : 500;
-        $toggle_url = wp_nonce_url(
-            admin_url(
-                "admin.php?page=ai-chat-search&tab=ai-chat&toggle_trial=1",
-            ),
-            "toggle_trial_gateway",
-        );
-        $current_provider = get_option("listeo_ai_search_provider", "openai");
+        $can_use_no_api_key = AI_Chat_Search_Pro_Manager::can_use_no_api_key_access();
+        $is_license_gateway = AI_Chat_Search_Pro_Manager::can_use_license_managed_gateway();
+        $is_paid_license_gateway = $is_license_gateway && !$trial_is_active;
+        $managed_provider_label = $is_license_gateway
+            ? __("Purio Cloud", "ai-chat-search")
+            : __("No API Key", "ai-chat-search");
+        $show_no_api_key_provider =
+            $can_use_no_api_key &&
+            ($is_license_gateway ||
+                ($is_pro && $trial_is_active) ||
+                !$ai_provider->has_own_api_key() ||
+                $current_provider === "no_api_key");
+        if (!$show_no_api_key_provider && $current_provider === "no_api_key") {
+            $current_provider = "openai";
+        }
+        $free_gateway_chat_limit = 50;
+        $starter_gateway_credits = 100;
         $model = get_option("listeo_ai_chat_model", "gpt-5.4-mini");
+        $managed_gateway_models = Listeo_AI_Provider::get_managed_gateway_chat_models();
+        $can_manage_cloud_model =
+            $is_license_gateway && current_user_can("manage_options");
+        if (
+            $current_provider === "no_api_key" &&
+            $can_manage_cloud_model &&
+            !isset($managed_gateway_models[$model])
+        ) {
+            $model = "openai/gpt-5.4-mini";
+        }
         ?>
 
         <div class="airs-card is-active" data-chat-section="api-config">
@@ -4570,101 +4837,43 @@ class Listeo_AI_Search_Admin_Interface
             <div class="airs-card-body" style="position: relative;">
                     <?php do_action("ai_chat_search_auto_config_card"); ?>
 
-                    <?php if (
-                        $trial_is_active &&
-                        $ai_provider->is_trial_gateway_active()
-                    ): ?>
-                    <div class="airs-trial-overlay">
-                        <div class="airs-trial-overlay-inner">
-                            <svg class="airs-trial-overlay-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            <strong class="airs-trial-overlay-title"><?php _e(
-                                "Free Trial Active",
-                                "ai-chat-search",
-                            ); ?></strong>
-                            <p class="airs-trial-overlay-text">
-                                <?php printf(
-                                    __(
-                                        'No API key needed during your trial. We\'ve got you covered.<br>Chat limit: <strong>%d</strong> messages. Training limit: <strong>%d</strong> resources.',
-                                        "ai-chat-search",
-                                    ),
-                                    esc_html($chat_limit),
-                                    esc_html($embeddings_limit),
-                                ); ?>
-                            </p>
-                            <a href="<?php echo esc_url(
-                                $toggle_url,
-                            ); ?>" class="airs-button airs-button-primary airs-trial-overlay-btn"><?php _e(
-    "Use my API key now",
-    "ai-chat-search",
-); ?></a>
-                            <p class="airs-trial-overlay-disclaimer"><?php _e(
-                                "After the trial you need to use your own API key.",
-                                "ai-chat-search",
-                            ); ?></p>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
                     <!-- AI Provider Selection -->
                     <div class="airs-form-group">
                         <label for="listeo_ai_search_provider" class="airs-label">
                             <?php _e("AI Provider", "ai-chat-search"); ?>
-                            <?php if (
-                                $trial_is_active &&
-                                !empty($config["enabled"]) &&
-                                !$ai_provider->is_trial_gateway_active() &&
-                                (!$ai_provider->has_own_api_key() ||
-                                    get_option(
-                                        "listeo_ai_search_debug_mode",
-                                        false,
-                                    ))
-                            ): ?>
-                            <a href="<?php echo esc_url(
-                                $toggle_url,
-                            ); ?>" style="margin-left:8px;vertical-align:middle;text-decoration:underline;color:#0073ee;"><?php _e(
-    "Use Trial AI Gateway",
-    "ai-chat-search",
-); ?></a>
-                            <?php endif; ?>
                         </label>
 
                         <!-- Hidden select for data storage -->
                         <select id="listeo_ai_search_provider" name="listeo_ai_search_provider" class="airs-input" style="display: none;">
+                            <?php if ($show_no_api_key_provider): ?>
+                            <option value="no_api_key" <?php selected(
+                                $current_provider,
+                                "no_api_key",
+                            ); ?>><?php echo esc_html($managed_provider_label); ?></option>
+                            <?php endif; ?>
                             <option value="openai" <?php selected(
-                                get_option(
-                                    "listeo_ai_search_provider",
-                                    "openai",
-                                ),
+                                $current_provider,
                                 "openai",
                             ); ?>><?php _e(
     "OpenAI",
     "ai-chat-search",
 ); ?></option>
                             <option value="gemini" <?php selected(
-                                get_option(
-                                    "listeo_ai_search_provider",
-                                    "openai",
-                                ),
+                                $current_provider,
                                 "gemini",
                             ); ?>><?php _e(
     "Google Gemini",
     "ai-chat-search",
 ); ?></option>
                             <option value="mistral" <?php selected(
-                                get_option(
-                                    "listeo_ai_search_provider",
-                                    "openai",
-                                ),
+                                $current_provider,
                                 "mistral",
                             ); ?>><?php _e(
     "Mistral AI",
     "ai-chat-search",
 ); ?></option>
                             <option value="openrouter" <?php selected(
-                                get_option(
-                                    "listeo_ai_search_provider",
-                                    "openai",
-                                ),
+                                $current_provider,
                                 "openrouter",
                             ); ?>><?php _e(
     "OpenRouter",
@@ -4672,10 +4881,24 @@ class Listeo_AI_Search_Admin_Interface
 ); ?></option>
                         </select>
 
+                        <div class="airs-provider-selection-box">
+                        <div class="airs-provider-toggle-slot">
                         <!-- Custom Toggle Switch with Logos -->
-                        <div class="ai-provider-toggle ai-provider-toggle-4" data-selected="<?php echo esc_attr(
-                            get_option("listeo_ai_search_provider", "openai"),
+                        <div class="ai-provider-toggle ai-provider-toggle-<?php echo esc_attr(
+                            $show_no_api_key_provider ? "5" : "4",
+                        ); ?>" data-selected="<?php echo esc_attr(
+                            $current_provider,
                         ); ?>">
+                            <?php if ($show_no_api_key_provider): ?>
+                            <div class="ai-provider-option" data-value="no_api_key">
+                                <div class="ai-provider-logo">
+                                    <img src="<?php echo esc_url(
+                                        LISTEO_AI_SEARCH_PLUGIN_URL .
+                                            "assets/icons/purio-provider.svg",
+                                    ); ?>" alt="<?php echo esc_attr($managed_provider_label); ?>">
+                                </div>
+                            </div>
+                            <?php endif; ?>
                             <div class="ai-provider-option" data-value="openai">
                                 <div class="ai-provider-logo">
                                     <img src="<?php echo esc_url(
@@ -4710,15 +4933,38 @@ class Listeo_AI_Search_Admin_Interface
                             </div>
                             <div class="ai-provider-slider"></div>
                         </div>
-
-                        <div class="airs-help-text">
-                            <?php _e(
-                                "Choose between OpenAI, Google Gemini, Mistral AI, or OpenRouter - a gateway to all top AI models.",
-                                "ai-chat-search",
-                            ); ?>
+                        </div>
                         </div>
 
                         <div class="airs-provider-notices">
+                            <div class="airs-debug-notice airs-provider-notice provider-field provider-no-api-key" style="<?php echo $current_provider !==
+                            "no_api_key"
+                                ? "display:none;"
+                                : ""; ?>">
+                                <?php if ($is_paid_license_gateway): ?>
+                                    <?php _e(
+                                        "<strong>Purio Cloud for Pro.</strong> Includes 100 starter credits per license. Requests then use your license-linked balance; no provider API key is required.",
+                                        "ai-chat-search",
+                                    ); ?>
+                                <?php elseif ($trial_is_active): ?>
+                                    <?php printf(
+                                        __(
+                                            "<strong>Purio Cloud Trial.</strong> Includes <strong>%d starter credits</strong> — up to %d messages with 1-credit models.",
+                                            "ai-chat-search",
+                                        ),
+                                        esc_html($starter_gateway_credits),
+                                        esc_html($starter_gateway_credits),
+                                    ); ?>
+                                <?php else: ?>
+                                    <?php printf(
+                                        __(
+                                            "<strong>Free test access.</strong> No API key required (<strong>up to %d messages per domain</strong> with GPT-5.4 Mini).",
+                                            "ai-chat-search",
+                                        ),
+                                        esc_html($free_gateway_chat_limit),
+                                    ); ?>
+                                <?php endif; ?>
+                            </div>
                             <div class="airs-debug-notice airs-provider-notice provider-field provider-openai" style="<?php echo $current_provider !==
                             "openai"
                                 ? "display:none;"
@@ -4780,7 +5026,57 @@ class Listeo_AI_Search_Admin_Interface
 
                     <div class="airs-provider-model-layout" data-provider="<?php echo esc_attr(
                         $current_provider,
-                    ); ?>">
+                    ); ?>" data-license-gateway="<?php echo $can_manage_cloud_model
+    ? "1"
+    : "0"; ?>">
+                    <!-- Email and consent are required for every Purio Cloud tier. -->
+                    <div class="airs-form-group airs-purio-cloud-contact provider-field provider-no-api-key" style="<?php echo $current_provider !==
+                    "no_api_key"
+                        ? "display:none;"
+                        : ""; ?>">
+                        <label for="listeo_ai_free_gateway_email" class="airs-label airs-settings-panel-label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+                            <?php _e("Email Address", "ai-chat-search"); ?>&nbsp;<span style="color: #d63638;"><?php _e(
+                                "(required)",
+                                "ai-chat-search",
+                            ); ?></span>
+                        </label>
+                        <div class="airs-group-block airs-settings-panel-body">
+                            <input type="email" id="listeo_ai_free_gateway_email" name="listeo_ai_free_gateway_email" value="<?php echo esc_attr(
+                                get_option("listeo_ai_free_gateway_email", ""),
+                            ); ?>" class="airs-input" placeholder="name@example.com" />
+                            <label class="airs-checkbox-label" for="listeo_ai_free_gateway_consent" style="margin-top: 14px; align-items: flex-start;">
+                                <input type="checkbox" id="listeo_ai_free_gateway_consent" name="listeo_ai_free_gateway_consent" value="1" <?php checked(
+                                    get_option(
+                                        "listeo_ai_free_gateway_consent",
+                                        0,
+                                    ),
+                                    1,
+                                ); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <?php _e(
+                                        "I consent to sending this site's domain and the email address above to PureThemes for Purio Cloud access.",
+                                        "ai-chat-search",
+                                    ); ?>
+                                    <span style="color: #d63638;"><?php _e(
+                                        "(required)",
+                                        "ai-chat-search",
+                                    ); ?></span>
+                                </span>
+                            </label>
+                            <p class="airs-help-text" style="margin: 10px 0 0;">
+                                <?php printf(
+                                    __(
+                                        'These details are used to provide and limit managed access. See our %1$sPrivacy Policy%2$s.',
+                                        "ai-chat-search",
+                                    ),
+                                    '<a href="https://purethemes.net/privacy-policy/" target="_blank" rel="noopener noreferrer">',
+                                    "</a>",
+                                ); ?>
+                            </p>
+                        </div>
+                    </div>
                     <!-- OpenAI API Key (shown when provider is OpenAI) -->
                     <div class="airs-form-group provider-field provider-openai" style="<?php echo get_option(
                         "listeo_ai_search_provider",
@@ -4788,14 +5084,14 @@ class Listeo_AI_Search_Admin_Interface
                     ) !== "openai"
                         ? "display:none;"
                         : ""; ?>">
-                        <label for="listeo_ai_search_api_key" class="airs-label">
+                        <label for="listeo_ai_search_api_key" class="airs-label airs-settings-panel-label">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                             <?php _e("OpenAI API Key", "ai-chat-search"); ?>
                         </label>
                         <?php $has_openai_key =
                             get_option("listeo_ai_search_api_key", "") !==
                             ""; ?>
-                        <div class="airs-api-test-wrapper airs-group-block" style="padding: 20px; padding-bottom: 20px; border-radius: 8px; border: 1px solid #e0e0e0; margin-top: 10px;">
+                        <div class="airs-api-test-wrapper airs-group-block airs-settings-panel-body">
                             <input type="password" id="listeo_ai_search_api_key" name="<?php echo $has_openai_key
                                 ? ""
                                 : "listeo_ai_search_api_key"; ?>" value="<?php echo $has_openai_key
@@ -4833,7 +5129,7 @@ class Listeo_AI_Search_Admin_Interface
                     ) !== "gemini"
                         ? "display:none;"
                         : ""; ?>">
-                        <label for="listeo_ai_search_gemini_api_key" class="airs-label">
+                        <label for="listeo_ai_search_gemini_api_key" class="airs-label airs-settings-panel-label">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                             <?php _e(
                                 "Google Gemini API Key",
@@ -4845,7 +5141,7 @@ class Listeo_AI_Search_Admin_Interface
                                 "listeo_ai_search_gemini_api_key",
                                 "",
                             ) !== ""; ?>
-                        <div class="airs-api-test-wrapper airs-group-block" style="padding: 20px; padding-bottom: 20px; border-radius: 8px; border: 1px solid #e0e0e0; margin-top: 10px;">
+                        <div class="airs-api-test-wrapper airs-group-block airs-settings-panel-body">
                             <input type="password" id="listeo_ai_search_gemini_api_key" name="<?php echo $has_gemini_key
                                 ? ""
                                 : "listeo_ai_search_gemini_api_key"; ?>" value="<?php echo $has_gemini_key
@@ -4883,7 +5179,7 @@ class Listeo_AI_Search_Admin_Interface
                     ) !== "mistral"
                         ? "display:none;"
                         : ""; ?>">
-                        <label for="listeo_ai_search_mistral_api_key" class="airs-label">
+                        <label for="listeo_ai_search_mistral_api_key" class="airs-label airs-settings-panel-label">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                             <?php _e("Mistral AI API Key", "ai-chat-search"); ?>
                         </label>
@@ -4892,7 +5188,7 @@ class Listeo_AI_Search_Admin_Interface
                                 "listeo_ai_search_mistral_api_key",
                                 "",
                             ) !== ""; ?>
-                        <div class="airs-api-test-wrapper airs-group-block" style="padding: 20px; padding-bottom: 20px; border-radius: 8px; border: 1px solid #e0e0e0; margin-top: 10px;">
+                        <div class="airs-api-test-wrapper airs-group-block airs-settings-panel-body">
                             <input type="password" id="listeo_ai_search_mistral_api_key" name="<?php echo $has_mistral_key
                                 ? ""
                                 : "listeo_ai_search_mistral_api_key"; ?>" value="<?php echo $has_mistral_key
@@ -4930,7 +5226,7 @@ class Listeo_AI_Search_Admin_Interface
                     ) !== "openrouter"
                         ? "display:none;"
                         : ""; ?>">
-                        <label for="listeo_ai_search_openrouter_api_key" class="airs-label">
+                        <label for="listeo_ai_search_openrouter_api_key" class="airs-label airs-settings-panel-label">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                             <?php _e("OpenRouter API Key", "ai-chat-search"); ?>
                         </label>
@@ -4939,7 +5235,7 @@ class Listeo_AI_Search_Admin_Interface
                                 "listeo_ai_search_openrouter_api_key",
                                 "",
                             ) !== ""; ?>
-                        <div class="airs-api-test-wrapper airs-group-block" style="padding: 20px; padding-bottom: 20px; border-radius: 8px; border: 1px solid #e0e0e0; margin-top: 10px;">
+                        <div class="airs-api-test-wrapper airs-group-block airs-settings-panel-body">
                             <input type="password" id="listeo_ai_search_openrouter_api_key" name="<?php echo $has_openrouter_key
                                 ? ""
                                 : "listeo_ai_search_openrouter_api_key"; ?>" value="<?php echo $has_openrouter_key
@@ -4971,11 +5267,16 @@ class Listeo_AI_Search_Admin_Interface
                     </div>
 
                     <!-- Model Selection -->
-                    <div class="airs-form-group airs-model-selection">
-                        <label for="listeo_ai_chat_model" class="airs-label">
+                    <div class="airs-form-group airs-model-selection" style="<?php echo $current_provider ===
+                    "no_api_key" && !$can_manage_cloud_model
+                        ? "display:none;"
+                        : ""; ?>">
+                        <label for="listeo_ai_chat_model" class="airs-label airs-settings-panel-label">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
                             <span id="model-label-text">
-                                <?php if ($current_provider === "gemini") {
+                                <?php if ($current_provider === "no_api_key" && $can_manage_cloud_model) {
+                                    _e("Purio Cloud Model", "ai-chat-search");
+                                } elseif ($current_provider === "gemini") {
                                     _e("Gemini Model", "ai-chat-search");
                                 } elseif ($current_provider === "mistral") {
                                     _e("Mistral Model", "ai-chat-search");
@@ -4986,7 +5287,7 @@ class Listeo_AI_Search_Admin_Interface
                                 } ?>
                             </span>
                         </label>
-                        <div style="padding: 20px;  padding-bottom: 5px; border-radius: 8px; border: 1px solid #e0e0e0;" class="airs-group-block">
+                        <div class="airs-group-block airs-settings-panel-body">
                         <?php // Helper closure: emit a single <option> with its vendor icon prepended.
 
         $render_model_option = function (
@@ -5021,9 +5322,46 @@ class Listeo_AI_Search_Admin_Interface
                             );
                         };
         $direct_chat_models = $this->get_direct_chat_model_catalog(); ?>
-                        <div style="display: flex; align-items: flex-start; gap: 5px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: flex-start; row-gap: 5px; column-gap: 20px; flex-wrap: wrap;">
                         <div id="airs-direct-model-selector" class="airs-direct-model-selector" hidden></div>
                         <select id="listeo_ai_chat_model" name="listeo_ai_chat_model" class="airs-input" style="flex: 1; min-width: 260px;">
+                            <?php if ($can_manage_cloud_model): ?>
+                            <?php foreach ([1, 2] as $credit_cost): ?>
+                            <optgroup label="<?php echo esc_attr(
+                                sprintf(
+                                    _n(
+                                        "%d credit per message",
+                                        "%d credits per message",
+                                        $credit_cost,
+                                        "ai-chat-search",
+                                    ),
+                                    $credit_cost,
+                                ),
+                            ); ?>" class="model-group model-group-purio-cloud" data-credits="<?php echo esc_attr(
+                                $credit_cost,
+                            ); ?>" style="<?php echo $current_provider !== "no_api_key"
+    ? "display:none;"
+    : ""; ?>">
+                                <?php foreach ($managed_gateway_models as $slug => $model_data): ?>
+                                    <?php if ((int) $model_data["credits"] === $credit_cost): ?>
+                                        <?php $render_model_option(
+                                            $slug,
+                                            sprintf(
+                                                _n(
+                                                    '%1$s — %2$d credit',
+                                                    '%1$s — %2$d credits',
+                                                    $credit_cost,
+                                                    "ai-chat-search",
+                                                ),
+                                                $model_data["name"],
+                                                $credit_cost,
+                                            ),
+                                        ); ?>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </optgroup>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
                             <!-- OpenAI Models -->
                             <optgroup label="OpenAI Models" class="model-group model-group-openai" style="<?php echo $current_provider !==
                             "openai"
@@ -5159,8 +5497,30 @@ class Listeo_AI_Search_Admin_Interface
                                     <span class="airs-checkbox-text"><?php _e(
                                         "Enable reasoning",
                                         "ai-chat-search",
-                                    ); ?> <span class="airs-hint-icon" data-tooltip="<?php esc_attr_e(
+                                    ); ?> <span class="airs-hint-icon" data-airs-tooltip="<?php esc_attr_e(
      "Uses low reasoning effort. Disable for no reasoning and faster responses.",
+     "ai-chat-search",
+ ); ?>" aria-label="<?php esc_attr_e(
+    "More info",
+    "ai-chat-search",
+); ?>" tabindex="0">?</span></span>
+                                </label>
+                            </div>
+                            <!-- GPT-5.6 Fast mode toggle (direct OpenAI only) -->
+                            <div id="gpt56-fast-mode-field" style="<?php echo $current_provider === "openai" && strpos($model, "gpt-5.6-") === 0
+                                ? ""
+                                : "display:none;"; ?>">
+                                <label class="airs-checkbox-label" style="margin-top: 8px; white-space: nowrap;">
+                                    <input type="checkbox" name="listeo_ai_gpt56_fast_mode" value="1" <?php checked(
+                                        get_option("listeo_ai_gpt56_fast_mode", 0),
+                                        1,
+                                    ); ?> />
+                                    <span class="airs-checkbox-custom"></span>
+                                    <span class="airs-checkbox-text"><?php _e(
+                                        "Fast mode",
+                                        "ai-chat-search",
+                                    ); ?> <span class="airs-hint-icon" data-airs-tooltip="<?php esc_attr_e(
+     "Uses faster, more consistent OpenAI processing at a higher per-token price.",
      "ai-chat-search",
  ); ?>" aria-label="<?php esc_attr_e(
     "More info",
@@ -5185,7 +5545,7 @@ class Listeo_AI_Search_Admin_Interface
                                     <span class="airs-checkbox-text"><?php _e(
                                         "Enable reasoning",
                                         "ai-chat-search",
-                                    ); ?> <span class="airs-hint-icon" data-tooltip="<?php esc_attr_e(
+                                    ); ?> <span class="airs-hint-icon" data-airs-tooltip="<?php esc_attr_e(
      "Reasoning can produce better answers for complex questions but might be slower.",
      "ai-chat-search",
  ); ?>" aria-label="<?php esc_attr_e(
@@ -5196,7 +5556,12 @@ class Listeo_AI_Search_Admin_Interface
                             </div>
                         </div>
                         <p class="airs-help-text" id="model-help-text">
-                            <?php if ($current_provider === "gemini") {
+                            <?php if ($current_provider === "no_api_key" && $can_manage_cloud_model) {
+                                _e(
+                                    "Choose the Purio Cloud model and credit cost per message. The gateway validates the model and pricing.",
+                                    "ai-chat-search",
+                                );
+                            } elseif ($current_provider === "gemini") {
                                 _e(
                                     "Select the Gemini model for chat responses. Better models provide more accurate and context-aware responses.",
                                     "ai-chat-search",
@@ -5238,11 +5603,52 @@ class Listeo_AI_Search_Admin_Interface
 
                     </div>
 
+                    <!-- Agentic Mode -->
+                    <div class="airs-form-group airs-agentic-mode-setting">
+                        <div class="airs-group-block airs-agentic-mode-card<?php echo !$is_pro
+                            ? " is-disabled"
+                            : ""; ?>">
+                            <label class="airs-checkbox-label" for="listeo-ai-chat-agentic-mode">
+                                <input id="listeo-ai-chat-agentic-mode" type="checkbox" name="listeo_ai_chat_agentic_mode" value="1" <?php checked(
+                                    $is_pro &&
+                                        get_option(
+                                            "listeo_ai_chat_agentic_mode",
+                                            0,
+                                        ),
+                                    1,
+                                ); ?> <?php disabled(!$is_pro); ?> />
+                                <span class="airs-checkbox-custom"></span>
+                                <span class="airs-checkbox-text">
+                                    <span class="airs-agentic-mode-title"><?php _e(
+                                        "Enable Agentic Mode",
+                                        "ai-chat-search",
+                                    ); ?></span>
+                                    <?php if ($is_pro): ?>
+                                        <span class="airs-status-badge airs-status-badge--beta">
+                                            <?php _e("Beta", "ai-chat-search"); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
+                                    <?php endif; ?>
+                                    <small style="line-height: 1.6;"><?php echo wp_kses_post(
+                                        __(
+                                            "Let AI handle multi-step requests. For example: <strong>“Find me headphones, pick the best one and add it to the cart, then check the refund policy and find the store owner’s contact details.”</strong> It searches, combines results, and shows progress as it works.",
+                                            "ai-chat-search",
+                                        ),
+                                    ); ?></small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Rate Limit Settings - Collapsible -->
                     <div class="airs-collapsible-section">
                         <div class="airs-collapsible-header" data-section="rate-limits">
                             <span class="airs-collapsible-title">
-                                <span class="dashicons dashicons-shield"></span>
+                                <svg class="airs-collapsible-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M12 3 20 6v5.5c0 4.8-3.2 8.3-8 10.5-4.8-2.2-8-5.7-8-10.5V6l8-3Z"></path>
+                                    <path d="m8.5 12 2.2 2.2 4.8-4.8"></path>
+                                </svg>
                                 <?php _e(
                                     "Rate Limit Settings",
                                     "ai-chat-search",
@@ -5420,39 +5826,41 @@ class Listeo_AI_Search_Admin_Interface
             <div class="airs-card-body">
                 <?php $this->render_search_field_shortcode_builder(); ?>
                 <?php if (!Listeo_AI_Detection::is_listeo_available()): ?>
-                    <?php $this->render_min_match_slider(); ?>
+                    <div class="airs-search-tuning-row">
+                        <?php $this->render_min_match_slider(); ?>
 
-                    <div class="airs-form-group">
-                        <label for="listeo_ai_search_max_results" class="airs-label">
-                            <?php _e(
-                                "Maximum AI Top Picks Results",
-                                "ai-chat-search",
-                            ); ?>
-                        </label>
-                        <div class="airs-group-block" style="background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #e0e0e0;">
-                        <input type="number" id="listeo_ai_search_max_results" name="listeo_ai_search_max_results" value="<?php echo esc_attr(
-                            get_option("listeo_ai_search_max_results", 10),
-                        ); ?>" min="3" max="50" step="1" class="airs-input airs-input-small" />
-                        <span><?php _e("results", "ai-chat-search"); ?></span>
-                        <div class="airs-help-text">
-                            <?php _e(
-                                'Maximum number of <strong>"Best Match" badge</strong> results to display in <strong>search field shortcode</strong> dropdown.',
-                                "ai-chat-search",
-                            ); ?>
-                            <br>
-                            <span style="color: #27ae60;">5</span> = <?php _e(
-                                "Balanced (recommended)",
-                                "ai-chat-search",
-                            ); ?>,
-                            <span style="color: #2980b9;">3</span> = <?php _e(
-                                "Compact",
-                                "ai-chat-search",
-                            ); ?>,
-                            <span style="color: #f39c12;">20</span> = <?php _e(
-                                "Comprehensive",
-                                "ai-chat-search",
-                            ); ?>
-                        </div>
+                        <div class="airs-form-group">
+                            <label for="listeo_ai_search_max_results" class="airs-label">
+                                <?php _e(
+                                    "Maximum AI Top Picks Results",
+                                    "ai-chat-search",
+                                ); ?>
+                            </label>
+                            <div class="airs-group-block" style="background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #e0e0e0;">
+                            <input type="number" id="listeo_ai_search_max_results" name="listeo_ai_search_max_results" value="<?php echo esc_attr(
+                                get_option("listeo_ai_search_max_results", 10),
+                            ); ?>" min="3" max="50" step="1" class="airs-input airs-input-small" />
+                            <span><?php _e("results", "ai-chat-search"); ?></span>
+                            <div class="airs-help-text">
+                                <?php _e(
+                                    'Maximum number of <strong>"Best Match" badge</strong> results to display in <strong>search field shortcode</strong> dropdown.',
+                                    "ai-chat-search",
+                                ); ?>
+                                <br>
+                                <span style="color: #27ae60;">5</span> = <?php _e(
+                                    "Balanced (recommended)",
+                                    "ai-chat-search",
+                                ); ?>,
+                                <span style="color: #2980b9;">3</span> = <?php _e(
+                                    "Compact",
+                                    "ai-chat-search",
+                                ); ?>,
+                                <span style="color: #f39c12;">20</span> = <?php _e(
+                                    "Comprehensive",
+                                    "ai-chat-search",
+                                ); ?>
+                            </div>
+                            </div>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -5527,12 +5935,13 @@ class Listeo_AI_Search_Admin_Interface
                         ); ?></textarea>
                     </div>
 
-                    <!-- Database Tables Status -->
+                    <div class="airs-developer-diagnostics">
+                    <h4 class="airs-developer-diagnostics__title"><?php esc_html_e(
+                        "Server Info",
+                        "ai-chat-search",
+                    ); ?></h4>
+                    <!-- Database status -->
                     <div class="airs-form-group">
-                        <label class="airs-label"><?php _e(
-                            "Database Tables Status",
-                            "ai-chat-search",
-                        ); ?></label>
                         <?php
                         global $wpdb;
                         $tables = [
@@ -5641,13 +6050,6 @@ class Listeo_AI_Search_Admin_Interface
                             </div>
                         </div>
                         <?php endif; ?>
-                    </div>
-
-                    <div class="airs-form-group">
-                        <label class="airs-label"><?php _e(
-                            "Server Info",
-                            "ai-chat-search",
-                        ); ?></label>
                         <?php
                         $server_memory =
                             ini_get("memory_limit") ?:
@@ -5682,7 +6084,7 @@ class Listeo_AI_Search_Admin_Interface
                             ? $database_version_match[0]
                             : __("Unknown", "ai-chat-search");
                         ?>
-                        <div style="padding: 8px 10px; background: #f8fafc; border-radius: 4px; margin-top: 8px; display: flex; gap: 5px 20px; flex-wrap: wrap;">
+                        <div style="padding: 8px 10px; background: #f6f6f6; border-radius: 4px; margin-top: 8px; display: flex; gap: 5px 20px; flex-wrap: wrap;">
                             <span><?php _e(
                                 "WP Memory Limit:",
                                 "ai-chat-search",
@@ -5727,12 +6129,12 @@ class Listeo_AI_Search_Admin_Interface
                     </div>
 
                     <div class="airs-form-group">
-                        <label style="font-weight: 500;"><?php _e(
+                        <label class="airs-label"><?php _e(
                             "Cache Management",
                             "ai-chat-search",
                         ); ?></label>
                         <div class="airs-help-text"><?php _e(
-                            "Clear rate limiting and usage tracking data. Useful for testing or troubleshooting.",
+                            "Refresh Purio Cloud availability and clear rate limiting and usage tracking data. Useful for testing or troubleshooting.",
                             "ai-chat-search",
                         ); ?></div>
                         <div class="airs-cache-actions" style="margin-top: 10px;">
@@ -5743,6 +6145,9 @@ class Listeo_AI_Search_Admin_Interface
                             <span id="listeo-clear-cache-status" style="margin-left: 10px; font-weight: bold;"></span>
                         </div>
                     </div>
+                    </div>
+
+                    <?php $this->vector_benchmark->render(); ?>
 
             </div>
         </div>
@@ -6124,13 +6529,14 @@ class Listeo_AI_Search_Admin_Interface
                             );
                         };
                         ?>
+                        <?php if ($current_provider !== "no_api_key"): ?>
                         <div class="airs-form-group" style="margin-bottom: 15px;">
                             <label for="listeo_ai_embedding_model" class="airs-label">
                                 <?php _e(
                                     "Embedding Model",
                                     "ai-chat-search",
                                 ); ?>
-                                <span class="airs-hint-icon" data-tooltip="<?php echo esc_attr(
+                                <span class="airs-hint-icon" data-airs-tooltip="<?php echo esc_attr(
                                     __(
                                         "Embedding models convert your content into numerical vectors so the chatbot can find semantically similar results. Higher dimensions (e.g. 3072) capture more nuance and accuracy but are slower to search. Lower dimensions (e.g. 512, 1024) are faster with slightly reduced precision.",
                                         "ai-chat-search",
@@ -6253,6 +6659,7 @@ class Listeo_AI_Search_Admin_Interface
                                 ); ?>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Embedding Model Change Confirmation Modal -->
                         <div id="embedding-model-change-modal" class="airs-modal" style="display: none;">
@@ -6923,55 +7330,109 @@ class Listeo_AI_Search_Admin_Interface
                     "Start Training",
                     "ai-chat-search",
                 ); ?></button>
-                <button type="button" id="stop-regeneration" class="airs-button airs-button-secondary" style="display: none;"><?php _e(
-                    "Stop",
-                    "ai-chat-search",
-                ); ?></button>
             </div>
         </div>
 
-        <div id="regeneration-progress" style="display: none; margin-top: 20px; padding: 20px; background: #f6f6f6; border: none; border-radius: 6px; text-align: center;">
-            <div style="display: inline-block; padding: 0 8px;">
-                <canvas class="airs-composing-orb" data-size="90" data-speed="1.5" width="180" height="180" style="display: block; width: 90px; height: 90px;" aria-hidden="true"></canvas>
-            </div>
-            <p style="margin: 0; font-size: 16px; color: #222; font-weight: 500;"><?php _e(
-                "Training in progress...",
-                "ai-chat-search",
-            ); ?></p>
-            <p style="margin: 5px 0 0 0; font-size: 13px; color: #666;"><?php _e(
-                "This may take a while depending on the number of items selected",
-                "ai-chat-search",
-            ); ?></p>
-        </div>
-
-        <div id="regeneration-log" style="display: none; margin-top: 15px;">
-            <div id="log-content" class="airs-log"></div>
-        </div>
-
-        <!-- Training Confirmation Modal -->
+        <!-- Training Modal -->
         <div id="training-confirm-modal" class="airs-modal" style="display: none;">
             <div class="airs-modal-overlay"></div>
-            <div class="airs-modal-content">
-                <div class="airs-modal-header">
-                    <h3><?php _e("Start Training?", "ai-chat-search"); ?></h3>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #0073aa;">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M12 7V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
-                    </svg>
+            <div class="airs-modal-content airs-training-modal-content" role="dialog" aria-modal="true" aria-labelledby="training-title-text">
+                <div class="airs-training" id="training">
+                    <h2 class="airs-training__title">
+                        <span class="airs-training__tick">
+                            <svg viewBox="0 0 20 20" aria-hidden="true">
+                                <circle cx="10" cy="10" r="10" fill="#2e9e63"/>
+                                <path d="M5.8 10.4l2.9 2.9 5.5-6.2" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <span id="training-title-text"><?php esc_html_e(
+                            "Ready to start training",
+                            "ai-chat-search",
+                        ); ?></span>
+                    </h2>
+
+                    <div class="airs-training__summary">
+                        <div class="airs-training__stage">
+                            <canvas class="airs-training__stream" id="training-stream" aria-hidden="true"></canvas>
+                            <canvas class="airs-composing-orb" id="training-orb" data-size="96" data-speed="1" data-fps="30" aria-hidden="true"></canvas>
+                        </div>
+
+                        <div class="airs-training__scope">
+                            <span class="airs-training__scope-pill">
+                                <span id="training-status-pill-text">0 <?php esc_html_e(
+                                    "sources selected",
+                                    "ai-chat-search",
+                                ); ?></span>
+                            </span>
+                        </div>
+
+                        <div class="airs-training__progress">
+                            <div class="airs-training__bar">
+                                <div class="airs-training__bar-fill" id="training-progress-fill"></div>
+                            </div>
+                            <div class="airs-training__bar-meta">
+                                <span id="training-progress-count">0 / 0 <?php esc_html_e(
+                                    "items",
+                                    "ai-chat-search",
+                                ); ?></span>
+                                <span id="training-progress-percent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if (
+                        AI_Chat_Search_Pro_Manager::is_free_training_limited('post')
+                        || AI_Chat_Search_Pro_Manager::is_free_training_limited('page')
+                    ): ?>
+                        <p class="airs-training__limit-note">
+                            <?php
+                            echo wp_kses_post(sprintf(
+                                /* translators: %d: posts limit */
+                                __('Try it free with <strong>up to %d blog posts and your homepage</strong> before upgrading to PurioChat Pro.', 'ai-chat-search'),
+                                AI_Chat_Search_Pro_Manager::get_free_training_limit('post')
+                            ));
+                            ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <div class="airs-training__activity" id="training-activity" aria-hidden="true">
+                        <div class="airs-training__activity-inner">
+                            <div class="airs-training__log-label"><?php esc_html_e(
+                                "Activity Log",
+                                "ai-chat-search",
+                            ); ?></div>
+                            <div id="regeneration-log">
+                                <div id="log-content" class="airs-log"></div>
+                            </div>
+
+                            <div id="training-quota-notice" class="airs-training-quota-notice" role="alert" aria-live="assertive" style="display: none;">
+                                <svg class="airs-training-quota-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                    <path d="M12 9v4"/>
+                                    <path d="M12 17h.01"/>
+                                </svg>
+                                <div>
+                                    <strong id="training-quota-notice-title"></strong>
+                                    <p id="training-quota-notice-message"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="airs-modal-body">
-                    <p><?php _e(
-                        "This will generate embeddings for all selected post types and consume API credits. You can stop anytime.",
-                        "ai-chat-search",
-                    ); ?></p>
-                </div>
+
                 <div class="airs-modal-footer">
                     <button type="button" class="airs-button airs-button-secondary" id="training-cancel-btn">
-                        <?php _e("Cancel", "ai-chat-search"); ?>
+                        <svg class="airs-training-button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+                            <path d="M6 6l12 12"></path>
+                            <path d="M18 6L6 18"></path>
+                        </svg>
+                        <span class="airs-training-button-label"><?php esc_html_e("Cancel", "ai-chat-search"); ?></span>
                     </button>
                     <button type="button" class="airs-button airs-button-primary" id="training-confirm-btn">
-                        <?php _e("Yes, Start Training", "ai-chat-search"); ?>
+                        <svg class="airs-training-button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M8 5l11 7-11 7z"></path>
+                        </svg>
+                        <span class="airs-training-button-label"><?php esc_html_e("Start", "ai-chat-search"); ?></span>
                     </button>
                 </div>
             </div>
@@ -7655,6 +8116,15 @@ class Listeo_AI_Search_Admin_Interface
                         "ai-chat-search",
                     ); ?></span>
                 </button>
+                <button type="button" class="airs-chat-sidebar-item" data-target="pre-chat-form" role="tab" aria-selected="false">
+                    <span class="airs-chat-sidebar-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="m3 17 2 2 4-4"></path><path d="M13 18h8"></path><path d="M13 12h8"></path></svg>
+                    </span>
+                    <span class="airs-chat-sidebar-label"><?php _e(
+                        "Pre-Chat Form",
+                        "ai-chat-search",
+                    ); ?></span>
+                </button>
                 <button type="button" class="airs-chat-sidebar-item" data-target="embed-links" role="tab" aria-selected="false">
                     <span class="airs-chat-sidebar-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
@@ -7753,13 +8223,13 @@ class Listeo_AI_Search_Admin_Interface
 
                 <!-- Install Translation -->
                 <div class="airs-form-group">
-                    <label for="ai_translation_locale" class="airs-label">
+                    <label for="ai_translation_locale" class="airs-label airs-settings-panel-label">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display: inline-block; vertical-align: -4px; margin-right: 5px;"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg><?php _e(
                             "Install Translation",
                             "ai-chat-search",
                         ); ?>
                     </label>
-                    <div style="padding: 20px; padding-bottom: 5px; border-radius: 8px; border: 1px solid #e0e0e0;" class="airs-group-block">
+                    <div class="airs-group-block airs-settings-panel-body">
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <select id="ai_translation_locale" class="airs-input" style="max-width: 280px;">
                             <option value=""><?php esc_html_e(
@@ -7870,12 +8340,12 @@ class Listeo_AI_Search_Admin_Interface
                 <div class="airs-form-group" style="<?php echo !$has_listings_or_products
                     ? "display: none;"
                     : ""; ?>">
-                    <label class="airs-label" style="margin-top: 25px;">
+                    <label class="airs-label airs-settings-panel-label">
 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg> WooCommerce<?php if (
     post_type_exists("listing")
 ): ?> &amp; Listeo<?php endif; ?>
                     </label>
-                    <div class="airs-form-row airs-group-block" style="display: flex; flex-wrap: wrap; gap: 0 20px; align-items: flex-start; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; padding-bottom: 15px;">
+                    <div class="airs-form-row airs-group-block airs-settings-panel-body" style="display: flex; flex-wrap: wrap; gap: 0 20px; align-items: flex-start;">
                         <div class="airs-form-col" style="flex: 1 1 0; min-width: 0;">
                             <label for="listeo_ai_chat_max_results" class="airs-label">
                                 <?php _e(
@@ -8058,11 +8528,11 @@ class Listeo_AI_Search_Admin_Interface
 
                 <!-- Speech-to-Text & Image Input (PRO Features) -->
                 <div class="airs-form-group">
-                    <label class="airs-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><?php _e(
+                    <label class="airs-label airs-settings-panel-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><?php _e(
                         "Multimodal Features",
                         "ai-chat-search",
                     ); ?></label>
-                    <div class="airs-form-row airs-group-block" style="display: flex; gap: 20px; flex-wrap: wrap; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; padding-bottom: 15px;">
+                    <div class="airs-form-row airs-group-block airs-settings-panel-body" style="display: flex; gap: 20px; flex-wrap: wrap;">
                         <div class="airs-form-col" style="flex: 1;">
                             <?php $speech_enabled =
                                 $is_pro &&
@@ -8092,7 +8562,7 @@ class Listeo_AI_Search_Admin_Interface
                                         <?php if (!$is_pro): ?>
                                             <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                                         <?php endif; ?>
-                                        <span class="airs-hint-icon" data-tooltip="<?php esc_attr_e(
+                                        <span class="airs-hint-icon" data-airs-tooltip="<?php esc_attr_e(
                                             "Audio is sent directly to AI for transcription and is not stored on your server.",
                                             "ai-chat-search",
                                         ); ?>" tabindex="0" aria-label="<?php esc_attr_e(
@@ -8153,7 +8623,7 @@ class Listeo_AI_Search_Admin_Interface
                                         <?php if (!$is_pro): ?>
                                             <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
                                         <?php endif; ?>
-                                        <span class="airs-hint-icon" data-tooltip="<?php esc_attr_e(
+                                        <span class="airs-hint-icon" data-airs-tooltip="<?php esc_attr_e(
                                             "Images are sent directly to AI and are not stored on your server.",
                                             "ai-chat-search",
                                         ); ?>" tabindex="0" aria-label="<?php esc_attr_e(
@@ -8619,10 +9089,12 @@ class Listeo_AI_Search_Admin_Interface
                 </div>
 
                 <!-- Whitelabel Option (PRO Feature) -->
-                <div class="airs-form-group">
+                <div class="airs-form-group"<?php if (
+                    listeo_ai_is_forced_whitelabel()
+                ): ?> style="display: none;"<?php endif; ?>>
                     <?php $whitelabel_enabled =
                         $is_pro &&
-                        get_option("listeo_ai_chat_whitelabel_enabled", 0); ?>
+                        listeo_ai_is_chat_whitelabel_enabled(); ?>
                     <label class="airs-checkbox-label <?php echo !$is_pro
                         ? "pro-locked"
                         : ""; ?>">
@@ -9436,6 +9908,67 @@ class Listeo_AI_Search_Admin_Interface
                                     </button>
                                 </div>
                             <?php endif; ?>
+
+                            <?php
+                            $whitelisted_pages = get_option(
+                                "listeo_ai_floating_whitelisted_pages",
+                                [],
+                            );
+                            if (!is_array($whitelisted_pages)) {
+                                $whitelisted_pages = [];
+                            }
+                            ?>
+                            <div class="purio-floating-whitelist-wrap" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                                <label>
+                                    <span class="airs-label"><?php esc_html_e(
+                                        "Whitelist Specific Content",
+                                        "ai-chat-search",
+                                    ); ?></span>
+                                    <input type="search" class="airs-input purio-floating-whitelist-search" autocomplete="off" placeholder="<?php esc_attr_e(
+                                        "Search by title…",
+                                        "ai-chat-search",
+                                    ); ?>">
+                                </label>
+                                <div class="purio-floating-whitelist-results purio-post-reference-results" style="display: none;"></div>
+                                <div class="purio-floating-whitelist-selected" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                                    <?php foreach ($whitelisted_pages as $page_id): ?>
+                                        <?php
+                                        $page_id = intval($page_id);
+                                        $whitelisted_post = get_post($page_id);
+                                        if (!$whitelisted_post) {
+                                            continue;
+                                        }
+                                        ?>
+                                        <span class="purio-floating-whitelist-chip purio-post-reference-selected-text" data-id="<?php echo esc_attr(
+                                            $page_id,
+                                        ); ?>">
+                                            <strong><?php echo esc_html(
+                                                get_the_title($whitelisted_post) ?:
+                                                    sprintf(
+                                                        __("Item #%d", "ai-chat-search"),
+                                                        $page_id,
+                                                    ),
+                                            ); ?></strong>
+                                            <span style="color: #999;">(ID: <?php echo esc_html(
+                                                $page_id,
+                                            ); ?>)</span>
+                                            <span class="post-reference-remove purio-floating-whitelist-remove" style="cursor: pointer; color: #999; margin-left: 4px;" title="<?php esc_attr_e(
+                                                "Remove content",
+                                                "ai-chat-search",
+                                            ); ?>">×</span>
+                                            <input type="hidden" name="listeo_ai_floating_whitelisted_pages[<?php echo esc_attr(
+                                                $page_id,
+                                            ); ?>]" value="<?php echo esc_attr(
+                                                $page_id,
+                                            ); ?>">
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <p class="airs-help-text"><?php esc_html_e(
+                                    "Whitelisted content always shows the floating chat widget, even when it is covered by the hidden pages above.",
+                                    "ai-chat-search",
+                                ); ?></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -9524,9 +10057,9 @@ class Listeo_AI_Search_Admin_Interface
                         "ai-chat-search",
                     ); ?></p>
 
-                    <div class="airs-group-block airs-embed-links-block">
+                    <div class="airs-group-block airs-embed-links-block airs-chat-shortcode-block">
                         <div class="airs-embed-shortcode-layout">
-                            <div>
+                            <div class="airs-chat-shortcode-settings-panel">
                                 <div class="airs-shortcode-form-row" style="margin-top: 0;">
                                     <div>
                                         <label for="chat-shortcode-height" class="airs-label"><?php esc_html_e(
@@ -9574,7 +10107,7 @@ class Listeo_AI_Search_Admin_Interface
                                 </div>
                             </div>
 
-                            <div>
+                            <div class="airs-chat-shortcode-preview-panel">
                                 <span class="airs-label"><?php esc_html_e("Preview", "ai-chat-search"); ?></span>
                                 <?php
                                 $preview_image_input =
@@ -9822,6 +10355,16 @@ class Listeo_AI_Search_Admin_Interface
                                 "Enable Quick Action Buttons",
                                 "ai-chat-search",
                             ); ?>
+                            <span class="airs-status-badge">
+                                <span class="airs-status-badge__on"><?php _e(
+                                    "Enabled",
+                                    "ai-chat-search",
+                                ); ?></span>
+                                <span class="airs-status-badge__off"><?php _e(
+                                    "Disabled",
+                                    "ai-chat-search",
+                                ); ?></span>
+                            </span>
                             <small><?php _e(
                                 "Show quick action buttons above the chat input field.",
                                 "ai-chat-search",
@@ -10061,6 +10604,203 @@ class Listeo_AI_Search_Admin_Interface
         </div>
 
         <!-- ========================================== -->
+        <!-- SECTION: PRE-CHAT FORM -->
+        <!-- ========================================== -->
+        <?php
+        $is_pro_pre_chat = AI_Chat_Search_Pro_Manager::is_pro_active();
+        $pre_chat_preview_headline = "";
+        $pre_chat_preview_fields = [];
+
+        if ($is_pro_pre_chat) {
+            $pre_chat_preview_headline = trim(
+                (string) get_option("listeo_ai_chat_pre_chat_headline", ""),
+            );
+            $stored_pre_chat_fields = get_option(
+                "listeo_ai_chat_pre_chat_fields",
+                [],
+            );
+
+            if (is_array($stored_pre_chat_fields)) {
+                foreach ($stored_pre_chat_fields as $stored_pre_chat_field) {
+                    if (
+                        is_array($stored_pre_chat_field) &&
+                        !empty($stored_pre_chat_field["label"])
+                    ) {
+                        $pre_chat_preview_fields[] = sanitize_text_field(
+                            $stored_pre_chat_field["label"],
+                        );
+                    }
+                }
+            }
+        }
+
+        if ($pre_chat_preview_headline === "") {
+            $pre_chat_preview_headline = __(
+                "Please introduce yourself",
+                "ai-chat-search",
+            );
+        }
+        if (empty($pre_chat_preview_fields)) {
+            $pre_chat_preview_fields = [
+                __("Name", "ai-chat-search"),
+                __("Email", "ai-chat-search"),
+            ];
+        }
+
+        $pre_chat_preview_color = sanitize_hex_color(
+            get_option("listeo_ai_primary_color", "#006aff"),
+        );
+        if (!$pre_chat_preview_color) {
+            $pre_chat_preview_color = "#006aff";
+        }
+        ?>
+        <div class="airs-card" data-chat-section="pre-chat-form">
+            <div class="airs-card-header airs-card-header-with-icon">
+                <div class="airs-card-icon airs-card-icon-indigo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="m3 17 2 2 4-4"></path><path d="M13 18h8"></path><path d="M13 12h8"></path></svg>
+                </div>
+                <div class="airs-card-header-text">
+                    <h3><?php _e("Pre-Chat Form", "ai-chat-search"); ?></h3>
+                    <p><?php _e(
+                        "Collect visitor information before the chat starts. The submitted data will be visible in chat history.",
+                        "ai-chat-search",
+                    ); ?></p>
+                </div>
+            </div>
+            <div class="airs-card-body">
+                <div class="airs-pre-chat-layout">
+                    <div class="airs-pre-chat-settings-panel">
+                        <?php if ($is_pro_pre_chat): ?>
+                            <?php do_action(
+                                "listeo_ai_chat_pre_chat_form_settings",
+                            ); ?>
+                        <?php else: ?>
+                            <div class="airs-form-group purio-live-handoff__master-setting">
+                                <label class="airs-checkbox-label pro-locked">
+                                    <input type="checkbox" disabled />
+                                    <span class="airs-checkbox-custom"></span>
+                                    <span class="airs-checkbox-text">
+                                        <?php echo AI_Chat_Search_Pro_Manager::get_lock_icon(); ?>
+                                        <?php _e(
+                                            "Enable Pre-Chat Form",
+                                            "ai-chat-search",
+                                        ); ?>
+                                        <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
+                                        <small><?php _e(
+                                            "Collect visitor information before the chat starts. The submitted data will be visible in chat history.",
+                                            "ai-chat-search",
+                                        ); ?></small>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="airs-group-block" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
+                                <label class="airs-label">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px; vertical-align: text-bottom; margin-right: 4px; display: inline-block;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg><?php _e(
+                                        "Form Fields",
+                                        "ai-chat-search",
+                                    ); ?>
+                                </label>
+                                <p class="airs-help-text" style="margin-bottom: 15px;">
+                                    <?php _e(
+                                        "Add the fields visitors must fill out before chatting.",
+                                        "ai-chat-search",
+                                    ); ?>
+                                </p>
+
+                                <div class="airs-form-group" style="margin-bottom: 15px;">
+                                    <label for="listeo-pre-chat-preview-headline" class="airs-label" style="font-size: 13px;"><?php _e(
+                                        "Form Headline",
+                                        "ai-chat-search",
+                                    ); ?></label>
+                                    <input type="text"
+                                           id="listeo-pre-chat-preview-headline"
+                                           placeholder="<?php esc_attr_e(
+                                               "e.g., Please introduce yourself",
+                                               "ai-chat-search",
+                                           ); ?>"
+                                           class="airs-input"
+                                           style="max-width: 400px;"
+                                           disabled />
+                                    <p class="airs-help-text"><?php _e(
+                                        "Leave blank for no headline.",
+                                        "ai-chat-search",
+                                    ); ?></p>
+                                </div>
+
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                                    <input type="text"
+                                           placeholder="<?php esc_attr_e(
+                                               "e.g., Full Name, Email, Phone Number",
+                                               "ai-chat-search",
+                                           ); ?>"
+                                           class="airs-input"
+                                           style="flex: 1; max-width: 300px;"
+                                           disabled />
+                                    <button type="button" class="airs-button airs-button-secondary listeo-remove-quick-button" style="padding: 0; justify-content: center;" title="<?php esc_attr_e(
+                                        "Remove",
+                                        "ai-chat-search",
+                                    ); ?>" disabled>
+                                        <svg class="remove-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+                                    </button>
+                                </div>
+
+                                <button type="button" class="airs-button airs-button-secondary" disabled>
+                                    <?php _e(
+                                        "+ Add Field",
+                                        "ai-chat-search",
+                                    ); ?>
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="airs-pre-chat-preview-panel">
+                        <span class="airs-label"><?php esc_html_e(
+                            "Preview",
+                            "ai-chat-search",
+                        ); ?></span>
+                        <div class="listeo-ai-pre-chat-form" aria-hidden="true" style="--ai-chat-primary-color: <?php echo esc_attr(
+                            $pre_chat_preview_color,
+                        ); ?>;">
+                            <div class="listeo-ai-pre-chat-form-body listeo-ai-contact-form-body">
+                                <div class="listeo-ai-pre-chat-headline"><?php echo esc_html(
+                                    $pre_chat_preview_headline,
+                                ); ?></div>
+                                <?php foreach (
+                                    $pre_chat_preview_fields
+                                    as $pre_chat_preview_field
+                                ): ?>
+                                    <div class="listeo-ai-contact-form-field">
+                                        <label><?php echo esc_html(
+                                            $pre_chat_preview_field,
+                                        ); ?> <span class="required">*</span></label>
+                                        <input type="text" tabindex="-1" readonly />
+                                    </div>
+                                <?php endforeach; ?>
+                                <div class="listeo-ai-contact-form-actions">
+                                    <button type="button" class="listeo-ai-contact-form-submit listeo-ai-pre-chat-submit" tabindex="-1">
+                                        <span class="button-text"><?php esc_html_e(
+                                            "Start Chat",
+                                            "ai-chat-search",
+                                        ); ?></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="airs-help-text airs-pre-chat-preview-note">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+                            <span><?php esc_html_e(
+                                "Illustrative preview.",
+                                "ai-chat-search",
+                            ); ?></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
         <!-- SECTION 4: CUSTOM INSTRUCTIONS -->
         <!-- ========================================== -->
         <div class="airs-card" data-chat-section="tools">
@@ -10187,7 +10927,6 @@ class Listeo_AI_Search_Admin_Interface
                             ); ?></strong>
                         <?php endif; ?>
                     </p>
-                    <?php if ($max_prompt_length > 0): ?>
                     <button type="button" id="insert-post-reference-btn" class="airs-button airs-button-secondary" style="margin-top: 8px; font-size: 13px;<?php echo !$is_pro
                         ? " opacity: 1; cursor: default;"
                         : ""; ?>" <?php echo !$is_pro ? "disabled" : ""; ?>>
@@ -10211,7 +10950,6 @@ class Listeo_AI_Search_Admin_Interface
                             "ai-chat-search",
                         ); ?></strong>
                     </p>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Hints for AI Modal -->
@@ -10513,33 +11251,6 @@ class Listeo_AI_Search_Admin_Interface
                     ); ?></p>
                 </div>
 
-                <?php if (AI_Chat_Search_Pro_Manager::is_pro_active()): ?>
-                    <?php // PRO: Full Pre-Chat Form Configuration - rendered by PRO plugin
-                    // PRO: Full Pre-Chat Form Configuration - rendered by PRO plugin
-                    // PRO: Full Pre-Chat Form Configuration - rendered by PRO plugin
-                    do_action("listeo_ai_chat_access_privacy_settings"); ?>
-                <?php else: ?>
-                    <!-- FREE: Pre-Chat Form Teaser -->
-                    <div class="airs-form-group">
-                        <label class="airs-checkbox-label pro-locked">
-                            <input type="checkbox" disabled />
-                            <span class="airs-checkbox-custom"></span>
-                            <span class="airs-checkbox-text">
-                                <?php echo AI_Chat_Search_Pro_Manager::get_lock_icon(); ?>
-                                <?php _e(
-                                    "Enable Pre-Chat Form",
-                                    "ai-chat-search",
-                                ); ?>
-                                <?php echo AI_Chat_Search_Pro_Manager::get_pro_badge(); ?>
-                                <small><?php _e(
-                                    "Collect visitor information before the chat starts. The submitted data will be visible in chat history.",
-                                    "ai-chat-search",
-                                ); ?></small>
-                            </span>
-                        </label>
-                    </div>
-                <?php endif; ?>
-
                 <!-- Block IP Addresses (PRO Feature) -->
                 <?php $is_pro_ip_blocking = AI_Chat_Search_Pro_Manager::is_pro_active(); ?>
                 <div class="airs-form-group airs-group-block" style="margin-top: 20px; border: 1px solid #e0e0e0; border-radius: 5px; padding: 20px;">
@@ -10759,6 +11470,7 @@ class Listeo_AI_Search_Admin_Interface
             "listeo_ai_chat_max_results",
             "listeo_ai_chat_rag_sources_limit",
             "listeo_ai_chat_context_length",
+            "listeo_ai_chat_agentic_mode",
             "listeo_ai_chat_woo_cart_enabled",
             "listeo_ai_chat_woo_order_checking_enabled",
             "listeo_ai_chat_hide_images",
@@ -10799,15 +11511,19 @@ class Listeo_AI_Search_Admin_Interface
             "listeo_ai_floating_header_overlay",
             "listeo_ai_animated_bg_color",
             "listeo_ai_floating_excluded_pages",
+            "listeo_ai_floating_whitelisted_pages",
             "listeo_ai_chat_quick_buttons_enabled",
             "listeo_ai_chat_quick_buttons_visibility",
             "listeo_ai_chat_blocked_ips",
             "listeo_ai_chat_enable_speech",
             "listeo_ai_chat_enable_image_input",
             "listeo_ai_gpt56_reasoning",
+            "listeo_ai_gpt56_fast_mode",
             "listeo_ai_openrouter_reasoning",
             "listeo_ai_chat_quick_buttons",
             "listeo_ai_search_provider",
+            "listeo_ai_free_gateway_email",
+            "listeo_ai_free_gateway_consent",
             "listeo_ai_search_api_key",
             "listeo_ai_search_gemini_api_key",
             "listeo_ai_search_mistral_api_key",

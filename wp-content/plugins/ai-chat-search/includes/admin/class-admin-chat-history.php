@@ -30,6 +30,7 @@ class Admin_Chat_History {
     public function __construct() {
         add_action('wp_ajax_listeo_ai_load_chat_history', array($this, 'ajax_load'));
         add_action('wp_ajax_listeo_ai_load_conversation_messages', array($this, 'ajax_load_conversation_messages'));
+        add_action('wp_ajax_listeo_ai_load_ip_geolocations', array($this, 'ajax_load_ip_geolocations'));
         add_action('wp_ajax_listeo_ai_clear_chat_history', array($this, 'ajax_clear'));
         add_action('wp_ajax_listeo_ai_delete_conversation', array($this, 'ajax_delete_conversation'));
         add_action('wp_ajax_listeo_ai_export_chat_history_csv', array($this, 'ajax_export_csv'));
@@ -322,7 +323,7 @@ class Admin_Chat_History {
         ?>
         <div class="ai-chat-pro-feature-locked">
             <div class="preview-container preview-blurred">
-                <div class="airs-stats-boxes">
+                <div class="airs-stats-boxes airs-chat-history-stats-boxes">
                     <div class="airs-stat-box airs-stat-box-green">
                         <div class="airs-stat-number airs-stat-number-green">42</div>
                         <div class="airs-stat-label airs-stat-label-green"><?php _e('Conversations', 'ai-chat-search'); ?></div>
@@ -411,7 +412,7 @@ class Admin_Chat_History {
             return;
         }
         ?>
-        <div class="airs-stats-boxes">
+        <div class="airs-stats-boxes airs-chat-history-stats-boxes">
             <div class="airs-stat-box airs-stat-box-green">
                 <div class="airs-stat-number airs-stat-number-green">
                     <?php echo number_format(isset($stats_30d['total_conversations']) ? intval($stats_30d['total_conversations']) : 0); ?>
@@ -588,17 +589,14 @@ class Admin_Chat_History {
                         <?php endif; ?>
                         <?php if (!empty($conv['ip_address'])): ?>
                             <?php
-                            $geo = Listeo_AI_Search_Chat_History::get_country_from_ip($conv['ip_address']);
-                            $tip_parts = array();
-                            if ($geo) {
-                                if (!empty($geo['country_name'])) $tip_parts[] = esc_attr($geo['country_name']);
-                                if (!empty($geo['city'])) $tip_parts[] = esc_attr($geo['city']);
-                                if (!empty($geo['region'])) $tip_parts[] = esc_attr($geo['region']);
-                                if (!empty($geo['continent'])) $tip_parts[] = esc_attr($geo['continent']);
-                            }
-                            $tip_data = !empty($tip_parts) ? implode('|', $tip_parts) : '';
+                            $geo = Listeo_AI_Search_Chat_History::get_cached_country_from_ip($conv['ip_address']);
+                            $geo_pending = false === $geo;
+                            $tip_parts = $geo
+                                ? array($geo['country_name'], $geo['city'], $geo['region'], $geo['continent'])
+                                : array();
+                            $tip_data = array_filter($tip_parts) ? implode('|', $tip_parts) : '';
                             ?>
-                            <span class="airs-ip-geo" <?php if ($tip_data): ?>data-geo-tooltip="<?php echo $tip_data; ?>"<?php endif; ?>>
+                            <span class="airs-ip-geo" data-ip="<?php echo esc_attr($conv['ip_address']); ?>"<?php if ($geo_pending): ?> data-geo-pending="1"<?php endif; ?><?php if ($tip_data): ?> data-geo-tooltip="<?php echo esc_attr($tip_data); ?>"<?php endif; ?>>
                                 <?php if ($geo): ?>
                                     <img src="https://flagcdn.com/16x12/<?php echo esc_attr($geo['country_code']); ?>.png" alt="<?php echo esc_attr(strtoupper($geo['country_code'])); ?>" style="vertical-align: middle;" />
                                 <?php endif; ?>
@@ -792,9 +790,31 @@ class Admin_Chat_History {
                 return $('<span>').text(text || '').html();
             }
 
+            function applyGeoLocation(ip, geo) {
+                $('.airs-ip-geo[data-geo-pending="1"]').filter(function() {
+                    return $(this).attr('data-ip') === ip;
+                }).each(function() {
+                    var $el = $(this);
+                    var countryCode = geo && /^[a-z]{2}$/.test(geo.country_code || '') ? geo.country_code : '';
+                    var tipParts = geo ? [geo.country_name || '', geo.city || '', geo.region || '', geo.continent || ''] : [];
+
+                    $el.removeAttr('data-geo-pending data-geo-tooltip');
+                    if (!countryCode) {
+                        return;
+                    }
+
+                    $('<img>', {
+                        src: 'https://flagcdn.com/16x12/' + countryCode + '.png',
+                        alt: countryCode.toUpperCase()
+                    }).css('vertical-align', 'middle').prependTo($el);
+                    $el.attr('data-geo-tooltip', tipParts.join('|'));
+                });
+            }
+
             // Build geo tooltips from data attributes
-            function initGeoTooltips() {
-                $('.airs-ip-geo[data-geo-tooltip]').not(':has(.airs-geo-tooltip)').each(function() {
+            function initGeoTooltips($scope) {
+                $scope = $scope || $(document);
+                $scope.find('.airs-ip-geo[data-geo-tooltip]').not(':has(.airs-geo-tooltip)').each(function() {
                     var $el = $(this);
                     var parts = $el.attr('data-geo-tooltip').split('|');
                     var labels = ['Country', 'City', 'Region', 'Continent'];
@@ -809,7 +829,43 @@ class Admin_Chat_History {
                     }
                 });
             }
-            initGeoTooltips();
+
+            function loadPendingGeoLocations($scope) {
+                var ips = [];
+                $scope.find('.airs-ip-geo[data-geo-pending="1"]').each(function() {
+                    var ip = $(this).attr('data-ip');
+                    if (ip && ips.indexOf(ip) === -1) {
+                        ips.push(ip);
+                    }
+                });
+
+                if (!ips.length) {
+                    return;
+                }
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'listeo_ai_load_ip_geolocations',
+                        nonce: '<?php echo $nonce; ?>',
+                        ips: ips
+                    },
+                    success: function(response) {
+                        if (!response.success || !response.data || !response.data.locations) {
+                            return;
+                        }
+
+                        $.each(response.data.locations, function(ip, geo) {
+                            applyGeoLocation(ip, geo);
+                        });
+                        initGeoTooltips($scope);
+                    }
+                });
+            }
+
+            initGeoTooltips($(document));
+            loadPendingGeoLocations($(document));
 
             // Build cart tooltips from data attributes
             $('.airs-cart-indicator[data-cart-tooltip]').not(':has(.airs-cart-tooltip)').each(function() {
@@ -924,7 +980,8 @@ class Admin_Chat_History {
                         if (response.success) {
                             $container.html(response.data.conversations);
                             $pagination.html(response.data.pagination);
-                            initGeoTooltips();
+                            initGeoTooltips($container);
+                            loadPendingGeoLocations($container);
                             loadOpenConversationMessages($container);
                             $('html, body').animate({
                                 scrollTop: $container.offset().top - 100
@@ -968,7 +1025,8 @@ class Admin_Chat_History {
                         if (response.success) {
                             $container.html(response.data.conversations);
                             $pagination.html(response.data.pagination);
-                            initGeoTooltips();
+                            initGeoTooltips($container);
+                            loadPendingGeoLocations($container);
                             loadOpenConversationMessages($container);
                             if (searchTerm) {
                                 $clearBtn.show();
@@ -1220,6 +1278,52 @@ class Admin_Chat_History {
             'page' => $page,
             'total_pages' => $total_pages
         ));
+    }
+
+    /**
+     * AJAX handler for resolving uncached IP geolocation after page render.
+     */
+    public function ajax_load_ip_geolocations() {
+        if (!check_ajax_referer('listeo_ai_search_nonce', 'nonce', false)) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-chat-search')));
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-chat-search')));
+            return;
+        }
+
+        if (!AI_Chat_Search_Pro_Manager::can_access_conversation_logs()) {
+            wp_send_json_error(array('message' => __('Conversation logs are a Pro feature.', 'ai-chat-search')));
+            return;
+        }
+
+        if (!class_exists('Listeo_AI_Search_Chat_History')) {
+            wp_send_json_error(array('message' => __('Chat history class not found.', 'ai-chat-search')));
+            return;
+        }
+
+        $posted_ips = isset($_POST['ips']) && is_array($_POST['ips'])
+            ? wp_unslash($_POST['ips'])
+            : array();
+        $ips = array();
+
+        foreach ($posted_ips as $posted_ip) {
+            $ip = sanitize_text_field($posted_ip);
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                $ips[$ip] = $ip;
+            }
+        }
+
+        $ips = array_slice(array_values($ips), 0, self::PER_PAGE);
+        $locations = array();
+
+        foreach ($ips as $ip) {
+            $locations[$ip] = Listeo_AI_Search_Chat_History::get_country_from_ip($ip);
+        }
+
+        wp_send_json_success(array('locations' => $locations));
     }
 
     /**

@@ -94,8 +94,11 @@
         this.magicQuestionAttempts = 0;
 
         var cfg = (typeof listeoAiFloatingChatConfig !== 'undefined') ? listeoAiFloatingChatConfig : {};
+        var chatCfg = (typeof listeoAiChatConfig !== 'undefined') ? listeoAiChatConfig : {};
         this.lazyScripts = (cfg && cfg.lazyScripts) ? cfg.lazyScripts : [];
         this.scriptVersion = (cfg && cfg.scriptVersion) ? cfg.scriptVersion : '';
+        this.assistantName = String(chatCfg.chatName || '').trim();
+        this.assistantAvatarUrl = String(chatCfg.chatAvatarUrl || '').trim();
         this.proactiveActions = (cfg && Array.isArray(cfg.proactiveActions))
             ? cfg.proactiveActions
             : ((cfg && cfg.proactiveAction) ? [cfg.proactiveAction] : []);
@@ -1023,14 +1026,35 @@
         panel.setAttribute('role', 'dialog');
         panel.setAttribute('aria-live', 'polite');
 
-        var closeButton = document.createElement('button');
-        closeButton.type = 'button';
-        closeButton.className = 'listeo-floating-mini-chat-close';
-        closeButton.setAttribute(
+        var identity = document.createElement('div');
+        identity.className = 'listeo-floating-mini-chat-identity';
+        identity.setAttribute('role', 'button');
+        identity.setAttribute('tabindex', '0');
+
+        if (this.assistantAvatarUrl) {
+            var avatar = document.createElement('img');
+            avatar.className = 'listeo-floating-mini-chat-avatar';
+            avatar.src = this.assistantAvatarUrl;
+            avatar.alt = '';
+            avatar.setAttribute('aria-hidden', 'true');
+            identity.classList.add('has-avatar');
+            identity.appendChild(avatar);
+        }
+
+        var assistantName = document.createElement('span');
+        assistantName.className = 'listeo-floating-mini-chat-assistant-name';
+        assistantName.textContent = this.assistantName;
+        identity.appendChild(assistantName);
+
+        var closeControl = document.createElement('div');
+        closeControl.className = 'listeo-floating-mini-chat-close';
+        closeControl.setAttribute('role', 'button');
+        closeControl.setAttribute('tabindex', '0');
+        closeControl.setAttribute(
             'aria-label',
             String(this.proactiveStrings.closeMiniChat || '')
         );
-        closeButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>';
+        closeControl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>';
 
         var message = document.createElement('div');
         message.className = 'listeo-floating-mini-chat-message';
@@ -1063,14 +1087,29 @@
 
         form.appendChild(input);
         form.appendChild(sendButton);
-        panel.appendChild(closeButton);
+        panel.appendChild(identity);
+        panel.appendChild(closeControl);
         panel.appendChild(message);
         panel.appendChild(quickActions);
         panel.appendChild(form);
         widget.appendChild(panel);
 
-        closeButton.addEventListener('click', function () {
+        closeControl.addEventListener('click', function () {
             self.dismissActiveMiniChat();
+        });
+        closeControl.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            self.dismissActiveMiniChat();
+        });
+
+        identity.addEventListener('click', function () {
+            self.openChat();
+        });
+        identity.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            self.openChat();
         });
 
         quickActions.addEventListener('click', function (event) {
@@ -1171,8 +1210,22 @@
         if (!this.miniChat) return false;
 
         this.miniChat.setAttribute('data-proactive-action-id', actionId);
-        this.miniChat.setAttribute('aria-label', message);
-        this.miniChatMessage.textContent = message;
+        this.miniChatMessage.innerHTML = message;
+        this.miniChat.setAttribute(
+            'aria-label',
+            String(this.miniChatMessage.textContent || '').trim()
+        );
+        Array.prototype.forEach.call(
+            this.miniChatMessage.querySelectorAll('a[target="_blank"]'),
+            function (link) {
+                var rel = String(link.getAttribute('rel') || '')
+                    .split(/\s+/)
+                    .filter(Boolean);
+                if (rel.indexOf('noopener') === -1) rel.push('noopener');
+                if (rel.indexOf('noreferrer') === -1) rel.push('noreferrer');
+                link.setAttribute('rel', rel.join(' '));
+            }
+        );
         this.miniChatInput.value = '';
         this.renderMiniChatQuickActions(quickActions);
 
