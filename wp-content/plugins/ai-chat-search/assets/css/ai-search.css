@@ -5,10 +5,8 @@
  */
 
 .ai-chat-search-container {
-    max-width: 900px;
-    margin: 0 auto;
+    margin: 0;
     padding: 0px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: visible;
     position: relative;
 }
@@ -1496,4 +1494,154 @@ body .header-search-container .search-input-wrapper {
 
 .ai-search-submit-btn svg {
     transition: 0.3s;
+}
+
+/* Universal search field shortcode styles. */
+html body .ai-chat-search-container.ai-search-field-standalone {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone.ai-search-field-custom-width {
+    width: 100% !important;
+    max-width: var(--ai-search-field-max-width) !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone > .ai-search-form-wrapper {
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone > .ai-search-form-wrapper > .search-input-wrapper {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: var(--ai-search-field-padding, 8px) !important;
+    padding-left: var(--ai-search-field-padding-left, 20px) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    border: var(--ai-search-field-border-width, 1px) solid var(--ai-search-field-border-color, #e0e0e0) !important;
+    border-radius: 10px !important;
+    background: var(--ai-search-field-background, #fff) !important;
+    box-shadow: var(--ai-search-field-box-shadow, 0 1px 3px rgba(0, 0, 0, 0.10)) !important;
+    box-sizing: border-box !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone .search-input-icon {
+    display: flex !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #666 !important;
+    line-height: 1 !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone .search-stars {
+    display: block !important;
+    width: auto !important;
+    margin: 0 !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone .ai-search-leading-icon {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone .ai-search-leading-icon--sparkles {
+    width: 22px !important;
+    height: 22px !important;
+    color: #f5a623 !important;
+    fill: currentColor !important;
+    stroke: none !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone input.ai-search-input {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 30px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 1 1 auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--ai-search-field-text-color, #333) !important;
+    font-family: inherit !important;
+    font-size: var(--ai-search-field-font-size, 16px) !important;
+    font-weight: 500 !important;
+    line-height: 30px !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone input.ai-search-input::placeholder {
+    color: var(--ai-search-field-text-color, #333) !important;
+    font-size: var(--ai-search-field-font-size, 16px) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone button.ai-search-submit-btn {
+    position: static !important;
+    display: inline-flex !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 42px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    outline: 0 !important;
+    background: var(--ai-search-field-button-color, #006aff) !important;
+    box-shadow: none !important;
+    color: #fff !important;
+    font: inherit !important;
+    letter-spacing: normal !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    text-transform: none !important;
+    transform: none !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone button.ai-search-submit-btn:hover,
+html body .ai-chat-search-container.ai-search-field-standalone button.ai-search-submit-btn:focus {
+    background: var(--ai-search-field-button-color, #006aff) !important;
+    color: #fff !important;
+    filter: brightness(0.9) !important;
+}
+
+html body .ai-chat-search-container.ai-search-field-standalone button.ai-search-submit-btn svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
 }

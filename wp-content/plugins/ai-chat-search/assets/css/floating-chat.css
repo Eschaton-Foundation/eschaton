@@ -541,6 +541,10 @@ body .listeo-floating-mini-chat-avatar {
     color: #e5e5e5;
 }
 
+.listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message strong {
+    color: #fff;
+}
+
 .listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a,
 .listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a:hover,
 .listeo-floating-chat-widget.dark-mode .listeo-floating-mini-chat-message a:focus-visible {

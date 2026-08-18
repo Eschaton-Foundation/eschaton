@@ -44,6 +44,13 @@ class Listeo_AI_Provider {
     private $managed_gateway_auth_context = null;
 
     /**
+     * Request-local billing metadata for paid Purio Cloud chat calls.
+     *
+     * @var array
+     */
+    private $managed_gateway_billing_context = array();
+
+    /**
      * Constructor
      *
      * @param string $provider Optional provider override (defaults to settings)
@@ -137,6 +144,33 @@ class Listeo_AI_Provider {
     public function is_signed_managed_gateway() {
         $context = $this->get_managed_gateway_auth_context();
         return isset($context['tier']) && in_array($context['tier'], array('trial', 'pro'), true);
+    }
+
+    /**
+     * Group one or more provider calls into one user-visible Purio Cloud turn.
+     * Pricing remains server-authoritative; the plugin only reports intent.
+     *
+     * @param string $operation Stable operation name.
+     * @param string $turn_id   Request-local turn identifier.
+     * @return void
+     */
+    public function set_managed_gateway_billing_context($operation, $turn_id) {
+        $operation = sanitize_key((string) $operation);
+        $allowed = array('chat', 'agent', 'insights', 'translation', 'auto_config', 'messaging', 'admin_assist');
+        if (!in_array($operation, $allowed, true)) {
+            $operation = 'chat';
+        }
+
+        $turn_id = trim((string) $turn_id);
+        if ($turn_id === '') {
+            $this->managed_gateway_billing_context = array();
+            return;
+        }
+
+        $this->managed_gateway_billing_context = array(
+            'operation' => $operation,
+            'turn_id' => substr(hash('sha256', home_url() . '|' . $operation . '|' . $turn_id), 0, 48),
+        );
     }
 
     /**
@@ -295,6 +329,10 @@ class Listeo_AI_Provider {
                 $headers['Idempotency-Key'] = function_exists('wp_generate_uuid4')
                     ? wp_generate_uuid4()
                     : uniqid('purio_', true);
+                if (!empty($this->managed_gateway_billing_context['turn_id'])) {
+                    $headers['X-Purio-Turn-ID'] = $this->managed_gateway_billing_context['turn_id'];
+                    $headers['X-Purio-Operation'] = $this->managed_gateway_billing_context['operation'];
+                }
             } else {
                 $headers['X-User-Email'] = $this->get_no_api_key_email();
                 $headers['X-User-Consent'] = $this->has_no_api_key_consent() ? '1' : '0';
@@ -398,7 +436,7 @@ class Listeo_AI_Provider {
             return isset($models[$stored]) ? $stored : 'openai/gpt-5.4-mini';
         }
         if ($this->get_provider() === 'gemini') {
-            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.6-flash';
+            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.7-flash';
         } elseif ($this->get_provider() === 'mistral') {
             return $this->model_matches_provider($stored, 'mistral') ? $stored : 'mistral-large-latest';
         } elseif ($this->get_provider() === 'openrouter') {
@@ -421,6 +459,7 @@ class Listeo_AI_Provider {
             'google/gemini-3.5-flash-lite' => array('name' => 'Gemini 3.5 Flash Lite', 'credits' => 1),
             'google/gemini-3-flash-preview' => array('name' => 'Gemini 3 Flash', 'credits' => 1),
             'openai/gpt-5.4-mini' => array('name' => 'GPT-5.4 Mini', 'credits' => 1),
+            'openai/gpt-5.6-luna' => array('name' => 'GPT-5.6 Luna', 'credits' => 1),
             'anthropic/claude-haiku-4.5' => array('name' => 'Claude Haiku 4.5', 'credits' => 1),
             'google/gemini-3.6-flash' => array('name' => 'Gemini 3.6 Flash', 'credits' => 2),
             'openai/gpt-5.6-terra' => array('name' => 'GPT-5.6 Terra', 'credits' => 2),
@@ -631,7 +670,7 @@ class Listeo_AI_Provider {
      *
      * Centralizes all model-specific parameter differences into one method:
      *   - max_tokens vs max_completion_tokens (GPT-5 vs others)
-     *   - temperature inclusion/exclusion (GPT-5 ignores it)
+     *   - unsupported sampling parameters for GPT-5 and direct Gemini 3.7
      *   - reasoning_effort per model (GPT-5.x, Gemini 3.x)
      *   - OpenAI Fast mode for native GPT-5.6 models
      *   - OpenRouter reasoning override (object form: reasoning: {effort: ...})
@@ -673,9 +712,13 @@ class Listeo_AI_Provider {
             unset( $payload['max_completion_tokens'] );
         }
 
-        // Step 3: Temperature - GPT-5 models don't support it
-        if ( $this->is_gpt5( $model ) ) {
+        // Step 3: Sampling - GPT-5 and direct Gemini 3.7 don't support temperature.
+        $is_direct_gemini_37 = $this->get_provider() === 'gemini' && $model === 'gemini-3.7-flash';
+        if ( $this->is_gpt5( $model ) || $is_direct_gemini_37 ) {
             unset( $payload['temperature'] );
+            if ( $is_direct_gemini_37 ) {
+                unset( $payload['top_p'], $payload['top_k'] );
+            }
         } else {
             $payload['temperature'] = $temperature;
         }
@@ -700,7 +743,7 @@ class Listeo_AI_Provider {
                 $payload['reasoning_effort'] = 'low';
             } elseif ( strpos( $model, 'gemini-3.1-pro' ) !== false || strpos( $model, 'gemini-3-pro' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
-            } elseif ( strpos( $model, 'gemini-3.6-flash' ) !== false || strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
+            } elseif ( strpos( $model, 'gemini-3.7-flash' ) !== false || strpos( $model, 'gemini-3.6-flash' ) !== false || strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
             }
         }
@@ -726,11 +769,13 @@ class Listeo_AI_Provider {
                 $payload['reasoning'] = array( 'effort' => $force_reasoning );
             } elseif ( ! get_option( 'listeo_ai_openrouter_reasoning', 0 ) ) {
                 // Some models reject 'none' with HTTP 400 (openai/*, select google/gemini-3*)
+                $is_gemini_37 = strpos( $payload['model'], 'google/gemini-3.7-flash' ) !== false;
                 $reasoning_mandatory = ( strpos( $payload['model'], 'openai/' ) === 0 )
                     || ( strpos( $payload['model'], 'google/gemini-3.1-pro' ) !== false )
+                    || $is_gemini_37
                     || ( strpos( $payload['model'], 'google/gemini-3.6-flash' ) !== false )
                     || ( strpos( $payload['model'], 'google/gemini-3.5-flash' ) !== false );
-                $effort = $reasoning_mandatory ? 'minimal' : 'none';
+                $effort = $is_gemini_37 ? 'low' : ( $reasoning_mandatory ? 'minimal' : 'none' );
                 $payload['reasoning'] = array( 'effort' => $effort );
             } else {
                 // Reasoning toggle ON - let model use its default

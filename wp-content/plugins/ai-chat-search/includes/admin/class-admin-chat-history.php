@@ -359,7 +359,7 @@ class Admin_Chat_History {
                                     if (!empty($conv['continent'])) $dummy_tip[] = esc_attr($conv['continent']);
                                     ?>
                                     <span class="airs-ip-geo" data-geo-tooltip="<?php echo implode('|', $dummy_tip); ?>">
-                                        <img src="https://flagcdn.com/16x12/<?php echo esc_attr($conv['country']); ?>.png" alt="<?php echo esc_attr(strtoupper($conv['country'])); ?>" style="vertical-align: middle;" />
+                                        <img src="https://flagcdn.com/w40/<?php echo esc_attr($conv['country']); ?>.png" alt="<?php echo esc_attr(strtoupper($conv['country'])); ?>" style="width: 18px; height: 12px; border-radius: 2px; vertical-align: middle;" />
                                         <span class="airs-ip-address"><?php echo esc_html($conv['ip']); ?></span>
                                     </span>
                                 </div>
@@ -413,34 +413,40 @@ class Admin_Chat_History {
         }
         ?>
         <div class="airs-stats-boxes airs-chat-history-stats-boxes">
-            <div class="airs-stat-box airs-stat-box-green">
-                <div class="airs-stat-number airs-stat-number-green">
-                    <?php echo number_format(isset($stats_30d['total_conversations']) ? intval($stats_30d['total_conversations']) : 0); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-green">
+                    <div class="airs-stat-number airs-stat-number-green">
+                        <?php echo number_format(isset($stats_30d['total_conversations']) ? intval($stats_30d['total_conversations']) : 0); ?>
+                    </div>
+                    <div class="airs-stat-today airs-stat-today-green">
+                        <?php printf(__('Today: %s', 'ai-chat-search'), number_format(isset($stats_today['total_conversations']) ? intval($stats_today['total_conversations']) : 0)); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-green"><?php _e('Conversations', 'ai-chat-search'); ?></div>
-                <div class="airs-stat-today airs-stat-today-green">
-                    <?php printf(__('Today: %s', 'ai-chat-search'), number_format(isset($stats_today['total_conversations']) ? intval($stats_today['total_conversations']) : 0)); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-green"><?php _e('Conversations', 'ai-chat-search'); ?></div>
             </div>
 
-            <div class="airs-stat-box airs-stat-box-blue">
-                <div class="airs-stat-number airs-stat-number-blue">
-                    <?php echo number_format(isset($stats_30d['total_messages']) ? intval($stats_30d['total_messages']) : 0); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-blue">
+                    <div class="airs-stat-number airs-stat-number-blue">
+                        <?php echo number_format(isset($stats_30d['total_messages']) ? intval($stats_30d['total_messages']) : 0); ?>
+                    </div>
+                    <div class="airs-stat-today airs-stat-today-blue">
+                        <?php printf(__('Today: %s', 'ai-chat-search'), number_format(isset($stats_today['total_messages']) ? intval($stats_today['total_messages']) : 0)); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-blue"><?php _e('Messages', 'ai-chat-search'); ?></div>
-                <div class="airs-stat-today airs-stat-today-blue">
-                    <?php printf(__('Today: %s', 'ai-chat-search'), number_format(isset($stats_today['total_messages']) ? intval($stats_today['total_messages']) : 0)); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-blue"><?php _e('Messages', 'ai-chat-search'); ?></div>
             </div>
 
-            <div class="airs-stat-box airs-stat-box-orange">
-                <div class="airs-stat-number airs-stat-number-orange">
-                    <?php echo isset($stats_30d['avg_per_conversation']) ? floatval($stats_30d['avg_per_conversation']) : 0; ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-orange">
+                    <div class="airs-stat-number airs-stat-number-orange">
+                        <?php echo isset($stats_30d['avg_per_conversation']) ? floatval($stats_30d['avg_per_conversation']) : 0; ?>
+                    </div>
+                    <div class="airs-stat-today airs-stat-today-orange">
+                        <?php printf(__('Today: %s', 'ai-chat-search'), isset($stats_today['avg_per_conversation']) ? floatval($stats_today['avg_per_conversation']) : 0); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-orange"><?php _e('Avg per Conversation', 'ai-chat-search'); ?></div>
-                <div class="airs-stat-today airs-stat-today-orange">
-                    <?php printf(__('Today: %s', 'ai-chat-search'), isset($stats_today['avg_per_conversation']) ? floatval($stats_today['avg_per_conversation']) : 0); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-orange"><?php _e('Avg per Conversation', 'ai-chat-search'); ?></div>
             </div>
         </div>
         <?php
@@ -598,7 +604,7 @@ class Admin_Chat_History {
                             ?>
                             <span class="airs-ip-geo" data-ip="<?php echo esc_attr($conv['ip_address']); ?>"<?php if ($geo_pending): ?> data-geo-pending="1"<?php endif; ?><?php if ($tip_data): ?> data-geo-tooltip="<?php echo esc_attr($tip_data); ?>"<?php endif; ?>>
                                 <?php if ($geo): ?>
-                                    <img src="https://flagcdn.com/16x12/<?php echo esc_attr($geo['country_code']); ?>.png" alt="<?php echo esc_attr(strtoupper($geo['country_code'])); ?>" style="vertical-align: middle;" />
+                                    <img src="https://flagcdn.com/w40/<?php echo esc_attr($geo['country_code']); ?>.png" alt="<?php echo esc_attr(strtoupper($geo['country_code'])); ?>" style="width: 18px; height: 12px; border-radius: 2px; vertical-align: middle;" />
                                 <?php endif; ?>
                                 <span class="airs-ip-address"><?php echo esc_html($conv['ip_address']); ?></span>
                             </span>
@@ -804,9 +810,14 @@ class Admin_Chat_History {
                     }
 
                     $('<img>', {
-                        src: 'https://flagcdn.com/16x12/' + countryCode + '.png',
+                        src: 'https://flagcdn.com/w40/' + countryCode + '.png',
                         alt: countryCode.toUpperCase()
-                    }).css('vertical-align', 'middle').prependTo($el);
+                    }).css({
+                        width: '18px',
+                        height: '12px',
+                        borderRadius: '2px',
+                        verticalAlign: 'middle'
+                    }).prependTo($el);
                     $el.attr('data-geo-tooltip', tipParts.join('|'));
                 });
             }

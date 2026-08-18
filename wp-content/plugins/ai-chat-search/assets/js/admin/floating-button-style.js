@@ -20,9 +20,17 @@
         var $speedButtons = $('.airs-floating-speed-btn');
         var $speedInput = $('#listeo_ai_floating_animated_speed');
         var $buttonColorInput = $('#listeo_ai_floating_button_color');
+        var $customIconSizeInput = $('#listeo_ai_floating_custom_icon_size');
+        var $welcomeBubbleInput = $('#listeo_ai_floating_welcome_bubble');
+        var $welcomeBubblePreview = $('#airs-floating-welcome-bubble-preview');
+        var $welcomeSimplePreview = $('.airs-floating-welcome-simple-button-preview');
+        var $welcomePreviewStage = $('.airs-floating-widget-welcome-preview-stage');
+        var $widgetEnabledInput = $('input[name="listeo_ai_floating_chat_enabled"]');
+        var $widgetPositionInput = $('#listeo_ai_floating_position');
         var preview = document.getElementById('airs-floating-avatar-preview');
+        var welcomeAnimatedPreview = document.getElementById('airs-floating-welcome-animated-button-preview');
 
-        function createAnimatedButtonPreview(size, compact) {
+        function createAnimatedButtonPreview(size) {
             var wrapper = document.createElement('span');
             var iconSource = document.getElementById('listeo-animated-icon-source');
             var icon = document.createElement('img');
@@ -30,9 +38,9 @@
             var configuredSize = parseInt($('#listeo_ai_floating_animated_icon_size').val(), 10) || 28;
             var iconSize = hasCustomIcon
                 ? Math.min(size * 0.63, configuredSize * size / 60)
-                : (compact ? 16 : 28);
+                : 28;
 
-            wrapper.className = 'airs-animated-button-preview' + (compact ? ' is-compact' : '');
+            wrapper.className = 'airs-animated-button-preview';
             wrapper.style.width = size + 'px';
             wrapper.style.height = size + 'px';
             wrapper.appendChild(window.PurioAvatar.create({
@@ -55,16 +63,18 @@
         }
 
         function renderAvatarPreview() {
-            if (!preview || typeof window.PurioAvatar === 'undefined') return;
+            if (typeof window.PurioAvatar === 'undefined') return;
 
-            preview.innerHTML = '';
-            preview.appendChild(createAnimatedButtonPreview(60, false));
-
-            var togglePreview = document.querySelector('.airs-floating-button-preview-animated');
-            if (togglePreview) {
-                togglePreview.innerHTML = '';
-                togglePreview.appendChild(createAnimatedButtonPreview(32, true));
+            if (preview) {
+                preview.innerHTML = '';
+                preview.appendChild(createAnimatedButtonPreview(60));
             }
+
+            if (welcomeAnimatedPreview) {
+                welcomeAnimatedPreview.innerHTML = '';
+                welcomeAnimatedPreview.appendChild(createAnimatedButtonPreview(60));
+            }
+
         }
 
         function showPanel(value, animate) {
@@ -83,9 +93,13 @@
 
             if (value === 'animated') {
                 renderAvatarPreview();
+                $welcomeSimplePreview.hide();
+                $(welcomeAnimatedPreview).show();
                 animate ? hidePanel($simplePanel) : $simplePanel.hide();
                 animate ? revealPanel($animatedPanel) : $animatedPanel.show();
             } else {
+                $(welcomeAnimatedPreview).hide();
+                $welcomeSimplePreview.show();
                 animate ? hidePanel($animatedPanel) : $animatedPanel.hide();
                 animate ? revealPanel($simplePanel) : $simplePanel.show();
             }
@@ -93,8 +107,29 @@
 
         function updateSimplePreview() {
             var color = $buttonColorInput.val() || '#222222';
-            $('.airs-floating-button-preview-simple, #listeo-custom-icon-preview .airs-media-placeholder')
+            $('#listeo-custom-icon-preview .airs-media-placeholder')
                 .css('background-color', color);
+            $welcomeSimplePreview.css('background-color', color);
+
+            var $sourceIcon = $('#listeo-custom-icon-preview .airs-media-placeholder').children().first();
+            if ($sourceIcon.length) {
+                $welcomeSimplePreview.empty().append($sourceIcon.clone().removeAttr('id'));
+            }
+        }
+
+        function updateWelcomeBubblePreview() {
+            var value = $welcomeBubbleInput.val() || '';
+            $welcomeBubblePreview.toggleClass('is-empty', $.trim(value) === '');
+            $welcomeBubblePreview.find('.listeo-floating-welcome-bubble-content').text(value);
+        }
+
+        function updateWidgetPreview() {
+            var position = $widgetPositionInput.val() === 'left' ? 'left' : 'right';
+
+            $welcomePreviewStage
+                .toggle($widgetEnabledInput.is(':checked'))
+                .toggleClass('is-left', position === 'left')
+                .toggleClass('is-right', position === 'right');
         }
 
         $styleButtons.on('click', function (event) {
@@ -125,10 +160,19 @@
 
         $avatarColorInput.on('input change colorpickerchange', renderAvatarPreview);
         $buttonColorInput.on('input change colorpickerchange', updateSimplePreview);
-        $(document).on('purio-floating-icon-changed', renderAvatarPreview);
+        $customIconSizeInput.on('input change', updateSimplePreview);
+        $welcomeBubbleInput.on('input change', updateWelcomeBubblePreview);
+        $widgetEnabledInput.on('change', updateWidgetPreview);
+        $widgetPositionInput.on('change', updateWidgetPreview);
+        $(document).on('purio-floating-icon-changed', function () {
+            renderAvatarPreview();
+            updateSimplePreview();
+        });
 
         showPanel($styleInput.val() || 'simple', false);
         updateSimplePreview();
+        updateWelcomeBubblePreview();
+        updateWidgetPreview();
     }
 
     $(document).ready(init);

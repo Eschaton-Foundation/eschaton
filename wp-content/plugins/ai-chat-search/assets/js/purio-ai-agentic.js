@@ -412,9 +412,6 @@
     if (typeof helpers.logModelDebug === "function") {
       helpers.logModelDebug(payload, "Backend Agentic", chat.chatConfig);
     }
-    if (typeof helpers.logApiRequest === "function") {
-      helpers.logApiRequest(payload, chat.chatConfig.model);
-    }
     debugLog("Starting backend agent request");
 
     chat.activeChatRequest = $.ajax({

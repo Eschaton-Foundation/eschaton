@@ -97,11 +97,50 @@
         var $limit = $('#shortcode-limit');
         var $output = $('#generated-shortcode');
         var $copyBtn = $('#copy-shortcode-btn');
+        var $stylesUpdatedNotice = $('#shortcode-styles-updated-notice');
+        var $padding = $('#shortcode-padding');
+        var $buttonColor = $('#shortcode-button-color');
+        var $boxShadow = $('#shortcode-box-shadow');
+        var $backgroundColor = $('#shortcode-background-color');
+        var $borderColor = $('#shortcode-border-color');
+        var $borderWidth = $('#shortcode-border-width');
+        var $textColor = $('#shortcode-text-color');
+        var $fontSize = $('#shortcode-font-size');
+        var $maxWidth = $('#shortcode-max-width');
+        var $icon = $('#shortcode-icon');
+        var $styleControls = $padding
+            .add($buttonColor)
+            .add($boxShadow)
+            .add($backgroundColor)
+            .add($borderColor)
+            .add($borderWidth)
+            .add($textColor)
+            .add($fontSize)
+            .add($maxWidth)
+            .add($icon);
+        var $previewInput = $('.airs-search-field-preview__input');
+        var $previewButton = $('.airs-search-field-preview__button');
+        var $previewIcon = $('.airs-search-field-preview__sparkle');
+        var $previewQuery = $('.airs-search-field-preview__query');
 
         // Skip if elements don't exist
         if (!$output.length) return;
 
         var defaultPlaceholder = i18n.searchPlaceholder || 'Search anything...';
+        var copiedStyleSignature = '';
+
+        function getStyleSignature() {
+            return $styleControls.map(function() {
+                return $(this).val();
+            }).get().join('|');
+        }
+
+        function updateStylesUpdatedNotice() {
+            $stylesUpdatedNotice.prop(
+                'hidden',
+                getStyleSignature() === copiedStyleSignature
+            );
+        }
 
         function updateShortcode() {
             var postTypes = [];
@@ -111,6 +150,8 @@
 
             var placeholder = $placeholder.val().trim();
             var limit = parseInt($limit.val()) || 10;
+
+            $previewQuery.text(placeholder || defaultPlaceholder);
 
             var shortcode = '[ai_search_field';
 
@@ -126,21 +167,112 @@
                 shortcode += ' limit="' + limit + '"';
             }
 
+            if ($styleControls.length) {
+                var padding = Math.max(0, Math.min(40, parseInt($padding.val(), 10) || 0));
+                var borderWidth = Math.max(0, Math.min(10, parseInt($borderWidth.val(), 10) || 0));
+                var fontSize = Math.max(10, Math.min(32, parseInt($fontSize.val(), 10) || 16));
+                var maxWidth = Math.max(0, Math.min(3000, parseInt($maxWidth.val(), 10) || 0));
+                var buttonColor = $buttonColor.val() || '#006aff';
+                var backgroundColor = $backgroundColor.val() || '#ffffff';
+                var borderColor = $borderColor.val() || '#e0e0e0';
+                var textColor = $textColor.val() || '#333333';
+                var boxShadow = $boxShadow.val() || 'light';
+                var icon = $icon.val() || 'sparkles';
+
+                if (padding !== 8) {
+                    shortcode += ' padding="' + padding + '"';
+                }
+                if (buttonColor.toLowerCase() !== '#006aff') {
+                    shortcode += ' button_color="' + buttonColor + '"';
+                }
+                if (boxShadow !== 'light') {
+                    shortcode += ' box_shadow="' + boxShadow + '"';
+                }
+                if (backgroundColor.toLowerCase() !== '#ffffff') {
+                    shortcode += ' background_color="' + backgroundColor + '"';
+                }
+                if (borderColor.toLowerCase() !== '#e0e0e0') {
+                    shortcode += ' border_color="' + borderColor + '"';
+                }
+                if (borderWidth !== 1) {
+                    shortcode += ' border_width="' + borderWidth + '"';
+                }
+                if (textColor.toLowerCase() !== '#333333') {
+                    shortcode += ' text_color="' + textColor + '"';
+                }
+                if (fontSize !== 16) {
+                    shortcode += ' font_size="' + fontSize + '"';
+                }
+                if (maxWidth > 0) {
+                    shortcode += ' max_width="' + maxWidth + '"';
+                }
+                if (icon !== 'sparkles') {
+                    shortcode += ' icon="' + icon + '"';
+                }
+
+                var shadowPresets = {
+                    none: 'none',
+                    light: '0 1px 3px rgba(0, 0, 0, 0.10)',
+                    medium: '0 4px 12px rgba(0, 0, 0, 0.12)',
+                    strong: '0 8px 24px rgba(0, 0, 0, 0.16)'
+                };
+
+                $previewInput.css({
+                    padding: padding + 'px',
+                    paddingLeft: (padding * 2.5) + 'px',
+                    width: '100%',
+                    maxWidth: maxWidth > 0 ? maxWidth + 'px' : 'none',
+                    backgroundColor: backgroundColor,
+                    border: borderWidth + 'px solid ' + borderColor,
+                    boxShadow: shadowPresets[boxShadow] || shadowPresets.light
+                });
+                $previewButton.css('backgroundColor', buttonColor);
+                $previewQuery.css({
+                    color: textColor,
+                    fontSize: fontSize + 'px'
+                });
+
+                if (icon === 'none') {
+                    $previewIcon.hide().removeClass('is-search-icon');
+                } else if (icon === 'search') {
+                    $previewIcon
+                        .show()
+                        .addClass('is-search-icon')
+                        .html('<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>');
+                } else {
+                    $previewIcon
+                        .show()
+                        .removeClass('is-search-icon')
+                        .html('<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8.5 2.5 10.2 8.8 16.5 10.5 10.2 12.2 8.5 18.5 6.8 12.2 .5 10.5 6.8 8.8 8.5 2.5Z"></path><path d="M18.5 2 19.3 4.7 22 5.5 19.3 6.3 18.5 9 17.7 6.3 15 5.5 17.7 4.7 18.5 2Z"></path></svg>');
+                }
+            }
+
             shortcode += ']';
 
             $output.val(shortcode);
         }
 
         // Update shortcode when options change
-        $postTypes.add($placeholder).add($limit).on('change input', updateShortcode);
+        $postTypes
+            .add($placeholder)
+            .add($limit)
+            .on('change input colorpickerchange', updateShortcode);
+
+        $styleControls.on('change input colorpickerchange', function() {
+            updateShortcode();
+            updateStylesUpdatedNotice();
+        });
 
         // Initial generation
         updateShortcode();
+        copiedStyleSignature = getStyleSignature();
 
         // Copy to clipboard
         $copyBtn.on('click', function() {
             $output.select();
             document.execCommand('copy');
+            copiedStyleSignature = getStyleSignature();
+            updateStylesUpdatedNotice();
 
             var $btn = $(this);
             var originalHtml = $btn.html();
@@ -337,7 +469,7 @@
 
             $buttons.removeClass('active');
             $btn.addClass('active');
-            $hiddenInput.val(value);
+            $hiddenInput.val(value).trigger('change');
         });
     }
 
@@ -398,6 +530,8 @@
         }
 
         function showPanelForValue(value, animate) {
+            $toggle.toggleClass('airs-style-tabs--attached', value !== 'simple');
+
             if (value === 'image') {
                 stopAnimatedPreview();
                 animate ? $bgPanel.slideDown(200) : $bgPanel.show();
@@ -427,6 +561,7 @@
 
         // Init correct panel on page load
         var currentValue = $hiddenInput.val();
+        $toggle.toggleClass('airs-style-tabs--attached', currentValue !== 'simple');
         if (currentValue === 'animated') {
             initAnimatedBgPreview();
         }
@@ -772,14 +907,44 @@
             }
 
             // Sync picker-open class, button text, and hex value
+            function updatePickerDirection() {
+                if ($swatchBtn.attr('aria-expanded') !== 'true') {
+                    $container.removeClass('picker-opens-up');
+                    return;
+                }
+
+                var containerRect = $container[0].getBoundingClientRect();
+                var holderHeight = $holder.outerHeight() || $holder.find('.iris-picker').outerHeight() || 300;
+                var hexHeight = $holder.find('.airs-hex-input').outerHeight() || 0;
+                var requiredSpace = holderHeight + hexHeight + 12;
+                var spaceAbove = containerRect.top;
+                var spaceBelow = window.innerHeight - containerRect.bottom;
+
+                $container.toggleClass(
+                    'picker-opens-up',
+                    spaceBelow < requiredSpace && spaceAbove > spaceBelow
+                );
+            }
+
             function syncPickerState() {
                 var isOpen = $swatchBtn.attr('aria-expanded') === 'true';
+                var $card = $container.closest('.airs-card');
                 $container.toggleClass('picker-open', isOpen);
+                if (isOpen) {
+                    $card.addClass('airs-color-picker-open');
+                } else if (!$card.find('.wp-color-result[aria-expanded="true"]').length) {
+                    $card.removeClass('airs-color-picker-open');
+                }
                 $container.find('.airs-color-action-btn').text(isOpen ? 'Apply' : 'Select');
                 if (isOpen) {
                     $container.find('.airs-hex-input').val($input.val());
+                    updatePickerDirection();
+                } else {
+                    $container.removeClass('picker-opens-up');
                 }
             }
+
+            $container.data('airs-update-picker-direction', updatePickerDirection);
 
             $swatchBtn.on('click', function() {
                 setTimeout(syncPickerState, 0);
@@ -789,6 +954,17 @@
             var observer = new MutationObserver(syncPickerState);
             observer.observe($swatchBtn[0], { attributes: true, attributeFilter: ['aria-expanded'] });
         });
+
+        $(window)
+            .off('.airsColorPickerPosition')
+            .on('resize.airsColorPickerPosition scroll.airsColorPickerPosition', function() {
+                $('.wp-picker-container.picker-open').each(function() {
+                    var updateDirection = $(this).data('airs-update-picker-direction');
+                    if (updateDirection) {
+                        updateDirection();
+                    }
+                });
+            });
 
         // Move animated bg color picker holder to body to escape overflow:hidden
         var $waveInput = $('#listeo_ai_animated_bg_color');

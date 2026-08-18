@@ -3,7 +3,7 @@
  * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.3.6
+ * Version: 2.3.8
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.3.6");
+define("LISTEO_AI_SEARCH_VERSION", "2.3.8");
 define("LISTEO_AI_LIVE_HANDOFF_INTEGRATION_VERSION", 1);
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
@@ -1026,7 +1026,7 @@ class Listeo_AI_Search
     {
         return [
             // API Provider settings
-            "listeo_ai_search_provider" => "openai",
+            "listeo_ai_search_provider" => "no_api_key",
 
             // Search settings
             "listeo_ai_search_min_match_percentage" => 50,

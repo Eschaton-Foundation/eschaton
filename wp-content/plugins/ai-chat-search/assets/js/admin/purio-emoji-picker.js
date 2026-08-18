@@ -1,5 +1,5 @@
 /**
- * Reusable emoji picker for admin textareas.
+ * Reusable emoji picker for admin text fields.
  *
  * @package AI_Chat_Search
  */
@@ -55,18 +55,18 @@
         $('.purio-emoji-toggle').attr('aria-expanded', 'false');
     }
 
-    function insertEmoji(textarea, emoji) {
-        var start = typeof textarea.selectionStart === 'number'
-            ? textarea.selectionStart
-            : textarea.value.length;
-        var end = typeof textarea.selectionEnd === 'number'
-            ? textarea.selectionEnd
+    function insertEmoji(field, emoji) {
+        var start = typeof field.selectionStart === 'number'
+            ? field.selectionStart
+            : field.value.length;
+        var end = typeof field.selectionEnd === 'number'
+            ? field.selectionEnd
             : start;
 
-        textarea.value = textarea.value.substring(0, start) + emoji + textarea.value.substring(end);
-        textarea.focus();
-        textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
-        $(textarea).trigger('input');
+        field.value = field.value.substring(0, start) + emoji + field.value.substring(end);
+        field.focus();
+        field.selectionStart = field.selectionEnd = start + emoji.length;
+        $(field).trigger('input');
     }
 
     $(document).on('click', '.purio-emoji-toggle', function (event) {
@@ -88,9 +88,9 @@
         event.preventDefault();
         event.stopPropagation();
 
-        var textarea = $(this).closest('.purio-emoji-field').find('textarea').get(0);
-        if (textarea) {
-            insertEmoji(textarea, $(this).attr('data-emoji') || '');
+        var field = $(this).closest('.purio-emoji-field').find('textarea, input[type="text"]').first().get(0);
+        if (field) {
+            insertEmoji(field, $(this).attr('data-emoji') || '');
         }
         closePickers();
     });

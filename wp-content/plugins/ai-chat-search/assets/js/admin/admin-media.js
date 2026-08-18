@@ -57,9 +57,6 @@
                 var previewHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
                     '<img src="' + attachment.url + '" alt="Custom icon" id="listeo-custom-icon-preview-img" style="' + imgStyle + '" /></div>';
                 $('#listeo-custom-icon-preview').html(previewHtml);
-                $('.airs-floating-button-preview-simple')
-                    .empty()
-                    .append($('<img>').attr('src', attachment.url).attr('alt', ''));
                 $(document).trigger('purio-floating-icon-changed');
 
                 // Show remove button if it doesn't exist
@@ -91,9 +88,6 @@
             var placeholderHtml = '<div class="airs-media-placeholder" style="width: 60px; height: 60px; background-color: ' + btnColor + '; border-radius: 100px; display: flex; align-items: center; justify-content: center;">' +
                 '<img src="' + pluginUrl + 'assets/icons/chat.svg" alt="Default icon" width="28" height="28" /></div>';
             $('#listeo-custom-icon-preview').html(placeholderHtml);
-            $('.airs-floating-button-preview-simple').html(
-                '<img src="' + pluginUrl + 'assets/icons/chat.svg" alt="" width="16" height="16" />'
-            );
             $(document).trigger('purio-floating-icon-changed');
 
             // Hide the icon size input

@@ -646,7 +646,7 @@ class Listeo_AI_Search_Universal_Settings {
                             </span>
                         <?php endif; ?>
                     </h3>
-                    <code>ai_document</code>
+                    <code><?php esc_html_e('PDF, TXT, MD, XML, CSV', 'ai-chat-search'); ?></code>
 
                     <?php if ($is_locked): ?>
                         <!-- Locked state -->
@@ -1285,6 +1285,9 @@ class Listeo_AI_Search_Universal_Settings {
      * @return string
      */
     private function get_custom_fields_suggestion_model($provider) {
+        if ($provider->is_no_api_key_provider()) {
+            return 'openai/gpt-5.6-luna';
+        }
         switch ($provider->get_provider()) {
             case 'openrouter':
                 return 'openai/gpt-5.4-nano';
@@ -1402,6 +1405,8 @@ class Listeo_AI_Search_Universal_Settings {
         $post_type = sanitize_text_field((string) $post_type);
         $args = wp_parse_args($args, array(
             'allow_detected_custom_type' => false,
+            'billing_turn_id' => '',
+            'billing_operation' => 'admin_assist',
         ));
 
         if (
@@ -1429,6 +1434,10 @@ class Listeo_AI_Search_Universal_Settings {
         }
 
         $provider = new Listeo_AI_Provider();
+        $provider->set_managed_gateway_billing_context(
+            $args['billing_operation'],
+            $args['billing_turn_id'] !== '' ? $args['billing_turn_id'] : wp_generate_uuid4()
+        );
         if (empty($provider->get_api_key())) {
             return new WP_Error('missing_api_key', __('No AI provider API key is configured.', 'ai-chat-search'));
         }

@@ -244,44 +244,6 @@
     debugLog("=".repeat(55));
   };
 
-  /**
-   * Compute the reasoning effort the SERVER will apply for this model.
-   *
-   * The reasoning override runs server-side (class-chat-api.php) right before
-   * wp_remote_post, so it's never in the client's payload at log time. This
-   * helper mirrors the server logic so the browser console can still show what
-   * reasoning setting is in effect per request.
-   *
-   * @param {string} model  — full model slug (e.g. "openai/gpt-5.4-mini")
-   * @returns {string}      — "minimal" | "none" | "(model default)" | "(native)"
-   */
-  const computeServerReasoning = function (model) {
-    if (!model) return "(native)";
-    var isOpenRouter = model.indexOf("/") !== -1;
-    if (!isOpenRouter) return "(native — server sets per-model)";
-
-    var cfg = window.listeoAiChatConfig && window.listeoAiChatConfig.chatConfig;
-    var reasoningEnabled = cfg && cfg.openrouter_reasoning_enabled;
-    if (reasoningEnabled) return "(model default — toggle ON)";
-
-    // Reasoning disabled — server applies lowest-possible per vendor
-    var reasoningMandatory =
-      model.indexOf("openai/") === 0 ||
-      model.indexOf("google/gemini-3.1-pro") !== -1 ||
-      model.indexOf("google/gemini-3.6-flash") !== -1 ||
-      model.indexOf("google/gemini-3.5-flash") !== -1;
-    return reasoningMandatory ? "minimal" : "none";
-  };
-
-  /**
-   * Log API request summary with model params
-   * @param {Object} payload - The API payload
-   */
-  const logApiRequest = function (payload, model) {
-    var params = { server_reasoning: computeServerReasoning(model) };
-    debugLog("🚀 API REQUEST | Model:", model || "(server-side)", "| Params:", params);
-  };
-
   const pruneEmptyOptionalToolArgs = function (args, optionalKeys) {
     var cleaned = $.extend({}, args);
 
@@ -1412,7 +1374,6 @@
           analyzeError: analyzeError,
           generateLoaderHTML: generateLoaderHTML,
           getRequestHeaders: getRequestHeaders,
-          logApiRequest: logApiRequest,
           logModelDebug: logModelDebug,
         });
         return;
@@ -1503,14 +1464,13 @@
       debugLog("Messages:", messages.length);
       debugLog("Tools (server-side):", self.chatConfig.hasTools ? 1 : 0);
 
-      logApiRequest(payload, self.chatConfig.model);
-
       // Send to OpenAI - no retry to avoid duplicate paid provider calls
         self.activeChatRequest = $.ajax({
           url: listeoAiChatConfig.apiBase + "/chat-proxy",
           method: "POST",
           headers: $.extend({}, getRequestHeaders(), {
             "X-Session-ID": self.sessionId,
+            "X-Purio-Turn-ID": loadingId,
           }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
             ? window.PurioChatLiveHandoff.getHeaders(self)
             : {}, self.getPreChatHeaders()),
@@ -1835,6 +1795,7 @@
             method: "POST",
             headers: $.extend({}, getRequestHeaders(), {
               "X-Session-ID": self.sessionId,
+              "X-Purio-Turn-ID": loadingId,
             }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
               ? window.PurioChatLiveHandoff.getHeaders(self)
               : {}, self.getPreChatHeaders()),
@@ -2335,6 +2296,7 @@
           method: "POST",
           headers: $.extend({}, getRequestHeaders(), {
             "X-Session-ID": self.sessionId,
+            "X-Purio-Turn-ID": loadingId,
           }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
             ? window.PurioChatLiveHandoff.getHeaders(self)
             : {}),
@@ -3145,13 +3107,12 @@
         ),
       );
       debugLog("Full payload:", payload);
-      logApiRequest(payload, self.chatConfig.model);
-
       $.ajax({
         url: listeoAiChatConfig.apiBase + "/chat-proxy",
         method: "POST",
         headers: $.extend({}, getRequestHeaders(), {
           "X-Session-ID": self.sessionId,
+          "X-Purio-Turn-ID": loadingId,
         }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
           ? window.PurioChatLiveHandoff.getHeaders(self)
           : {}),
@@ -3382,13 +3343,12 @@
       debugLog("Full messages array:", payload.messages);
       debugLog("Condensed results being sent:", condensedResults);
       debugLog("Complete payload:", payload);
-      logApiRequest(payload, self.chatConfig.model);
-
       $.ajax({
         url: listeoAiChatConfig.apiBase + "/chat-proxy",
         method: "POST",
         headers: $.extend({}, getRequestHeaders(), {
           "X-Session-ID": self.sessionId,
+          "X-Purio-Turn-ID": loadingId,
         }, window.PurioChatLiveHandoff && typeof window.PurioChatLiveHandoff.getHeaders === "function"
           ? window.PurioChatLiveHandoff.getHeaders(self)
           : {}),

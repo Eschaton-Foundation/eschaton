@@ -7,6 +7,21 @@
     resize: none;
 }
 
+.purio-emoji-field--input .airs-input {
+    padding-right: 48px;
+}
+
+.purio-emoji-field--input .purio-emoji-tools {
+    top: 50%;
+    bottom: auto;
+    margin-right: -4px;
+    transform: translateY(-50%);
+}
+
+.purio-emoji-field--input .purio-emoji-picker {
+    top: calc(100% + 8px);
+}
+
 .purio-emoji-tools {
     position: absolute;
     right: 8px;

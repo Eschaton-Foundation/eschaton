@@ -961,6 +961,10 @@ class Listeo_AI_Search_Chat_API
 
         // Initialize AI provider
         $provider = new Listeo_AI_Provider();
+        $provider->set_managed_gateway_billing_context(
+            'chat',
+            $request->get_header('X-Purio-Turn-ID') ?: $request_id
+        );
         $managed_access_error = $provider->get_no_api_key_configuration_error();
         if ($managed_access_error !== '') {
             return new WP_REST_Response(
@@ -2548,6 +2552,10 @@ class Listeo_AI_Search_Chat_API
 
         // Initialize AI provider
         $provider = new Listeo_AI_Provider();
+        $provider->set_managed_gateway_billing_context(
+            'chat',
+            $request->get_header('X-Purio-Turn-ID') ?: $request_id
+        );
         $managed_access_error = $provider->get_no_api_key_configuration_error();
         if ($managed_access_error !== '') {
             return new WP_REST_Response(
@@ -3965,7 +3973,11 @@ ADDITIONAL NOTES:
             $default_prompt .= "========================================";
         }
 
-        return $default_prompt;
+        return (string) apply_filters(
+            'listeo_ai_chat_system_prompt',
+            $default_prompt,
+            $include_tools
+        );
     }
 
     /**

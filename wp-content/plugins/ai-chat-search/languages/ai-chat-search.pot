@@ -2,7 +2,7 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: PurioChat 2.3.6\n"
+"Project-Id-Version: PurioChat 2.3.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -769,6 +769,7 @@ msgstr ""
 
 #: includes/admin/class-admin-chat-history.php:459
 #: includes/admin/class-admin-interface.php:3413
+#: includes/admin/class-admin-interface.php:7308
 msgid "Search"
 msgstr ""
 
@@ -2391,10 +2392,6 @@ msgstr ""
 msgid "Yes, Clear Embeddings"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:4918
-msgid "AI Semantic Search Field"
-msgstr ""
-
 #: includes/admin/class-admin-interface.php:4922
 msgid "Add AI-powered semantic search to any page using a shortcode."
 msgstr ""
@@ -2811,12 +2808,8 @@ msgid ""
 "600;\">this article in docs</a>."
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:6559
+#: includes/admin/class-admin-interface.php:5839
 msgid "Search Field Shortcode"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:6562
-msgid "Choose the searchable content and customize the shortcode for your page."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:6721
@@ -3287,6 +3280,10 @@ msgid "Customize how the chat looks and feels to your users."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:7763
+msgid "Chatbot Identity"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7763
 msgid "Chatbot Name"
 msgstr ""
 
@@ -3337,6 +3334,7 @@ msgstr ""
 msgid "Color Scheme"
 msgstr ""
 
+#: includes/admin/class-admin-interface.php:7286
 #: includes/admin/class-admin-interface.php:7889
 msgid "Light"
 msgstr ""
@@ -3671,10 +3669,6 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:9078
 msgid "Custom System Prompt (Additional Instructions)"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:9085
-msgid "See the FAQ for tips"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:9100
@@ -6545,16 +6539,16 @@ msgstr ""
 msgid "United States"
 msgstr ""
 
-#: includes/admin/class-admin-interface.php:8363
-msgid "Floating Button Style"
-msgstr ""
-
-#: includes/admin/class-admin-interface.php:8392
-msgid "Choose the appearance of the button that opens the chat."
-msgstr ""
-
 #: includes/admin/class-admin-interface.php:8595
 msgid "Animation Style"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9357
+msgid "Floating Button Settings"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:9769
+msgid "Widget Settings"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:8597
@@ -6567,6 +6561,7 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:8407
 #: includes/admin/class-admin-interface.php:8606
+#: includes/admin/class-admin-interface.php:7314
 msgid "Button Color"
 msgstr ""
 
@@ -8409,7 +8404,7 @@ msgid "Enable Agentic Mode"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php
-msgid "Beta"
+msgid "Uses more tokens"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php
@@ -8599,7 +8594,11 @@ msgid "Use 100 starter Purio Cloud credits with Pro, top up when needed, or conn
 msgstr ""
 
 #: includes/admin/class-admin-interface.php
-msgid "<strong>Purio Cloud for Pro.</strong> Includes 100 starter credits per license. Requests then use your license-linked balance; no provider API key is required."
+msgid "Buy Credits"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php
+msgid "<strong>Purio Cloud for Pro.</strong> Includes 100 starter credits per license. No provider API key is required."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php
@@ -8664,4 +8663,75 @@ msgid "Credit balance"
 msgstr ""
 
 msgid "Top up credits"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7213
+msgid "Styles updated."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7217
+msgid "Copy the generated shortcode again to apply the changes."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7257
+msgid "Search Field Styles"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7263
+msgid ""
+"These styles apply only to this shortcode and override styles inherited from "
+"the active theme."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7271
+msgid "Padding"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7281
+msgid "Box Shadow"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7285
+#: includes/admin/class-admin-interface.php:7309
+msgid "None"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7287
+msgid "Medium"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7288
+msgid "Strong"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7293
+msgid "Border Thickness"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7303
+msgid "Icon"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7307
+msgid "Sparkles"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7321
+msgid "Background Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7328
+msgid "Border Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7335
+msgid "Text & Placeholder Color"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7342
+msgid "Font Size"
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:7352
+msgid "Max Width"
 msgstr ""

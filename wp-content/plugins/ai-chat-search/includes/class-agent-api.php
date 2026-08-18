@@ -192,6 +192,7 @@ class Listeo_AI_Search_Agent_API {
         }
 
         $provider = new Listeo_AI_Provider();
+        $provider->set_managed_gateway_billing_context('agent', $request_id);
         $managed_access_error = $provider->get_no_api_key_configuration_error();
         if ($managed_access_error !== '') {
             return $this->error_response(

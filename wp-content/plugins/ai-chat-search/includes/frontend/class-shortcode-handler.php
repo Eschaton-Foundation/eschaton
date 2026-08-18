@@ -221,6 +221,16 @@ class Listeo_AI_Search_Shortcode_Handler
             'placeholder' => __('Search anything...', 'ai-chat-search'),
             'post_types' => $default_post_types, // Comma-separated post types: product,post,page
             'limit' => $max_results_setting,
+            'padding' => '8',
+            'button_color' => '#006aff',
+            'box_shadow' => 'light',
+            'background_color' => '#ffffff',
+            'border_color' => '#e0e0e0',
+            'border_width' => '1',
+            'text_color' => '#333333',
+            'font_size' => '16',
+            'max_width' => '0',
+            'icon' => 'sparkles',
         ), $atts, 'ai_search_field');
 
         // Validate post_types - only allow enabled post types
@@ -241,18 +251,76 @@ class Listeo_AI_Search_Shortcode_Handler
         // Get debug mode from admin settings
         $debug_mode = get_option('listeo_ai_search_debug_mode', false);
 
+        // This universal shortcode owns its styling even when Listeo is active.
+        // The separate listeo_ai_search shortcode keeps using Listeo theme styles.
+        $container_classes = array('ai-chat-search-container', 'ai-search-field-standalone');
+        $padding = max(0, min(40, (int) $atts['padding']));
+        $border_width = max(0, min(10, (int) $atts['border_width']));
+        $font_size = max(10, min(32, (int) $atts['font_size']));
+        $max_width = max(0, min(3000, (int) $atts['max_width']));
+        $button_color = sanitize_hex_color($atts['button_color']) ?: '#006aff';
+        $background_color = sanitize_hex_color($atts['background_color']) ?: '#ffffff';
+        $border_color = sanitize_hex_color($atts['border_color']) ?: '#e0e0e0';
+        $text_color = sanitize_hex_color($atts['text_color']) ?: '#333333';
+
+        $shadow_presets = array(
+            'none' => 'none',
+            'light' => '0 1px 3px rgba(0, 0, 0, 0.10)',
+            'medium' => '0 4px 12px rgba(0, 0, 0, 0.12)',
+            'strong' => '0 8px 24px rgba(0, 0, 0, 0.16)',
+        );
+        $box_shadow = sanitize_key($atts['box_shadow']);
+        if (!isset($shadow_presets[$box_shadow])) {
+            $box_shadow = 'light';
+        }
+
+        $allowed_icons = array('sparkles', 'search', 'none');
+        $leading_icon = sanitize_key($atts['icon']);
+        if (!in_array($leading_icon, $allowed_icons, true)) {
+            $leading_icon = 'sparkles';
+        }
+
+        $inline_styles = array(
+            '--ai-search-field-padding: ' . $padding . 'px',
+            '--ai-search-field-padding-left: ' . ($padding * 2.5) . 'px',
+            '--ai-search-field-button-color: ' . $button_color,
+            '--ai-search-field-box-shadow: ' . $shadow_presets[$box_shadow],
+            '--ai-search-field-background: ' . $background_color,
+            '--ai-search-field-border-color: ' . $border_color,
+            '--ai-search-field-border-width: ' . $border_width . 'px',
+            '--ai-search-field-text-color: ' . $text_color,
+            '--ai-search-field-font-size: ' . $font_size . 'px',
+        );
+
+        if ($max_width > 0) {
+            $container_classes[] = 'ai-search-field-custom-width';
+            $inline_styles[] = '--ai-search-field-max-width: ' . $max_width . 'px';
+        }
+
         // Use the SAME HTML structure as listeo_ai_search shortcode
         // data-button-action="disable" prevents redirect and removes quick picks button
         // data-universal="true" tells JS this is the universal shortcode (no redirect on Enter)
         ob_start();
 ?>
-        <div class="ai-chat-search-container" data-limit="<?php echo esc_attr($atts['limit']); ?>" data-types="<?php echo esc_attr($post_types_data); ?>" data-debug="<?php echo $debug_mode ? 'true' : 'false'; ?>" data-button-action="disable" data-universal="true">
+        <div class="<?php echo esc_attr(implode(' ', $container_classes)); ?>" data-limit="<?php echo esc_attr($atts['limit']); ?>" data-types="<?php echo esc_attr($post_types_data); ?>" data-debug="<?php echo $debug_mode ? 'true' : 'false'; ?>" data-button-action="disable" data-universal="true"<?php if (!empty($inline_styles)): ?> style="<?php echo esc_attr(implode('; ', $inline_styles)); ?>"<?php endif; ?>>
             <!-- Modern Search Bar -->
             <div class="ai-search-form-wrapper">
                 <div class="search-input-wrapper">
-                    <div class="search-input-icon">
-                        <span class="search-stars">✨</span>
-                    </div>
+                    <?php if ($leading_icon === 'sparkles'): ?>
+                        <div class="search-input-icon">
+                            <svg class="ai-search-leading-icon ai-search-leading-icon--sparkles" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                                <path d="M8.5 2.5 10.2 8.8 16.5 10.5 10.2 12.2 8.5 18.5 6.8 12.2 .5 10.5 6.8 8.8 8.5 2.5Z"></path>
+                                <path d="M18.5 2 19.3 4.7 22 5.5 19.3 6.3 18.5 9 17.7 6.3 15 5.5 17.7 4.7 18.5 2Z"></path>
+                            </svg>
+                        </div>
+                    <?php elseif ($leading_icon === 'search'): ?>
+                        <div class="search-input-icon">
+                            <svg class="ai-search-leading-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                        </div>
+                    <?php endif; ?>
                     <input
                         type="text"
                         name="ai_search_input"

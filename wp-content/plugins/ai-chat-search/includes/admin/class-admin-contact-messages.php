@@ -92,38 +92,38 @@ class Admin_Contact_Messages {
     private function render_stats_boxes($stats, $total_count) {
         ?>
         <div class="airs-stats-boxes">
-            <div class="airs-stat-box airs-stat-box-green">
-                <div class="airs-stat-number airs-stat-number-green">
-                    <?php echo intval($total_count); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-green">
+                    <div class="airs-stat-number airs-stat-number-green">
+                        <?php echo intval($total_count); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-green">
-                    <?php _e('Total Emails', 'ai-chat-search'); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-green"><?php _e('Total Emails', 'ai-chat-search'); ?></div>
             </div>
-            <div class="airs-stat-box airs-stat-box-blue">
-                <div class="airs-stat-number airs-stat-number-blue">
-                    <?php echo intval($stats['from_llm']); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-blue">
+                    <div class="airs-stat-number airs-stat-number-blue">
+                        <?php echo intval($stats['from_llm']); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-blue">
-                    <?php _e('Via AI Chat', 'ai-chat-search'); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-blue"><?php _e('Via AI Chat', 'ai-chat-search'); ?></div>
             </div>
-            <div class="airs-stat-box airs-stat-box-purple">
-                <div class="airs-stat-number airs-stat-number-purple">
-                    <?php echo intval($stats['from_button']); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-purple">
+                    <div class="airs-stat-number airs-stat-number-purple">
+                        <?php echo intval($stats['from_button']); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-purple">
-                    <?php _e('Via Button', 'ai-chat-search'); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-purple"><?php _e('Via Button', 'ai-chat-search'); ?></div>
             </div>
             <?php if ($stats['failed_emails'] > 0): ?>
-            <div class="airs-stat-box airs-stat-box-red">
-                <div class="airs-stat-number airs-stat-number-red">
-                    <?php echo intval($stats['failed_emails']); ?>
+            <div class="airs-footer-stat">
+                <div class="airs-stat-box airs-stat-box-red">
+                    <div class="airs-stat-number airs-stat-number-red">
+                        <?php echo intval($stats['failed_emails']); ?>
+                    </div>
                 </div>
-                <div class="airs-stat-label airs-stat-label-red">
-                    <?php _e('Failed Emails', 'ai-chat-search'); ?>
-                </div>
+                <div class="airs-stat-footer airs-stat-footer-red"><?php _e('Failed Emails', 'ai-chat-search'); ?></div>
             </div>
             <?php endif; ?>
         </div>
@@ -201,33 +201,33 @@ class Admin_Contact_Messages {
             <div class="preview-container preview-blurred">
                 <div class="airs-stats-boxes">
                     <!-- Total Emails -->
-                    <div class="airs-stat-box airs-stat-box-green">
-                        <div class="airs-stat-number airs-stat-number-green">
-                            23
+                    <div class="airs-footer-stat">
+                        <div class="airs-stat-box airs-stat-box-green">
+                            <div class="airs-stat-number airs-stat-number-green">
+                                23
+                            </div>
                         </div>
-                        <div class="airs-stat-label airs-stat-label-green">
-                            <?php _e('Total Emails', 'ai-chat-search'); ?>
-                        </div>
+                        <div class="airs-stat-footer airs-stat-footer-green"><?php _e('Total Emails', 'ai-chat-search'); ?></div>
                     </div>
 
                     <!-- Via AI Chat -->
-                    <div class="airs-stat-box airs-stat-box-blue">
-                        <div class="airs-stat-number airs-stat-number-blue">
-                            18
+                    <div class="airs-footer-stat">
+                        <div class="airs-stat-box airs-stat-box-blue">
+                            <div class="airs-stat-number airs-stat-number-blue">
+                                18
+                            </div>
                         </div>
-                        <div class="airs-stat-label airs-stat-label-blue">
-                            <?php _e('Via AI Chat', 'ai-chat-search'); ?>
-                        </div>
+                        <div class="airs-stat-footer airs-stat-footer-blue"><?php _e('Via AI Chat', 'ai-chat-search'); ?></div>
                     </div>
 
                     <!-- Via Button -->
-                    <div class="airs-stat-box airs-stat-box-purple">
-                        <div class="airs-stat-number airs-stat-number-purple">
-                            5
+                    <div class="airs-footer-stat">
+                        <div class="airs-stat-box airs-stat-box-purple">
+                            <div class="airs-stat-number airs-stat-number-purple">
+                                5
+                            </div>
                         </div>
-                        <div class="airs-stat-label airs-stat-label-purple">
-                            <?php _e('Via Button', 'ai-chat-search'); ?>
-                        </div>
+                        <div class="airs-stat-footer airs-stat-footer-purple"><?php _e('Via Button', 'ai-chat-search'); ?></div>
                     </div>
                 </div>
 
