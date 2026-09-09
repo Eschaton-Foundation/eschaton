@@ -330,7 +330,7 @@ class Listeo_AI_Background_Processor {
 
         // Get provider-specific configuration
         $endpoint = $provider->get_endpoint('embeddings');
-        $headers = $provider->get_headers();
+        $headers = $provider->get_headers('embeddings');
 
         // Sanitize text to ensure valid UTF-8 encoding (prevents json_encode failures)
         $sanitized_text = Listeo_AI_Search_Embedding_Manager::sanitize_utf8($text);

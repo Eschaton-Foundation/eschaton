@@ -23,6 +23,12 @@
     var trainingStream = null;
     var trainingCancelLabel = '';
     var trainingConfirmLabel = '';
+    var trainingTitleTransitionTimer = 0;
+    var trainingScopeTransitionTimer = 0;
+    var trainingScopeWidthTimer = 0;
+    var trainingStartButtonTimer = 0;
+    var fakeTrainingProgressTimer = 0;
+    var renderedTrainingProgress = 0;
 
     function getAjaxErrorMessage(response, fallback) {
         if (response && response.message) {
@@ -161,7 +167,7 @@
             context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
             context.clearRect(0, 0, width, height);
 
-            if (active && particles.length < 16 && Math.random() < 0.28) {
+            if (active && particles.length < 28 && Math.random() < 0.48) {
                 spawn();
             }
 
@@ -235,63 +241,210 @@
     /**
      * Paint the real AJAX batch progress in the V1 progress bar.
      */
+    function formatTrainingPercentage(percentage) {
+        if (percentage > 0 && percentage < 1) {
+            return percentage.toFixed(1);
+        }
+
+        return Math.round(percentage);
+    }
+
     function updateTrainingProgress(completed, total) {
+        stopFakeTrainingProgress();
         completed = Math.max(0, parseInt(completed, 10) || 0);
         total = Math.max(0, parseInt(total, 10) || 0);
 
         var percentage = total > 0
-            ? Math.min(100, Math.round((completed / total) * 100))
+            ? Math.min(100, (completed / total) * 100)
             : 0;
 
-        $('#training-progress-fill').css('width', percentage + '%');
+        renderedTrainingProgress = percentage;
+        $('#training-progress-fill').css('width', percentage.toFixed(3) + '%');
         $('#training-progress-count').text(
             completed + ' / ' + total + ' ' + (i18n.trainingItemsLabel || 'items')
         );
-        $('#training-progress-percent').text(percentage + '%');
+        $('#training-progress-percent').text(formatTrainingPercentage(percentage) + '%');
+    }
+
+    function stopFakeTrainingProgress() {
+        if (!fakeTrainingProgressTimer) {
+            return;
+        }
+
+        window.clearInterval(fakeTrainingProgressTimer);
+        fakeTrainingProgressTimer = 0;
+    }
+
+    function startFakeTrainingProgress(batchSize) {
+        var reducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        stopFakeTrainingProgress();
+
+        if (reducedMotion || totalListings <= 0) {
+            return;
+        }
+
+        var batchTarget = Math.min(totalListings, currentOffset + batchSize) / totalListings * 100;
+        var fakeLimit = renderedTrainingProgress +
+            (batchTarget - renderedTrainingProgress) * 0.9;
+
+        if (fakeLimit <= renderedTrainingProgress) {
+            return;
+        }
+
+        fakeTrainingProgressTimer = window.setInterval(function() {
+            if (!regenerationRunning) {
+                stopFakeTrainingProgress();
+                return;
+            }
+
+            var remaining = fakeLimit - renderedTrainingProgress;
+            renderedTrainingProgress += Math.max(0.015, remaining * 0.055);
+            renderedTrainingProgress = Math.min(renderedTrainingProgress, fakeLimit);
+
+            $('#training-progress-fill').css('width', renderedTrainingProgress.toFixed(3) + '%');
+            var fakeCompleted = Math.min(
+                totalListings,
+                Math.max(
+                    currentOffset,
+                    Math.ceil(renderedTrainingProgress / 100 * totalListings)
+                )
+            );
+            $('#training-progress-count').text(
+                fakeCompleted + ' / ' + totalListings + ' ' +
+                (i18n.trainingItemsLabel || 'items')
+            );
+            $('#training-progress-percent').text(
+                formatTrainingPercentage(renderedTrainingProgress) + '%'
+            );
+        }, 150);
     }
 
     function updateTrainingSourceSummary(total) {
         total = Math.max(0, parseInt(total, 10) || 0);
-        $('#training-status-pill-text').text(
+        setTrainingScopeText(
             total + ' ' + (
                 total === 1
                     ? (i18n.trainingSourceSelected || 'source selected')
                     : (i18n.trainingSourcesSelected || 'sources selected')
-            )
+            ),
+            false
         );
+    }
+
+    function setTrainingScopeText(text, animate) {
+        var $scopeText = $('#training-status-pill-text');
+        var $scopePill = $scopeText.closest('.airs-training__scope-pill');
+        var reducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        window.clearTimeout(trainingScopeTransitionTimer);
+        window.clearTimeout(trainingScopeWidthTimer);
+        $scopeText.removeClass('is-blurring-out is-blurring-in');
+        $scopePill.css('width', '');
+
+        if (!animate || reducedMotion) {
+            $scopeText.text(text);
+            return;
+        }
+
+        var startWidth = $scopePill.outerWidth();
+        $scopePill.css('width', startWidth + 'px');
+        $scopeText.addClass('is-blurring-out');
+        trainingScopeTransitionTimer = window.setTimeout(function() {
+            $scopeText
+                .text(text)
+                .removeClass('is-blurring-out')
+                .addClass('is-blurring-in');
+
+            $scopePill.css('width', '');
+            var targetWidth = $scopePill.outerWidth();
+            $scopePill.css('width', startWidth + 'px');
+            void $scopePill[0].offsetWidth;
+            $scopePill.css('width', targetWidth + 'px');
+
+            trainingScopeTransitionTimer = window.setTimeout(function() {
+                $scopeText.removeClass('is-blurring-in');
+            }, 160);
+
+            trainingScopeWidthTimer = window.setTimeout(function() {
+                $scopePill.css('width', '');
+            }, 200);
+        }, 120);
     }
 
     function getKnownTrainingTotal() {
         return Math.max(0, parseInt(AIRS.trainingTotalItems, 10) || 0);
     }
 
-    function setTrainingTitle(title, state) {
-        $('#training')
-            .removeClass('airs-training--done airs-training--failed airs-training--stopped')
-            .addClass(state ? 'airs-training--' + state : '');
-        $('#training-title-text').text(title);
+    function setTrainingTitle(title, state, animate) {
+        var $training = $('#training');
+        var $title = $('#training-title-text');
+        var animateTransition = (animate || (state === 'done' && trainingModalState === 'running')) &&
+            !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+        window.clearTimeout(trainingTitleTransitionTimer);
+        $title.removeClass('is-blurring-out is-blurring-in');
+
+        if (!animateTransition) {
+            $training
+                .removeClass('airs-training--completing airs-training--done airs-training--failed airs-training--stopped')
+                .addClass(state ? 'airs-training--' + state : '');
+            $title.text(title);
+            return;
+        }
+
+        $title.addClass('is-blurring-out');
+        trainingTitleTransitionTimer = window.setTimeout(function() {
+            $training
+                .removeClass('airs-training--completing airs-training--done airs-training--failed airs-training--stopped')
+                .addClass(state ? 'airs-training--' + state : '');
+            $title
+                .text(title)
+                .removeClass('is-blurring-out')
+                .addClass('is-blurring-in');
+
+            trainingTitleTransitionTimer = window.setTimeout(function() {
+                $title.removeClass('is-blurring-in');
+            }, 240);
+        }, 180);
     }
 
     function setTrainingModalState(state) {
         var $cancelButton = $('#training-cancel-btn');
         var $confirmButton = $('#training-confirm-btn');
+        var reducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         trainingModalState = state;
         $('#training').toggleClass('airs-training--running', state === 'running');
+        window.clearTimeout(trainingStartButtonTimer);
 
         if (state === 'ready') {
             $cancelButton.find('.airs-training-button-label').text(trainingCancelLabel);
             $cancelButton.show();
-            $confirmButton.find('.airs-training-button-label').text(trainingConfirmLabel);
+            $confirmButton
+                .removeClass('is-starting')
+                .find('.airs-training-button-label').text(trainingConfirmLabel);
             $confirmButton.prop('disabled', false).show();
         } else if (state === 'running') {
             $cancelButton.find('.airs-training-button-label').text(i18n.stopTraining || 'Stop');
             $cancelButton.show();
-            $confirmButton.prop('disabled', true).hide();
+            $confirmButton.prop('disabled', true);
+
+            if (reducedMotion) {
+                $confirmButton.hide();
+            } else {
+                $confirmButton.addClass('is-starting');
+                trainingStartButtonTimer = window.setTimeout(function() {
+                    $confirmButton.removeClass('is-starting').hide();
+                }, 240);
+            }
         } else {
             $cancelButton.find('.airs-training-button-label').text(i18n.closeTraining || 'Close');
             $cancelButton.show();
-            $confirmButton.prop('disabled', true).hide();
+            $confirmButton.removeClass('is-starting').prop('disabled', true).hide();
         }
     }
 
@@ -330,10 +483,11 @@
     function stopTraining() {
         activeTrainingRun++;
         regenerationRunning = false;
+        updateTrainingProgress(currentOffset, totalListings);
         $('#start-regeneration').show();
 
         finishActiveBatchLog(i18n.stoppedByUser || 'Training stopped by user.', 'warning');
-        $('#training-status-pill-text').text(i18n.trainingStoppedTitle || 'Training stopped');
+        setTrainingScopeText(i18n.trainingStoppedTitle || 'Training stopped', true);
         setTrainingTitle(i18n.trainingStoppedTitle || 'Training stopped', 'stopped');
         setTrainingModalState('finished');
 
@@ -417,7 +571,7 @@
             $('#log-content').empty();
             $('#training-activity').addClass('is-visible').attr('aria-hidden', 'false');
             activeBatchLogEntry = null;
-            setTrainingTitle(i18n.trainingInProgress || 'Training in progress...', '');
+            setTrainingTitle(i18n.trainingInProgress || 'Training in progress...', '', true);
             setTrainingModalState('running');
 
             updateTrainingProgress(0, totalListings);
@@ -441,8 +595,11 @@
         var batchSize = 20; // Reduced to prevent PHP timeout
 
         var batchLabel = getBatchRangeLabel(batchSize);
-        $('#training-status-pill-text').text(batchLabel);
-        startActiveBatchLog(batchLabel);
+        if (batchLabel) {
+            setTrainingScopeText(batchLabel, true);
+            startActiveBatchLog(batchLabel);
+        }
+        startFakeTrainingProgress(batchSize);
 
         AIRS.ajax({
             action: 'listeo_ai_manage_database',
@@ -549,14 +706,20 @@
      */
     function finishRegeneration(message, type) {
         regenerationRunning = false;
+        if (type === 'success') {
+            stopFakeTrainingProgress();
+        } else {
+            updateTrainingProgress(currentOffset, totalListings);
+        }
         $('#start-regeneration').show();
         logMessage(message, type || 'success');
 
         if (type === 'success') {
-            $('#training-status-pill-text').text(i18n.done || 'Done');
-            setTrainingTitle(i18n.trainingCompleteTitle || 'Training complete', 'done');
+            $('#training').addClass('airs-training--completing');
+            setTrainingScopeText(i18n.done || 'Done', true);
+            setTrainingTitle(i18n.trainingCompleteTitle || 'Training completed', 'done');
         } else {
-            $('#training-status-pill-text').text(i18n.trainingFailedTitle || 'Training failed');
+            setTrainingScopeText(i18n.trainingFailedTitle || 'Training failed', true);
             setTrainingTitle(i18n.trainingFailedTitle || 'Training failed', 'failed');
         }
 
@@ -619,6 +782,10 @@
      * Build the visible range for the next batch.
      */
     function getBatchRangeLabel(batchSize) {
+        if (totalListings > 0 && currentOffset >= totalListings) {
+            return '';
+        }
+
         var start = currentOffset + 1;
         var end = currentOffset + batchSize;
 
@@ -635,7 +802,7 @@
     function buildLogEntry(message, type) {
         var timestamp = new Date().toLocaleTimeString();
         var $entry = $('<div>', {
-            class: 'airs-log-entry airs-log-entry--' + type
+            class: 'airs-log-entry airs-log-entry--' + type + ' is-entering'
         });
 
         $entry.append($('<span>', {
@@ -673,6 +840,10 @@
         if (type === 'running') {
             appendLoadingDots($entry.find('.airs-log-message'));
         }
+
+        $entry.removeClass('is-entering');
+        void $entry[0].offsetWidth;
+        $entry.addClass('is-entering');
     }
 
     /**
@@ -1157,7 +1328,7 @@
 
         var embeddingDefaults = {
             openai: 'text-embedding-3-small',
-            gemini: 'gemini-embedding-001',
+            gemini: 'gemini-embedding-2:1536',
             mistral: 'mistral-embed',
             openrouter: 'openai/text-embedding-3-small'
         };

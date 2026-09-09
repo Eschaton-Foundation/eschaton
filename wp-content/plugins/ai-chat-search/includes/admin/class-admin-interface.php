@@ -144,7 +144,7 @@ class Listeo_AI_Search_Admin_Interface
                 "sanitize" => "intval",
                 "default" => 0,
                 "description" =>
-                    "Enable OpenAI Fast mode for direct GPT-5.6 models",
+                    "Enable Fast mode for direct OpenAI GPT-5.6 and Astra, or OpenRouter Astra",
             ],
             "listeo_ai_search_debug_mode" => [
                 "type" => "checkbox",
@@ -854,7 +854,7 @@ class Listeo_AI_Search_Admin_Interface
                     "description" => __("1 credit per message", "ai-chat-search"),
                     "group" => "fast",
                     "capability" => 4,
-                    "speed" => 5,
+                    "speed" => 4,
                 ],
                 "openai/gpt-5.4-mini" => [
                     "name" => "GPT-5.4 Mini",
@@ -883,7 +883,7 @@ class Listeo_AI_Search_Admin_Interface
                     "description" => __("2 credits per message", "ai-chat-search"),
                     "group" => "balanced",
                     "capability" => 4,
-                    "speed" => 5,
+                    "speed" => 4,
                 ],
                 "openai/gpt-5.6-terra" => [
                     "name" => "GPT-5.6 Terra",
@@ -915,6 +915,13 @@ class Listeo_AI_Search_Admin_Interface
                     "capability" => 4,
                     "speed" => 4,
                     "recommended" => true,
+                ],
+                "gpt-6-astra" => [
+                    "name" => "GPT-6 Astra",
+                    "description" => __("Maximum reasoning", "ai-chat-search"),
+                    "group" => "capable",
+                    "capability" => 5,
+                    "speed" => 2,
                 ],
                 "gpt-5.6-sol" => [
                     "name" => "GPT-5.6 Sol",
@@ -973,14 +980,21 @@ class Listeo_AI_Search_Admin_Interface
                     "group" => "fast",
                     "capability" => 2,
                     "speed" => 5,
+                    "recommended" => true,
+                ],
+                "gemini-3.8-flash" => [
+                    "name" => "Gemini 3.8 Flash",
+                    "description" => __("Smart and fast", "ai-chat-search"),
+                    "group" => "balanced",
+                    "capability" => 5,
+                    "speed" => 4,
                 ],
                 "gemini-3.7-flash" => [
                     "name" => "Gemini 3.7 Flash",
                     "description" => __("Smart and fast", "ai-chat-search"),
                     "group" => "balanced",
                     "capability" => 5,
-                    "speed" => 5,
-                    "recommended" => true,
+                    "speed" => 4,
                 ],
                 "gemini-3.6-flash" => [
                     "name" => "Gemini 3.6 Flash",
@@ -1315,7 +1329,9 @@ class Listeo_AI_Search_Admin_Interface
 
         // Custom system prompt - enforce length limit on save (prevent devtools bypass of maxlength)
         if ($key === "listeo_ai_chat_system_prompt") {
-            $sanitized = sanitize_textarea_field(wp_unslash($value));
+            $sanitized = Listeo_AI_Search_Utility_Helper::sanitize_prompt_text(
+                wp_unslash($value)
+            );
             $max_length = AI_Chat_Search_Pro_Manager::get_max_system_prompt_length();
             return mb_substr($sanitized, 0, $max_length);
         }
@@ -1508,6 +1524,7 @@ class Listeo_AI_Search_Admin_Interface
 
         // Show version mismatch notice if Pro is active with different version
         add_action("admin_notices", [$this, "show_version_mismatch_notice"]);
+        add_action("admin_notices", [$this, "show_embedding_dimension_notice"]);
     }
 
     /**
@@ -2202,10 +2219,10 @@ class Listeo_AI_Search_Admin_Interface
                     ) {
                         update_option(
                             "listeo_ai_chat_model",
-                            "gemini-3.7-flash",
+                            "gemini-3.5-flash-lite",
                         );
                         $updated_settings["listeo_ai_chat_model"] =
-                            "gemini-3.7-flash";
+                            "gemini-3.5-flash-lite";
                     }
                     // If switching to Mistral and current model is not a Mistral model
                     elseif (
@@ -2234,10 +2251,20 @@ class Listeo_AI_Search_Admin_Interface
                         "listeo_ai_embedding_model",
                         "",
                     );
+                    $has_legacy_implicit_gemini_model =
+                        $value === "gemini" &&
+                        $current_embedding_model === "" &&
+                        get_option(
+                            "listeo_ai_legacy_implicit_embedding_model",
+                            "",
+                        ) === "gemini-embedding-001";
                     if (
-                        !empty($current_embedding_model) &&
-                        !$provider_obj->embedding_model_matches_provider(
-                            $current_embedding_model,
+                        !$has_legacy_implicit_gemini_model &&
+                        (
+                            empty($current_embedding_model) ||
+                            !$provider_obj->embedding_model_matches_provider(
+                                $current_embedding_model,
+                            )
                         )
                     ) {
                         $default_embedding_model =
@@ -2463,17 +2490,19 @@ class Listeo_AI_Search_Admin_Interface
         try {
             // Test the API key by making a simple embedding request (smallest possible test)
             $test_endpoint =
-                "https://generativelanguage.googleapis.com/v1beta/openai/embeddings";
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent";
 
             $response = wp_remote_post($test_endpoint, [
                 "headers" => [
-                    "Authorization" => "Bearer " . $api_key,
+                    "x-goog-api-key" => $api_key,
                     "Content-Type" => "application/json",
                 ],
                 "body" => json_encode([
-                    "model" => "gemini-embedding-001",
-                    "input" => "test",
-                    "dimensions" => 1536,
+                    "model" => "models/gemini-embedding-2",
+                    "content" => [
+                        "parts" => [["text" => "test"]],
+                    ],
+                    "outputDimensionality" => 1536,
                 ]),
                 "timeout" => 15,
             ]);
@@ -2677,8 +2706,8 @@ class Listeo_AI_Search_Admin_Interface
         }
 
         try {
-            // Test the API key by making a simple models list request
-            $test_endpoint = "https://openrouter.ai/api/v1/models";
+            // Test the API key against an endpoint that requires authentication.
+            $test_endpoint = "https://openrouter.ai/api/v1/key";
 
             $response = wp_remote_get($test_endpoint, [
                 "headers" => [
@@ -3956,7 +3985,7 @@ class Listeo_AI_Search_Admin_Interface
                 "ai-chat-search",
             ),
             "trainingCompleteTitle" => __(
-                "Training complete",
+                "Training completed",
                 "ai-chat-search",
             ),
             "trainingStoppedTitle" => __(
@@ -5429,6 +5458,7 @@ class Listeo_AI_Search_Admin_Interface
                                     "openai/gpt-5.6-luna" => ["GPT-5.6 Luna", 4, 5],
                                     "openai/gpt-5.6-terra" => ["GPT-5.6 Terra", 5, 3],
                                     "openai/gpt-5.6-sol" => ["GPT-5.6 Sol", 5, 2],
+                                    "openai/gpt-6-astra" => ["GPT-6 Astra", 5, 2],
                                     "openai/gpt-4.1" => ["GPT-4.1", 4, 3],
                                     "openai/gpt-4.1-mini" => ["GPT-4.1 Mini", 3, 4],
                                     // Anthropic
@@ -5446,13 +5476,15 @@ class Listeo_AI_Search_Admin_Interface
                                     "google/gemini-3.1-pro-preview" =>
                                         ["Gemini 3.1 Pro", 5, 2],
                                     "google/gemini-3-flash-preview" =>
-                                        ["Gemini 3 Flash", 4, 5],
+                                        ["Gemini 3 Flash", 4, 4],
+                                    "google/gemini-3.8-flash" =>
+                                        ["Gemini 3.8 Flash", 5, 4],
                                     "google/gemini-3.7-flash" =>
-                                        ["Gemini 3.7 Flash", 5, 5],
+                                        ["Gemini 3.7 Flash", 5, 4],
                                     "google/gemini-3.6-flash" =>
-                                        ["Gemini 3.6 Flash", 4, 5],
+                                        ["Gemini 3.6 Flash", 4, 4],
                                     "google/gemini-3.5-flash" =>
-                                        ["Gemini 3.5 Flash", 4, 5],
+                                        ["Gemini 3.5 Flash", 4, 4],
                                     "google/gemini-3.5-flash-lite" =>
                                         ["Gemini 3.5 Flash Lite", 3, 5],
                                     "google/gemini-3.1-flash-lite" =>
@@ -5475,6 +5507,7 @@ class Listeo_AI_Search_Admin_Interface
                                     "deepseek/deepseek-v4-pro" => ["DeepSeek V4 Pro", 5, 3],
                                     "deepseek/deepseek-v4-flash" => ["DeepSeek V4 Flash", 4, 5],
                                     // Z-AI
+                                    "z-ai/glm-5.3-flash" => ["GLM 5.3 Flash", 5, 5],
                                     "z-ai/glm-5.1" => ["GLM 5.1", 5, 3],
                                     "z-ai/glm-5-turbo" => ["GLM 5 Turbo", 4, 5],
                                     // Moonshot
@@ -5528,8 +5561,11 @@ class Listeo_AI_Search_Admin_Interface
 ); ?>" tabindex="0">?</span></span>
                                 </label>
                             </div>
-                            <!-- GPT-5.6 Fast mode toggle (direct OpenAI only) -->
-                            <div id="gpt56-fast-mode-field" style="<?php echo $current_provider === "openai" && strpos($model, "gpt-5.6-") === 0
+                            <p id="astra-reasoning-note" class="airs-help-text" style="<?php echo ($current_provider === "openai" && $model === "gpt-6-astra") || ($current_provider === "openrouter" && $model === "openai/gpt-6-astra")
+                                ? ""
+                                : "display:none;"; ?>"><?php _e("GPT-6 Astra uses low reasoning. Reasoning cannot be disabled.", "ai-chat-search"); ?></p>
+                            <!-- Fast mode for direct OpenAI GPT-5.6 and Astra, or OpenRouter Astra. -->
+                            <div id="gpt56-fast-mode-field" style="<?php echo ($current_provider === "openai" && (strpos($model, "gpt-5.6-") === 0 || $model === "gpt-6-astra")) || ($current_provider === "openrouter" && $model === "openai/gpt-6-astra")
                                 ? ""
                                 : "display:none;"; ?>">
                                 <label class="airs-checkbox-label" style="margin-top: 8px; white-space: nowrap;">
@@ -5551,8 +5587,8 @@ class Listeo_AI_Search_Admin_Interface
                                 </label>
                             </div>
                             <!-- OpenRouter reasoning toggle (same row as model dropdown, shown only when provider = openrouter) -->
-                            <div class="provider-field provider-openrouter" style="<?php echo $current_provider !==
-                            "openrouter"
+                            <div id="openrouter-reasoning-field" class="provider-field provider-openrouter" style="<?php echo $current_provider !==
+                            "openrouter" || $model === "openai/gpt-6-astra"
                                 ? "display:none;"
                                 : ""; ?>">
                                 <label class="airs-checkbox-label" style="margin-top: 8px;">
@@ -5852,13 +5888,13 @@ class Listeo_AI_Search_Admin_Interface
                         <?php $this->render_min_match_slider(); ?>
 
                         <div class="airs-form-group">
-                            <label for="listeo_ai_search_max_results" class="airs-label">
+                            <label for="listeo_ai_search_max_results" class="airs-label airs-settings-panel-label">
                                 <?php _e(
                                     "Maximum AI Top Picks Results",
                                     "ai-chat-search",
                                 ); ?>
                             </label>
-                            <div class="airs-group-block" style="background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #e0e0e0;">
+                            <div class="airs-group-block airs-settings-panel-body">
                             <input type="number" id="listeo_ai_search_max_results" name="listeo_ai_search_max_results" value="<?php echo esc_attr(
                                 get_option("listeo_ai_search_max_results", 10),
                             ); ?>" min="3" max="50" step="1" class="airs-input airs-input-small" />
@@ -6398,13 +6434,13 @@ class Listeo_AI_Search_Admin_Interface
                             </div>
 
                             <div class="airs-form-group" style="flex: 1; display: flex; flex-direction: column;">
-                                <label for="listeo_ai_search_max_results" class="airs-label">
+                                <label for="listeo_ai_search_max_results" class="airs-label airs-settings-panel-label">
                                     <?php _e(
                                         "Maximum AI Top Picks Results",
                                         "ai-chat-search",
                                     ); ?>
                                 </label>
-                                <div class="airs-group-block" style="background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #e0e0e0; flex: 1;">
+                                <div class="airs-group-block airs-settings-panel-body" style="flex: 1;">
                                 <input type="number" id="listeo_ai_search_max_results" name="listeo_ai_search_max_results" value="<?php echo esc_attr(
                                     get_option(
                                         "listeo_ai_search_max_results",
@@ -6603,7 +6639,7 @@ class Listeo_AI_Search_Admin_Interface
                                     : ""; ?>">
                                     <?php $render_embedding_option(
                                         "gemini-embedding-001",
-                                        "gemini-embedding-001 (1536d) - Default",
+                                        "gemini-embedding-001 (1536d)",
                                     ); ?>
                                     <?php $render_embedding_option(
                                         "gemini-embedding-2:768",
@@ -6615,7 +6651,7 @@ class Listeo_AI_Search_Admin_Interface
                                     ); ?>
                                     <?php $render_embedding_option(
                                         "gemini-embedding-2:1536",
-                                        "gemini-embedding-2 (1536d)",
+                                        "gemini-embedding-2 (1536d) - Default",
                                     ); ?>
                                     <?php $render_embedding_option(
                                         "gemini-embedding-2:3072",
@@ -6925,10 +6961,10 @@ class Listeo_AI_Search_Admin_Interface
         }
         ?>
         <div class="airs-form-group">
-            <label for="listeo_ai_search_min_match_percentage" class="airs-label">
+            <label for="listeo_ai_search_min_match_percentage" class="airs-label airs-settings-panel-label">
                 <?php _e("Minimum Match Percentage", "ai-chat-search"); ?>
             </label>
-            <div class="airs-group-block" style="background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #e0e0e0;">
+            <div class="airs-group-block airs-settings-panel-body">
             <div class="airs-quality-slider-container">
                 <div class="airs-quality-value-display <?php echo esc_attr(
                     $quality_class,
@@ -12630,6 +12666,58 @@ class Listeo_AI_Search_Admin_Interface
     // - admin-database.js: Database status, actions, search
     // - admin-media.js: WordPress media uploader
     // Dead Safe Mode code has been removed as it was never implemented.
+
+    /**
+     * Check actual stored dimensions in the Database tab, including mixed Gemini indexes.
+     */
+    public function show_embedding_dimension_notice()
+    {
+        $screen = get_current_screen();
+        if (!$screen || $screen->id !== "toplevel_page_ai-chat-search" || !current_user_can("manage_options")) {
+            return;
+        }
+        if ($this->get_active_admin_tab() !== "database") {
+            return;
+        }
+
+        $provider = new Listeo_AI_Provider();
+        if ($provider->get_provider() !== "gemini") {
+            return;
+        }
+        $expected = $provider->prepare_embedding_payload("")["outputDimensionality"];
+
+        global $wpdb;
+        $table = $wpdb->prefix . "listeo_ai_embeddings";
+        if (!Listeo_AI_Search_Database_Manager::table_exists($table)) {
+            return;
+        }
+
+        // Read every row in bounded batches. The first row can hide a mixed index.
+        $last_id = 0;
+        do {
+            $rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, embedding FROM {$table} WHERE id > %d ORDER BY id LIMIT 100",
+                $last_id,
+            ));
+            foreach ((array) $rows as $row) {
+                $last_id = (int) $row->id;
+                $embedding = Listeo_AI_Search_Database_Manager::decompress_embedding_from_storage($row->embedding);
+                if (!is_array($embedding) || count($embedding) === $expected) {
+                    continue;
+                }
+                printf(
+                    '<div class="notice notice-error"><p>%s</p></div>',
+                    esc_html(sprintf(
+                        /* translators: 1: stored dimensions, 2: configured dimensions. */
+                        __('PurioChat found stored embeddings with %1$d dimensions, but the current Gemini setting requests %2$d. Search cannot compare these vectors. Regenerate all embeddings in the Database tab using the current model and size. A mixed-size index requires full retraining.', "ai-chat-search"),
+                        count($embedding),
+                        $expected,
+                    )),
+                );
+                return;
+            }
+        } while (count((array) $rows) === 100);
+    }
 
     /**
      * Show version mismatch notice between free and pro plugins

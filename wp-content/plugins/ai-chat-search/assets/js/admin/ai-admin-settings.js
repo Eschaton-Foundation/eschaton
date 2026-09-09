@@ -13,8 +13,8 @@
     var AIRS = window.AIRS || {};
     var i18n = window.listeo_ai_search_i18n || {};
     var directModelFallbackSlugs = {
-        openai: ['gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-5.6-sol', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.5', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'],
-        gemini: ['gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+        openai: ['gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.5', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'],
+        gemini: ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'],
         mistral: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'mistral-medium-3.5']
     };
 
@@ -643,9 +643,13 @@
     function updateGpt56ReasoningVisibility() {
         var provider = $('#listeo_ai_search_provider').val() || '';
         var model = $('#listeo_ai_chat_model').val() || '';
-        $('#gpt56-reasoning-field, #gpt56-fast-mode-field').toggle(
-            provider === 'openai' && model.indexOf('gpt-5.6-') === 0
-        );
+        var isGpt56 = provider === 'openai' && model.indexOf('gpt-5.6-') === 0;
+        var isAstra = (provider === 'openai' && model === 'gpt-6-astra') ||
+            (provider === 'openrouter' && model === 'openai/gpt-6-astra');
+        $('#gpt56-reasoning-field').toggle(isGpt56);
+        $('#gpt56-fast-mode-field').toggle(isGpt56 || isAstra);
+        $('#astra-reasoning-note').toggle(isAstra);
+        $('#openrouter-reasoning-field').toggle(provider === 'openrouter' && !isAstra);
     }
 
     /**
@@ -700,7 +704,7 @@
                 label: i18n.geminiModel || 'Gemini Model',
                 help: i18n.geminiModelHelp || 'Select the Gemini model for chat responses.',
                 models: getDirectModelSlugs('gemini'),
-                default: 'gemini-3.7-flash'
+                default: 'gemini-3.5-flash-lite'
             },
             mistral: {
                 class: 'provider-mistral',
@@ -717,7 +721,7 @@
                 help: i18n.openrouterModelHelp || 'Select an OpenRouter model for chat responses.',
                 // Any vendor/model slug is considered valid — OpenRouter has 300+ models.
                 // This list only governs auto-reset when switching into the openrouter provider.
-                models: ['openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-5.6-luna', 'openai/gpt-5.6-terra', 'openai/gpt-5.6-sol', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-5', 'anthropic/claude-opus-4.8', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.7-flash', 'google/gemini-3.6-flash', 'google/gemini-3.5-flash', 'google/gemini-3.5-flash-lite', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.6', 'moonshotai/kimi-k3', 'moonshotai/kimi-k2.5', 'qwen/qwen3.7-plus', 'qwen/qwen3.7-max', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m3', 'minimax/minimax-m2.7', 'x-ai/grok-4.5', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
+                models: ['openai/gpt-5.4-mini', 'openai/gpt-5.4-nano', 'openai/gpt-5.5', 'openai/gpt-5.6-luna', 'openai/gpt-5.6-terra', 'openai/gpt-5.6-sol', 'openai/gpt-6-astra', 'openai/gpt-4.1', 'openai/gpt-4.1-mini', 'anthropic/claude-sonnet-5', 'anthropic/claude-opus-4.8', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5', 'google/gemini-3.1-pro-preview', 'google/gemini-3-flash-preview', 'google/gemini-3.8-flash', 'google/gemini-3.7-flash', 'google/gemini-3.6-flash', 'google/gemini-3.5-flash', 'google/gemini-3.5-flash-lite', 'google/gemini-3.1-flash-lite', 'google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct', 'mistralai/mistral-large-2512', 'mistralai/mistral-medium-3.1', 'deepseek/deepseek-chat-v3', 'deepseek/deepseek-chat-v3.1', 'deepseek/deepseek-v3.2', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4-flash', 'z-ai/glm-5.3-flash', 'z-ai/glm-5.1', 'z-ai/glm-5-turbo', 'moonshotai/kimi-k2.6', 'moonshotai/kimi-k3', 'moonshotai/kimi-k2.5', 'qwen/qwen3.7-plus', 'qwen/qwen3.7-max', 'qwen/qwen3.5-flash-02-23', 'qwen/qwen3.6-plus', 'minimax/minimax-m3', 'minimax/minimax-m2.7', 'x-ai/grok-4.5', 'x-ai/grok-4', 'x-ai/grok-4.1-fast', 'x-ai/grok-4.20'],
                 default: 'openai/gpt-5.6-luna'
             }
         };
@@ -873,28 +877,34 @@
      * API Key Test Handlers
      */
     function initApiKeyTests() {
-        // OpenAI
-        $('#test-api-key').on('click', function(e) {
-            e.preventDefault();
-            testApiKey('openai', $(this), '#api-test-result', '#listeo_ai_search_api_key');
-        });
+        var providerTests = {
+            openai: {
+                result: '#api-test-result',
+                key: '#listeo_ai_search_api_key'
+            },
+            gemini: {
+                result: '#gemini-api-test-result',
+                key: '#listeo_ai_search_gemini_api_key'
+            },
+            mistral: {
+                result: '#mistral-api-test-result',
+                key: '#listeo_ai_search_mistral_api_key'
+            },
+            openrouter: {
+                result: '#openrouter-api-test-result',
+                key: '#listeo_ai_search_openrouter_api_key'
+            }
+        };
 
-        // Gemini
-        $('#test-gemini-api-key').on('click', function(e) {
+        $('.test-api-key-button').on('click', function(e) {
             e.preventDefault();
-            testApiKey('gemini', $(this), '#gemini-api-test-result', '#listeo_ai_search_gemini_api_key');
-        });
 
-        // Mistral
-        $('#test-mistral-api-key').on('click', function(e) {
-            e.preventDefault();
-            testApiKey('mistral', $(this), '#mistral-api-test-result', '#listeo_ai_search_mistral_api_key');
-        });
+            var provider = $('#listeo_ai_search_provider').val();
+            var testConfig = providerTests[provider];
 
-        // OpenRouter
-        $('#test-openrouter-api-key').on('click', function(e) {
-            e.preventDefault();
-            testApiKey('openrouter', $(this), '#openrouter-api-test-result', '#listeo_ai_search_openrouter_api_key');
+            if (!testConfig) return;
+
+            testApiKey(provider, $(this), testConfig.result, testConfig.key);
         });
 
         $('.airs-api-key-remove-button').on('click', function(e) {

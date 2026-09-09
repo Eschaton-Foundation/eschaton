@@ -550,7 +550,7 @@ class Listeo_AI_Search_Agent_API {
         $system_prompt .= "- Treat PDF content as answer context only. Never mention PDF file names and never link to any PDF source, including URLs ending in .pdf or containing ?post_type=ai_pdf_document.\n";
         $system_prompt .= "- Only call tools present in the current tool catalog. Never tell the user that an available tool cannot be used; call it and report only its actual result.\n";
         $system_prompt .= "- Tools that access private data or perform actions may be called only when the current user request and the tool-specific rules authorize them. Never infer consent, invent missing identity data, or claim success before the tool confirms it.\n";
-        $system_prompt .= "- Use add_to_cart only when the user explicitly asks to add or buy a product, with an exact product ID returned by the product tools. Use check_order_status when the user asks about an order and provides both the order number and billing email; ask for whichever value is missing.\n";
+        $system_prompt .= "- Use add_to_cart only when the user explicitly asks to add or buy a product, with an exact product ID from the product tools or CURRENT PRODUCT CONTEXT. Use check_order_status when the user asks about an order and provides both the order number and billing email; ask for whichever value is missing.\n";
         $system_prompt = (string) apply_filters(
             'listeo_ai_agent_system_prompt',
             $system_prompt,
@@ -702,8 +702,9 @@ class Listeo_AI_Search_Agent_API {
 
                 if ($content !== '') {
                     $blocks[] = "CURRENT PRODUCT CONTEXT:\n"
+                        . "PRODUCT ID: " . $product_id . "\n"
                         . mb_substr((string) $content, 0, 30000)
-                        . "\nUse this information for questions about the current product; do not search for the same product again.";
+                        . "\nThe PRODUCT ID above is authoritative for product tools, including add_to_cart when the user asks. Use this information for questions about the current product; do not search for the same product again.";
                 }
             }
         }

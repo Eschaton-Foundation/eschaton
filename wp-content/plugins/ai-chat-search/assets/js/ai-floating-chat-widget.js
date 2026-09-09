@@ -1284,9 +1284,19 @@
     ListeoFloatingChatWidget.prototype.lazyLoadAndInit = function () {
         var self = this;
         var chatWrapper = document.getElementById('listeo-floating-chat-instance');
+        var existingChatInstance = null;
+
+        if (chatWrapper && typeof window.jQuery !== 'undefined') {
+            existingChatInstance = window.jQuery(chatWrapper).data('listeo-ai-chat-instance');
+        }
 
         // shortcode on same page may have already loaded core
-        if (document.querySelector('script[src*="ai-chat-core"]')) {
+        if (
+            existingChatInstance ||
+            document.querySelector(
+                'script[src*="purio-ai-scripts.js"], script[src*="ai-chat-core"]'
+            )
+        ) {
             this.scriptsLoaded = true;
             this.initializeChat();
             return;

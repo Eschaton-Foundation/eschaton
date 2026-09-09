@@ -738,7 +738,7 @@ content: '\2713';
     color: #333333;
     border-color: #999999;
     outline: none;
-    box-shadow: 0 0 0 1px #999999;
+    box-shadow: none;
 }
 
 .airs-button-success {
@@ -923,7 +923,7 @@ content: '\2713';
     --airs-training-summary-border-fade: rgba(170, 170, 170, 0.2);
     --airs-training-summary-border-color: #aaa;
     padding: 30px;
-    border: 1px solid transparent;
+    border: 1.5px solid transparent;
     border-radius: 8px;
     background:
         linear-gradient(#f8f8f8, #f8f8f8) padding-box,
@@ -988,6 +988,7 @@ content: '\2713';
 .airs-training__scope-pill {
     display: inline-flex;
     align-items: center;
+    box-sizing: border-box;
     gap: 6px;
     padding: 7px 14px;
     color: #333;
@@ -997,9 +998,48 @@ content: '\2713';
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    transition:
+        width 0.2s ease,
+        color 0.16s ease,
+        background-color 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+#training-status-pill-text {
+    display: inline-block;
+}
+
+#training-status-pill-text.is-blurring-out {
+    animation: airs-training-scope-blur-out 0.12s ease-in forwards;
+}
+
+#training-status-pill-text.is-blurring-in {
+    animation: airs-training-scope-blur-in 0.16s ease-out forwards;
+}
+
+@keyframes airs-training-scope-blur-out {
+    to {
+        opacity: 0.55;
+        filter: blur(4px);
+    }
+}
+
+@keyframes airs-training-scope-blur-in {
+    from {
+        opacity: 0.55;
+        filter: blur(4px);
+    }
+
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
 }
 
 .airs-training--running .airs-training__scope-pill,
+.airs-training--completing .airs-training__scope-pill,
 .airs-training--done .airs-training__scope-pill {
     color: #23884e;
     background: #cfefdc;
@@ -1028,11 +1068,12 @@ content: '\2713';
 
 .airs-training__tick {
     display: none;
+    position: relative;
+    top: -1px;
     align-self: flex-start;
     flex: 0 0 20px;
     width: 20px;
     height: 20px;
-    margin-top: 2px;
 }
 
 .airs-training__tick svg {
@@ -1043,6 +1084,19 @@ content: '\2713';
 
 .airs-training--done .airs-training__tick {
     display: inline-flex;
+    animation: airs-training-tick-blur-in 0.24s ease-out both;
+}
+
+@keyframes airs-training-tick-blur-in {
+    from {
+        opacity: 0.55;
+        filter: blur(5px);
+    }
+
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
 }
 
 .airs-training__progress {
@@ -1065,7 +1119,8 @@ content: '\2713';
     width: 0;
     background: #2e9e63;
     border-radius: 2px;
-    transition: width 0.35s ease;
+    transition: width 0.18s linear;
+    will-change: width;
 }
 
 .airs-training__bar-meta {
@@ -1109,8 +1164,8 @@ content: '\2713';
 }
 
 #training-confirm-modal .airs-log {
-    height: 168px;
-    max-height: none;
+    height: auto;
+    max-height: 170px;
     padding: 12px 14px;
     color: #3d3d3d;
     background: #fafafa;
@@ -1124,6 +1179,22 @@ content: '\2713';
 #training-confirm-modal .airs-log-entry {
     align-items: center;
     padding: 2px 0;
+}
+
+#training-confirm-modal .airs-log-entry.is-entering {
+    animation: airs-training-log-entry-in 0.22s ease-out both;
+}
+
+@keyframes airs-training-log-entry-in {
+    from {
+        opacity: 0;
+        filter: blur(3px);
+    }
+
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
 }
 
 #training-confirm-modal .airs-log-time {
@@ -1145,6 +1216,57 @@ content: '\2713';
 
 #training-confirm-modal .airs-log-entry--running .airs-log-icon {
     animation: none;
+}
+
+#training-confirm-modal .airs-log-entry--running .airs-log-message {
+    color: transparent;
+    background: repeating-linear-gradient(
+        90deg,
+        #3d3d3d 0,
+        #3d3d3d 70px,
+        #aaa 90px,
+        #3d3d3d 110px,
+        #3d3d3d 180px
+    );
+    background-size: 180px 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: airs-training-log-shimmer 1.6s linear infinite;
+}
+
+@keyframes airs-training-log-shimmer {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 180px 0;
+    }
+}
+
+#training-title-text.is-blurring-out {
+    animation: airs-training-title-blur-out 0.18s ease-in forwards;
+}
+
+#training-title-text.is-blurring-in {
+    animation: airs-training-title-blur-in 0.24s ease-out forwards;
+}
+
+@keyframes airs-training-title-blur-out {
+    to {
+        filter: blur(5px);
+    }
+}
+
+@keyframes airs-training-title-blur-in {
+    from {
+        filter: blur(5px);
+    }
+
+    to {
+        filter: blur(0);
+    }
 }
 
 .airs-training__log-spinner {
@@ -1207,6 +1329,19 @@ content: '\2713';
     background: #bbedb3 !important;
 }
 
+#training-confirm-btn.is-starting {
+    pointer-events: none;
+    animation: airs-training-start-button-out 0.24s ease-in forwards;
+}
+
+@keyframes airs-training-start-button-out {
+    to {
+        opacity: 0;
+        filter: blur(5px);
+        transform: scale(0.97);
+    }
+}
+
 .airs-training-quota-notice {
     display: flex;
     align-items: flex-start;
@@ -1264,7 +1399,16 @@ content: '\2713';
     .airs-training__summary,
     .airs-training__activity,
     .airs-training__bar-fill,
-    .airs-training__log-spinner {
+    .airs-training__log-spinner,
+    .airs-training__scope-pill,
+    .airs-training--done .airs-training__tick,
+    #training-confirm-modal .airs-log-entry.is-entering,
+    #training-confirm-modal .airs-log-entry--running .airs-log-message,
+    #training-status-pill-text.is-blurring-out,
+    #training-status-pill-text.is-blurring-in,
+    #training-title-text.is-blurring-out,
+    #training-title-text.is-blurring-in,
+    #training-confirm-btn.is-starting {
         animation: none;
         transition: none;
     }
@@ -3621,6 +3765,10 @@ gap:0;
 
 .airs-search-tuning-row > .airs-form-group > .airs-group-block {
     flex: 1;
+}
+
+.airs-card[data-chat-section="semantic-search"] .airs-search-tuning-row .airs-settings-panel-label {
+    margin-bottom: -10px;
 }
 
 .airs-search-field-settings-panel,
@@ -6927,6 +7075,7 @@ details[open] > .airs-view-messages-summary .airs-view-messages-chevron {
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     background: #fafafa;
+    align-self: start;
 }
 
 .airs-floating-widget-welcome-editor {
@@ -7013,6 +7162,16 @@ details[open] > .airs-view-messages-summary .airs-view-messages-chevron {
     overflow: hidden;
     border-radius: 50%;
     background: #222222;
+}
+
+#airs-floating-welcome-animated-button-preview {
+    display: flex;
+    width: 60px;
+    height: 60px;
+    flex: 0 0 60px;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
 }
 
 .airs-floating-welcome-simple-button-preview img {

@@ -1380,11 +1380,12 @@ class Listeo_AI_Search_Chat_API
                     $system_prompt .=
                         "CURRENT PRODUCT CONTEXT (User is viewing this product):\n";
                     $system_prompt .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+                    $system_prompt .= "PRODUCT ID: {$product_context_id}\n";
                     $system_prompt .= $product_content;
                     $system_prompt .=
                         "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
                     $system_prompt .=
-                        "Use this product information to answer questions about it. Do not search for this product again.\n";
+                        "Use this product information to answer questions about it. The PRODUCT ID above is authoritative for product tools, including add_to_cart when the user asks. Do not search for this product again.\n";
                     $system_prompt .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
                 }
             }
@@ -1418,8 +1419,8 @@ class Listeo_AI_Search_Chat_API
                 ],
             ];
 
-            if ($provider->is_native_openai_gpt56()) {
-                // GPT-5.6 rejects a continuation when its previous function call
+            if ($provider->uses_responses_api()) {
+                // Responses rejects a continuation when its previous function call
                 // is missing from the newly declared tool set. Keep the original
                 // catalog for the forced filter call, but leave the text fallback
                 // tool-free so it cannot start another tool chain.
@@ -1682,6 +1683,47 @@ class Listeo_AI_Search_Chat_API
                 }
 
                 $text_messages = $payload["messages"];
+
+                // Keep the final prose grounded in the same filtered records shown in the UI.
+                for ($message_index = count($text_messages) - 1; $message_index >= 0; $message_index--) {
+                    if (
+                        !isset($text_messages[$message_index]["role"], $text_messages[$message_index]["content"]) ||
+                        $text_messages[$message_index]["role"] !== "tool" ||
+                        !is_string($text_messages[$message_index]["content"])
+                    ) {
+                        continue;
+                    }
+
+                    $tool_data = json_decode($text_messages[$message_index]["content"], true);
+                    if (!is_array($tool_data)) {
+                        continue;
+                    }
+
+                    $result_key = isset($tool_data["products"])
+                        ? "products"
+                        : (isset($tool_data["listings"]) ? "listings" : null);
+                    if ($result_key === null || !is_array($tool_data[$result_key])) {
+                        continue;
+                    }
+
+                    $results_by_id = [];
+                    foreach ($tool_data[$result_key] as $result) {
+                        if (is_array($result) && isset($result["id"])) {
+                            $results_by_id[(int) $result["id"]] = $result;
+                        }
+                    }
+
+                    $tool_data[$result_key] = [];
+                    foreach ($relevant_ids as $relevant_id) {
+                        if (isset($results_by_id[$relevant_id])) {
+                            $tool_data[$result_key][] = $results_by_id[$relevant_id];
+                        }
+                    }
+                    $tool_data["total"] = count($tool_data[$result_key]);
+                    $text_messages[$message_index]["content"] = wp_json_encode($tool_data);
+                    break;
+                }
+
                 $text_messages[] = $filter_assistant_msg;
                 $text_messages[] = [
                     "role" => "tool",
@@ -1810,6 +1852,7 @@ class Listeo_AI_Search_Chat_API
 
         // Handle tool_calls server-side via filter (e.g., webhook execution)
         $live_handoff_result = null;
+        $proxy_cart_result = null;
         if (
             $response_code === 200 &&
             isset($response_data["choices"][0]["message"]["tool_calls"])
@@ -1838,6 +1881,19 @@ class Listeo_AI_Search_Chat_API
                 if ($tool_result !== null) {
                     if (!empty($tool_result['handoff_started']) || !empty($tool_result['handoff_requires_identity'])) {
                         $live_handoff_result = $tool_result;
+                    }
+                    if (
+                        $function_name === 'add_to_cart'
+                        && is_array($tool_result)
+                        && !empty($tool_result['success'])
+                    ) {
+                        $proxy_cart_result = [
+                            'added' => true,
+                            'product_id' => isset($tool_result['product_id']) ? absint($tool_result['product_id']) : 0,
+                            'product_title' => isset($tool_result['product_title']) ? sanitize_text_field($tool_result['product_title']) : '',
+                            'quantity' => isset($tool_result['quantity']) ? max(1, (int) $tool_result['quantity']) : 1,
+                            'cart_count' => isset($tool_result['cart_count']) ? max(0, (int) $tool_result['cart_count']) : 0,
+                        ];
                     }
 
                     // Append assistant tool_call + result, make second AI call for final response
@@ -1952,6 +2008,10 @@ class Listeo_AI_Search_Chat_API
 
         if ($live_handoff_result !== null && $response_code === 200) {
             $response_data['purio_live_handoff'] = $live_handoff_result;
+        }
+
+        if ($proxy_cart_result !== null && $response_code === 200) {
+            $response_data['purio_cart'] = $proxy_cart_result;
         }
 
         // Return OpenAI response to frontend
@@ -2297,11 +2357,18 @@ class Listeo_AI_Search_Chat_API
         }
 
         // Pricing (tax-aware using WooCommerce display settings)
+        $display_price = wc_get_price_to_display($product);
+        $display_regular = wc_get_price_to_display($product, array('price' => $product->get_regular_price()));
+        $display_sale = $product->get_sale_price() ? wc_get_price_to_display($product, array('price' => $product->get_sale_price())) : 0;
+        $currency_code = get_woocommerce_currency();
+        $formatted_price = html_entity_decode(wp_strip_all_tags($product->get_price_html()), ENT_QUOTES, 'UTF-8');
+        $formatted_regular = html_entity_decode(wp_strip_all_tags(wc_price($display_regular)), ENT_QUOTES, 'UTF-8');
         $content .= "PRICING:\n";
-        $content .= "- Price: " . html_entity_decode(wp_strip_all_tags($product->get_price_html()), ENT_QUOTES, 'UTF-8') . "\n";
-        $content .= "- Regular Price: " . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($product, array('price' => $product->get_regular_price())))), ENT_QUOTES, 'UTF-8') . "\n";
+        $content .= "- Price: {$formatted_price} [amount={$display_price}; currency={$currency_code}]\n";
+        $content .= "- Regular Price: {$formatted_regular} [amount={$display_regular}; currency={$currency_code}]\n";
         if ($product->is_on_sale()) {
-            $content .= "- Sale Price: " . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($product, array('price' => $product->get_sale_price())))), ENT_QUOTES, 'UTF-8') . "\n";
+            $formatted_sale = html_entity_decode(wp_strip_all_tags(wc_price($display_sale)), ENT_QUOTES, 'UTF-8');
+            $content .= "- Sale Price: {$formatted_sale} [amount={$display_sale}; currency={$currency_code}]\n";
             $content .= "- ON SALE: Yes\n";
         }
         /**
@@ -3602,6 +3669,7 @@ IMPORTANT RULES:
 - ONLY use information from the provided sources (content already retrieved and in your context)
 - If sources don't contain the answer, politely say you don't have that information
 - When no relevant content is found, offer to help clarify or search differently
+- PRICES: Treat price.amount and [amount=...; currency=...] as canonical. When mentioning a price, copy its accompanying price.display or displayed price exactly, including separators and decimals. Never calculate, localize, or reformat prices.
 
 RESPONSE FORMAT:
 - Use HTML INSTEAD MARKDOWN: <p> for paragraphs, <strong> for key info, <a> for links
@@ -3866,7 +3934,7 @@ TOOLS:
 	   - For category-like requests, keep the category words in the query; product categories are provided in results for re-ranking
 	   - If the user mentions a product code/SKU (e.g. \"ABC-123\"), pass it to the \"sku\" parameter
 	   - Available filters (USE ONLY WHEN USER ASKS): price_min, price_max, in_stock (boolean), on_sale (boolean), rating
-	   - You will receive: {id, title, price, stock_status, rating, url} for each product
+	   - You will receive: {id, title, price: {amount, currency, display}, stock_status, rating, url} for each product
    - IMPORTANT: ALWAYS use the \"url\" field for links - NEVER construct URLs manually
 
      AFTER PRODUCT SEARCHING:
@@ -3897,10 +3965,14 @@ TOOLS:
                 if (get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
                     $cart_tool_number = get_option('listeo_ai_chat_woo_order_checking_enabled', 1) ? $wc_order_number + 1 : $wc_order_number;
                     $default_prompt .= "
-{$cart_tool_number}. add_to_cart(product_id, quantity) - Add a product to the shopping cart
+{$cart_tool_number}. add_to_cart(product_id, quantity, selected_options) - Add a product to the shopping cart
    Examples: \"add that to my cart\", \"I want to buy this\", \"add 2 of those\"
-   - Use the EXACT product_id from previous search_products() results
-   - Only works for simple in-stock products; for variable products, direct user to the product page to select options
+   - Use the EXACT product_id from previous search_products() results or CURRENT PRODUCT CONTEXT
+   - Product results may include requires_selection and variation_options with exact attribute keys and allowed values
+   - For variable products, NEVER guess a color, size, or any other option for the user
+   - If the user has not supplied every required option, ask one concise follow-up listing the available choices
+   - If the choices are not present in context, call add_to_cart without selected_options; selection_required returns them
+   - Once all choices are known, pass their exact machine keys and values in selected_options
    - Default quantity is 1 unless user specifies otherwise
    - After adding, confirm what was added and mention the cart icon to view/checkout
 
@@ -4296,20 +4368,40 @@ ADDITIONAL NOTES:
                 "function" => [
                     "name" => "add_to_cart",
                     "description" =>
-                        "Add a product to the shopping cart. Use when user explicitly asks to add a product to cart, buy it, or says 'I want it'. Only works for simple products that are in stock. For variable products, tell the user to select options on the product page.",
+                        "Add a simple or variable product to the shopping cart. For a variable product, never choose options for the user. Use exact keys and values from variation_options after the user provides every required choice. If choices are missing or unknown, omit selected_options; the tool returns selection_required with the choices to ask about.",
                     "parameters" => [
                         "type" => "object",
                         "properties" => [
                             "product_id" => [
                                 "type" => "integer",
                                 "description" =>
-                                    "The product ID from previous search_products results.",
+                                    "The product ID from previous search_products results or CURRENT PRODUCT CONTEXT.",
                             ],
                             "quantity" => [
                                 "type" => "integer",
                                 "description" =>
                                     "Quantity to add. Default 1.",
                                 "default" => 1,
+                            ],
+                            "selected_options" => [
+                                "type" => "array",
+                                "description" =>
+                                    "Selections for a variable product. Use exact attribute keys and values from variation_options. Omit for simple products or while required choices are missing.",
+                                "items" => [
+                                    "type" => "object",
+                                    "properties" => [
+                                        "attribute" => [
+                                            "type" => "string",
+                                            "description" => "Exact attribute key, for example attribute_pa_color.",
+                                        ],
+                                        "value" => [
+                                            "type" => "string",
+                                            "description" => "Exact selected option value.",
+                                        ],
+                                    ],
+                                    "required" => ["attribute", "value"],
+                                    "additionalProperties" => false,
+                                ],
                             ],
                         ],
                         "required" => ["product_id"],

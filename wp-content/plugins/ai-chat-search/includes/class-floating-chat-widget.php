@@ -157,12 +157,14 @@ class Listeo_AI_Search_Floating_Chat_Widget
             return;
         }
 
+        $chat_style_version = filemtime(LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/css/chatbot.css") ?: LISTEO_AI_SEARCH_VERSION;
+
         // Enqueue chat styles (reuse from shortcode)
         wp_enqueue_style(
             "listeo-ai-chat",
             LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/chatbot.css",
             [],
-            LISTEO_AI_SEARCH_VERSION,
+            $chat_style_version,
         );
 
         // Enqueue dark mode styles

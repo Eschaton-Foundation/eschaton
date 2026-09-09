@@ -488,12 +488,21 @@ class Listeo_AI_Search_Agent_Tool_Executor {
 				'title'        => isset( $product['title'] ) ? $this->clean_text( $product['title'] ) : '',
 				'url'          => isset( $product['url'] ) ? esc_url_raw( $product['url'] ) : '',
 				'excerpt'      => $this->trim_words( isset( $product['llm_excerpt'] ) ? $product['llm_excerpt'] : ( isset( $product['excerpt'] ) ? $product['excerpt'] : '' ), 100 ),
-				'price'        => isset( $product['price']['formatted'] ) ? $this->clean_text( $product['price']['formatted'] ) : '',
+				'price'        => array(
+					'amount'          => isset( $product['price']['raw'] ) ? (float) $product['price']['raw'] : null,
+					'regular_amount'  => isset( $product['price']['raw_regular'] ) ? (float) $product['price']['raw_regular'] : null,
+					'sale_amount'     => isset( $product['price']['raw_sale'] ) ? (float) $product['price']['raw_sale'] : null,
+					'currency'        => isset( $product['price']['currency'] ) ? sanitize_text_field( $product['price']['currency'] ) : '',
+					'display'         => isset( $product['price']['formatted'] ) ? $this->clean_text( $product['price']['formatted'] ) : '',
+					'regular_display' => isset( $product['price']['regular'] ) ? $this->clean_text( $product['price']['regular'] ) : '',
+					'sale_display'    => isset( $product['price']['sale'] ) ? $this->clean_text( $product['price']['sale'] ) : '',
+				),
 				'stock_status' => isset( $product['stock_status'] ) ? sanitize_key( $product['stock_status'] ) : '',
 				'on_sale'      => ! empty( $product['on_sale'] ),
 				'rating'       => isset( $product['rating']['average'] ) ? (float) $product['rating']['average'] : 0,
 				'categories'   => isset( $product['categories'] ) && is_array( $product['categories'] ) ? $this->clean_string_list( $product['categories'], 12 ) : array(),
 				'tags'         => isset( $product['tags'] ) && is_array( $product['tags'] ) ? $this->clean_string_list( $product['tags'], 12 ) : array(),
+				'requires_selection' => ! empty( $product['requires_selection'] ),
 			);
 
 			foreach ( array( 'sku', 'product_type' ) as $key ) {
@@ -502,7 +511,7 @@ class Listeo_AI_Search_Agent_Tool_Executor {
 				}
 			}
 
-			foreach ( array( 'attributes', 'variations', 'extra_pricing' ) as $key ) {
+			foreach ( array( 'attributes', 'variation_options', 'variations', 'extra_pricing' ) as $key ) {
 				if ( ! empty( $product[ $key ] ) && is_array( $product[ $key ] ) ) {
 					$item[ $key ] = $this->safe_artifact_value( $product[ $key ] );
 				}
@@ -550,12 +559,19 @@ class Listeo_AI_Search_Agent_Tool_Executor {
 				$data = $this->response_data( $integration->get_product_details( $request ) );
 
 				if ( ! empty( $data['success'] ) ) {
-					$products[] = array(
+					$product_data = array(
 						'product_id'        => $product_id,
 						'title'             => isset( $data['title'] ) ? $data['title'] : '',
 						'url'               => isset( $data['url'] ) ? $data['url'] : '',
 						'structured_content' => isset( $data['structured_content'] ) ? $data['structured_content'] : '',
 					);
+					if ( ! empty( $data['requires_selection'] ) ) {
+						$product_data['requires_selection'] = true;
+					}
+					if ( ! empty( $data['variation_options'] ) && is_array( $data['variation_options'] ) ) {
+						$product_data['variation_options'] = $this->safe_artifact_value( $data['variation_options'] );
+					}
+					$products[] = $product_data;
 				} else {
 					$errors[] = isset( $data['error'] ) ? $data['error'] : __( 'Product details could not be loaded.', 'ai-chat-search' );
 				}
@@ -647,72 +663,31 @@ class Listeo_AI_Search_Agent_Tool_Executor {
 	 * @return array
 	 */
 	private function add_to_cart( array $args ) {
-		if ( ! function_exists( 'WC' ) || ! function_exists( 'wc_get_product' ) ) {
+		if ( ! function_exists( 'listeo_ai_add_product_to_cart' ) ) {
 			return $this->error_result( __( 'WooCommerce is not available.', 'ai-chat-search' ), true );
 		}
 
 		$product_id = isset( $args['product_id'] ) ? absint( $args['product_id'] ) : 0;
 		$quantity   = isset( $args['quantity'] ) ? (int) $args['quantity'] : 1;
 		$quantity   = max( 1, min( 100, $quantity ) );
+		$selected_options = isset( $args['selected_options'] ) && is_array( $args['selected_options'] )
+			? $args['selected_options']
+			: array();
 
 		if ( $product_id <= 0 ) {
 			return $this->error_result( __( 'A valid product ID is required.', 'ai-chat-search' ), true );
 		}
 
-		$woocommerce = WC();
-		if ( ! $woocommerce ) {
-			return $this->error_result( __( 'WooCommerce is not available.', 'ai-chat-search' ), true );
+		$data = listeo_ai_add_product_to_cart( $product_id, $quantity, $selected_options );
+		if ( empty( $data['success'] ) ) {
+			return $this->result( $this->safe_artifact_value( $data ) );
 		}
-
-		if ( ! $woocommerce->session && method_exists( $woocommerce, 'initialize_session' ) ) {
-			$woocommerce->initialize_session();
-		}
-		if ( ! $woocommerce->cart && method_exists( $woocommerce, 'initialize_cart' ) ) {
-			$woocommerce->initialize_cart();
-		}
-		if ( ! $woocommerce->cart ) {
-			return $this->error_result( __( 'The WooCommerce cart session is not available.', 'ai-chat-search' ), true );
-		}
-
-		$product = wc_get_product( $product_id );
-		if ( ! $product || 'publish' !== $product->get_status() ) {
-			return $this->error_result( __( 'Product not found.', 'ai-chat-search' ), true );
-		}
-
-		if ( function_exists( 'wc_clear_notices' ) ) {
-			wc_clear_notices();
-		}
-
-		$cart_item_key = $woocommerce->cart->add_to_cart( $product_id, $quantity );
-		if ( ! $cart_item_key ) {
-			$message = __( 'Could not add the product to the cart.', 'ai-chat-search' );
-			if ( function_exists( 'wc_get_notices' ) ) {
-				$notices = wc_get_notices( 'error' );
-				if ( ! empty( $notices[0] ) ) {
-					$notice  = is_array( $notices[0] ) && isset( $notices[0]['notice'] ) ? $notices[0]['notice'] : $notices[0];
-					$message = $this->clean_text( $notice );
-				}
-			}
-			if ( function_exists( 'wc_clear_notices' ) ) {
-				wc_clear_notices();
-			}
-			return $this->error_result( $message, true );
-		}
-
-		$data = array(
-			'success'       => true,
-			'message'       => __( 'Product added to the cart.', 'ai-chat-search' ),
-			'product_id'    => $product_id,
-			'quantity'      => $quantity,
-			'cart_count'    => (int) $woocommerce->cart->get_cart_contents_count(),
-			'cart_subtotal' => wp_strip_all_tags( $woocommerce->cart->get_cart_subtotal() ),
-		);
 
 		return $this->result(
-			$data,
+			$this->safe_artifact_value( $data ),
 			array(
 				'type'  => 'cart',
-				'items' => array( $data ),
+				'items' => array( $this->safe_artifact_value( $data ) ),
 			),
 			true
 		);

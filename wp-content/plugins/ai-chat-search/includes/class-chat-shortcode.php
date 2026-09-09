@@ -71,12 +71,14 @@ class Listeo_AI_Search_Chat_Shortcode
      */
     public function enqueue_chat_assets()
     {
+        $chat_style_version = filemtime(LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/css/chatbot.css") ?: LISTEO_AI_SEARCH_VERSION;
+
         // Enqueue chat styles
         wp_enqueue_style(
             "listeo-ai-chat",
             LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/chatbot.css",
             [],
-            LISTEO_AI_SEARCH_VERSION
+            $chat_style_version
         );
 
         // Enqueue dark mode styles

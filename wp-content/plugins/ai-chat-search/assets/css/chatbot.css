@@ -529,7 +529,6 @@ body p.listeo-ai-listing-excerpt {
     align-items: center;
     gap: 4px;
     display: inline-block !important;
-    margin-bottom: -8px;
 }
 .listeo-ai-chat-wrapper .stock-status svg { top: 2px; position: relative; }
 .listeo-ai-chat-wrapper .stock-status.in-stock {
@@ -555,13 +554,14 @@ body p.listeo-ai-listing-excerpt {
     display: block;
     width: auto;
     margin-top: 12px;
-    padding: 6px 16px;
+    padding: 6px 16px !important;
     background: white;
     border:none;
     color: var(--ai-chat-primary-color);
     background: var(--ai-chat-primary-color-light);
     border-radius: 8px;
     font-size: 14px;
+    line-height: 22px !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 500;
@@ -936,8 +936,9 @@ body#dark-mode .listeo-ai-chat-input {background: #f5f5f5; color: #555;}
     color: white;
     border: none;
     border-radius: 24px;
-    padding: 8px 20px;
+    padding: 10px 20px;
     font-size: 14px;
+    line-height: 22px;
     font-weight: 500;
     cursor: pointer;
     display: inline-flex;

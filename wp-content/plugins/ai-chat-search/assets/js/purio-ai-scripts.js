@@ -7,6 +7,38 @@
 (function ($) {
   "use strict";
 
+  // Keep form anti-spam hooks (e.g. WP Cerber) from appending fields to JSON.
+  $.ajaxPrefilter(function (options, originalOptions) {
+    if (
+      typeof listeoAiChatConfig === "undefined" ||
+      !listeoAiChatConfig.apiBase ||
+      options.url.indexOf(listeoAiChatConfig.apiBase + "/") !== 0 ||
+      options.type.toUpperCase() !== "POST" ||
+      typeof originalOptions.data !== "string"
+    ) {
+      return;
+    }
+
+    var contentType = (options.headers || {})["Content-Type"] || options.contentType;
+    if (!/^application\/json\b/i.test(contentType)) {
+      return;
+    }
+
+    var body = originalOptions.data;
+    var beforeSend = options.beforeSend;
+    options.contentType = "application/json";
+    options.processData = false;
+    options.beforeSend = function (xhr, settings) {
+      // Preserve headers, callback context, and cancellation from existing hooks.
+      var result;
+      if (beforeSend) {
+        result = beforeSend.call(this, xhr, settings);
+      }
+      settings.data = body;
+      return result;
+    };
+  });
+
   /**
    * Debug logging helper - only logs when debug mode is enabled
    */
@@ -517,22 +549,70 @@
         });
       });
 
-      // Select Options click — navigate to product page
+      var variationPickerLoadPromise = null;
+
+      function loadVariationPicker() {
+        if (window.PurioProductVariations) {
+          return $.Deferred().resolve().promise();
+        }
+        if (variationPickerLoadPromise) return variationPickerLoadPromise;
+
+        var deferred = $.Deferred();
+        var styleDeferred = $.Deferred();
+        var styleUrl = listeoAiChatConfig.variationPickerStyleUrl;
+        var scriptUrl = listeoAiChatConfig.variationPickerScriptUrl;
+
+        if ($('link[data-purio-variation-picker]').length) {
+          styleDeferred.resolve();
+        } else {
+          $('<link rel="stylesheet" data-purio-variation-picker>')
+            .attr("href", styleUrl)
+            .on("load", function () { styleDeferred.resolve(); })
+            .on("error", function () { styleDeferred.reject(); })
+            .appendTo("head");
+        }
+
+        $.when(styleDeferred, $.ajax({ url: scriptUrl, dataType: "script", cache: true }))
+          .done(function () { deferred.resolve(); })
+          .fail(function () {
+            variationPickerLoadPromise = null;
+            deferred.reject();
+          });
+
+        variationPickerLoadPromise = deferred.promise();
+        return variationPickerLoadPromise;
+      }
+
+      // Variable picker code and styles are loaded only after the first click.
       $(document).on("click", ".listeo-ai-select-options-btn", function (e) {
         e.preventDefault();
         e.stopPropagation();
-        var url = $(this).data("url");
-        if (url) {
-          window.location.href = url;
+
+        var $btn = $(this);
+        var url = $btn.data("url");
+        var productId = parseInt($btn.data("product-id"), 10) || 0;
+        var productType = $btn.data("product-type");
+
+        if (productType !== "variable" || !productId) {
+          if (url) window.location.href = url;
+          return;
         }
+
+        loadVariationPicker()
+          .done(function () {
+            window.PurioProductVariations.open($btn);
+          })
+          .fail(function () {
+            if (url) window.location.href = url;
+          });
       });
 
       // Cart toggle button click
       $(document).on("click", ".listeo-ai-chat-cart-toggle", function (e) {
         e.preventDefault();
-        var $wrapper = $(this).closest(".listeo-ai-chat-wrapper, .listeo-ai-chat-container").find(".listeo-ai-cart-overlay");
+        var $wrapper = $(this).closest(".listeo-ai-chat-wrapper, .listeo-ai-chat-container").find(".listeo-ai-cart-overlay:not(.listeo-ai-variation-overlay)");
         if (!$wrapper.length) {
-          $wrapper = $(this).closest(".listeo-floating-chat-popup, .listeo-ai-chat-shortcode-wrapper").find(".listeo-ai-cart-overlay");
+          $wrapper = $(this).closest(".listeo-floating-chat-popup, .listeo-ai-chat-shortcode-wrapper").find(".listeo-ai-cart-overlay:not(.listeo-ai-variation-overlay)");
         }
         $wrapper.fadeIn(200);
         loadCartContents($wrapper);
@@ -1499,6 +1579,21 @@
               return;
             }
 
+            if (data.purio_cart && data.purio_cart.added) {
+              var proxyCartCount = parseInt(data.purio_cart.cart_count, 10) || 0;
+              if (proxyCartCount > 0) {
+                $(".listeo-ai-cart-badge").text(proxyCartCount).show();
+              } else {
+                $(".listeo-ai-cart-badge").hide();
+              }
+              logCartEvent(
+                self.sessionId,
+                data.purio_cart.product_id,
+                data.purio_cart.product_title || "",
+                data.purio_cart.quantity || 1,
+              );
+            }
+
             var assistantMessage = data.choices[0].message;
 
             debugLog("===== OPENAI RESPONSE =====");
@@ -2048,27 +2143,23 @@
             nonce: listeoAiChatConfig.cartNonce,
             product_id: functionArgs.product_id,
             quantity: functionArgs.quantity || 1,
+            selected_options: functionArgs.selected_options || [],
           },
           success: function (response) {
             debugLog("Add to cart response:", response);
 
             var toolResult;
             if (response.success) {
-              toolResult = {
-                success: true,
-                message: "Product added to cart successfully.",
-                cart_count: response.data.cart_count,
-                cart_subtotal: response.data.cart_subtotal,
-              };
+              toolResult = $.extend({ success: true }, response.data || {});
               // Update cart badge
               $(".listeo-ai-cart-badge").text(response.data.cart_count).show();
               // Log cart event for chat history
-              logCartEvent(self.sessionId, functionArgs.product_id, "", functionArgs.quantity || 1);
+              logCartEvent(self.sessionId, functionArgs.product_id, response.data.product_title || "", functionArgs.quantity || 1);
             } else {
-              toolResult = {
+              toolResult = $.extend({
                 success: false,
                 message: response.data?.message || "Could not add to cart.",
-              };
+              }, response.data || {});
             }
 
             self.$messages.find("#" + loadingId).remove();
@@ -3065,6 +3156,11 @@
       var recentHistory = self.getValidHistorySlice(12 * ctxMul);
 
       // Build API payload (model and tools are handled server-side)
+      var detailsToolContent = detailsResponse.structured_content;
+      if (detailsResponse.requires_selection && detailsResponse.variation_options) {
+        detailsToolContent += "\nREQUIRED PRODUCT OPTIONS (use exact keys and values for add_to_cart):\n" +
+          JSON.stringify(detailsResponse.variation_options);
+      }
       var payload = {
         messages: recentHistory.concat([
           { role: "user", content: userMessage },
@@ -3072,7 +3168,7 @@
           {
             role: "tool",
             tool_call_id: toolCall.id,
-            content: detailsResponse.structured_content, // Semantic embedding content
+            content: detailsToolContent,
           },
         ]),
       };
@@ -3152,7 +3248,7 @@
             {
               role: "tool",
               tool_call_id: toolCall.id,
-              content: detailsResponse.structured_content,
+              content: detailsToolContent,
             },
             { role: "assistant", content: finalMessage }, // Final response
           );
@@ -3236,7 +3332,15 @@
                   id: r.id,
                   title: r.title,
                   excerpt: r.llm_excerpt || r.excerpt || "",
-                  price: r.price?.formatted || "",
+                  price: {
+                    amount: r.price?.raw ?? null,
+                    regular_amount: r.price?.raw_regular ?? null,
+                    sale_amount: r.price?.raw_sale ?? null,
+                    currency: r.price?.currency || "",
+                    display: r.price?.formatted || "",
+                    regular_display: r.price?.regular || "",
+                    sale_display: r.price?.sale || "",
+                  },
                   stock_status: r.stock_status || "",
                   on_sale: r.on_sale || false,
                   url: r.url || "",
@@ -3246,6 +3350,12 @@
 	                }
 	                if (r.product_type) {
 	                  product.product_type = r.product_type;
+	                }
+	                if (r.requires_selection) {
+	                  product.requires_selection = true;
+	                }
+	                if (r.variation_options) {
+	                  product.variation_options = r.variation_options;
 	                }
 	                if (r.categories && r.categories.length) {
 	                  product.categories = r.categories;
@@ -3718,7 +3828,7 @@
           } else if (productType !== "simple" && stockStatus === "instock") {
             html +=
               '      <div class="listeo-ai-atc-wrapper">' +
-              '        <div class="listeo-ai-add-to-cart-btn listeo-ai-select-options-btn" data-url="' + url + '" role="button" tabindex="0">' +
+              '        <div class="listeo-ai-add-to-cart-btn listeo-ai-select-options-btn" data-product-id="' + productId + '" data-product-type="' + self.escapeHtml(productType) + '" data-url="' + url + '" role="button" tabindex="0">' +
               '          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> ' +
               '          <span>' + (listeoAiChatConfig.strings.selectOptions || "Select Options") + '</span>' +
               "        </div>" +
@@ -4304,15 +4414,29 @@
     },
 
     /**
-     * Get pre-chat data header for first message
-     * Returns object to merge into request headers, or empty object
+     * Get pre-chat request headers.
+     * Returns headers for history storage and optional AI context.
      */
     getPreChatHeaders: function () {
+      var headers = {};
+
+      if (
+        this.preChatData &&
+        listeoAiChatConfig.preChatAttachToAI
+      ) {
+        headers["X-Purio-Pre-Chat-Context"] = encodeURIComponent(
+          JSON.stringify(this.preChatData),
+        );
+      }
+
       if (this.preChatData && !this.preChatDataSent) {
         this.preChatDataSent = true;
-        return { "X-Pre-Chat-Data": encodeURIComponent(JSON.stringify(this.preChatData)) };
+        headers["X-Pre-Chat-Data"] = encodeURIComponent(
+          JSON.stringify(this.preChatData),
+        );
       }
-      return {};
+
+      return headers;
     },
 
     /**

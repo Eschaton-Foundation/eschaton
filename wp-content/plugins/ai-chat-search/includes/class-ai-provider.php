@@ -277,11 +277,11 @@ class Listeo_AI_Provider {
         }
 
         if ($this->get_provider() === 'gemini') {
-            // Use OpenAI compatibility mode for Gemini
-            // Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
             if ($type === 'embeddings') {
-                return 'https://generativelanguage.googleapis.com/v1beta/openai/embeddings';
+                $model = rawurlencode($this->get_embedding_model());
+                return 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':embedContent';
             } elseif ($type === 'chat') {
+                // Chat continues to use Gemini's OpenAI compatibility endpoint.
                 return 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
             }
         } elseif ($this->get_provider() === 'mistral') {
@@ -315,9 +315,17 @@ class Listeo_AI_Provider {
     /**
      * Get HTTP headers for API requests
      *
+     * @param string $type Request type: chat or embeddings.
      * @return array Headers array
      */
-    public function get_headers() {
+    public function get_headers($type = 'chat') {
+        if ($this->get_provider() === 'gemini' && $type === 'embeddings') {
+            return array(
+                'x-goog-api-key' => $this->get_api_key(),
+                'Content-Type' => 'application/json',
+            );
+        }
+
         $headers = array(
             'Authorization' => 'Bearer ' . $this->get_api_key(),
             'Content-Type' => 'application/json',
@@ -367,7 +375,7 @@ class Listeo_AI_Provider {
      */
     public function get_default_embedding_model() {
         if ($this->get_provider() === 'gemini') {
-            return 'gemini-embedding-001';
+            return 'gemini-embedding-2:1536';
         } elseif ($this->get_provider() === 'mistral') {
             return 'mistral-embed';
         } elseif ($this->get_provider() === 'openrouter') {
@@ -418,7 +426,13 @@ class Listeo_AI_Provider {
         if (!empty($parsed['model']) && $this->embedding_model_matches_provider($parsed['model'])) {
             return $parsed['model'];
         }
-        return $this->get_default_embedding_model();
+        if (
+            $this->get_provider() === 'gemini'
+            && get_option('listeo_ai_legacy_implicit_embedding_model', '') === 'gemini-embedding-001'
+        ) {
+            return 'gemini-embedding-001';
+        }
+        return explode(':', $this->get_default_embedding_model(), 2)[0];
     }
 
     /**
@@ -436,7 +450,7 @@ class Listeo_AI_Provider {
             return isset($models[$stored]) ? $stored : 'openai/gpt-5.4-mini';
         }
         if ($this->get_provider() === 'gemini') {
-            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.7-flash';
+            return $this->model_matches_provider($stored, 'gemini') ? $stored : 'gemini-3.5-flash-lite';
         } elseif ($this->get_provider() === 'mistral') {
             return $this->model_matches_provider($stored, 'mistral') ? $stored : 'mistral-large-latest';
         } elseif ($this->get_provider() === 'openrouter') {
@@ -507,6 +521,22 @@ class Listeo_AI_Provider {
         $model  = $this->get_embedding_model();
         $dims   = $parsed['dimensions'];
 
+        if ($this->get_provider() === 'gemini') {
+            $payload = array(
+                'model' => 'models/' . $model,
+                'content' => array(
+                    'parts' => array(
+                        array('text' => $input),
+                    ),
+                ),
+            );
+
+            // Retain the supported top-level REST field for older endpoint compatibility.
+            $payload['outputDimensionality'] = $dims !== null && $dims > 0 ? $dims : 1536;
+
+            return $payload;
+        }
+
         $payload = array(
             'model' => $model,
             'input' => $input,
@@ -519,9 +549,6 @@ class Listeo_AI_Provider {
         // Add dimensions when explicitly configured via composite value
         if ($dims !== null && $dims > 0) {
             $payload['dimensions'] = $dims;
-        } elseif ($this->get_provider() === 'gemini' && empty($parsed['model'])) {
-            // Legacy fallback: gemini direct without stored option got hardcoded 1536
-            $payload['dimensions'] = 1536;
         }
 
         return $payload;
@@ -610,6 +637,21 @@ class Listeo_AI_Provider {
     }
 
     /**
+     * Whether the native OpenAI model uses our Responses API transport.
+     *
+     * @param string|null $model Optional model slug. Defaults to the chat model.
+     * @return bool
+     */
+    public function uses_responses_api( $model = null ) {
+        if ( $this->get_provider() !== 'openai' ) {
+            return false;
+        }
+        $model = $model !== null ? $model : $this->get_chat_model();
+        return $this->is_native_openai_gpt56( $model )
+            || $this->get_bare_model( $model ) === 'gpt-6-astra';
+    }
+
+    /**
      * Return the supported replacement for a retired chat model.
      *
      * @param string $model Full or bare model slug.
@@ -669,8 +711,8 @@ class Listeo_AI_Provider {
      * Normalize a chat completion payload for the current provider and model.
      *
      * Centralizes all model-specific parameter differences into one method:
-     *   - max_tokens vs max_completion_tokens (GPT-5 vs others)
-     *   - unsupported sampling parameters for GPT-5 and direct Gemini 3.7
+     *   - max_tokens vs max_completion_tokens (GPT-5/Astra vs others)
+     *   - unsupported sampling parameters for GPT-5/Astra and direct Gemini 3.7/3.8
      *   - reasoning_effort per model (GPT-5.x, Gemini 3.x)
      *   - OpenAI Fast mode for native GPT-5.6 models
      *   - OpenRouter reasoning override (object form: reasoning: {effort: ...})
@@ -702,9 +744,17 @@ class Listeo_AI_Provider {
         $model = $this->normalize_model( $model );
         $payload['model'] = $model;
         $bare = $this->get_bare_model( $model );
+        $is_astra = $bare === 'gpt-6-astra';
+        if ( $is_astra && ( $force_reasoning === null || in_array( $force_reasoning, array( 'none', 'minimal' ), true ) ) ) {
+            $force_reasoning = 'low';
+        }
+        $is_gemini_38 = in_array( $model, array( 'gemini-3.8-flash', 'google/gemini-3.8-flash' ), true );
+        if ( $is_gemini_38 && in_array( $force_reasoning, array( 'none', 'minimal' ), true ) ) {
+            $force_reasoning = 'low';
+        }
 
-        // Step 2: max_tokens key - GPT-5 uses max_completion_tokens, others use max_tokens
-        if ( $this->is_gpt5( $model ) ) {
+        // Step 2: GPT-5 and Astra use max_completion_tokens, others use max_tokens.
+        if ( $this->is_gpt5( $model ) || $is_astra ) {
             $payload['max_completion_tokens'] = $max_tokens;
             unset( $payload['max_tokens'] );
         } else {
@@ -712,15 +762,19 @@ class Listeo_AI_Provider {
             unset( $payload['max_completion_tokens'] );
         }
 
-        // Step 3: Sampling - GPT-5 and direct Gemini 3.7 don't support temperature.
-        $is_direct_gemini_37 = $this->get_provider() === 'gemini' && $model === 'gemini-3.7-flash';
-        if ( $this->is_gpt5( $model ) || $is_direct_gemini_37 ) {
+        // Step 3: GPT-5, Astra, and direct Gemini 3.7/3.8 don't support temperature.
+        $is_direct_gemini_fixed_sampling = $this->get_provider() === 'gemini'
+            && in_array( $model, array( 'gemini-3.7-flash', 'gemini-3.8-flash' ), true );
+        if ( $this->is_gpt5( $model ) || $is_astra || $is_direct_gemini_fixed_sampling ) {
             unset( $payload['temperature'] );
-            if ( $is_direct_gemini_37 ) {
+            if ( $is_direct_gemini_fixed_sampling ) {
                 unset( $payload['top_p'], $payload['top_k'] );
             }
         } else {
             $payload['temperature'] = $temperature;
+        }
+        if ( $is_astra ) {
+            unset( $payload['top_p'], $payload['top_logprobs'], $payload['logprobs'] );
         }
 
         // Step 4: Reasoning - native providers (not OpenRouter)
@@ -743,17 +797,17 @@ class Listeo_AI_Provider {
                 $payload['reasoning_effort'] = 'low';
             } elseif ( strpos( $model, 'gemini-3.1-pro' ) !== false || strpos( $model, 'gemini-3-pro' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
-            } elseif ( strpos( $model, 'gemini-3.7-flash' ) !== false || strpos( $model, 'gemini-3.6-flash' ) !== false || strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
+            } elseif ( $is_gemini_38 || strpos( $model, 'gemini-3.7-flash' ) !== false || strpos( $model, 'gemini-3.6-flash' ) !== false || strpos( $model, 'gemini-3.5-flash' ) !== false || strpos( $model, 'gemini-3-flash' ) !== false ) {
                 $payload['reasoning_effort'] = 'low';
             }
         }
 
-        // Step 5: OpenAI Fast mode
+        // Step 5: OpenAI Fast mode, including Astra through OpenRouter.
         if (
-            $this->is_native_openai_gpt56( $model )
+            ( $this->uses_responses_api( $model ) || ( $this->get_provider() === 'openrouter' && $is_astra ) )
             && get_option( 'listeo_ai_gpt56_fast_mode', 0 )
         ) {
-            $payload['service_tier'] = 'fast';
+            $payload['service_tier'] = $this->get_provider() === 'openrouter' ? 'priority' : 'fast';
         } else {
             unset( $payload['service_tier'] );
         }
@@ -772,10 +826,10 @@ class Listeo_AI_Provider {
                 $is_gemini_37 = strpos( $payload['model'], 'google/gemini-3.7-flash' ) !== false;
                 $reasoning_mandatory = ( strpos( $payload['model'], 'openai/' ) === 0 )
                     || ( strpos( $payload['model'], 'google/gemini-3.1-pro' ) !== false )
-                    || $is_gemini_37
+                    || $is_gemini_37 || $is_gemini_38
                     || ( strpos( $payload['model'], 'google/gemini-3.6-flash' ) !== false )
                     || ( strpos( $payload['model'], 'google/gemini-3.5-flash' ) !== false );
-                $effort = $is_gemini_37 ? 'low' : ( $reasoning_mandatory ? 'minimal' : 'none' );
+                $effort = ( $is_gemini_37 || $is_gemini_38 ) ? 'low' : ( $reasoning_mandatory ? 'minimal' : 'none' );
                 $payload['reasoning'] = array( 'effort' => $effort );
             } else {
                 // Reasoning toggle ON - let model use its default
@@ -789,7 +843,7 @@ class Listeo_AI_Provider {
     /**
      * Send a chat request through the provider's appropriate API.
      *
-     * Direct OpenAI GPT-5.6 requests use the Responses API. The rest of the
+     * Direct OpenAI GPT-5.6 and Astra requests use the Responses API. The rest of the
      * plugin keeps its existing Chat Completions payload and response shape.
      *
      * @param array $payload Normalized Chat Completions payload.
@@ -799,7 +853,31 @@ class Listeo_AI_Provider {
      * @return array|WP_Error WordPress HTTP response.
      */
     public function request_chat( array $payload, $timeout = 60, $preserve_agent_state = false ) {
-        if ( ! $this->is_native_openai_gpt56( isset( $payload['model'] ) ? $payload['model'] : null ) ) {
+        $timeout = max( 1, (int) $timeout );
+        $execution_limit = (int) ini_get( 'max_execution_time' );
+        if ( $execution_limit > 0 ) {
+            // Each filter/final-response call needs time for HTTP to finish or time out,
+            // plus time to return JSON. Reset the PHP timer between sequential calls.
+            $timer_reset = function_exists( 'set_time_limit' )
+                && @set_time_limit( max( $execution_limit, $timeout + 10 ) );
+
+            if ( ! $timer_reset ) {
+                // Restricted hosts: finish HTTP before the remaining PHP budget expires.
+                $started_at = isset( $_SERVER['REQUEST_TIME_FLOAT'] )
+                    ? (float) $_SERVER['REQUEST_TIME_FLOAT']
+                    : (float) ( $_SERVER['REQUEST_TIME'] ?? microtime( true ) );
+                $remaining = (int) floor( $execution_limit - ( microtime( true ) - $started_at ) - 5 );
+                if ( $remaining < 1 ) {
+                    return new WP_Error(
+                        'ai_chat_timeout',
+                        __( 'The server time limit was reached before the AI could respond. Please try again.', 'ai-chat-search' )
+                    );
+                }
+                $timeout = min( $timeout, $remaining );
+            }
+        }
+
+        if ( ! $this->uses_responses_api( isset( $payload['model'] ) ? $payload['model'] : null ) ) {
             return wp_remote_post( $this->get_endpoint( 'chat' ), array(
                 'headers'     => $this->get_headers(),
                 'body'        => wp_json_encode( $payload ),
@@ -855,7 +933,7 @@ class Listeo_AI_Provider {
             'tools'     => in_array( $provider, $known_providers, true ),
             'parallel'  => in_array( $provider, array( 'openai', 'openrouter' ), true ),
             'forced'    => $provider === 'openai',
-            'reasoning' => $this->is_native_openai_gpt56(),
+            'reasoning' => $this->uses_responses_api(),
         );
     }
 
@@ -1603,7 +1681,10 @@ class Listeo_AI_Provider {
      * @return array|false Embedding array or false on failure
      */
     public function parse_embedding_response($response_data) {
-        // Both OpenAI and Gemini (in compatibility mode) use the same response format
+        if ($this->get_provider() === 'gemini') {
+            return $response_data['embedding']['values'] ?? false;
+        }
+
         return $response_data['data'][0]['embedding'] ?? false;
     }
 

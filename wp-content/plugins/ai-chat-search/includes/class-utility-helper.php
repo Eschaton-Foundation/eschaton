@@ -58,6 +58,31 @@ class Listeo_AI_Search_Utility_Helper {
     }
 
     /**
+     * Sanitize plain-text prompts without stripping percent-encoded URL parts.
+     *
+     * WordPress text field sanitizers remove sequences such as %5B and %5D,
+     * which breaks URLs containing array-style query parameters.
+     *
+     * @param mixed $value Raw prompt value.
+     * @return string Sanitized prompt text.
+     */
+    public static function sanitize_prompt_text($value) {
+        if (is_object($value) || is_array($value)) {
+            return '';
+        }
+
+        $filtered = wp_check_invalid_utf8((string) $value);
+
+        if (strpos($filtered, '<') !== false) {
+            $filtered = wp_pre_kses_less_than($filtered);
+            $filtered = wp_strip_all_tags($filtered, false);
+            $filtered = str_replace("<\n", "&lt;\n", $filtered);
+        }
+
+        return trim($filtered);
+    }
+
+    /**
      * Sanitize the comma-separated custom search suggestions setting.
      *
      * @param string|array $value Raw suggestions value.

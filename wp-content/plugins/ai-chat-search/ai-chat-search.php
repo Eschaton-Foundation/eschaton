@@ -3,7 +3,7 @@
  * Plugin Name: PurioChat
  * Plugin URI: https://purethemes.net/ai-chatbot-for-wordpress/
  * Description: AI-powered semantic search and conversational chat with natural language queries
- * Version: 2.3.8
+ * Version: 2.4.2
  * Author: PureThemes
  * Author URI: https://purethemes.net
  * License: GPL2
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 }
 
 // Define plugin constants
-define("LISTEO_AI_SEARCH_VERSION", "2.3.8");
+define("LISTEO_AI_SEARCH_VERSION", "2.4.2");
 define("LISTEO_AI_LIVE_HANDOFF_INTEGRATION_VERSION", 1);
 define("LISTEO_AI_SEARCH_PLUGIN_URL", plugin_dir_url(__FILE__));
 define("LISTEO_AI_SEARCH_PLUGIN_PATH", plugin_dir_path(__FILE__));
@@ -203,6 +203,8 @@ class Listeo_AI_Search
         // Load dependencies first
         $this->load_dependencies();
 
+        $this->maybe_preserve_legacy_gemini_embedding_default();
+
         $this->register_array_option_guards();
 
         // Initialize AJAX handlers early (before init)
@@ -215,6 +217,50 @@ class Listeo_AI_Search
 
         register_activation_hook(__FILE__, [$this, "activate"]);
         register_deactivation_hook(__FILE__, [$this, "deactivate"]);
+    }
+
+    /**
+     * Preserve the implicit Gemini Embedding 001 default on existing installs.
+     *
+     * Older versions could train Gemini embeddings while leaving the model option
+     * empty. Pin that implicit model before changing the default for new installs.
+     *
+     * @return void
+     */
+    private function maybe_preserve_legacy_gemini_embedding_default()
+    {
+        $migration_version = 1;
+        $installed_migration = (int) get_option(
+            "listeo_ai_embedding_default_migration_version",
+            0,
+        );
+
+        if ($installed_migration >= $migration_version) {
+            return;
+        }
+
+        $is_existing_install = get_option(
+            "listeo_ai_search_version",
+            false,
+        ) !== false;
+        $provider = get_option("listeo_ai_search_provider", "openai");
+        $embedding_model = get_option("listeo_ai_embedding_model", "");
+
+        if (
+            $is_existing_install &&
+            $provider === "gemini" &&
+            $embedding_model === ""
+        ) {
+            update_option(
+                "listeo_ai_legacy_implicit_embedding_model",
+                "gemini-embedding-001",
+            );
+        }
+
+        update_option(
+            "listeo_ai_embedding_default_migration_version",
+            $migration_version,
+        );
     }
 
     /**
@@ -1421,6 +1467,7 @@ function listeo_ai_get_chat_strings($welcome_message = "")
         // WooCommerce cart
         "addToCart" => __("Add to Cart", "ai-chat-search"),
         "selectOptions" => __("Select Options", "ai-chat-search"),
+        "chooseOption" => __("Choose an option", "ai-chat-search"),
         "addingToCart" => __("Adding...", "ai-chat-search"),
         "addedToCart" => __("Added!", "ai-chat-search"),
         "cartErrorAdd" => __("Could not add to cart.", "ai-chat-search"),
@@ -1515,6 +1562,9 @@ function listeo_ai_get_chat_js_config()
         $result_order = "cards_first";
     }
 
+    $variation_script_version = filemtime(LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/js/purio-product-variations.js") ?: LISTEO_AI_SEARCH_VERSION;
+    $variation_style_version = filemtime(LISTEO_AI_SEARCH_PLUGIN_PATH . "assets/css/product-variations.css") ?: LISTEO_AI_SEARCH_VERSION;
+
     $config = [
         // API settings
         "apiBase" => esc_url(rest_url("listeo/v1")),
@@ -1552,6 +1602,16 @@ function listeo_ai_get_chat_js_config()
             ? esc_url(wc_get_checkout_url()) : '',
         "cartCount" => (class_exists('WooCommerce') && get_option('listeo_ai_chat_woo_cart_enabled', 0) && WC()->cart)
             ? WC()->cart->get_cart_contents_count() : 0,
+        "variationPickerScriptUrl" => esc_url(add_query_arg(
+            "ver",
+            $variation_script_version,
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/js/purio-product-variations.js",
+        )),
+        "variationPickerStyleUrl" => esc_url(add_query_arg(
+            "ver",
+            $variation_style_version,
+            LISTEO_AI_SEARCH_PLUGIN_URL . "assets/css/product-variations.css",
+        )),
 
         // Quick buttons visibility
         "quickButtonsVisibility" => get_option("listeo_ai_chat_quick_buttons_visibility", "always"),
@@ -1599,6 +1659,9 @@ function listeo_ai_localize_chat_config($handle)
 add_action('wp_ajax_listeo_ai_add_to_cart', 'listeo_ai_handle_add_to_cart');
 add_action('wp_ajax_nopriv_listeo_ai_add_to_cart', 'listeo_ai_handle_add_to_cart');
 
+add_action('wp_ajax_listeo_ai_get_product_variations', 'listeo_ai_handle_get_product_variations');
+add_action('wp_ajax_nopriv_listeo_ai_get_product_variations', 'listeo_ai_handle_get_product_variations');
+
 add_action('wp_ajax_listeo_ai_get_cart', 'listeo_ai_handle_get_cart');
 add_action('wp_ajax_nopriv_listeo_ai_get_cart', 'listeo_ai_handle_get_cart');
 
@@ -1610,6 +1673,8 @@ add_action('wp_ajax_nopriv_listeo_ai_update_cart_qty', 'listeo_ai_handle_update_
 
 add_action('wp_ajax_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
 add_action('wp_ajax_nopriv_listeo_ai_log_cart_event', 'listeo_ai_handle_log_cart_event');
+
+add_filter('ai_chat_search_proxy_execute_tool', 'listeo_ai_execute_cart_tool_for_chat_proxy', 10, 4);
 
 function listeo_ai_clear_cart_events_for_conversation($conversation_id) {
     $conversation_id = substr(sanitize_text_field($conversation_id), 0, 64);
@@ -1632,51 +1697,508 @@ function listeo_ai_clear_all_cart_events() {
     delete_option('listeo_ai_cart_events');
 }
 
-function listeo_ai_handle_add_to_cart() {
-    if (!function_exists('WC') || !WC()->cart) {
+/**
+ * Return the selectable attributes for a variable WooCommerce product.
+ *
+ * Values are kept in WooCommerce's canonical format so the same data can be
+ * used by the popup, the LLM tool response, and the cart resolver.
+ *
+ * @param WC_Product $product Variable product.
+ * @return array
+ */
+function listeo_ai_get_product_variation_options($product) {
+    if (!is_object($product) || !method_exists($product, 'is_type') || !$product->is_type('variable')) {
+        return array();
+    }
+
+    $attributes = array();
+    foreach ($product->get_variation_attributes() as $attribute_name => $options) {
+        $attribute_options = array();
+
+        foreach ($options as $option) {
+            $label = $option;
+            if (taxonomy_exists($attribute_name)) {
+                $term = get_term_by('slug', $option, $attribute_name);
+                if ($term && !is_wp_error($term)) {
+                    $label = $term->name;
+                }
+            }
+
+            $attribute_options[] = array(
+                'value' => (string) $option,
+                'label' => wp_strip_all_tags((string) $label),
+            );
+        }
+
+        $attributes[] = array(
+            'key' => wc_variation_attribute_name($attribute_name),
+            'label' => wc_attribute_label($attribute_name, $product),
+            'options' => $attribute_options,
+        );
+    }
+
+    return $attributes;
+}
+
+/**
+ * Normalize LLM or frontend variation selections to WooCommerce attribute keys.
+ *
+ * @param WC_Product $product          Variable product.
+ * @param array      $selected_options Map or list of attribute/value objects.
+ * @return array
+ */
+function listeo_ai_normalize_product_variation_selection($product, $selected_options) {
+    $definitions = listeo_ai_get_product_variation_options($product);
+    $submitted = array();
+
+    if (is_array($selected_options)) {
+        foreach ($selected_options as $attribute => $selection) {
+            if (is_array($selection)) {
+                $attribute = isset($selection['attribute']) ? $selection['attribute'] : ($selection['key'] ?? '');
+                $value = isset($selection['value']) ? $selection['value'] : '';
+            } else {
+                $value = $selection;
+            }
+
+            if (!is_scalar($attribute) || !is_scalar($value)) {
+                continue;
+            }
+
+            $submitted[sanitize_title((string) $attribute)] = sanitize_text_field((string) $value);
+        }
+    }
+
+    $normalized = array();
+    $invalid = array();
+    $known_aliases = array();
+
+    foreach ($definitions as $definition) {
+        $key = $definition['key'];
+        $aliases = array(
+            sanitize_title($key),
+            sanitize_title(str_replace('attribute_', '', $key)),
+            sanitize_title($definition['label']),
+        );
+
+        foreach ($aliases as $alias) {
+            if ('' !== $alias) {
+                $known_aliases[$alias] = $key;
+            }
+        }
+    }
+
+    foreach ($submitted as $alias => $value) {
+        if (!isset($known_aliases[$alias])) {
+            $invalid[] = array('attribute' => $alias, 'value' => $value);
+            continue;
+        }
+
+        $key = $known_aliases[$alias];
+        $definition = null;
+        foreach ($definitions as $candidate) {
+            if ($candidate['key'] === $key) {
+                $definition = $candidate;
+                break;
+            }
+        }
+
+        $matched_value = null;
+        foreach ($definition['options'] as $option) {
+            if (0 === strcasecmp($value, $option['value']) || 0 === strcasecmp($value, $option['label'])) {
+                $matched_value = $option['value'];
+                break;
+            }
+        }
+
+        if (null === $matched_value) {
+            $invalid[] = array('attribute' => $key, 'value' => $value);
+            continue;
+        }
+
+        $normalized[$key] = $matched_value;
+    }
+
+    return array(
+        'definitions' => $definitions,
+        'selected' => $normalized,
+        'invalid' => $invalid,
+    );
+}
+
+/**
+ * Limit missing choices to purchasable variations compatible with selections.
+ *
+ * @param WC_Product $product     Variable product.
+ * @param array      $definitions Attribute definitions.
+ * @param array      $selected    Canonical selected attributes.
+ * @return array
+ */
+function listeo_ai_get_compatible_product_options($product, $definitions, $selected) {
+    $compatible_variations = array();
+
+    foreach ($product->get_available_variations() as $variation_data) {
+        $variation = wc_get_product($variation_data['variation_id']);
+        if (!$variation || !$variation->is_in_stock() || !$variation->is_purchasable()) {
+            continue;
+        }
+
+        $attributes = array_map('strval', $variation_data['attributes']);
+        $matches = true;
+        foreach ($selected as $key => $value) {
+            $expected = isset($attributes[$key]) ? $attributes[$key] : '';
+            if ('' !== $expected && 0 !== strcasecmp($expected, $value)) {
+                $matches = false;
+                break;
+            }
+        }
+
+        if ($matches) {
+            $compatible_variations[] = $attributes;
+        }
+    }
+
+    $missing = array();
+    foreach ($definitions as $definition) {
+        if (isset($selected[$definition['key']])) {
+            continue;
+        }
+
+        $compatible_options = array();
+        foreach ($definition['options'] as $option) {
+            foreach ($compatible_variations as $variation_attributes) {
+                $variation_value = isset($variation_attributes[$definition['key']])
+                    ? $variation_attributes[$definition['key']]
+                    : '';
+                if ('' === $variation_value || 0 === strcasecmp($variation_value, $option['value'])) {
+                    $compatible_options[] = $option;
+                    break;
+                }
+            }
+        }
+
+        $missing[] = array(
+            'attribute' => $definition['key'],
+            'label' => $definition['label'],
+            'choices' => $compatible_options,
+        );
+    }
+
+    return $missing;
+}
+
+/**
+ * Resolve selected product options to one valid WooCommerce variation.
+ *
+ * @param WC_Product $product               Variable product.
+ * @param array      $selected_options      Map or list of selections.
+ * @param int        $expected_variation_id Optional variation ID supplied by the popup.
+ * @return array
+ */
+function listeo_ai_resolve_product_variation($product, $selected_options, $expected_variation_id = 0) {
+    $selection = listeo_ai_normalize_product_variation_selection($product, $selected_options);
+
+    if (!empty($selection['invalid'])) {
+        return array(
+            'success' => false,
+            'status' => 'invalid_selection',
+            'message' => __('Please select valid product options.', 'ai-chat-search'),
+            'variation_options' => $selection['definitions'],
+            'invalid_options' => $selection['invalid'],
+        );
+    }
+
+    $missing_options = listeo_ai_get_compatible_product_options(
+        $product,
+        $selection['definitions'],
+        $selection['selected']
+    );
+    foreach ($missing_options as $missing_option) {
+        if (empty($missing_option['choices'])) {
+            return array(
+                'success' => false,
+                'status' => 'selection_unavailable',
+                'message' => __('This product combination is unavailable.', 'ai-chat-search'),
+                'variation_options' => $selection['definitions'],
+            );
+        }
+    }
+    if (!empty($missing_options)) {
+        return array(
+            'success' => false,
+            'status' => 'selection_required',
+            'message' => __('Please select product options.', 'ai-chat-search'),
+            'selected_options' => $selection['selected'],
+            'missing_options' => $missing_options,
+        );
+    }
+
+    $data_store = WC_Data_Store::load('product');
+    $variation_id = (int) $data_store->find_matching_product_variation($product, $selection['selected']);
+    $variation = $variation_id ? wc_get_product($variation_id) : false;
+
+    if (
+        !$variation
+        || (int) $variation->get_parent_id() !== (int) $product->get_id()
+        || ($expected_variation_id && $expected_variation_id !== $variation_id)
+        || 'publish' !== $variation->get_status()
+        || !$variation->is_in_stock()
+        || !$variation->is_purchasable()
+    ) {
+        return array(
+            'success' => false,
+            'status' => 'selection_unavailable',
+            'message' => __('This product combination is unavailable.', 'ai-chat-search'),
+            'variation_options' => $selection['definitions'],
+        );
+    }
+
+    $selected_for_llm = array();
+    foreach ($selection['definitions'] as $definition) {
+        $value = $selection['selected'][$definition['key']];
+        $label = $value;
+        foreach ($definition['options'] as $option) {
+            if ($option['value'] === $value) {
+                $label = $option['label'];
+                break;
+            }
+        }
+        $selected_for_llm[] = array(
+            'attribute' => $definition['key'],
+            'label' => $definition['label'],
+            'value' => $value,
+            'value_label' => $label,
+        );
+    }
+
+    return array(
+        'success' => true,
+        'status' => 'resolved',
+        'variation_id' => $variation_id,
+        'variation' => $variation,
+        'variation_attributes' => $selection['selected'],
+        'selected_options' => $selected_for_llm,
+    );
+}
+
+/**
+ * Add a simple or fully selected variable product to the WooCommerce cart.
+ *
+ * @param int   $product_id           Parent product ID.
+ * @param int   $quantity             Quantity.
+ * @param array $selected_options     Variable product selections.
+ * @param int   $expected_variation_id Optional variation ID supplied by the popup.
+ * @return array
+ */
+function listeo_ai_add_product_to_cart($product_id, $quantity = 1, $selected_options = array(), $expected_variation_id = 0) {
+    if (!get_option('listeo_ai_chat_woo_cart_enabled', 0)) {
+        return array('success' => false, 'status' => 'disabled', 'message' => __('Shopping cart is not available.', 'ai-chat-search'));
+    }
+
+    if (!function_exists('WC') || !function_exists('wc_get_product')) {
+        return array('success' => false, 'status' => 'error', 'message' => __('WooCommerce not available.', 'ai-chat-search'));
+    }
+
+    $product_id = absint($product_id);
+    $quantity = max(1, min(100, (int) $quantity));
+    $product = $product_id ? wc_get_product($product_id) : false;
+    if (!$product || 'publish' !== $product->get_status()) {
+        return array('success' => false, 'status' => 'error', 'message' => __('Product not found.', 'ai-chat-search'));
+    }
+
+    $woocommerce = WC();
+    if (!$woocommerce) {
+        return array('success' => false, 'status' => 'error', 'message' => __('WooCommerce not available.', 'ai-chat-search'));
+    }
+    if (!$woocommerce->session && method_exists($woocommerce, 'initialize_session')) {
+        $woocommerce->initialize_session();
+    }
+    if (!$woocommerce->cart && method_exists($woocommerce, 'initialize_cart')) {
+        $woocommerce->initialize_cart();
+    }
+    if (!$woocommerce->cart) {
+        return array('success' => false, 'status' => 'error', 'message' => __('The WooCommerce cart session is not available.', 'ai-chat-search'));
+    }
+
+    // REST callbacks can initialize the cart after wp_loaded, so force WooCommerce
+    // to hydrate the existing cart from its session before adding another item.
+    $woocommerce->cart->get_cart();
+
+    $variation_id = 0;
+    $variation_attributes = array();
+    $selected_for_llm = array();
+    $cart_product = $product;
+
+    if ($product->is_type('variable')) {
+        $resolved = listeo_ai_resolve_product_variation($product, $selected_options, absint($expected_variation_id));
+        if (empty($resolved['success'])) {
+            $resolved['product_id'] = $product_id;
+            $resolved['product_title'] = $product->get_name();
+            return $resolved;
+        }
+
+        $variation_id = $resolved['variation_id'];
+        $variation_attributes = $resolved['variation_attributes'];
+        $selected_for_llm = $resolved['selected_options'];
+        $cart_product = $resolved['variation'];
+    } elseif (!$product->is_type('simple')) {
+        return array('success' => false, 'status' => 'unsupported_product_type', 'message' => __('This product type cannot be added directly to the cart.', 'ai-chat-search'));
+    }
+
+    if (!$cart_product->is_in_stock() || !$cart_product->is_purchasable()) {
+        return array('success' => false, 'status' => 'unavailable', 'message' => __('This product combination is unavailable.', 'ai-chat-search'));
+    }
+
+    wc_clear_notices();
+    $cart_item_key = $woocommerce->cart->add_to_cart(
+        $product_id,
+        $quantity,
+        $variation_id,
+        $variation_attributes
+    );
+
+    if (!$cart_item_key) {
+        $post_author = get_post_field('post_author', $product_id);
+        if ($post_author && (int) $post_author === get_current_user_id()) {
+            wc_clear_notices();
+            return array('success' => false, 'status' => 'error', 'message' => __('You cannot purchase your own product.', 'ai-chat-search'));
+        }
+
+        $notices = wc_get_notices('error');
+        $message = !empty($notices)
+            ? wp_strip_all_tags($notices[0]['notice'] ?? $notices[0])
+            : __('Could not add to cart.', 'ai-chat-search');
+        wc_clear_notices();
+        return array('success' => false, 'status' => 'error', 'message' => $message);
+    }
+
+    return array(
+        'success' => true,
+        'status' => 'added',
+        'message' => __('Product added to the cart.', 'ai-chat-search'),
+        'product_id' => $product_id,
+        'product_title' => $product->get_name(),
+        'variation_id' => $variation_id ?: null,
+        'selected_options' => $selected_for_llm,
+        'quantity' => $quantity,
+        'unit_price' => html_entity_decode(
+            wp_strip_all_tags(wc_price(wc_get_price_to_display($cart_product))),
+            ENT_QUOTES,
+            get_bloginfo('charset')
+        ),
+        'cart_count' => $woocommerce->cart->get_cart_contents_count(),
+        'cart_subtotal' => html_entity_decode(
+            wp_strip_all_tags($woocommerce->cart->get_cart_subtotal()),
+            ENT_QUOTES,
+            get_bloginfo('charset')
+        ),
+    );
+}
+
+/**
+ * Execute the cart tool inside the standard non-agentic chat proxy.
+ *
+ * The frontend keeps a legacy fallback, but current requests complete the
+ * LLM -> cart -> LLM sequence on the server.
+ *
+ * @param mixed  $result        Result from an earlier filter callback.
+ * @param string $function_name Tool function name.
+ * @param array  $function_args Tool arguments supplied by the model.
+ * @param array  $context       Chat proxy context.
+ * @return mixed
+ */
+function listeo_ai_execute_cart_tool_for_chat_proxy($result, $function_name, $function_args, $context) {
+    if (null !== $result || 'add_to_cart' !== $function_name) {
+        return $result;
+    }
+
+    $product_id = isset($function_args['product_id']) ? absint($function_args['product_id']) : 0;
+    $quantity = isset($function_args['quantity']) ? (int) $function_args['quantity'] : 1;
+    $selected_options = isset($function_args['selected_options']) && is_array($function_args['selected_options'])
+        ? $function_args['selected_options']
+        : array();
+
+    return listeo_ai_add_product_to_cart($product_id, $quantity, $selected_options);
+}
+
+function listeo_ai_handle_get_product_variations() {
+    if (!function_exists('WC') || !function_exists('wc_get_product')) {
         wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
         return;
     }
     check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
 
-    $product_id = intval($_POST['product_id']);
-    $quantity = isset($_POST['quantity']) ? max(1, min(100, intval($_POST['quantity']))) : 1;
+    $product_id = isset($_POST['product_id']) ? absint(wp_unslash($_POST['product_id'])) : 0;
+    $product = $product_id ? wc_get_product($product_id) : false;
 
-    if ($product_id <= 0) {
-        wp_send_json_error(array('message' => __('Invalid product.', 'ai-chat-search')));
+    if (!$product || !$product->is_type('variable') || 'publish' !== $product->get_status()) {
+        wp_send_json_error(array('message' => __('Variable product not found.', 'ai-chat-search')));
         return;
     }
 
-    $product = wc_get_product($product_id);
-    if (!$product) {
-        wp_send_json_error(array('message' => __('Product not found.', 'ai-chat-search')));
-        return;
-    }
+    $attributes = listeo_ai_get_product_variation_options($product);
 
-    // Clear any existing WC notices before adding
-    wc_clear_notices();
-
-    $cart_item_key = WC()->cart->add_to_cart($product_id, $quantity);
-    if ($cart_item_key) {
-        wp_send_json_success(array(
-            'cart_count' => WC()->cart->get_cart_contents_count(),
-            'cart_subtotal' => WC()->cart->get_cart_subtotal(),
-        ));
-    } else {
-        // Check if this is the product owner trying to buy their own product
-        $post_author = get_post_field('post_author', $product_id);
-        if ($post_author && (int) $post_author === get_current_user_id()) {
-            wc_clear_notices();
-            wp_send_json_error(array('message' => __('You cannot purchase your own product.', 'ai-chat-search')));
-            return;
+    $variations = array();
+    foreach ($product->get_available_variations() as $variation_data) {
+        $variation = wc_get_product($variation_data['variation_id']);
+        if (!$variation) {
+            continue;
         }
 
-        // Get WooCommerce error notices for debugging
-        $notices = wc_get_notices('error');
-        $error_msg = !empty($notices) ? wp_strip_all_tags($notices[0]['notice'] ?? $notices[0]) : __('Could not add to cart.', 'ai-chat-search');
-        wc_clear_notices();
-        wp_send_json_error(array('message' => $error_msg));
+        $image_id = $variation->get_image_id() ?: $product->get_image_id();
+        $image = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
+        if (!$image) {
+            $image = wc_placeholder_img_src('medium');
+        }
+
+        $variations[] = array(
+            'id' => $variation->get_id(),
+            'attributes' => array_map('strval', $variation_data['attributes']),
+            'price_html' => wp_kses_post($variation->get_price_html()),
+            'image' => esc_url_raw($image),
+            'in_stock' => $variation->is_in_stock(),
+            'purchasable' => $variation->is_purchasable(),
+        );
     }
+
+    $product_image = wp_get_attachment_image_url($product->get_image_id(), 'medium');
+    if (!$product_image) {
+        $product_image = wc_placeholder_img_src('medium');
+    }
+
+    wp_send_json_success(array(
+        'product_id' => $product_id,
+        'title' => $product->get_name(),
+        'url' => get_permalink($product_id),
+        'image' => esc_url_raw($product_image),
+        'price_html' => wp_kses_post($product->get_price_html()),
+        'attributes' => $attributes,
+        'variations' => $variations,
+    ));
+}
+
+function listeo_ai_handle_add_to_cart() {
+    if (!function_exists('WC')) {
+        wp_send_json_error(array('message' => __('WooCommerce not available.', 'ai-chat-search')));
+        return;
+    }
+    check_ajax_referer('listeo_ai_cart_nonce', 'nonce');
+
+    $product_id = isset($_POST['product_id']) ? absint(wp_unslash($_POST['product_id'])) : 0;
+    $variation_id = isset($_POST['variation_id']) ? absint(wp_unslash($_POST['variation_id'])) : 0;
+    $quantity = isset($_POST['quantity']) ? max(1, min(100, intval(wp_unslash($_POST['quantity'])))) : 1;
+    $selected_options = array();
+    if (isset($_POST['selected_options']) && is_array($_POST['selected_options'])) {
+        $selected_options = wp_unslash($_POST['selected_options']);
+    } elseif (isset($_POST['variation']) && is_array($_POST['variation'])) {
+        $selected_options = wp_unslash($_POST['variation']);
+    }
+
+    $result = listeo_ai_add_product_to_cart($product_id, $quantity, $selected_options, $variation_id);
+    if (!empty($result['success'])) {
+        wp_send_json_success($result);
+    }
+
+    wp_send_json_error($result);
 }
 
 function listeo_ai_handle_get_cart() {

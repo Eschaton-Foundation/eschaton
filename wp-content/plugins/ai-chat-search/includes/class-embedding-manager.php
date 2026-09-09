@@ -147,7 +147,7 @@ class Listeo_AI_Search_Embedding_Manager {
 
         // Get provider-specific configuration
         $endpoint = $this->provider->get_endpoint('embeddings');
-        $headers = $this->provider->get_headers();
+        $headers = $this->provider->get_headers('embeddings');
 
         // Sanitize text to ensure valid UTF-8 encoding (prevents json_encode failures)
         $sanitized_text = self::sanitize_utf8($text);
@@ -252,6 +252,17 @@ class Listeo_AI_Search_Embedding_Manager {
             $full_error = self::format_api_error_message($provider_name, $response_code, $body, $raw_body);
 
             throw new Exception($full_error);
+        }
+
+        $requested_dimensions = $payload['outputDimensionality'] ?? $payload['dimensions'] ?? null;
+        if ($requested_dimensions !== null && count($embedding) !== (int) $requested_dimensions) {
+            throw new Exception(sprintf(
+                /* translators: 1: provider name, 2: returned dimensions, 3: requested dimensions. */
+                __('%1$s returned an embedding with %2$d dimensions; %3$d were requested. The embedding was not saved. Check the embedding model settings before retraining.', 'ai-chat-search'),
+                $this->provider->get_provider_name(),
+                count($embedding),
+                $requested_dimensions
+            ));
         }
 
         return $embedding;

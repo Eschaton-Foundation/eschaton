@@ -1,0 +1,276 @@
+/**
+ * On-demand variable product picker styles.
+ * The popup shell and backdrop are inherited from the cart overlay.
+ */
+.listeo-ai-variation-popup-body {
+    padding: 16px;
+}
+
+.listeo-ai-variation-popup .listeo-ai-cart-loading {
+    align-items: center;
+}
+
+.listeo-ai-variation-product {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 15px;
+    background: #f6f6f6;
+    border-bottom: none;
+    border-radius: 8px;
+}
+
+.listeo-ai-variation-image {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f5f5f5;
+}
+
+.listeo-ai-variation-summary {
+    min-width: 0;
+}
+
+.listeo-ai-variation-title {
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.listeo-ai-variation-price {
+    color: #666;
+    font-size: 14px;
+    margin-top: 0;
+}
+
+.listeo-ai-variation-price del {
+    color: #999;
+}
+
+.listeo-ai-variation-fields {
+    display: grid;
+    gap: 11px;
+}
+
+.listeo-ai-variation-field {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+}
+
+.listeo-ai-variation-field > span {
+    color: #444;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.listeo-ai-variation-select {
+    width: 100%;
+    min-height: 38px;
+    margin: 0;
+    padding: 7px 10px;
+    color: #333;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    box-shadow: none;
+    font-size: 14px !important;
+    line-height: 1.4;
+}
+
+.listeo-ai-variation-select:focus {
+    border-color: var(--ai-chat-primary-color, #006aff);
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ai-chat-primary-color, #006aff) 15%, transparent);
+}
+
+/* Same progressive modern select used by the plugin admin. */
+@supports (appearance: base-select) {
+    .listeo-ai-variation-select-wrap {
+        position: relative;
+        display: block;
+    }
+
+    .listeo-ai-variation-select {
+        appearance: base-select;
+        position: relative;
+        height: 40px;
+        padding: 1px 14px !important;
+        line-height: 36px;
+        cursor: pointer;
+    }
+
+    .listeo-ai-variation-select::picker-icon {
+        display: none;
+    }
+
+    .listeo-ai-variation-select-wrap::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        width: 6px;
+        height: 6px;
+        border: solid #909090;
+        border-width: 0 1px 1px 0;
+        pointer-events: none;
+        transform: translateY(-70%) rotate(45deg);
+        transition: transform 0.2s ease;
+    }
+
+    .listeo-ai-variation-select-wrap:has(.listeo-ai-variation-select:open)::after {
+        transform: translateY(-30%) rotate(-135deg);
+    }
+
+    .listeo-ai-variation-select::picker(select) {
+        appearance: base-select;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-block: 6px;
+        padding: 6px;
+        color: #333;
+        background: #fff;
+        border: none;
+        border-radius: 6px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .listeo-ai-variation-select:not(:open)::picker(select) {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+    .listeo-ai-variation-select:open::picker(select) {
+        opacity: 1;
+        pointer-events: auto;
+        visibility: visible;
+    }
+
+    .listeo-ai-variation-select option {
+        padding: 6px 10px;
+        border-radius: 6px;
+        line-height: 1.4;
+        cursor: pointer;
+    }
+
+    .listeo-ai-variation-select option:hover {
+        background: #f6f6f6;
+    }
+
+    .listeo-ai-variation-select option:checked {
+        color: var(--ai-chat-primary-color, #006aff);
+        background: color-mix(in srgb, var(--ai-chat-primary-color, #006aff) 12%, #fff);
+        font-weight: 500;
+    }
+
+    .listeo-ai-variation-select option::checkmark {
+        display: none;
+    }
+}
+
+.listeo-ai-variation-message {
+    min-height: 18px;
+    margin-top: 9px;
+    color: #666;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.listeo-ai-variation-message.error {
+    color: #c0392b;
+}
+
+.listeo-ai-variation-add-btn {
+    width: 100%;
+    min-height: 40px;
+    margin-top: 18px;
+    padding: 9px 14px !important;
+    color: #fff !important;
+    background: var(--ai-chat-primary-color, #006aff);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.listeo-ai-variation-add-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.listeo-ai-variation-add-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.listeo-ai-variation-add-btn.added {
+    background: #27ae60;
+    opacity: 1;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-product {
+    background: #303030 !important;
+    border-bottom: none !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-image {
+    background: #303030 !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-title,
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-field > span {
+    color: var(--chat-text) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-price,
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-message {
+    color: var(--chat-text-secondary) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-select {
+    color: var(--chat-text) !important;
+    background: #303030 !important;
+    border-color: var(--chat-border) !important;
+}
+
+@supports (appearance: base-select) {
+    .listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-select-wrap::after {
+        border-color: #909090 !important;
+    }
+
+    .listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-select::picker(select) {
+        color: var(--chat-text) !important;
+        background: var(--chat-bg-secondary) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-select option:hover {
+        background: #303030 !important;
+    }
+
+    .listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-select option:checked {
+        color: #fff !important;
+        background: var(--ai-chat-primary-color, #006aff) !important;
+    }
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-message.error {
+    color: #ff8a80 !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-add-btn {
+    color: #fff !important;
+    background: var(--ai-chat-primary-color, #006aff) !important;
+}
+
+.listeo-ai-chat-wrapper.dark-mode .listeo-ai-variation-add-btn.added {
+    background: #27ae60 !important;
+}

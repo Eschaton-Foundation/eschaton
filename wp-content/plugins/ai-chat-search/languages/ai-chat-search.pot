@@ -2,7 +2,7 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: PurioChat 2.3.8\n"
+"Project-Id-Version: PurioChat 2.4.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ai-chat-search\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -473,6 +473,10 @@ msgstr ""
 msgid "Select Options"
 msgstr ""
 
+#: ai-chat-search.php:1424
+msgid "Choose an option"
+msgstr ""
+
 #: ai-chat-search.php:1118
 msgid "Adding..."
 msgstr ""
@@ -516,6 +520,30 @@ msgstr ""
 
 #: ai-chat-search.php:1321
 msgid "Product not found."
+msgstr ""
+
+#: ai-chat-search.php:1652
+msgid "Variable product not found."
+msgstr ""
+
+#: ai-chat-search.php:1856
+msgid "Please select valid product options."
+msgstr ""
+
+#: ai-chat-search.php:1881
+msgid "Please select product options."
+msgstr ""
+
+#: ai-chat-search.php
+msgid "Shopping cart is not available."
+msgstr ""
+
+#: ai-chat-search.php:1872 ai-chat-search.php:1902 ai-chat-search.php:1992
+msgid "This product combination is unavailable."
+msgstr ""
+
+#: ai-chat-search.php:1988
+msgid "This product type cannot be added directly to the cart."
 msgstr ""
 
 #: ai-chat-search.php:1339
@@ -1617,7 +1645,7 @@ msgid "Ready to start training"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3771
-msgid "Training complete"
+msgid "Training completed"
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:3775
@@ -3849,6 +3877,14 @@ msgstr ""
 #: includes/admin/class-admin-interface.php:10580
 #: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:467
 msgid "+ Add Field"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:569
+msgid "Add form data to AI context"
+msgstr ""
+
+#: ../ai-chat-search-pro/includes/class-pre-chat-fields.php:570
+msgid "Submitted details, including the visitor's name, are added to the conversation context."
 msgstr ""
 
 #: includes/admin/class-admin-interface.php:10614
@@ -8515,15 +8551,11 @@ msgstr ""
 msgid "A valid product ID is required."
 msgstr ""
 
-#: includes/class-agent-tool-executor.php
+#: ai-chat-search.php:1967
 msgid "The WooCommerce cart session is not available."
 msgstr ""
 
-#: includes/class-agent-tool-executor.php
-msgid "Could not add the product to the cart."
-msgstr ""
-
-#: includes/class-agent-tool-executor.php
+#: ai-chat-search.php:2021
 msgid "Product added to the cart."
 msgstr ""
 
@@ -8734,4 +8766,24 @@ msgstr ""
 
 #: includes/admin/class-admin-interface.php:7352
 msgid "Max Width"
+msgstr ""
+
+#. translators: 1: provider name, 2: returned dimensions, 3: requested dimensions.
+#: includes/class-embedding-manager.php:261
+#, php-format
+msgid "%1$s returned an embedding with %2$d dimensions; %3$d were requested. The embedding was not saved. Check the embedding model settings before retraining."
+msgstr ""
+
+#. translators: 1: stored dimensions, 2: configured dimensions.
+#: includes/admin/class-admin-interface.php:12701
+#, php-format
+msgid "PurioChat found stored embeddings with %1$d dimensions, but the current Gemini setting requests %2$d. Search cannot compare these vectors. Regenerate all embeddings in the Database tab using the current model and size. A mixed-size index requires full retraining."
+msgstr ""
+
+#: includes/class-ai-provider.php:870
+msgid "The server time limit was reached before the AI could respond. Please try again."
+msgstr ""
+
+#: includes/admin/class-admin-interface.php:5566
+msgid "GPT-6 Astra uses low reasoning. Reasoning cannot be disabled."
 msgstr ""

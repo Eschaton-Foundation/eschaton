@@ -76,10 +76,9 @@ class Listeo_AI_Search_Result_Formatter {
                     $listing['sale_price'] = $product->get_sale_price();
 
                     // Formatted prices with currency symbol (plain text, no HTML)
-                    $currency_symbol = get_woocommerce_currency_symbol();
-                    $listing['regular_price_formatted'] = $product->get_regular_price() ? $currency_symbol . number_format((float)$product->get_regular_price(), 2) : '';
-                    $listing['sale_price_formatted'] = $product->get_sale_price() ? $currency_symbol . number_format((float)$product->get_sale_price(), 2) : '';
-                    $listing['price_formatted'] = $product->get_price() ? $currency_symbol . number_format((float)$product->get_price(), 2) : '';
+                    $listing['regular_price_formatted'] = $product->get_regular_price() ? html_entity_decode(wp_strip_all_tags(wc_price((float)$product->get_regular_price())), ENT_QUOTES, 'UTF-8') : '';
+                    $listing['sale_price_formatted'] = $product->get_sale_price() ? html_entity_decode(wp_strip_all_tags(wc_price((float)$product->get_sale_price())), ENT_QUOTES, 'UTF-8') : '';
+                    $listing['price_formatted'] = $product->get_price() ? html_entity_decode(wp_strip_all_tags(wc_price((float)$product->get_price())), ENT_QUOTES, 'UTF-8') : '';
                 }
             }
             
