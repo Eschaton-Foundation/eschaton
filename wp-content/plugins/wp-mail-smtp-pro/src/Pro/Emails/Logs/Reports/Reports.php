@@ -3,6 +3,7 @@
 namespace WPMailSMTP\Pro\Emails\Logs\Reports;
 
 use WPMailSMTP\WP;
+use WPMailSMTP\Pro\Emails\Logs\EmailsCollection;
 use WPMailSMTP\Pro\Emails\Logs\Reports\Emails\Summary as SummaryReportEmail;
 use WPMailSMTP\Reports\Reports as ReportsLite;
 
@@ -12,6 +13,22 @@ use WPMailSMTP\Reports\Reports as ReportsLite;
  * @since 3.0.0
  */
 class Reports extends ReportsLite {
+
+	/**
+	 * Get the number of total emails sent.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return int
+	 */
+	public function get_total_emails_sent() {
+
+		if ( ! wp_mail_smtp()->get_pro()->get_logs()->is_valid_db() ) {
+			return parent::get_total_emails_sent();
+		}
+
+		return max( ( new EmailsCollection() )->get_count(), (int) parent::get_total_emails_sent() );
+	}
 
 	/**
 	 * Get emails stats weekly summary report.

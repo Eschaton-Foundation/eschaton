@@ -31,16 +31,24 @@ class LicenseCheckTask extends Task {
 	}
 
 	/**
+	 * Register the task's callbacks.
+	 *
+	 * @since 4.10.0
+	 */
+	public function hooks() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
+
+		// Register the action handler.
+		add_action( self::ACTION, [ $this, 'process' ] );
+	}
+
+	/**
 	 * Initialize the task.
 	 *
 	 * @since 3.9.0
 	 *
 	 * @return void
 	 */
-	public function init() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
-
-		// Register the action handler.
-		add_action( self::ACTION, [ $this, 'process' ] );
+	public function init() {
 
 		if ( Tasks::is_scheduled( self::ACTION ) !== false ) {
 			return;

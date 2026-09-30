@@ -67,6 +67,8 @@ class Resend {
 			wp_send_json_error( esc_html__( 'Invalid email ID.', 'wp-mail-smtp-pro' ) );
 		}
 
+		wp_mail_smtp()->get_pro()->get_product_events()->track_email_resent( false );
+
 		$is_sent = $this->send_email( $email, $recipients, $connection );
 
 		if ( ! is_wp_error( $is_sent ) ) {
@@ -110,6 +112,8 @@ class Resend {
 		$connection_id = ! empty( $_POST['connection_id'] ) ? sanitize_key( $_POST['connection_id'] ) : 'primary';
 
 		$this->schedule_emails_send( $email_ids, $connection_id );
+
+		wp_mail_smtp()->get_pro()->get_product_events()->track_email_resent( true );
 
 		wp_send_json_success( esc_html__( 'Emails were added to the send queue. If these selected emails have their email content, they will be resent shortly.', 'wp-mail-smtp-pro' ) );
 	}

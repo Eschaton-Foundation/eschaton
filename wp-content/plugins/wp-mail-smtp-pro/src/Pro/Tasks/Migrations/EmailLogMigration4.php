@@ -33,11 +33,11 @@ class EmailLogMigration4 extends Task {
 	}
 
 	/**
-	 * Initialize the task with all the proper checks.
+	 * Register the task's callbacks.
 	 *
-	 * @since 2.1.2
+	 * @since 4.10.0
 	 */
-	public function init() {
+	public function hooks() {
 
 		// Register the action handler.
 		add_action( self::ACTION, array( $this, 'process' ) );

@@ -21,7 +21,7 @@ class Migration extends MigrationAbstract {
 	 *
 	 * @since 1.5.0
 	 */
-	const DB_VERSION = 14;
+	const DB_VERSION = 15;
 
 	/**
 	 * Option key where we save the current DB version for Logs functionality.
@@ -442,6 +442,39 @@ class Migration extends MigrationAbstract {
 		// Save the current version to DB.
 		if ( $result !== false ) {
 			$this->update_db_ver( 14 );
+		}
+	}
+
+	/**
+	 * Add an index on date_sent + status + initiator_name to support the email sources
+	 * report. All three columns, in that order, keep its query covering.
+	 *
+	 * @since 4.10.0
+	 */
+	protected function migrate_to_15() {
+
+		$this->maybe_required_older_migrations( 15 );
+
+		global $wpdb;
+
+		$table = Logs::get_table_name();
+		$index = 'date_sent_status_initiator';
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$is_index_present = (bool) $wpdb->get_var(
+			$wpdb->prepare( "SHOW INDEX FROM `$table` WHERE Key_name = %s", $index )
+		);
+
+		// Adding an index that is already there fails on a duplicate key name, which would
+		// leave the DB version behind and re-run this migration on every admin request.
+		$result = $is_index_present
+			? true
+			: $wpdb->query( "ALTER TABLE `$table` ADD INDEX `$index` (`date_sent`, `status`, `initiator_name`) USING BTREE;" );
+		// phpcs:enable
+
+		// Save the current version to DB.
+		if ( $result !== false ) {
+			$this->update_db_ver( 15 );
 		}
 	}
 

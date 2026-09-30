@@ -3,8 +3,10 @@
 namespace WPMailSMTP\Pro;
 
 use WPMailSMTP\Admin\Area;
+use WPMailSMTP\Admin\Dashboard\Page as DashboardPage;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\EmailSendingDebug;
+use WPMailSMTP\Helpers\UI;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Tasks\LicenseCheckTask;
 use WPMailSMTP\Tasks\NotificationsUpdateTask;
@@ -37,17 +39,15 @@ class Multisite {
 		// Add the plugin admin pages for WPMS and remove unneeded menu items.
 		add_action( 'network_admin_menu', [ wp_mail_smtp()->get_admin(), 'add_admin_options_page' ] );
 
-		// Add the multisite plugin setting.
-		add_filter( 'wp_mail_smtp_admin_settings_tab_display', [ $this, 'add_multisite_network_wide_setting' ] );
+		// Add the multisite plugin setting. Runs last because it decides whether the rest
+		// of the tab is offered at all, and other features append their own sections here.
+		add_filter( 'wp_mail_smtp_admin_settings_tab_display', [ $this, 'add_multisite_network_wide_setting' ], PHP_INT_MAX );
 
 		// Filter plugin settings save process.
 		add_filter( 'wp_mail_smtp_options_set', [ $this, 'multisite_network_wide_filter_options_set' ] );
 
 		// Process the settings tab post submission data.
 		add_filter( 'wp_mail_smtp_settings_tab_process_post', [ $this, 'multisite_network_wide_process_settings_tab_post' ] );
-
-		// Filter the core plugin options population.
-		add_filter( 'wp_mail_smtp_populate_options', [ $this, 'filter_populate_options' ] );
 
 		// Filter the crypto key option.
 		add_filter( 'wp_mail_smtp_helpers_crypto_get_secret_key', [ $this, 'filter_crypto_secret_key' ] );
@@ -63,8 +63,9 @@ class Multisite {
 		add_filter( 'wp_mail_smtp_outlook_get_plugin_auth_url', [ $this, 'change_outlook_auth_redirect_url' ] );
 		add_filter( 'wp_mail_smtp_pro_providers_outlook_one_click_auth_get_plugin_auth_url', [ $this, 'change_outlook_oneclick_auth_redirect_url' ] );
 
-		// Remove other settings tabs if on network admin and the global settings options is disabled.
-		add_filter( 'wp_mail_smtp_admin_get_pages', [ $this, 'maybe_remove_other_setting_tabs' ] );
+		// Remove other settings tabs if on network admin and the global settings options is
+		// disabled. Runs last: each feature registers its own tab on this filter.
+		add_filter( 'wp_mail_smtp_admin_get_pages', [ $this, 'maybe_remove_other_setting_tabs' ], PHP_INT_MAX );
 
 		// Remove WP update nag on plugin pages.
 		add_action( 'admin_init', [ $this, 'remove_wp_update_nag' ] );
@@ -92,6 +93,12 @@ class Multisite {
 
 		// Check if on network admin and subsite related request.
 		if ( $this->is_network_admin_subsite_related_request() ) {
+
+			// Display network admin dashboard site selector.
+			add_action(
+				'wp_mail_smtp_admin_dashboard_page_title_actions',
+				[ $this, 'display_network_admin_site_selector' ]
+			);
 
 			// Display network admin email logs site selector.
 			add_action(
@@ -122,6 +129,10 @@ class Multisite {
 				3
 			);
 
+			// Switch blog on dashboard page.
+			add_action( 'wp-mail-smtp_page_wp-mail-smtp-dashboard', [ $this, 'switch_blog_to_selection' ], 0 );
+			add_action( 'wp-mail-smtp_page_wp-mail-smtp-dashboard', 'restore_current_blog', PHP_INT_MAX );
+
 			// Switch blog on email logs page.
 			add_action( 'wp-mail-smtp_page_wp-mail-smtp-logs', [ $this, 'switch_blog_to_selection' ], 0 );
 			add_action( 'wp-mail-smtp_page_wp-mail-smtp-logs', 'restore_current_blog', PHP_INT_MAX );
@@ -147,11 +158,7 @@ class Multisite {
 		}
 
 		// Handle network admin subsite related AJAX request.
-		if (
-			WP::is_doing_self_ajax() &&
-			! empty( $_REQUEST['network_admin_subsite_related_request'] ) && // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			current_user_can( 'manage_network' )
-		) {
+		if ( $this->is_network_admin_ajax_request() ) {
 			add_action( 'admin_init', [ $this, 'switch_blog_to_selection' ], 0 );
 		}
 
@@ -278,16 +285,20 @@ class Multisite {
 		<!-- Network wide setting -->
 		<div id="wp-mail-smtp-setting-row-multisite" class="wp-mail-smtp-setting-row wp-mail-smtp-setting-row-multisite wp-mail-smtp-clear">
 			<div class="wp-mail-smtp-setting-label">
-				<label for="wp-mail-smtp-setting-multisite-settings-control"><?php esc_html_e( 'Settings control', 'wp-mail-smtp-pro' ); ?></label>
+				<label for="wp-mail-smtp-setting-network-wide"><?php esc_html_e( 'Settings control', 'wp-mail-smtp-pro' ); ?></label>
 			</div>
 			<div class="wp-mail-smtp-setting-field">
-				<input name="wp-mail-smtp[general][network_wide]" type="checkbox"
-					value="true" <?php checked( $global_settings_enabled ); ?>
-					id="wp-mail-smtp-setting-network-wide">
-
-				<label for="wp-mail-smtp-setting-network-wide">
-					<?php esc_html_e( 'Make the plugin settings global network-wide', 'wp-mail-smtp-pro' ); ?>
-				</label>
+				<?php
+				UI::toggle(
+					[
+						'name'    => 'wp-mail-smtp[general][network_wide]',
+						'id'      => 'wp-mail-smtp-setting-network-wide',
+						'value'   => 'true',
+						'checked' => $global_settings_enabled,
+						'label'   => esc_html__( 'Make the plugin settings global network-wide', 'wp-mail-smtp-pro' ),
+					]
+				);
+				?>
 
 				<p class="desc">
 					<?php esc_html_e( 'If disabled, each subsite of this multisite will have its own WP Mail SMTP settings page that has to be configured separately.', 'wp-mail-smtp-pro' ); ?>
@@ -422,14 +433,18 @@ class Multisite {
 	/**
 	 * Filter the core plugin options population.
 	 * Use the main site options if the network_wide is enabled.
+	 * No longer hooked: Options reads the main site's record itself.
 	 *
-	 * @since 2.2.0
+	 * @since      2.2.0
+	 * @deprecated {VERSION}
 	 *
 	 * @param array $options Default plugin options.
 	 *
 	 * @return array
 	 */
 	public function filter_populate_options( $options ) {
+
+		_deprecated_function( __METHOD__, '4.10.0' );
 
 		if ( ! WP::use_global_plugin_settings() ) {
 			return $options;
@@ -635,6 +650,23 @@ class Multisite {
 	}
 
 	/**
+	 * Whether this is a plugin AJAX request the network admin made.
+	 *
+	 * `is_network_admin()` answers from the request's entry point, and admin-ajax.php
+	 * defines no `WP_NETWORK_ADMIN`, so it is always false there whatever screen called it.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return bool
+	 */
+	public function is_network_admin_ajax_request() {
+
+		return WP::is_doing_self_ajax() &&
+			! empty( $_REQUEST['network_admin_subsite_related_request'] ) && // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			current_user_can( 'manage_network' );
+	}
+
+	/**
 	 * Whether network admin subsite related request or not.
 	 *
 	 * @since 2.9.0
@@ -648,6 +680,7 @@ class Multisite {
 		if (
 			is_network_admin() &&
 			(
+				wp_mail_smtp()->get_admin()->is_admin_page( 'dashboard' ) ||
 				wp_mail_smtp()->get_admin()->is_admin_page( 'logs' ) ||
 				( wp_mail_smtp()->get_admin()->is_admin_page( 'tools' ) && $current_tab === 'export' ) ||
 				( wp_mail_smtp()->get_admin()->is_admin_page( 'reports' ) && ( $current_tab === '' || $current_tab === 'reports' ) )
@@ -669,7 +702,9 @@ class Multisite {
 		$form_action    = wp_mail_smtp()->get_admin()->get_admin_page_url();
 		$current_action = current_action();
 
-		if ( $current_action === 'wp_mail_smtp_pro_emails_logs_admin_archive_page_display_header' ) {
+		if ( $current_action === 'wp_mail_smtp_admin_dashboard_page_title_actions' ) {
+			$form_action = DashboardPage::get_url();
+		} elseif ( $current_action === 'wp_mail_smtp_pro_emails_logs_admin_archive_page_display_header' ) {
 			$form_action = wp_mail_smtp()->get_pro()->get_logs()->get_admin_page_url();
 		} elseif ( $current_action === 'wp_mail_smtp_admin_page_tools_export_display_header' ) {
 			$form_action = wp_mail_smtp()->get_admin()->get_parent_pages()['tools']->get_link( 'export' );
@@ -830,7 +865,6 @@ class Multisite {
 
 		$results = array_map(
 			function ( $site_id ) {
-
 				return [
 					'id'   => intval( $site_id ),
 					'text' => esc_html( get_blog_details( $site_id )->blogname ),

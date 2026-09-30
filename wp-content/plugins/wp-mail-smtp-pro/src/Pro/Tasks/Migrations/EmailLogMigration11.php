@@ -99,23 +99,13 @@ class EmailLogMigration11 extends Task {
 	}
 
 	/**
-	 * Initialize the task with all the proper checks.
-	 *
-	 * @since 3.8.0
-	 */
-	public function init() {
-
-		$this->hooks();
-	}
-
-	/**
 	 * Hook our migration action.
 	 *
 	 * @since 3.8.0
 	 *
 	 * @return void
 	 */
-	private function hooks() {
+	public function hooks() {
 
 		add_action( self::ACTION, [ $this, 'process' ] );
 	}

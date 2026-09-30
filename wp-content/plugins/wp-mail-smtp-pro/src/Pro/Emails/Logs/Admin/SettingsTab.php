@@ -87,6 +87,15 @@ class SettingsTab extends PageAbstract {
 				</div>
 			</div>
 
+			<?php
+			/**
+			 * Fires after a page's section heading, before its settings.
+			 *
+			 * @since 4.10.0
+			 */
+			do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+			?>
+
 			<!-- Enable Log -->
 			<div id="wp-mail-smtp-setting-row-logs_enabled" class="wp-mail-smtp-setting-row wp-mail-smtp-clear">
 				<div class="wp-mail-smtp-setting-label">

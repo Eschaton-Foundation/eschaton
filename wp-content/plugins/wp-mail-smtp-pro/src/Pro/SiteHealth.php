@@ -139,10 +139,10 @@ class SiteHealth {
 
 		$license_status = wp_mail_smtp()->pro->get_license()->get_status();
 
-		$result['description'] = $license_status['message'];
+		$result['description'] = '<p>' . $license_status['message'] . '</p>';
 
 		if ( $license_status['valid'] === false ) {
-			$result['label']          = esc_html__( 'WP Mail SMTP Pro license is invalid', 'wp-mail-smtp-pro' );
+			$result['label']          = esc_html__( 'WP Mail SMTP Pro license needs attention', 'wp-mail-smtp-pro' );
 			$result['badge']['color'] = 'orange';
 			$result['status']         = 'recommended';
 		}

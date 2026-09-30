@@ -222,6 +222,15 @@ class SettingsTab extends SmartRoutingTab {
 				</div>
 			</div>
 
+			<?php
+			/**
+			 * Fires after a page's section heading, before its settings.
+			 *
+			 * @since 4.10.0
+			 */
+			do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+			?>
+
 			<?php if ( ! $this->additional_connections->has_connections() ) : ?>
 				<div class="wp-mail-smtp-notice notice-info notice-inline wp-mail-smtp-smart-routing-notice-top wp-mail-smtp-smart-routing-notice-top--no-connections">
 					<p>

@@ -5,7 +5,7 @@ namespace WPMailSMTP\Pro\Providers;
 use WP_Error;
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
-use WPMailSMTP\Admin\SetupWizard;
+use WPMailSMTP\Admin\SetupWizard\Launcher as SetupWizardLauncher;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\MailCatcherInterface;
 use WPMailSMTP\Pro\Providers\AmazonSES\Auth as SESAuth;
@@ -21,6 +21,19 @@ use WPMailSMTP\WP;
  * @since 1.5.0
  */
 class Providers {
+
+	/**
+	 * The mailers Pro adds, as slug => class namespace.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @var array
+	 */
+	const PRO_MAILERS = [
+		'amazonses' => 'WPMailSMTP\Pro\Providers\AmazonSES\\',
+		'outlook'   => 'WPMailSMTP\Pro\Providers\Outlook\\',
+		'zoho'      => 'WPMailSMTP\Pro\Providers\Zoho\\',
+	];
 
 	/**
 	 * Providers constructor.
@@ -65,11 +78,7 @@ class Providers {
 	 */
 	public function inject_providers( $providers ) {
 
-		$providers['amazonses'] = 'WPMailSMTP\Pro\Providers\AmazonSES\\';
-		$providers['outlook']   = 'WPMailSMTP\Pro\Providers\Outlook\\';
-		$providers['zoho']      = 'WPMailSMTP\Pro\Providers\Zoho\\';
-
-		return $providers;
+		return array_merge( $providers, self::PRO_MAILERS );
 	}
 
 	/**
@@ -109,14 +118,14 @@ class Providers {
 
 		$auth = new OutlookAuth( $connection );
 
-		$redirect_url         = ( new ConnectionSettings( $connection ) )->get_admin_page_url();
-		$outlook_options      = $connection->get_options()->get_group( 'outlook' );
-		$is_setup_wizard_auth = ! empty( $outlook_options['is_setup_wizard_auth'] );
+		$redirect_url    = ( new ConnectionSettings( $connection ) )->get_admin_page_url();
+		$outlook_options = $connection->get_options()->get_group( 'outlook' );
+		$wizard_variant  = isset( $outlook_options['is_setup_wizard_auth'] ) ? $outlook_options['is_setup_wizard_auth'] : false;
 
-		if ( $is_setup_wizard_auth ) {
+		if ( ! empty( $wizard_variant ) ) {
 			$auth->update_is_setup_wizard_auth( false );
 
-			$redirect_url = SetupWizard::get_site_url() . '#/step/configure_mailer/outlook';
+			$redirect_url = SetupWizardLauncher::get_oauth_return_url( $wizard_variant, 'outlook' );
 		}
 
 		if ( ! wp_verify_nonce( $nonce, $auth->state_key ) ) {

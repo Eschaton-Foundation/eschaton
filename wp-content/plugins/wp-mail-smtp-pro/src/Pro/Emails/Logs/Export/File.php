@@ -63,15 +63,16 @@ class File {
 		$f         = fopen( 'php://temp', 'wb+' );
 		$separator = Export::get_config( 'export', 'csv_export_separator' );
 		$enclosure = '"';
+		$escape    = '\\';
 
 		$data = new TableData( $request );
 
 		if ( $request->get_arg( 'step' ) === 1 ) {
-			fputcsv( $f, $data->get_columns(), $separator, $enclosure );
+			fputcsv( $f, $data->get_columns(), $separator, $enclosure, $escape );
 		}
 
 		foreach ( $data->get_row() as $row ) {
-			fputcsv( $f, $row, $separator, $enclosure );
+			fputcsv( $f, $row, $separator, $enclosure, $escape );
 		}
 
 		rewind( $f );

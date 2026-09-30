@@ -5,6 +5,7 @@ namespace WPMailSMTP\Pro\Admin;
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Options;
+use WPMailSMTP\PartnerPlugins\Plugins\WPForms;
 use WPMailSMTP\Pro\Alerts\Alerts;
 use WPMailSMTP\Pro\Emails\Logs\Email;
 use WPMailSMTP\Pro\Emails\Logs\Logs;
@@ -288,12 +289,12 @@ class DashboardWidget {
 			}
 		}
 
-		$plugins          = get_plugins();
+		$wpforms          = new WPForms();
 		$hide_recommended = $this->widget_meta( 'get', 'hide_recommended_block' );
 
 		if (
-			! array_key_exists( 'wpforms-lite/wpforms.php', $plugins ) &&
-			! array_key_exists( 'wpforms/wpforms.php', $plugins ) &&
+			! $wpforms->is_installed() &&
+			! $wpforms->is_pro_installed() &&
 			empty( $hide_recommended )
 		) {
 			$this->recommended_plugin_block_html();

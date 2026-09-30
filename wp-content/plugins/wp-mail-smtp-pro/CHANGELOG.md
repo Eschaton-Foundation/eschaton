@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.10.0] - 2026-09-29
+
+### Added:
+- New Dashboard page, now the default screen for WP Mail SMTP, with email statistics, a setup overview, connection status, and recommended next steps.
+- Setup Checklist: a new page that guides you through connecting a mailer, sending a test email, and the rest of your email setup, with progress tracked automatically.
+- Email Detective: a new tab on the Tools page that sends a test email through your primary connection and emails you a free deliverability report covering authentication, blocklists, and spam filter scoring.
+- Setup Wizard now verifies your mailer settings with your email provider before saving them, and guides you through each mailer's required settings as numbered steps.
+
+### Changed:
+- Setup Wizard's email test now reports the exact sending error with the fix steps for it, names the setting at fault where it can be identified, and shows the domain checker results.
+- Pro features now need an active license key before their settings can be edited. Email sending and anything already configured keep working, and every gated screen shows where to enter or renew your key.
+- Updated Action Scheduler library to 4.1.0.
+
+### Fixed:
+- The plugin could not be activated on some sites and failed with a fatal error when its stored activation dates were saved in an unexpected format.
+- Email Reports failed with a fatal error when the page was opened with a malformed custom date range.
+- A database error was logged and the Dashboard widget's email error alert never appeared on sites whose MySQL server treats double quotes as identifiers (ANSI_QUOTES mode).
+- Queued emails stopped being sent, with no notice, when Action Scheduler reported its setup as incomplete.
+- The Setup Wizard's test email did not send while the "Do Not Send" option was enabled.
+- The Pro update notice reappeared after the plugin had already been updated.
+- PHP deprecation notices were logged when exporting email logs to CSV on PHP 8.4 and newer.
+- Hardened permission checks and request handling across several admin features to address potential security issues.
+
 ## [4.9.0] - 2026-06-24
 
 ### Added:

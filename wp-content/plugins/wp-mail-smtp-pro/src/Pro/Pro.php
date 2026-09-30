@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Pro;
 
-use WP_Error;
+use WPMailSMTP\Helpers\Helpers;
 use WPMailSMTP\Options;
 use WPMailSMTP\Pro\Abilities\EmailLogs\GetEmailLogAbility;
 use WPMailSMTP\Pro\Abilities\EmailLogs\ListEmailLogsAbility;
@@ -11,9 +11,12 @@ use WPMailSMTP\Pro\AdditionalConnections\AdditionalConnections;
 use WPMailSMTP\Pro\Admin\Area;
 use WPMailSMTP\Pro\Admin\DashboardWidget;
 use WPMailSMTP\Pro\Admin\PluginsList;
+use WPMailSMTP\Pro\Admin\SetupWizard\Hosted as HostedSetupWizard;
+use WPMailSMTP\Pro\Admin\SetupWizard\Local as LocalSetupWizard;
 use WPMailSMTP\Pro\Alerts\Alerts;
 use WPMailSMTP\Pro\Alerts\Loader as AlertsLoader;
 use WPMailSMTP\Pro\BackupConnections\BackupConnections;
+use WPMailSMTP\Pro\Deprecated\Pro as DeprecatedMethods;
 use WPMailSMTP\Pro\Emails\Logs\Attachments\Attachments;
 use WPMailSMTP\Pro\Emails\Logs\EmailsCollection;
 use WPMailSMTP\Pro\Emails\Logs\Importers\Importers;
@@ -23,9 +26,12 @@ use WPMailSMTP\Pro\Emails\Logs\Tracking\Tracking;
 use WPMailSMTP\Pro\Emails\RateLimiting\RateLimiting;
 use WPMailSMTP\Pro\Emails\TestEmail;
 use WPMailSMTP\Pro\ProductApi\ProductApi;
-use WPMailSMTP\Pro\Providers\AmazonSES\Options as SESOptions;
+use WPMailSMTP\Pro\SetupChecklist\SetupChecklist;
+use WPMailSMTP\Pro\SiteHealth;
 use WPMailSMTP\Pro\SmartRouting\SmartRouting;
+use WPMailSMTP\Pro\UsageTracking\ProductEvents;
 use WPMailSMTP\Pro\WPCLI\Options\Registry as WPCLIOptionsRegistry;
+use WPMailSMTP\Vendor\ProductApi\ProductApi as ProductApiClient;
 use WPMailSMTP\WP;
 
 /**
@@ -35,6 +41,13 @@ use WPMailSMTP\WP;
  * @since 1.5.0
  */
 class Pro {
+
+	/**
+	 * Backward-compatibility methods relocated from this class.
+	 *
+	 * @since 4.10.0
+	 */
+	use DeprecatedMethods;
 
 	/**
 	 * Plugin slug.
@@ -86,6 +99,13 @@ class Pro {
 		// Load translations just in case.
 		load_plugin_textdomain( 'wp-mail-smtp-pro', false, plugin_basename( wp_mail_smtp()->plugin_path ) . '/assets/pro/languages' );
 
+		// Kept ahead of every get_*() call below: get_logs() runs Logs::init(), which
+		// calls is_archive() and so reaches the memoized Core::get_admin(). That builds
+		// and hooks Lite's Area, and Area::hooks() resolves the Dashboard through the
+		// wp_mail_smtp_admin_area_get_dashboard filter, so this Area has to have
+		// registered its substitution before then or the Lite Dashboard is cached.
+		( new Area() )->hooks();
+
 		add_filter( 'http_request_args', [ $this, 'request_lite_translations' ], 10, 2 );
 
 		// Add the action links to a plugin on Plugins page.
@@ -110,6 +130,24 @@ class Pro {
 
 		// Alias WPMailArgs class.
 		class_alias( 'WPMailSMTP\WPMailArgs', 'WPMailSMTP\Pro\WPMailArgs' );
+
+		ProductApiClient::configure(
+			[
+				'api_url'        => defined( 'WPMS_PRODUCT_API_BASE_URL' ) ? WPMS_PRODUCT_API_BASE_URL : 'https://wpmailsmtpapi.com/',
+				'site_url'       => wp_mail_smtp()->get_license_site_url()->get(),
+				'license_key'    => wp_mail_smtp()->get_license_key(),
+				'license_valid'  => $this->get_license()->is_valid(),
+				'is_pro'         => wp_mail_smtp()->is_pro_allowed(),
+				'user_agent'     => Helpers::get_default_user_agent(),
+				'environment'    => wp_get_environment_type(),
+				'plugin_slug'    => 'wp-mail-smtp',
+				'plugin_version' => WPMS_PLUGIN_VER,
+			]
+		)
+			->with_events( [ 'log_events_cap' => wp_mail_smtp()->get_capability_manage_options() ] )
+			->boot();
+
+		$this->get_product_events()->init();
 
 		$this->get_multisite()->init();
 		$this->get_control();
@@ -143,8 +181,7 @@ class Pro {
 		// Initialize test email.
 		( new TestEmail() )->hooks();
 
-		// Initialize admin area.
-		( new Area() )->hooks();
+		( new SetupChecklist() )->hooks();
 
 		// Initialize upgrades.
 		( new Upgrade() )->hooks();
@@ -152,18 +189,19 @@ class Pro {
 		// Initialize WP-CLI options args registry.
 		( new WPCLIOptionsRegistry() )->hooks();
 
+		// Both wizard variants are always wired; the Lite launcher decides per
+		// request which one renders. The hosted side augments REST routes, so it
+		// cannot be gated on is_admin(); the bundled side is admin-only.
+		( new HostedSetupWizard() )->hooks();
+
+		if ( is_admin() ) {
+			( new LocalSetupWizard() )->hooks();
+		}
+
 		// Usage tracking hooks.
 		add_filter( 'wp_mail_smtp_usage_tracking_get_data', [ $this, 'usage_tracking_get_data' ] );
 		add_filter( 'wp_mail_smtp_admin_pages_misc_tab_show_usage_tracking_setting', '__return_false' );
 		add_filter( 'wp_mail_smtp_usage_tracking_is_enabled', '__return_true' );
-
-		// Setup wizard hooks.
-		add_filter( 'wp_mail_smtp_admin_setup_wizard_prepare_mailer_options', [ $this, 'setup_wizard_prepare_mailer_options' ] );
-		add_action( 'wp_mail_smtp_admin_setup_wizard_get_oauth_url', [ $this, 'prepare_oauth_url_redirect' ], 10, 2 );
-		add_action( 'wp_mail_smtp_admin_setup_wizard_license_exists', [ $this, 'does_license_key_exist' ] );
-		add_action( 'wp_ajax_wp_mail_smtp_vue_get_amazon_ses_identities', [ $this, 'get_amazon_ses_identities' ] );
-		add_action( 'wp_ajax_wp_mail_smtp_vue_amazon_ses_identity_registration', [ $this, 'amazon_ses_identity_registration' ] );
-		add_action( 'wp_ajax_wp_mail_smtp_vue_verify_license_key', [ $this, 'verify_license_key' ] );
 
 		// Maybe cancel Pro recurring AS tasks for PHP 8 compatibility in v2.6.
 		add_filter( 'wp_mail_smtp_migration_cancel_recurring_tasks', [ $this, 'maybe_cancel_recurring_as_tasks_for_v26' ] );
@@ -349,13 +387,20 @@ class Pro {
 	 *
 	 * @since 1.9.0
 	 *
-	 * @return \WPMailSMTP\Pro\SiteHealth
+	 * @return SiteHealth
 	 */
 	public function get_site_health() {
 
 		static $site_health;
 
 		if ( ! isset( $site_health ) ) {
+			/**
+			 * Filters the Site Health instance.
+			 *
+			 * @since 1.9.0
+			 *
+			 * @param SiteHealth $site_health The Site Health instance.
+			 */
 			$site_health = apply_filters( 'wp_mail_smtp_pro_get_site_health', new SiteHealth() );
 		}
 
@@ -378,28 +423,6 @@ class Pro {
 		}
 
 		return $multisite;
-	}
-
-	/**
-	 * Get the DashboardWidget object.
-	 *
-	 * @deprecated 2.9.0
-	 *
-	 * @since 2.7.0
-	 *
-	 * @return DashboardWidget
-	 */
-	public function get_dashboard_widget() {
-
-		_deprecated_function( __METHOD__, '2.9.0' );
-
-		static $dashboard_widget;
-
-		if ( ! isset( $dashboard_widget ) ) {
-			$dashboard_widget = apply_filters( 'wp_mail_smtp_pro_get_dashboard_widget', new DashboardWidget() );
-		}
-
-		return $dashboard_widget;
 	}
 
 	/**
@@ -585,28 +608,6 @@ class Pro {
 		$args['body']['plugins'] = wp_json_encode( $plugins );
 
 		return $args;
-	}
-
-	/**
-	 * Get the list of all custom DB tables that should be present in the DB.
-	 *
-	 * @deprecated 3.0.0
-	 *
-	 * @since 1.9.0
-	 *
-	 * @return array List of table names.
-	 */
-	public function get_custom_db_tables() {
-
-		_deprecated_function( __METHOD__, '3.0.0', '\WPMailSMTP\Core::get_custom_db_tables' );
-
-		return [
-			Logs::get_table_name(),
-			Attachments::get_email_attachments_table_name(),
-			Attachments::get_attachment_files_table_name(),
-			Tracking::get_events_table_name(),
-			Tracking::get_links_table_name(),
-		];
 	}
 
 	/**
@@ -864,108 +865,6 @@ class Pro {
 	}
 
 	/**
-	 * Filter the HTML of the auto-updates setting for WP Mail SMTP Pro plugin.
-	 *
-	 * @deprecated 3.0.0
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param string $html        The HTML of the plugin's auto-update column content, including
-	 *                            toggle auto-update action links and time to next update.
-	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
-	 * @param array  $plugin_data An array of plugin data.
-	 *
-	 * @return string
-	 */
-	public function auto_update_setting_html( $html, $plugin_file, $plugin_data ) {
-
-		_deprecated_function( __METHOD__, '3.0.0' );
-
-		if (
-			! empty( $plugin_data['Author'] ) &&
-			$plugin_data['Author'] === 'WPForms' &&
-			$plugin_file === plugin_basename( WPMS_PLUGIN_FILE )
-		) {
-			$html = esc_html__( 'Auto-updates are not available.', 'wp-mail-smtp-pro' );
-		}
-
-		return $html;
-	}
-
-	/**
-	 * Rollback to default value for automatically update WP Mail SMTP Pro plugin.
-	 * Some devs or tools can use `auto_update_plugin` filter and turn on auto-updates for all plugins.
-	 *
-	 * @deprecated 3.0.0
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param mixed  $auto_update    Whether to update.
-	 * @param object $filter_payload The update offer.
-	 *
-	 * @return null|bool
-	 */
-	public function rollback_auto_update_plugin_default_value( $auto_update, $filter_payload ) {
-
-		_deprecated_function( __METHOD__, '3.0.0' );
-
-		// Check whether auto-updates for plugins are supported and enabled. If not, return early.
-		if (
-			! function_exists( 'wp_is_auto_update_enabled_for_type' ) ||
-			! wp_is_auto_update_enabled_for_type( 'plugin' )
-		) {
-			return $auto_update;
-		}
-
-		if ( empty( $auto_update ) ) {
-			return $auto_update;
-		}
-
-		if ( ! is_object( $filter_payload ) || empty( $filter_payload->plugin ) ) {
-			return $auto_update;
-		}
-
-		// Determine if it's a WP Mail SMTP Pro plugin. If so, return null (default value).
-		if ( $filter_payload->plugin === plugin_basename( WPMS_PLUGIN_FILE ) ) {
-			return null;
-		}
-
-		return $auto_update;
-	}
-
-	/**
-	 * Filter value, which is prepared for `auto_update_plugins` option before it's saved into DB.
-	 * We need to exclude WP Mail SMTP Pro.
-	 *
-	 * @deprecated 3.0.0
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param mixed  $plugins     New plugins of the network option.
-	 * @param mixed  $old_plugins Old plugins of the network option.
-	 * @param string $option      Option name.
-	 * @param int    $network_id  ID of the network.
-	 *
-	 * @return array
-	 */
-	public function update_auto_update_plugins_option( $plugins, $old_plugins, $option, $network_id ) {
-
-		_deprecated_function( __METHOD__, '3.0.0' );
-
-		// No need to filter out our plugins if none were saved.
-		if ( empty( $plugins ) ) {
-			return $plugins;
-		}
-
-		// Check whether auto-updates for plugins are supported and enabled. If so, exclude WP Mail SMTP Pro plugin.
-		if ( function_exists( 'wp_is_auto_update_enabled_for_type' ) && wp_is_auto_update_enabled_for_type( 'plugin' ) ) {
-			return array_diff( (array) $plugins, [ plugin_basename( WPMS_PLUGIN_FILE ) ] );
-		}
-
-		return $plugins;
-	}
-
-	/**
 	 * Add the Pro usage tracking data.
 	 *
 	 * @since 2.3.0
@@ -1026,227 +925,6 @@ class Pro {
 		$data['wp_mail_smtp_pro_rate_limiting_enabled'] = (bool) RateLimiting::is_enabled();
 
 		return $data;
-	}
-
-	/**
-	 * Setup any additional PRO mailer options for the Setup Wizard.
-	 * This data is passed via `wp_localize_script` before the Vue app is initialized.
-	 *
-	 * @since 2.6.0
-	 * @since 3.11.0 Handle WPMS_AMAZONSES_DISPLAY_IDENTITIES constant.
-	 *
-	 * @param array $data The default mailer options data.
-	 *
-	 * @return array
-	 */
-	public function setup_wizard_prepare_mailer_options( $data ) {
-
-		if ( key_exists( 'amazonses', $data ) ) {
-			if ( empty( $data['amazonses']['disabled'] ) ) {
-				$amazon_regions   = \WPMailSMTP\Pro\Providers\AmazonSES\Auth::get_regions_names();
-				$prepared_regions = [];
-
-				foreach ( $amazon_regions as $value => $label ) {
-					$prepared_regions[] = [
-						'label' => $label,
-						'value' => $value,
-					];
-				}
-
-				$data['amazonses']['region_options'] = $prepared_regions;
-			}
-
-			$data['amazonses']['display_identities'] = (
-				! defined( 'WPMS_AMAZONSES_DISPLAY_IDENTITIES' ) ||
-				WPMS_AMAZONSES_DISPLAY_IDENTITIES === true
-			);
-		}
-
-		if ( key_exists( 'outlook', $data ) && empty( $data['outlook']['disabled'] ) ) {
-			$data['outlook']['redirect_uri'] = \WPMailSMTP\Pro\Providers\Outlook\Auth::get_plugin_auth_url();
-		}
-
-		if ( key_exists( 'zoho', $data ) && empty( $data['zoho']['disabled'] ) ) {
-			$data['zoho']['redirect_uri']   = \WPMailSMTP\Pro\Providers\Zoho\Auth::get_plugin_auth_url();
-			$data['zoho']['domain_options'] = wp_mail_smtp()->get_providers()->get_options( 'zoho' )->get_zoho_domains();
-		}
-
-		return $data;
-	}
-
-	/**
-	 * A filter hook to check if license key exists.
-	 *
-	 * @since 2.6.0
-	 *
-	 * @return bool
-	 */
-	public function does_license_key_exist() {
-
-		$license = Options::init()->get( 'license', 'key' );
-
-		return ! empty( $license );
-	}
-
-	/**
-	 * AJAX callback for getting the current Amazon SES Identities in a JS friendly format.
-	 *
-	 * @since 2.6.0
-	 */
-	public function get_amazon_ses_identities() {
-
-		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
-
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
-			wp_send_json_error();
-		}
-
-		$options = Options::init();
-
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$ses_settings = isset( $_POST['value'] ) ? wp_slash( json_decode( wp_unslash( $_POST['value'] ), true ) ) : [];
-
-		if ( empty( $ses_settings ) ) {
-			wp_send_json_error();
-		}
-
-		// Update Amazon SES settings with current settings to retrieve the SES Identities for.
-		$options->set( [ 'amazonses' => $ses_settings ], false, false );
-
-		$table = new \WPMailSMTP\Pro\Providers\AmazonSES\IdentitiesTable();
-		$table->prepare_items();
-
-		$error = $table->get_last_error();
-
-		if ( ! $table->has_items() && $error instanceof WP_Error ) {
-			wp_send_json_error( $error->get_error_message() );
-		}
-
-		wp_send_json_success(
-			[
-				'columns' => $table->get_columns_for_js(),
-				'data'    => $table->get_items_for_js(),
-			]
-		);
-	}
-
-	/**
-	 * AJAX callback for the Amazon SES identity registration processing.
-	 *
-	 * @since 2.6.0
-	 */
-	public function amazon_ses_identity_registration() {
-
-		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
-
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
-			wp_send_json_error();
-		}
-
-		$type  = isset( $_POST['type'] ) ? sanitize_key( $_POST['type'] ) : '';
-		$value = isset( $_POST['value'] ) ? sanitize_text_field( wp_unslash( $_POST['value'] ) ) : '';
-
-		if ( $type === 'email' && ! is_email( $value ) ) {
-			wp_send_json_error( esc_html__( 'Please provide a valid email address.', 'wp-mail-smtp-pro' ) );
-		} elseif ( $type === 'domain' && empty( $value ) ) {
-			wp_send_json_error( esc_html__( 'Please provide a domain.', 'wp-mail-smtp-pro' ) );
-		}
-
-		$ses = new \WPMailSMTP\Pro\Providers\AmazonSES\Auth();
-
-		// Verify domain for easier conditional checking below.
-		$domain_dkim_tokens = ( $type === 'domain' ) ? $ses->do_verify_domain_dkim( $value ) : '';
-
-		if ( $type === 'email' && $ses->do_verify_email( $value ) === true ) {
-			wp_send_json_success(
-				[
-					'type'  => $type,
-					'value' => esc_html( $value ),
-				]
-			);
-		} elseif ( $type === 'domain' && ! empty( $domain_dkim_tokens ) ) {
-			wp_send_json_success(
-				[
-					'type'                    => $type,
-					'value'                   => esc_html( $value ),
-					'domain_dkim_dns_records' => SESOptions::prepare_dkim_dns_records(
-						$value,
-						$domain_dkim_tokens,
-						wp_mail_smtp()->get_connections_manager()->get_primary_connection()
-					),
-				]
-			);
-		} else {
-			$error = $ses->get_last_error();
-
-			wp_send_json_error(
-				$error instanceof WP_Error
-					? esc_html( $error->get_error_message() )
-					: esc_html__( 'Something went wrong. Please try again later.', 'wp-mail-smtp-pro' )
-			);
-		}
-	}
-
-	/**
-	 * Prepare the oAuth URL redirect for the PRO oAuth mailers.
-	 *
-	 * @since 2.6.0
-	 *
-	 * @param array  $data   The default oAuth data.
-	 * @param string $mailer The mailer to prepare the redirect URL for.
-	 *
-	 * @return array
-	 *
-	 * @throws \Exception If auth classes fail to initialize.
-	 */
-	public function prepare_oauth_url_redirect( $data, $mailer ) {
-
-		$auth = null;
-
-		switch ( $mailer ) {
-			case 'outlook':
-				$auth = wp_mail_smtp()->get_providers()->get_auth( 'outlook' );
-				break;
-
-			case 'zoho':
-				$auth = new \WPMailSMTP\Pro\Providers\Zoho\Auth();
-				break;
-		}
-
-		if ( ! empty( $auth ) && $auth->is_clients_saved() && $auth->is_auth_required() ) {
-			$data['oauth_url'] = $auth->get_auth_url();
-		}
-
-		return $data;
-	}
-
-	/**
-	 * AJAX callback for verifying the license key.
-	 *
-	 * @since 2.6.0
-	 */
-	public function verify_license_key() {
-
-		check_ajax_referer( 'wpms-admin-nonce', 'nonce' );
-
-		if ( ! current_user_can( wp_mail_smtp()->get_capability_manage_global_options() ) ) {
-			wp_send_json_error( esc_html__( 'You don\'t have the permission to perform this action.', 'wp-mail-smtp-pro' ) );
-		}
-
-		$license_key = ! empty( $_POST['license_key'] ) ? sanitize_key( $_POST['license_key'] ) : '';
-
-		if ( empty( $license_key ) ) {
-			wp_send_json_error( esc_html__( 'Please enter a valid license key!', 'wp-mail-smtp-pro' ) );
-		}
-
-		$license_object = $this->get_license();
-
-		// Let the License class handle the rest via AJAX.
-		if ( method_exists( $license_object, 'verify_key' ) ) {
-			$license_object->verify_key( $license_key, true );
-		}
-
-		wp_send_json_error( esc_html__( 'License functionality missing!', 'wp-mail-smtp-pro' ) );
 	}
 
 	/**
@@ -1340,5 +1018,31 @@ class Pro {
 		}
 
 		return $product_api;
+	}
+
+	/**
+	 * Get the ProductEvents object.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return ProductEvents
+	 */
+	public function get_product_events() {
+
+		static $product_events;
+
+		if ( ! isset( $product_events ) ) {
+
+			/**
+			 * Filter the ProductEvents object.
+			 *
+			 * @since 4.10.0
+			 *
+			 * @param ProductEvents $product_events The ProductEvents object.
+			 */
+			$product_events = apply_filters( 'wp_mail_smtp_pro_product_events', new ProductEvents() );
+		}
+
+		return $product_events;
 	}
 }

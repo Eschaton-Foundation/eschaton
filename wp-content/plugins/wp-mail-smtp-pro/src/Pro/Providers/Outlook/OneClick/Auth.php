@@ -6,7 +6,7 @@ use Exception;
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
-use WPMailSMTP\Admin\SetupWizard;
+use WPMailSMTP\Admin\SetupWizard\Launcher as SetupWizardLauncher;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\Pro\Providers\Outlook\OneClick\Auth\Client;
@@ -61,7 +61,7 @@ class Auth extends AuthAbstract {
 			return $this->client;
 		}
 
-		$this->client = new Client( WP::get_site_url() );
+		$this->client = new Client( wp_mail_smtp()->get_license_site_url()->get() );
 
 		if ( ! $this->is_auth_required() && ! $this->is_reauth_required() ) {
 			$credentials   = $this->options['one_click_setup_credentials'] ?? [];
@@ -210,13 +210,13 @@ class Auth extends AuthAbstract {
 	 */
 	public function process() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded, Generic.Metrics.CyclomaticComplexity.TooHigh
 
-		$redirect_url         = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
-		$is_setup_wizard_auth = ! empty( $this->options['is_setup_wizard_auth'] );
+		$redirect_url   = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
+		$wizard_variant = isset( $this->options['is_setup_wizard_auth'] ) ? $this->options['is_setup_wizard_auth'] : false;
 
-		if ( $is_setup_wizard_auth ) {
+		if ( ! empty( $wizard_variant ) ) {
 			$this->update_is_setup_wizard_auth( false );
 
-			$redirect_url = SetupWizard::get_site_url() . '#/step/configure_mailer/outlook';
+			$redirect_url = SetupWizardLauncher::get_oauth_return_url( $wizard_variant, 'outlook' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended

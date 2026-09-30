@@ -47,11 +47,11 @@ abstract class VerifySentStatusTaskAbstract extends Task {
 	}
 
 	/**
-	 * Initialize the task with all the proper checks.
+	 * Register the task's callbacks.
 	 *
-	 * @since 2.5.0
+	 * @since 4.10.0
 	 */
-	public function init() {
+	public function hooks() {
 
 		add_action( static::ACTION, [ $this, 'process' ] );
 	}

@@ -132,6 +132,56 @@ class Auth extends AuthAbstract {
 	}
 
 	/**
+	 * Get all registered SES identities (domains and emails) as Identity objects.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return Identity[]
+	 */
+	public function get_identities() {
+
+		if ( ! $this->is_connection_ready() ) {
+			return [];
+		}
+
+		$identities = [];
+
+		foreach ( $this->get_registered_domains() as $identity_value => $identity_data ) {
+			$verification_status = $identity_data['VerificationStatus'];
+
+			if ( is_array( $verification_status ) && count( $verification_status ) === 2 ) {
+				$verification_status = $verification_status[1];
+			}
+
+			$txt_token   = empty( $identity_data['VerificationToken'] ) ? null : $identity_data['VerificationToken'];
+			$dkim_tokens = empty( $identity_data['DkimTokens'] ) ? null : $identity_data['DkimTokens'];
+
+			// Preferred DKIM verification, but we need to keep old one via TXT records if it was verified.
+			if (
+				$verification_status !== 'Success' &&
+				! empty( $identity_data['DkimEnabled'] ) &&
+				! empty( $identity_data['DkimVerificationStatus'] )
+			) {
+				$verification_status = $identity_data['DkimVerificationStatus'];
+			}
+
+			$identities[] = new Identity( $identity_value, Identity::DOMAIN_TYPE, $verification_status, $txt_token, $dkim_tokens );
+		}
+
+		foreach ( $this->get_registered_emails() as $identity_value => $identity_data ) {
+			$verification_status = $identity_data['VerificationStatus'];
+
+			if ( is_array( $verification_status ) && count( $verification_status ) === 2 ) {
+				$verification_status = $verification_status[1];
+			}
+
+			$identities[] = new Identity( $identity_value, Identity::EMAIL_TYPE, $verification_status );
+		}
+
+		return $identities;
+	}
+
+	/**
 	 * Get the last error captured by an API call on this instance.
 	 *
 	 * Returns null when the most recent public API call on this instance succeeded
@@ -299,6 +349,54 @@ class Auth extends AuthAbstract {
 			return $this->client[ $version ];
 		}
 
+		$this->client[ $version ] = self::make_client(
+			[
+				'key'    => $this->options['client_id'],
+				'secret' => $this->options['client_secret'],
+			],
+			empty( $this->options['region'] ) ? self::AWS_US_EAST_1 : $this->options['region'],
+			$version
+		);
+
+		return $this->client[ $version ];
+	}
+
+	/**
+	 * Build an AWS SES client.
+	 *
+	 * Static, and taking the credentials it uses, so a check running against values that are not the
+	 * saved connection's can share it. The pair stays inside an array because an uncaught throw
+	 * renders scalar frame arguments into the log and array arguments as `Array`.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @param array  $credentials AWS `key` and `secret`.
+	 * @param string $region      Region, in any of the formats the option has been saved in.
+	 * @param string $version     Client version.
+	 * @param array  $args        Arguments laid over the defaults.
+	 *
+	 * @return SesClient|SesV2Client
+	 */
+	public static function make_client( $credentials, $region, $version = 'v1', $args = [] ) {
+
+		require_once wp_mail_smtp()->plugin_path . '/vendor/autoload.php';
+
+		$args = array_merge(
+			[
+				'credentials' => $credentials,
+				'region'      => self::prepare_region( $region ),
+				'version'     => $version === 'v1' ? '2010-12-01' : '2019-09-27',
+			],
+			$args
+		);
+
+		// Disable AWS shared config files if open_basedir restriction would prevent access. This
+		// prevents PHP warnings when the SDK tries to read ~/.aws/config or ~/.aws/credentials. An
+		// explicit value from the caller, or from the filter below, wins over the detection.
+		if ( ! array_key_exists( 'use_aws_shared_config_files', $args ) && self::is_aws_shared_config_restricted() ) {
+			$args['use_aws_shared_config_files'] = false;
+		}
+
 		/**
 		 * Filters AWS SES client arguments.
 		 *
@@ -307,18 +405,7 @@ class Auth extends AuthAbstract {
 		 * @param array  $args    AWS SES client arguments.
 		 * @param string $version AWS SES client version.
 		 */
-		$args = apply_filters(
-			'wp_mail_smtp_providers_auth_aws_get_client_args',
-			[
-				'credentials' => [
-					'key'    => $this->options['client_id'],
-					'secret' => $this->options['client_secret'],
-				],
-				'region'      => empty( $this->options['region'] ) ? self::AWS_US_EAST_1 : self::prepare_region( $this->options['region'] ),
-				'version'     => $version === 'v1' ? '2010-12-01' : '2019-09-27',
-			],
-			$version
-		);
+		$args = apply_filters( 'wp_mail_smtp_providers_auth_aws_get_client_args', $args, $version ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName -- renaming a shipped filter would drop callers.
 
 		// Prevent AWS SDK to require additional files.
 		$args['disable_request_compression']        = true;
@@ -327,17 +414,7 @@ class Auth extends AuthAbstract {
 		// Suppress PHP deprecation warnings.
 		$args['suppress_php_deprecation_warning'] = true;
 
-		// Disable AWS shared config files if open_basedir restriction would prevent access.
-		// This prevents PHP warnings when the SDK tries to read ~/.aws/config or ~/.aws/credentials.
-		// Only override when `wp_mail_smtp_providers_auth_aws_get_client_args` filter hasn't taken
-		// a stance — an explicit `true` (or `false`) from the caller wins over our auto-detection.
-		if ( ! array_key_exists( 'use_aws_shared_config_files', $args ) && $this->is_aws_shared_config_restricted() ) {
-			$args['use_aws_shared_config_files'] = false;
-		}
-
-		$this->client[ $version ] = $version === 'v1' ? new SesClient( $args ) : new SesV2Client( $args );
-
-		return $this->client[ $version ];
+		return $version === 'v1' ? new SesClient( $args ) : new SesV2Client( $args );
 	}
 
 	/**
@@ -413,8 +490,10 @@ class Auth extends AuthAbstract {
 
 		try {
 			$identities_response = $this->get_client( 'v2' )->listEmailIdentities();
-			$identities          = $identities_response->get( 'EmailIdentities' );
-			$identities_list     = array_column( $identities, 'IdentityName' );
+			// An account with no identities omits the key, and a missing key reads as
+			// null. The TypeError array_column() then throws is not an Exception.
+			$identities      = $identities_response->get( 'EmailIdentities' ) ?? [];
+			$identities_list = array_column( $identities, 'IdentityName' );
 
 			$identities = array_merge_recursive(
 				array_combine( $identities_list, $identities ),
@@ -644,10 +723,10 @@ class Auth extends AuthAbstract {
 	 *
 	 * @return bool True if shared config files are restricted, false otherwise.
 	 */
-	private function is_aws_shared_config_restricted() {
+	private static function is_aws_shared_config_restricted() {
 
 		// Get config file path the same way SDK does.
-		$aws_config_file = $this->get_aws_config_filename();
+		$aws_config_file = self::get_aws_config_filename();
 
 		// Use @ to suppress open_basedir warnings during the check itself.
 		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -664,7 +743,7 @@ class Auth extends AuthAbstract {
 	 *
 	 * @return string Config file path.
 	 */
-	private function get_aws_config_filename() {
+	private static function get_aws_config_filename() {
 
 		// First check if AWS_CONFIG_FILE env variable is set.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv
@@ -676,7 +755,7 @@ class Auth extends AuthAbstract {
 
 		// Match SDK: with no resolvable home, fall back to a leading-slash path so the
 		// readability check still runs and predictably fails closed.
-		return ( $this->get_aws_home_dir() ?? '' ) . '/.aws/config';
+		return ( self::get_aws_home_dir() ?? '' ) . '/.aws/config';
 	}
 
 	/**
@@ -688,7 +767,7 @@ class Auth extends AuthAbstract {
 	 *
 	 * @return string|null Home directory path or null if cannot be determined.
 	 */
-	private function get_aws_home_dir() {
+	private static function get_aws_home_dir() {
 
 		// On Linux/Unix-like systems, use the HOME environment variable.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_getenv

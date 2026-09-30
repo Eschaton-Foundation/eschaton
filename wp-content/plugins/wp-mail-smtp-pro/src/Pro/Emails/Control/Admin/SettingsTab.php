@@ -38,6 +38,15 @@ class SettingsTab extends ControlTab {
 			</div>
 
 			<?php
+			/**
+			 * Fires after a page's section heading, before its settings.
+			 *
+			 * @since 4.10.0
+			 */
+			do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+			?>
+
+			<?php
 			foreach ( $controls as $section_id => $section ) :
 				if ( empty( $section['emails'] ) ) {
 					continue;

@@ -2,7 +2,7 @@
 
 namespace WPMailSMTP\Pro\Admin;
 
-use WPMailSMTP\Options;
+use WPMailSMTP\Pro\License\License;
 use WPMailSMTP\Pro\License\Updater;
 use WPMailSMTP\Pro\Pro;
 
@@ -52,15 +52,6 @@ class PluginsList {
 	const LICENSE_STATUS_LIMIT_REACHED = 4;
 
 	/**
-	 * The license status.
-	 *
-	 * @since 3.8.0
-	 *
-	 * @var null|int
-	 */
-	private $license_status = null;
-
-	/**
 	 * Latest version fetched from remote source.
 	 *
 	 * @since 3.8.0
@@ -103,7 +94,7 @@ class PluginsList {
 
 		$current_screen = get_current_screen();
 
-		if ( is_null( $current_screen ) || $current_screen->id !== 'plugins' || $this->get_license_status() === self::LICENSE_STATUS_VALID ) {
+		if ( is_null( $current_screen ) || $current_screen->id !== 'plugins' || $this->get_license()->is_valid() ) {
 			return;
 		}
 
@@ -157,7 +148,7 @@ class PluginsList {
 			return $value;
 		}
 
-		if ( $this->get_license_status() === self::LICENSE_STATUS_VALID ) {
+		if ( $this->get_license()->is_valid() ) {
 			return $value;
 		}
 
@@ -187,44 +178,6 @@ class PluginsList {
 	}
 
 	/**
-	 * Get the license status.
-	 *
-	 * @since 3.8.0
-	 *
-	 * @return int
-	 */
-	private function get_license_status() {
-
-		if ( ! is_null( $this->license_status ) ) {
-			return $this->license_status;
-		}
-
-		$this->license_status = self::LICENSE_STATUS_EMPTY;
-
-		$license_option = Options::init()->get_group( 'license' );
-
-		// If there's a license, check if its expired.
-		if ( ! empty( $license_option['is_expired'] ) && $license_option['is_expired'] === true ) {
-			$this->license_status = self::LICENSE_STATUS_EXPIRED;
-
-			return $this->license_status;
-		}
-
-		// If there's a license, check if site activations limit reached.
-		if ( ! empty( $license_option['is_limit_reached'] ) && $license_option['is_limit_reached'] === true ) {
-			$this->license_status = self::LICENSE_STATUS_LIMIT_REACHED;
-
-			return $this->license_status;
-		}
-
-		if ( wp_mail_smtp()->get_pro()->get_license()->is_valid() ) {
-			$this->license_status = self::LICENSE_STATUS_VALID;
-		}
-
-		return $this->license_status;
-	}
-
-	/**
 	 * Adds custom plugin notice for Pro users without a valid license.
 	 *
 	 * @since 3.8.0
@@ -237,7 +190,7 @@ class PluginsList {
 
 		if (
 			$plugin_file !== $this->get_pro_plugin_file_path() ||
-			$this->get_license_status() === self::LICENSE_STATUS_VALID
+			$this->get_license()->is_valid()
 		) {
 			return;
 		}
@@ -260,14 +213,14 @@ class PluginsList {
 						echo '<p>' . wp_kses(
 							$this->get_update_notice(),
 							[
-								'a'      => [
+								'a'  => [
 									'href'   => [],
 									'target' => [],
+									'rel'    => [],
+									'class'  => [],
 								],
-								'br'     => [],
-								'strong' => [
-									'style' => [],
-								],
+								'b'  => [],
+								'br' => [],
 							]
 						) . '</p>';
 					?>
@@ -286,25 +239,28 @@ class PluginsList {
 	 */
 	private function get_update_notice() {
 
-		switch ( $this->get_license_status() ) {
-			case self::LICENSE_STATUS_EMPTY:
-				$message = $this->get_no_license_notice();
-				break;
+		$license = $this->get_license();
 
-			case self::LICENSE_STATUS_EXPIRED:
-				$message = $this->get_expired_license_notice();
-				break;
-
-			case self::LICENSE_STATUS_LIMIT_REACHED:
-				$message = $this->get_limit_reached_license_notice();
-				break;
-
-			default:
-				$message = '';
-				break;
+		if ( $license->is_valid() ) {
+			return '';
 		}
 
-		return $message;
+		$states = [
+			'expired'       => $license->is_expired(),
+			'limit_reached' => $license->is_limit_reached(),
+			'disabled'      => $license->is_disabled(),
+			'invalid'       => $license->is_invalid(),
+		];
+
+		$state = array_search( true, $states, true );
+
+		if ( $state === false ) {
+			return $this->get_no_license_notice();
+		}
+
+		$version_notice = $this->is_using_latest_version() ? '' : $this->get_new_version_available_notice() . '<br />';
+
+		return $version_notice . $license->get_state_report( $state, 'all-plugins-license' );
 	}
 
 	/**
@@ -320,14 +276,14 @@ class PluginsList {
 		$purchase_url = wp_mail_smtp()->get_upgrade_link(
 			[
 				'medium'  => 'all-plugins-license',
-				'content' => 'Purchase one now',
+				'content' => 'License Sign Up Today',
 			]
 		);
 
 		if ( $this->is_using_latest_version() ) {
 			return sprintf( /* translators: %1$s - WP Mail SMTP Pro URL; %2$s - WP Mail SMTP Pro purchase link. */
 				__(
-					'<a href="%1$s">Activate WP Mail SMTP Pro</a> to receive features, updates, and support. Don\'t have a license? <a target="_blank" href="%2$s" rel="noopener noreferrer">Purchase one now</a>.',
+					'<a href="%1$s">Activate WP Mail SMTP Pro</a> to receive features, updates, and support. Don\'t have a license key? <a target="_blank" href="%2$s" rel="noopener noreferrer">Sign up today!</a>',
 					'wp-mail-smtp-pro'
 				),
 				esc_url( $activate_url ),
@@ -339,82 +295,11 @@ class PluginsList {
 		. '<br />'
 		. sprintf( /* translators: %1$s - WP Mail SMTP Pro URL; %2$s - WP Mail SMTP Pro purchase link. */
 			__(
-				'<a href="%1$s">Activate</a> your license to access this update, new features, and support. Don\'t have a license? <a target="_blank" href="%2$s" rel="noopener noreferrer">Purchase one now</a>.',
+				'<a href="%1$s">Activate</a> your license to access this update, new features, and support. Don\'t have a license key? <a target="_blank" href="%2$s" rel="noopener noreferrer">Sign up today!</a>',
 				'wp-mail-smtp-pro'
 			),
 			esc_url( $activate_url ),
 			esc_url( $purchase_url )
-		);
-	}
-
-	/**
-	 * Get the notice for users with expired license key.
-	 *
-	 * @since 3.8.0
-	 *
-	 * @return string
-	 */
-	private function get_expired_license_notice() {
-
-		$message = $this->is_using_latest_version() ? '' : $this->get_new_version_available_notice() . '<br />';
-
-		return $message . sprintf( /* translators: %s - WP Mail SMTP Pro renew link. */
-			__(
-				'<strong style="color: #e72f0a">Your WP Mail SMTP Pro license is expired.</strong> <a target="_blank" href="%s" rel="noopener noreferrer">Renew now</a> to receive new features, updates, and support.',
-				'wp-mail-smtp-pro'
-			),
-			esc_url(
-				wp_mail_smtp()->get_pro()->get_license()->get_renewal_link(
-					[
-						'medium'  => 'all-plugins-license',
-						'content' => 'Renew now',
-					]
-				)
-			)
-		);
-	}
-
-	/**
-	 * Get the notice for users with site activations limit reached.
-	 *
-	 * @since 4.3.1
-	 *
-	 * @return string
-	 */
-	private function get_limit_reached_license_notice() {
-
-		return sprintf(
-			wp_kses( /* translators: %1$s - WPMailSMTP.com account area URL; %2$s - WPMailSMTP.com pricing page URL. */
-				__( '<strong style="color: #e72f0a">Your WP Mail SMTP Pro license has no site activations left.</strong> You can update the list of your sites or upgrade the license in the <a href="%1$s" target="_blank" rel="noopener noreferrer">Account area</a>. Or you can <a href="%2$s" target="_blank" rel="noopener noreferrer">purchase a new license key</a>.', 'wp-mail-smtp-pro' ),
-				[
-					'strong' => [
-						'style' => [],
-					],
-					'a'      => [
-						'href'   => [],
-						'target' => [],
-						'rel'    => [],
-					],
-				]
-			),
-			esc_url(
-				wp_mail_smtp()->get_utm_url(
-					'https://wpmailsmtp.com/account/licenses/',
-					[
-						'medium'  => 'all-plugins-license',
-						'content' => 'license site limit reached',
-					]
-				)
-			),
-			esc_url(
-				wp_mail_smtp()->get_utm_url(
-					'https://wpmailsmtp.com/pricing/',
-					[
-						'medium'  => 'all-plugins-license',
-						'content' => 'license site limit reached',
-					]
-				)
-			)
 		);
 	}
 
@@ -479,5 +364,17 @@ class PluginsList {
 		$this->remote_latest_version = wp_mail_smtp()->get_pro()->get_license()->fetch_latest_plugin_version();
 
 		return $this->remote_latest_version;
+	}
+
+	/**
+	 * Get the license handler.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return License
+	 */
+	protected function get_license() {
+
+		return wp_mail_smtp()->get_pro()->get_license();
 	}
 }

@@ -39,10 +39,39 @@ WPMailSMTP.Admin.Network = WPMailSMTP.Admin.Network || ( function( document, win
 		ready: function() {
 
 			app.bindActions();
+			app.markNetworkAdminRequests();
 
 			if ( wp_mail_smtp.network_subsite_mode === '1' ) {
 				app.initSubsiteMode();
 			}
+		},
+
+		/**
+		 * Tag every plugin ajax request with the admin it came from.
+		 *
+		 * This script only loads in the network admin, where `is_network_admin()` no longer
+		 * answers once the request reaches admin-ajax.php. Subsite-mode pages add which site
+		 * the network admin is looking at on top.
+		 *
+		 * @since 4.10.0
+		 */
+		markNetworkAdminRequests: function() {
+
+			var params = '&network_admin=1';
+
+			if ( wp_mail_smtp.network_subsite_mode === '1' ) {
+				params += '&network_admin_subsite_related_request=1';
+			}
+
+			$.ajaxSetup( {
+				beforeSend: function( jqXHR, s ) {
+					if ( s.type === 'GET' && s.url.indexOf( 'action=wp_mail_smtp_' ) !== -1 ) {
+						s.url = s.url + params;
+					} else if ( s.type === 'POST' && typeof s.data === 'string' && s.data.indexOf( 'action=wp_mail_smtp_' ) !== -1 ) {
+						s.data = s.data + params;
+					}
+				}
+			} );
 		},
 
 		/**
@@ -81,21 +110,6 @@ WPMailSMTP.Admin.Network = WPMailSMTP.Admin.Network || ( function( document, win
 					url: wp_mail_smtp.ajax_url + '?action=wp_mail_smtp_pro_get_sites_ajax&nonce=' + wp_mail_smtp.nonce,
 					dataType: 'json'
 				},
-			} );
-
-			// Append 'network_admin_subsite_related_request' param to all plugin related ajax requests.
-			$.ajaxSetup( {
-				beforeSend: function( jqXHR, s ) {
-					if ( s.type === 'GET' ) {
-						if ( s.url.indexOf( 'action=wp_mail_smtp_' ) !== -1 ) {
-							s.url = s.url + '&network_admin_subsite_related_request=1';
-						}
-					} else if ( s.type === 'POST' ) {
-						if ( typeof s.data === 'string' && s.data.indexOf( 'action=wp_mail_smtp_' ) !== -1 ) {
-							s.data = s.data + '&network_admin_subsite_related_request=1';
-						}
-					}
-				}
 			} );
 		},
 

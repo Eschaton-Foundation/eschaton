@@ -112,6 +112,15 @@ class Admin extends ExportTab {
 					<h2><?php esc_html_e( 'Export Email Logs', 'wp-mail-smtp-pro' ); ?></h2>
 				</div>
 			</div>
+
+			<?php
+			/**
+			 * Fires after a page's section heading, before its settings.
+			 *
+			 * @since 4.10.0
+			 */
+			do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+			?>
 			<div class="wp-mail-smtp-setting-row">
 				<section class="wp-clearfix" id="wp-mail-smtp-tools-export-email-logs-export-type">
 					<h5><?php esc_html_e( 'Export Type', 'wp-mail-smtp-pro' ); ?></h5>

@@ -270,7 +270,7 @@ class SettingsTab extends AdditionalConnectionsTab {
 				<h2 class="wp-mail-smtp-additional-connections-header__heading">
 					<?php esc_html_e( 'Additional Connections', 'wp-mail-smtp-pro' ); ?>
 					<?php if ( ! $is_singular ) : ?>
-						<a href="<?php echo esc_url( $this->get_connection_url( 'new' ) ); ?>">
+						<a href="<?php echo esc_url( $this->get_connection_url( 'new' ) ); ?>" class="js-wp-mail-smtp-additional-connections-add">
 							<?php esc_html_e( 'Add New', 'wp-mail-smtp-pro' ); ?>
 						</a>
 					<?php endif; ?>
@@ -309,6 +309,15 @@ class SettingsTab extends AdditionalConnectionsTab {
 				<?php endif; ?>
 			</div>
 		</div>
+
+		<?php
+		/**
+		 * Fires after a page's section heading, before its settings.
+		 *
+		 * @since 4.10.0
+		 */
+		do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+		?>
 		<?php
 	}
 
@@ -390,7 +399,7 @@ class SettingsTab extends AdditionalConnectionsTab {
 			$this->display_education_features_list();
 			?>
 
-			<p class="wp-mail-smtp-submit">
+			<p class="wp-mail-smtp-submit js-wp-mail-smtp-additional-connections-add">
 				<a href="<?php echo esc_url( $this->get_connection_url( 'new' ) ); ?>" class="wp-mail-smtp-btn wp-mail-smtp-btn-cta wp-mail-smtp-btn-orange">
 					<?php esc_html_e( 'Get Started', 'wp-mail-smtp-pro' ); ?>
 				</a>

@@ -16,6 +16,17 @@ use WPMailSMTP\Pro\Emails\Logs\Tracking\Events\Injectable\OpenEmailEvent;
 class Report {
 
 	/**
+	 * The SQL expression each supported grouping selects and groups by, keyed by the
+	 * column alias it lands under. The only source of SQL in query_stats().
+	 *
+	 * @since 4.10.0
+	 */
+	private const GROUPINGS = [
+		'day'     => 'CAST(logs.date_sent AS DATE)',
+		'subject' => 'logs.subject',
+	];
+
+	/**
 	 * Report params.
 	 *
 	 * @since 3.0.0
@@ -35,13 +46,13 @@ class Report {
 	private $raw_params;
 
 	/**
-	 * Base stats.
+	 * Base stats, one row per day.
 	 *
 	 * @since 4.2.0
 	 *
 	 * @var array
 	 */
-	private $stats = null;
+	private $day_stats = null;
 
 	/**
 	 * Stats totals count.
@@ -62,13 +73,13 @@ class Report {
 	private $stats_by_subject = null;
 
 	/**
-	 * Stats totals count grouped by date.
+	 * Stats totals count grouped by initiator, not yet folded into "Others".
 	 *
-	 * @since 3.0.0
+	 * @since 4.10.0
 	 *
 	 * @var array
 	 */
-	private $stats_by_date = null;
+	private $stats_by_initiator = null;
 
 	/**
 	 * Constructor.
@@ -159,10 +170,10 @@ class Report {
 			return false;
 		}
 
-		try {
-			$date_start = \DateTime::createFromFormat( 'Y-m-d', $date[0] );
-			$date_end   = \DateTime::createFromFormat( 'Y-m-d', $date[1] );
-		} catch ( \Exception $e ) {
+		$date_start = \DateTime::createFromFormat( 'Y-m-d', $date[0] );
+		$date_end   = \DateTime::createFromFormat( 'Y-m-d', $date[1] );
+
+		if ( ! $date_start instanceof \DateTime || ! $date_end instanceof \DateTime ) {
 			return false;
 		}
 
@@ -258,37 +269,70 @@ class Report {
 	}
 
 	/**
-	 * Get the base stats.
+	 * Get the base stats, one row per day.
 	 *
 	 * @since 4.2.0
 	 *
 	 * @return array
 	 */
-	private function get_stats() {
+	private function get_day_stats() {
 
-		if ( ! is_null( $this->stats ) ) {
-			return $this->stats;
+		if ( ! is_null( $this->day_stats ) ) {
+			return $this->day_stats;
 		}
+
+		$this->day_stats = $this->query_stats( 'day' );
+
+		return $this->day_stats;
+	}
+
+	/**
+	 * Run the stats query for one grouping. Selecting a column this grouping's callers
+	 * do not need makes the query non-covering: a wide date range then costs a table scan.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @param string $group One of {@see self::GROUPINGS}.
+	 *
+	 * @return array Rows with the grouping column and every {@see get_stat_fields()} count.
+	 */
+	private function query_stats( $group ) {
 
 		global $wpdb;
 
-		$logs_table = Logs::get_table_name();
-		$select     = $this->build_select();
-		$join       = $this->build_join();
-		$where      = $this->build_where();
+		// The log table is only created once email logging is first enabled.
+		if ( ! wp_mail_smtp()->get_pro()->get_logs()->is_valid_db() ) {
+			return [];
+		}
+
+		$group_select = self::GROUPINGS[ $group ];
+		$logs_table   = Logs::get_table_name();
+		$select       = $this->build_select();
+		$join         = $this->build_join();
+		$where        = $this->build_where();
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$this->stats = $wpdb->get_results(
-			"SELECT {$select} FROM {$logs_table} as logs {$join} WHERE {$where} GROUP BY day, subject",
+		$results = $wpdb->get_results(
+			"SELECT {$group_select} as {$group}, {$select} FROM {$logs_table} as logs {$join} WHERE {$where} GROUP BY {$group}",
 			\ARRAY_A
 		);
-
-		// Return empty array on database errors.
-		$this->stats = $this->stats === null ? [] : $this->stats;
-
 		// phpcs:enable
 
-		return $this->stats;
+		if ( ! is_array( $results ) ) {
+			return [];
+		}
+
+		$fields = $this->get_stat_fields();
+
+		// The counts reach the chart and the summary email as JSON, where a numeric string
+		// is not the same value as a number.
+		foreach ( $results as $index => $row ) {
+			foreach ( $fields as $field ) {
+				$results[ $index ][ $field ] = (int) ( $row[ $field ] ?? 0 );
+			}
+		}
+
+		return $results;
 	}
 
 	/**
@@ -331,7 +375,7 @@ class Report {
 		$stats = [];
 
 		foreach ( $this->get_stat_fields() as $key ) {
-			$stats[ $key ] = array_sum( array_column( $this->get_stats(), $key ) );
+			$stats[ $key ] = array_sum( array_column( $this->get_day_stats(), $key ) );
 		}
 
 		$this->stats_totals = $stats;
@@ -348,36 +392,7 @@ class Report {
 	 */
 	public function get_stats_by_date() {
 
-		if ( ! is_null( $this->stats_by_date ) ) {
-			return $this->stats_by_date;
-		}
-
-		$date_groups = [];
-
-		foreach ( $this->get_stats() as $stat ) {
-			$date_groups[ $stat['day'] ][] = array_intersect_key(
-				$stat,
-				array_flip( $this->get_stat_fields() )
-			);
-		}
-
-		$stats = [];
-
-		foreach ( $date_groups as $date => $group ) {
-			$stat = [
-				'day' => $date,
-			];
-
-			foreach ( $this->get_stat_fields() as $key ) {
-				$stat[ $key ] = array_sum( array_column( $group, $key ) );
-			}
-
-			$stats[] = $stat;
-		}
-
-		$this->stats_by_date = $stats;
-
-		return $this->stats_by_date;
+		return $this->get_day_stats();
 	}
 
 	/**
@@ -393,28 +408,7 @@ class Report {
 			return $this->stats_by_subject;
 		}
 
-		$subject_groups = [];
-
-		foreach ( $this->get_stats() as $stat ) {
-			$subject_groups[ $stat['subject'] ][] = array_intersect_key(
-				$stat,
-				array_flip( $this->get_stat_fields() )
-			);
-		}
-
-		$stats = [];
-
-		foreach ( $subject_groups as $subject => $group ) {
-			$stat = [
-				'subject' => $subject,
-			];
-
-			foreach ( $this->get_stat_fields() as $key ) {
-				$stat[ $key ] = array_sum( array_column( $group, $key ) );
-			}
-
-			$stats[] = $stat;
-		}
+		$stats = $this->query_stats( 'subject' );
 
 		array_multisort(
 			array_column( $stats, 'total' ),
@@ -425,6 +419,85 @@ class Report {
 		$this->stats_by_subject = $stats;
 
 		return $this->stats_by_subject;
+	}
+
+	/**
+	 * Get the totals count grouped by initiator (the plugin/theme that sent the email),
+	 * capped to the top $limit and with the tail folded into one "Others" entry.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @param int $limit Number of distinct initiators to keep before folding the rest.
+	 *                   A negative limit keeps every initiator, folding nothing.
+	 *
+	 * @return array Entries as [ 'initiator' => string, 'total' => int ].
+	 */
+	public function get_stats_by_initiator( $limit = 5 ) {
+
+		$stats = $this->get_initiator_totals();
+
+		if ( $limit < 0 || count( $stats ) <= $limit ) {
+			return $stats;
+		}
+
+		$kept   = array_slice( $stats, 0, $limit );
+		$others = array_slice( $stats, $limit );
+
+		$kept[] = [
+			'initiator' => esc_html__( 'Others', 'wp-mail-smtp-pro' ),
+			'total'     => array_sum( array_column( $others, 'total' ) ),
+		];
+
+		return $kept;
+	}
+
+	/**
+	 * Totals count grouped by initiator, all of them, ordered by total descending and
+	 * not yet folded into "Others". Memoised per request.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return array Entries as [ 'initiator' => string, 'total' => int ].
+	 */
+	protected function get_initiator_totals() {
+
+		if ( ! is_null( $this->stats_by_initiator ) ) {
+			return $this->stats_by_initiator;
+		}
+
+		global $wpdb;
+
+		$logs_table = Logs::get_table_name();
+		$where      = $this->build_where();
+
+		// No tracking-events join: this query counts log rows and reads no event column.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$results = $wpdb->get_results(
+			"SELECT logs.initiator_name as initiator, COUNT(*) as total FROM {$logs_table} as logs WHERE {$where} GROUP BY logs.initiator_name",
+			\ARRAY_A
+		);
+		// phpcs:enable
+
+		$results = is_array( $results ) ? $results : [];
+
+		$stats = [];
+
+		foreach ( $results as $row ) {
+			$stats[] = [
+				'initiator' => (string) $row['initiator'],
+				'total'     => (int) $row['total'],
+			];
+		}
+
+		array_multisort(
+			array_column( $stats, 'total' ),
+			SORT_DESC,
+			$stats
+		);
+
+		$this->stats_by_initiator = $stats;
+
+		return $this->stats_by_initiator;
 	}
 
 	/**
@@ -554,7 +627,7 @@ class Report {
 	 */
 	public function get_open_count( $item ) {
 
-		return intval( $item['open_count'] );
+		return intval( $item['open_count'] ?? 0 );
 	}
 
 	/**
@@ -568,7 +641,7 @@ class Report {
 	 */
 	public function get_click_count( $item ) {
 
-		return intval( $item['click_count'] );
+		return intval( $item['click_count'] ?? 0 );
 	}
 
 	/**
@@ -671,7 +744,8 @@ class Report {
 	}
 
 	/**
-	 * Get the SQL-ready string of SELECT part for a query.
+	 * Get the SQL-ready string of the SELECT counts for a query. Callers add their own
+	 * grouping column.
 	 *
 	 * @since 3.0.0
 	 *
@@ -682,9 +756,7 @@ class Report {
 		global $wpdb;
 
 		$select = $wpdb->prepare(
-			'CAST(logs.date_sent AS DATE) as day, 
-			logs.subject as subject,
-			COUNT(DISTINCT logs.id) as total,
+			'COUNT(DISTINCT logs.id) as total,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as unsent,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as sent,
 			COUNT(DISTINCT CASE WHEN logs.status = %d THEN logs.id ELSE NULL END) as delivered',

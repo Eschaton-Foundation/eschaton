@@ -77,6 +77,15 @@ class SettingsTab {
 			</div>
 		</div>
 
+		<?php
+		/**
+		 * Fires after a page's section heading, before its settings.
+		 *
+		 * @since 4.10.0
+		 */
+		do_action( 'wp_mail_smtp_admin_pages_after_section_heading' ); // phpcs:ignore WPForms.PHP.ValidateHooks.InvalidHookName
+		?>
+
 		<!-- Backup Connection Selector -->
 		<div id="wp-mail-smtp-setting-row-backup_connection" class="wp-mail-smtp-setting-row wp-mail-smtp-clear">
 			<div class="wp-mail-smtp-setting-label">

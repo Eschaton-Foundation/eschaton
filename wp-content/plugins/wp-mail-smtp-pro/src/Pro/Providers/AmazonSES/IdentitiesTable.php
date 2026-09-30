@@ -199,47 +199,7 @@ class IdentitiesTable extends \WP_List_Table {
 
 		$this->auth = new Auth( $this->connection );
 
-		if ( ! $this->auth->is_connection_ready() ) {
-			return [];
-		}
-
-		$domains = $this->auth->get_registered_domains();
-		$emails  = $this->auth->get_registered_emails();
-		$data    = [];
-
-		foreach ( $domains as $identity_value => $identity_data ) {
-			$verification_status = $identity_data['VerificationStatus'];
-
-			if ( is_array( $verification_status ) && count( $verification_status ) === 2 ) {
-				$verification_status = $verification_status[1];
-			}
-
-			$txt_token   = empty( $identity_data['VerificationToken'] ) ? null : $identity_data['VerificationToken'];
-			$dkim_tokens = empty( $identity_data['DkimTokens'] ) ? null : $identity_data['DkimTokens'];
-
-			// Preferred DKIM verification, but we need to keep old one via TXT records if it was verified.
-			if (
-				$verification_status !== 'Success' &&
-				! empty( $identity_data['DkimEnabled'] ) &&
-				! empty( $identity_data['DkimVerificationStatus'] )
-			) {
-				$verification_status = $identity_data['DkimVerificationStatus'];
-			}
-
-			$data[] = new Identity( $identity_value, Identity::DOMAIN_TYPE, $verification_status, $txt_token, $dkim_tokens );
-		}
-
-		foreach ( $emails as $identity_value => $identity_data ) {
-			$verification_status = $identity_data['VerificationStatus'];
-
-			if ( is_array( $verification_status ) && count( $verification_status ) === 2 ) {
-				$verification_status = $verification_status[1];
-			}
-
-			$data[] = new Identity( $identity_value, Identity::EMAIL_TYPE, $verification_status );
-		}
-
-		return $data;
+		return $this->auth->get_identities();
 	}
 
 	/**

@@ -675,18 +675,19 @@ class Logs {
 	 */
 	public function is_preview() {
 
-		// Nonce verification.
+		// Bail early unless we are on the logs preview page: nonce verification must not run on unrelated admin requests.
 		if (
-			! isset( $_GET['_wpnonce'] ) ||
-			! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'wp_mail_smtp_pro_logs_log_preview' )
+			! wp_mail_smtp()->get_admin()->is_admin_page( 'logs' ) ||
+			! isset( $_GET['mode'] ) ||
+			$_GET['mode'] !== 'preview' ||
+			empty( $_GET['email_id'] )
 		) {
 			return false;
 		}
 
-		return wp_mail_smtp()->get_admin()->is_admin_page( 'logs' ) &&
-			isset( $_GET['mode'] ) &&
-			$_GET['mode'] === 'preview' &&
-			! empty( $_GET['email_id'] );
+		// Nonce verification.
+		return isset( $_GET['_wpnonce'] ) &&
+			wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'wp_mail_smtp_pro_logs_log_preview' );
 	}
 
 	/**
@@ -697,6 +698,23 @@ class Logs {
 	 * @return bool
 	 */
 	public function is_deleting() {
+
+		// Bail early unless we are on the logs delete page: nonce verification must not run on unrelated admin requests.
+		if (
+			! wp_mail_smtp()->get_admin()->is_admin_page( 'logs' ) ||
+			empty( $_REQUEST['email_id'] ) ||
+			! (
+				( // Single email deletion.
+					isset( $_REQUEST['mode'] ) && $_REQUEST['mode'] === 'delete'
+				) ||
+				( // Bulk email deletion.
+					( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'delete' ) ||
+					( isset( $_REQUEST['action2'] ) && $_REQUEST['action2'] === 'delete' )
+				)
+			)
+		) {
+			return false;
+		}
 
 		$is_nonce_good = false;
 
@@ -711,21 +729,7 @@ class Logs {
 			$is_nonce_good = true;
 		}
 
-		if ( ! $is_nonce_good ) {
-			return false;
-		}
-
-		return wp_mail_smtp()->get_admin()->is_admin_page( 'logs' ) &&
-			! empty( $_REQUEST['email_id'] ) &&
-			(
-				( // Single email deletion.
-					isset( $_REQUEST['mode'] ) && $_REQUEST['mode'] === 'delete'
-				) ||
-				( // Bulk email deletion.
-					isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'delete' ||
-					isset( $_REQUEST['action2'] ) && $_REQUEST['action2'] === 'delete'
-				)
-			);
+		return $is_nonce_good;
 	}
 
 	/**

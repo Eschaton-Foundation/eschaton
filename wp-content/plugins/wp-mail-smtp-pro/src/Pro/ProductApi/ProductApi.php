@@ -3,7 +3,6 @@
 namespace WPMailSMTP\Pro\ProductApi;
 
 use WPMailSMTP\Helpers\Helpers;
-use WPMailSMTP\WP;
 
 /**
  * Product API integration.
@@ -61,7 +60,7 @@ class ProductApi {
 
 		$base_url     = defined( 'WPMS_PRODUCT_API_BASE_URL' ) ? WPMS_PRODUCT_API_BASE_URL : self::BASE_URL;
 		$environment  = defined( 'WPMS_PRODUCT_API_ENV' ) ? WPMS_PRODUCT_API_ENV : 'production';
-		$site_url     = WP::get_site_url();
+		$site_url     = wp_mail_smtp()->get_license_site_url()->get();
 		$license_key  = wp_mail_smtp()->get_license_key();
 		$license_type = wp_mail_smtp()->is_pro() && ! empty( $license_key ) ? 'pro' : 'lite';
 		$user_agent   = Helpers::get_default_user_agent();

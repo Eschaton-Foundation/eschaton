@@ -38,14 +38,22 @@ class EmailLogCleanupTask extends Task {
 	}
 
 	/**
+	 * Register the task's callbacks.
+	 *
+	 * @since 4.10.0
+	 */
+	public function hooks() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
+
+		// Register the action handler.
+		add_action( self::ACTION, [ $this, 'process' ] );
+	}
+
+	/**
 	 * Initialize the task with all the proper checks.
 	 *
 	 * @since 2.1.0
 	 */
-	public function init() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
-
-		// Register the action handler.
-		add_action( self::ACTION, [ $this, 'process' ] );
+	public function init() {
 
 		// Get the retention period value from the Log settings.
 		$retention_period = Options::init()->get( 'logs', 'log_retention_period' );
@@ -110,7 +118,7 @@ class EmailLogCleanupTask extends Task {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
-				'DELETE FROM `%1$s` WHERE date_sent < "%2$s"', // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnquotedComplexPlaceholder
+				'DELETE FROM `%1$s` WHERE date_sent < \'%2$s\'', // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnquotedComplexPlaceholder
 				Logs::get_table_name(),
 				$date
 			)

@@ -1,5 +1,5 @@
 /* eslint-disable no-prototype-builtins */
-/* global wp_mail_smtp_pro, ajaxurl */
+/* global wp_mail_smtp, wp_mail_smtp_pro, ajaxurl */
 'use strict';
 
 var WPMailSMTP = window.WPMailSMTP || {};
@@ -140,16 +140,47 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 			},
 
 			/**
+			 * Show or clear the message rejecting the license key, under the field it was
+			 * typed into. A dialog would stack a second one over the dialog the field can
+			 * itself be rendered in.
+			 *
+			 * @since 4.10.0
+			 *
+			 * @param {jQuery} $field  The license key field wrapper.
+			 * @param {string} message The message, or an empty string to clear it.
+			 */
+			setFieldError: function( $field, message ) {
+
+				var $error = $( '.js-wp-mail-smtp-license-key-error', $field ),
+					$input = $( '.js-wp-mail-smtp-license-key', $field );
+
+				// The CSS hides the region while it is :empty, so writing the message is also
+				// what reveals it; a role="alert" written to while hidden is not announced.
+				// Every license error arrives as escaped markup, some of it with links.
+				$error.html( message );
+
+				if ( message ) {
+					$input.attr( 'aria-invalid', 'true' ).attr( 'aria-describedby', $error.attr( 'id' ) );
+
+					return;
+				}
+
+				$input.removeAttr( 'aria-invalid' ).removeAttr( 'aria-describedby' );
+			},
+
+			/**
 			 * Process all license-related actions/events.
 			 *
 			 * @since 1.5.0
 			 */
 			bindActions: function() {
 
-				app.pageHolder.on( 'keydown', '#wp-mail-smtp-setting-license-key', this.inputEnter );
-				app.pageHolder.on( 'click', '#wp-mail-smtp-setting-license-key-verify', this.verify );
-				app.pageHolder.on( 'click', '#wp-mail-smtp-setting-license-key-deactivate', this.deactivate );
-				app.pageHolder.on( 'click', '#wp-mail-smtp-setting-license-key-refresh', this.refresh );
+				// Delegated from the document: the field also renders inside a dialog
+				// jQuery-confirm appends to the body, outside `app.pageHolder`.
+				$( document ).on( 'keydown', '.js-wp-mail-smtp-license-key', this.inputEnter );
+				$( document ).on( 'click', '.js-wp-mail-smtp-license-key-verify', this.verify );
+				$( document ).on( 'click', '.js-wp-mail-smtp-license-key-deactivate', this.deactivate );
+				$( document ).on( 'click', '.js-wp-mail-smtp-license-key-refresh', this.refresh );
 			},
 
 			/**
@@ -164,12 +195,12 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 				event.preventDefault();
 
 				var $btn = jQuery( event.target ),
-					$row = $btn.closest( '.wp-mail-smtp-setting-row' ),
-					$licenseKey = $( '#wp-mail-smtp-setting-license-key', $row ),
+					$field = $btn.closest( '.wpms-license-key-field' ),
+					$licenseKey = $( '.js-wp-mail-smtp-license-key', $field ),
 					data = {
 						action: 'wp_mail_smtp_pro_license_ajax',
 						task: 'license_verify',
-						nonce: $( '#wp-mail-smtp-setting-license-nonce', $row ).val(),
+						nonce: wp_mail_smtp.nonce,
 						license: $licenseKey.val()
 					};
 
@@ -177,30 +208,23 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 
 				$.post( ajaxurl, data, function( response ) {
 
-					var message,
-						icon,
-						type;
-
-					if ( response.success ) {
-						message = response.data.message;
-						icon    = 'check-circle-solid-green';
-						type    = 'green';
-
-						$( '#wp-mail-smtp-setting-field-license' ).replaceWith( response.data.settings_html );
-					} else {
-						message = response.data;
-						icon    = 'exclamation-circle-regular-red';
-						type    = 'red';
-
-						$row.find( '.type, .desc, #wp-mail-smtp-setting-license-key-deactivate' ).hide();
+					if ( ! response.success ) {
 						$licenseKey.prop( 'disabled', false );
+						app.license.setFieldError( $field, response.data );
+						$btn.prop( 'disabled', false );
+
+						return;
 					}
 
-					var actionCallback = function() {
-						window.location.reload();
-					};
+					app.license.setFieldError( $field, '' );
 
-					app.license.displayModal( message, icon, type, actionCallback );
+					app.license.displayModal( response.data.message, 'check-circle-solid-green', 'green', function() {
+						if ( $btn.closest( '.wp-mail-smtp-mailer-options' ).length ) {
+							window.location.hash = 'wp-mail-smtp-mailer-options';
+						}
+
+						window.location.reload();
+					} );
 
 					$btn.prop( 'disabled', false );
 
@@ -221,7 +245,7 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 				if ( event.keyCode === 13 ) {
 					event.preventDefault();
 
-					$( '#wp-mail-smtp-setting-license-key-verify' ).trigger( 'click' );
+					$( event.target ).closest( '.wpms-license-key-field' ).find( '.js-wp-mail-smtp-license-key-verify' ).trigger( 'click' );
 				}
 			},
 
@@ -237,36 +261,40 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 				event.preventDefault();
 
 				var $btn = jQuery( event.target ),
-					$row = $btn.closest( '.wp-mail-smtp-setting-row' ),
+					$field = $btn.closest( '.wpms-license-key-field' ),
 					data = {
 						action: 'wp_mail_smtp_pro_license_ajax',
 						task: 'license_deactivate',
-						nonce: $( '#wp-mail-smtp-setting-license-nonce', $row ).val()
+						nonce: wp_mail_smtp.nonce
 					};
 
 				$btn.prop( 'disabled', true );
 
 				$.post( ajaxurl, data, function( response ) {
 
-					var message,
-						icon,
-						type;
+					$( '.js-wp-mail-smtp-license-key', $field ).prop( 'disabled', false );
 
-					if ( response.success ) {
-						message = response.data.message;
-						icon = 'check-circle-solid-green';
-						type = 'green';
+					if ( ! response.success ) {
+						app.license.setFieldError( $field, response.data );
+						$btn.prop( 'disabled', false );
 
-						$( '#wp-mail-smtp-setting-field-license' ).replaceWith( response.data.settings_html );
-					} else {
-						message = response.data;
-						icon = 'exclamation-circle-regular-red';
-						type = 'red';
+						return;
 					}
 
-					$( '#wp-mail-smtp-setting-license-key', $row ).prop( 'disabled', false );
+					app.license.setFieldError( $field, '' );
 
-					app.license.displayModal( message, icon, type );
+					// The key always leaves the site; a server that could not confirm the
+					// release is not a clean success.
+					var isReleased = response.data.is_released !== false;
+
+					app.license.displayModal(
+						response.data.message,
+						isReleased ? 'check-circle-solid-green' : 'exclamation-circle-solid-orange',
+						isReleased ? 'green' : 'orange',
+						function() {
+							window.location.reload();
+						}
+					);
 
 					$btn.prop( 'disabled', false );
 
@@ -287,41 +315,30 @@ WPMailSMTP.Admin.Settings.Pro = WPMailSMTP.Admin.Settings.Pro || ( function( doc
 				event.preventDefault();
 
 				var $btn = jQuery( event.target ),
-					$row = $btn.closest( '.wp-mail-smtp-setting-row' ),
+					$field = $btn.closest( '.wpms-license-key-field' ),
 					data = {
 						action: 'wp_mail_smtp_pro_license_ajax',
 						task: 'license_refresh',
-						nonce: $( '#wp-mail-smtp-setting-license-nonce', $row ).val()
+						nonce: wp_mail_smtp.nonce
 					};
 
 				$btn.prop( 'disabled', true );
 
 				$.post( ajaxurl, data, function( response ) {
 
-					var message,
-						icon,
-						type;
+					if ( ! response.success ) {
+						$( '.js-wp-mail-smtp-license-key', $field ).prop( 'disabled', false );
+						app.license.setFieldError( $field, response.data );
+						$btn.prop( 'disabled', false );
 
-					if ( response.success ) {
-						message = response.data.message;
-						icon    = 'check-circle-solid-green';
-						type    = 'green';
-
-						$( '#wp-mail-smtp-setting-field-license' ).replaceWith( response.data.settings_html );
-					} else {
-						message = response.data;
-						icon    = 'exclamation-circle-regular-red';
-						type    = 'red';
-
-						$row.find( '.desc, #wp-mail-smtp-setting-license-key-deactivate' ).hide();
-						$( '#wp-mail-smtp-setting-license-key', $row ).prop( 'disabled', false );
+						return;
 					}
 
-					var actionCallback = function() {
-						window.location.reload();
-					};
+					app.license.setFieldError( $field, '' );
 
-					app.license.displayModal( message, icon, type, actionCallback );
+					app.license.displayModal( response.data.message, 'check-circle-solid-green', 'green', function() {
+						window.location.reload();
+					} );
 
 					$btn.prop( 'disabled', false );
 

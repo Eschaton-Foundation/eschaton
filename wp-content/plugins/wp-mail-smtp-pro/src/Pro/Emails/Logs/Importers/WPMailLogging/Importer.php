@@ -381,9 +381,9 @@ class Importer extends ImporterAbstract {
 		global $wpdb;
 
 		if ( $with_attachments ) {
-			$where_clause = 'WHERE `attachments` != ""';
+			$where_clause = 'WHERE `attachments` != \'\'';
 		} else {
-			$where_clause = 'WHERE `attachments` = ""';
+			$where_clause = 'WHERE `attachments` = \'\'';
 		}
 
 		$options = $this->get_saved_options();

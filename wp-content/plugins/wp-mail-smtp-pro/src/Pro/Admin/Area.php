@@ -2,6 +2,8 @@
 
 namespace WPMailSMTP\Pro\Admin;
 
+use WPMailSMTP\Admin\Dashboard\Dashboard as DashboardBase;
+use WPMailSMTP\Pro\Admin\Dashboard\Dashboard;
 use WPMailSMTP\Pro\Admin\Pages\MiscTab;
 use WPMailSMTP\Pro\Admin\Pages\TestTab;
 
@@ -23,8 +25,25 @@ class Area {
 		add_filter( 'wp_mail_smtp_admin_get_pages', [ $this, 'admin_get_pages' ] );
 		add_filter( 'wp_mail_smtp_admin_page_tools_tabs', [ $this, 'admin_page_tools_tabs' ] );
 
+		// Substitute the Dashboard orchestrator with the Pro subclass.
+		add_filter( 'wp_mail_smtp_admin_area_get_dashboard', [ $this, 'admin_get_dashboard' ] );
+
 		// Manage other admin notices.
 		add_action( 'admin_init', [ $this, 'manage_other_admin_notices' ] );
+	}
+
+	/**
+	 * Replace Lite's Dashboard orchestrator with the Pro version.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @param DashboardBase $dashboard Dashboard orchestrator instance.
+	 *
+	 * @return Dashboard
+	 */
+	public function admin_get_dashboard( $dashboard ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- Filter signature; Pro always substitutes its own instance.
+
+		return new Dashboard();
 	}
 
 	/**

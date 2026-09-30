@@ -5,11 +5,11 @@ namespace WPMailSMTP\Pro\Providers\Zoho;
 use WP_Error;
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
-use WPMailSMTP\Admin\SetupWizard;
+use WPMailSMTP\Admin\SetupWizard\Launcher as SetupWizardLauncher;
 use WPMailSMTP\ConnectionInterface;
-use WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessToken;
 use WPMailSMTP\Pro\Providers\Zoho\Auth\Zoho;
 use WPMailSMTP\Providers\AuthAbstract;
+use WPMailSMTP\Vendor\League\OAuth2\Client\Token\AccessToken;
 use WPMailSMTP\WP;
 
 /**
@@ -223,13 +223,13 @@ class Auth extends AuthAbstract {
 	 */
 	public function process() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded
 
-		$redirect_url         = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
-		$is_setup_wizard_auth = ! empty( $this->options['is_setup_wizard_auth'] );
+		$redirect_url   = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
+		$wizard_variant = isset( $this->options['is_setup_wizard_auth'] ) ? $this->options['is_setup_wizard_auth'] : false;
 
-		if ( $is_setup_wizard_auth ) {
+		if ( ! empty( $wizard_variant ) ) {
 			$this->update_is_setup_wizard_auth( false );
 
-			$redirect_url = SetupWizard::get_site_url() . '#/step/configure_mailer/zoho';
+			$redirect_url = SetupWizardLauncher::get_oauth_return_url( $wizard_variant, 'zoho' );
 		}
 
 		if ( ! ( isset( $_GET['tab'] ) && $_GET['tab'] === 'auth' ) ) {

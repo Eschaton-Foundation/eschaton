@@ -5,7 +5,6 @@ namespace WPMailSMTP\Pro\License;
 use stdClass;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
 use WPMailSMTP\Helpers\Helpers;
-use WPMailSMTP\WP;
 
 /**
  * Updater class.
@@ -139,10 +138,22 @@ class Updater {
 			return;
 		}
 
-		// Load the updater hooks and filters.
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_plugins_filter' ) );
-		add_filter( 'http_request_args', array( $this, 'http_request_args' ), 10, 2 );
-		add_filter( 'plugins_api', array( $this, 'plugins_api' ), 10, 3 );
+		$this->hooks();
+	}
+
+	/**
+	 * Register the updater hooks and filters.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return void
+	 */
+	private function hooks() {
+
+		add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'update_plugins_filter' ] );
+		add_filter( 'http_request_args', [ $this, 'http_request_args' ], 10, 2 );
+		add_filter( 'plugins_api', [ $this, 'plugins_api' ], 10, 3 );
+		add_action( 'upgrader_process_complete', [ $this, 'upgrader_process_complete' ], 10, 2 );
 	}
 
 	/**
@@ -207,6 +218,42 @@ class Updater {
 
 		// Return the update object.
 		return $value;
+	}
+
+	/**
+	 * Refresh the in-memory plugin version once an upgrade of this plugin completes.
+	 *
+	 * WordPress re-checks for updates on `upgrader_process_complete`, inside the same
+	 * request that just performed the update. At that point the new plugin files are on
+	 * disk, but `$this->version` still holds the version that was loaded into memory at
+	 * the start of the request (PHP does not reload already-included files mid-request).
+	 * Without refreshing it, `update_plugins_filter()` compares the stale old version
+	 * against the remote version and writes a bogus "update available" entry into the
+	 * `update_plugins` transient, so the update notice reappears until the next update.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @param mixed $upgrader   WP_Upgrader instance. Unused.
+	 * @param array $hook_extra Array of bulk item update data.
+	 *
+	 * @return void
+	 */
+	public function upgrader_process_complete( $upgrader, $hook_extra = [] ) {
+
+		$upgraded_plugins = isset( $hook_extra['plugins'] ) ? $hook_extra['plugins'] : [];
+
+		if ( ! in_array( $this->plugin_path, $upgraded_plugins, true ) ) {
+			return;
+		}
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$all_plugins      = get_plugins();
+		$upgraded_version = isset( $all_plugins[ $this->plugin_path ]['Version'] ) ? $all_plugins[ $this->plugin_path ]['Version'] : null;
+
+		$this->version = $upgraded_version ? (string) $upgraded_version : $this->version;
 	}
 
 	/**
@@ -332,7 +379,7 @@ class Updater {
 				'tgm-updater-key'         => $this->key,
 				'tgm-updater-wp-version'  => get_bloginfo( 'version' ),
 				'tgm-updater-php-version' => phpversion(),
-				'tgm-updater-referer'     => WP::get_site_url(),
+				'tgm-updater-referer'     => wp_mail_smtp()->get_license_site_url()->get(),
 			]
 		);
 

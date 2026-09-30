@@ -5,14 +5,13 @@ namespace WPMailSMTP\Pro\Providers\Gmail;
 use WPMailSMTP\Admin\Area;
 use WPMailSMTP\Admin\ConnectionSettings;
 use WPMailSMTP\Admin\DebugEvents\DebugEvents;
-use WPMailSMTP\Admin\SetupWizard;
+use WPMailSMTP\Admin\SetupWizard\Launcher as SetupWizardLauncher;
 use WPMailSMTP\ConnectionInterface;
 use WPMailSMTP\Options as PluginOptions;
 use WPMailSMTP\Pro\Providers\Gmail\Api\Client;
 use WPMailSMTP\Pro\Providers\Gmail\Api\OneTimeToken;
 use WPMailSMTP\Pro\Providers\Gmail\Api\SiteId;
 use WPMailSMTP\Providers\AuthAbstract;
-use WPMailSMTP\WP;
 
 /**
  * Class Auth to request access.
@@ -101,7 +100,7 @@ class Auth extends AuthAbstract {
 		}
 
 		$credentials = $this->options['one_click_setup_credentials'] ?? [];
-		$site_url    = WP::get_site_url();
+		$site_url    = wp_mail_smtp()->get_license_site_url()->get();
 
 		if ( $this->connection->get_id() !== 'primary' ) {
 			$site_url = add_query_arg( 'connection_id', $this->connection->get_id(), $site_url );
@@ -120,13 +119,13 @@ class Auth extends AuthAbstract {
 	 */
 	public function process() { // phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded, Generic.Metrics.CyclomaticComplexity.TooHigh
 
-		$redirect_url         = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
-		$is_setup_wizard_auth = ! empty( $this->options['is_setup_wizard_auth'] );
+		$redirect_url   = ( new ConnectionSettings( $this->connection ) )->get_admin_page_url();
+		$wizard_variant = isset( $this->options['is_setup_wizard_auth'] ) ? $this->options['is_setup_wizard_auth'] : false;
 
-		if ( $is_setup_wizard_auth ) {
+		if ( ! empty( $wizard_variant ) ) {
 			$this->update_is_setup_wizard_auth( false );
 
-			$redirect_url = SetupWizard::get_site_url() . '#/step/configure_mailer/gmail';
+			$redirect_url = SetupWizardLauncher::get_oauth_return_url( $wizard_variant, 'gmail' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -167,7 +166,7 @@ class Auth extends AuthAbstract {
 			],
 		];
 
-		$site_url = WP::get_site_url();
+		$site_url = wp_mail_smtp()->get_license_site_url()->get();
 
 		if ( $this->connection->get_id() !== 'primary' ) {
 			$site_url = add_query_arg( 'connection_id', $this->connection->get_id(), $site_url );

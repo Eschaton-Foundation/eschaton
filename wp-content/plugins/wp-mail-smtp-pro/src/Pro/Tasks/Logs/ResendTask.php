@@ -41,11 +41,11 @@ class ResendTask extends Task {
 	}
 
 	/**
-	 * Initialize the task.
+	 * Register the task's callbacks.
 	 *
-	 * @since 2.9.0
+	 * @since 4.10.0
 	 */
-	public function init() {
+	public function hooks() {
 
 		// Register the action handler.
 		add_action( self::ACTION, [ $this, 'process' ] );

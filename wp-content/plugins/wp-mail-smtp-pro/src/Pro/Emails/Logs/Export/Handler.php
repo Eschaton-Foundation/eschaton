@@ -121,12 +121,15 @@ class Handler {
 				Export::get_config( 'export', 'request_data_ttl' )
 			);
 
+			wp_mail_smtp()->get_pro()->get_product_events()->track_log_exported( $this->request->get_data( 'type' ) );
+
 			$file->output_file( $this->request );
 
 		} catch ( \Exception $e ) {
 			$this->remove_export_file( $this->request->get_request_id() );
 
 			$error = Export::get_config( 'errors', 'common' ) . '<br>' . $e->getMessage();
+
 			WP::add_admin_notice( $error );
 		}
 	}
@@ -167,6 +170,8 @@ class Handler {
 					$this->request->get_request_id(),
 					Export::get_config( 'export', 'request_data_ttl' )
 				);
+
+				wp_mail_smtp()->get_pro()->get_product_events()->track_log_exported( $this->request->get_data( 'type' ) );
 			}
 
 			wp_send_json_success(

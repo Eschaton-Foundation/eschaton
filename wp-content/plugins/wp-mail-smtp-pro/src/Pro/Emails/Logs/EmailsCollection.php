@@ -462,6 +462,26 @@ class EmailsCollection implements \Countable, \Iterator {
 	}
 
 	/**
+	 * Whether at least one DB record matches the filters, without counting them all.
+	 *
+	 * @since 4.10.0
+	 *
+	 * @return bool
+	 */
+	public function has_any() {
+
+		$table = Logs::get_table_name();
+
+		$where = $this->build_where();
+
+		return (bool) WP::wpdb()->get_var(
+			"SELECT 1 FROM $table
+			WHERE {$where}
+			LIMIT 1"
+		);
+	}
+
+	/**
 	 * Get the list of DB records.
 	 * You can either use array returned there OR iterate over the whole object,
 	 * as it implements Iterator interface.
